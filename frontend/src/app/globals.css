@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 48% 97%;
+  --foreground: 220 18% 12%;
+  --card: 42 56% 99%;
+  --card-foreground: 220 18% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 18% 12%;
+  --primary: 45 94% 56%;
+  --primary-foreground: 220 18% 12%;
+  --secondary: 211 76% 43%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 42 28% 91%;
+  --muted-foreground: 220 9% 39%;
+  --accent: 149 43% 39%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 2 72% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 42 22% 84%;
+  --input: 42 22% 84%;
+  --ring: 45 94% 56%;
+  --radius: 8px;
+}
+
+.dark {
+  --background: 220 16% 9%;
+  --foreground: 42 44% 94%;
+  --card: 220 15% 12%;
+  --card-foreground: 42 44% 94%;
+  --popover: 220 15% 12%;
+  --popover-foreground: 42 44% 94%;
+  --primary: 45 94% 56%;
+  --primary-foreground: 220 18% 12%;
+  --secondary: 211 70% 52%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 220 11% 18%;
+  --muted-foreground: 42 8% 72%;
+  --accent: 149 42% 45%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 2 70% 61%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 18% 22%;
+  --input: 214 18% 22%;
+  --ring: 45 94% 56%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  min-height: 100vh;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+  text-rendering: geometricPrecision;
+}
+
+::selection {
+  background: rgba(244, 197, 66, 0.36);
+}
+
+@layer utilities {
+  .soft-grid {
+    background-image:
+      linear-gradient(rgba(31, 37, 50, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31, 37, 50, 0.045) 1px, transparent 1px);
+    background-size: 36px 36px;
+  }
+
+  .glass-surface {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--foreground));
+    border-radius: 24px;
+    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 14px 26px rgba(31, 37, 50, 0.08);
+  }
+
+  .dark .glass-surface {
+    background: hsl(var(--card));
+    border-color: hsl(var(--foreground));
+    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 18px 32px rgba(0, 0, 0, 0.26);
+  }
+
+  .game-surface {
+    background: hsl(var(--card));
+    border: 2px solid hsl(var(--foreground));
+    border-radius: 24px;
+    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 14px 26px rgba(31, 37, 50, 0.08);
+  }
+
+  .dark .game-surface {
+    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 18px 32px rgba(0, 0, 0, 0.26);
+  }
+
+  .game-tile {
+    border: 2px solid hsl(var(--foreground));
+    border-radius: 18px;
+    box-shadow: 0 4px 0 hsl(var(--foreground));
+    transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+  }
+
+  .game-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 hsl(var(--foreground));
+  }
+
+  .game-tile:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 hsl(var(--foreground));
+  }
+
+  .game-chip {
+    border: 2px solid hsl(var(--foreground));
+    border-radius: 999px;
+    box-shadow: 0 3px 0 hsl(var(--foreground));
+  }
+
+  .game-focus-card {
+    border: 2px solid hsl(var(--primary));
+    border-radius: 20px;
+    box-shadow: 0 4px 0 hsl(var(--primary));
+  }
+
+  .focus-ring-soft {
+    box-shadow: 0 0 0 2px rgba(248, 200, 48, 0.28), 0 10px 24px rgba(31, 37, 50, 0.10);
+  }
+
+  .website-shell {
+    background: hsl(var(--background));
+  }
+
+  .accent-panel {
+    background: hsl(var(--primary));
+  }
+
+  .graphite-panel {
+    background: hsl(var(--foreground));
+  }
+
+  .bg-primary .text-white,
+  .bg-primary .text-white\/62,
+  .bg-primary .text-white\/70,
+  .bg-primary .text-white\/72,
+  .bg-primary .text-white\/74,
+  .bg-primary .text-white\/76,
+  .bg-primary .text-white\/78,
+  .bg-primary .text-white\/82,
+  .bg-primary .text-white\/86 {
+    color: rgba(29, 27, 22, 0.72);
+  }
+
+  .bg-primary .bg-white\/10,
+  .bg-primary .bg-white\/12,
+  .bg-primary .bg-white\/16 {
+    background-color: rgba(29, 27, 22, 0.08);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+.editor-lines {
+  counter-reset: line;
+}
+
+.editor-lines p {
+  counter-increment: line;
+}
+
+.editor-lines p::before {
+  content: counter(line);
+}

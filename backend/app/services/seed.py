@@ -461,7 +461,7 @@ def seed_database(db: Session) -> None:
         daily_goal_minutes=45,
     )
     admin = User(
-        name="Admin Donk",
+        name="Admin Donk ENEM",
         email="admin@demo.com",
         hashed_password=get_password_hash("12345678"),
         role=UserRole.ADMIN,
@@ -582,17 +582,17 @@ def seed_database(db: Session) -> None:
         EssayTheme(
             title="Desafios para a democratizacao do acesso a educacao digital no Brasil",
             context="Considere desigualdade de acesso a internet, infraestrutura escolar, formacao docente e cidadania digital.",
-            source="Donk",
+            source="Donk ENEM",
         ),
         EssayTheme(
             title="Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
             context="Reflita sobre genero, economia, politicas publicas, reconhecimento social e direitos trabalhistas.",
-            source="Donk",
+            source="Donk ENEM",
         ),
         EssayTheme(
             title="A importancia da leitura critica na formacao dos jovens brasileiros",
             context="Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
-            source="Donk",
+            source="Donk ENEM",
         ),
     ]
     db.add_all(themes)
