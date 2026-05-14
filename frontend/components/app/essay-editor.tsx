@@ -112,7 +112,7 @@ export function EssayEditor({
             <div className="rounded-lg border bg-background/72 p-4">
               <div className="mb-3 flex items-center gap-2 text-sm font-black">
                 <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
-                Checkpoint
+                Marco
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <Signal active={words >= 80} text="Texto elegivel para correcao" />
@@ -157,4 +157,3 @@ function Signal({ active, text }: { active: boolean; text: string }) {
     </li>
   );
 }
-

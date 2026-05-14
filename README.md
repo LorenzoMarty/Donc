@@ -63,7 +63,7 @@ npm run dev
 ## Funcionalidades entregues
 
 - Login, cadastro, logout, recuperacao de senha e rotas protegidas.
-- Dashboard do aluno com progresso, media de redacao, streak, XP, metas, grafico e skeletons.
+- Painel do aluno com progresso, media de redacao, sequencia, XP, metas, grafico e estados de carregamento.
 - Estrutura Materia -> Modulo -> Aula, player, progresso salvo e aulas concluidas.
 - Exercicios ENEM com correcao automatica, explicacao e dificuldade dinamica.
 - Editor de redacao com contador de linhas, contador de palavras, autosave, modo foco e spellcheck.
@@ -72,7 +72,7 @@ npm run dev
 - IA tutora para duvidas de Portugues e Redacao.
 - Simulados com cronometro, correcao automatica e desempenho por habilidade.
 - Gamificacao com XP, nivel, streak, conquistas e metas.
-- Admin panel com usuarios e metricas.
+- Painel administrativo com usuarios e metricas.
 - Onboarding inicial e tela de boas-vindas.
 
 ## Estrutura

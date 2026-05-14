@@ -12,7 +12,7 @@ O projeto separa frontend e backend para manter evolucao independente.
 
 Camadas:
 
-- `routers`: expõem endpoints REST por dominio.
+- `routers`: expoem endpoints REST por dominio.
 - `services`: concentram regras de negocio.
 - `repositories`: isolam consultas SQLAlchemy.
 - `schemas`: contratos Pydantic de entrada e saida.
@@ -23,7 +23,7 @@ Camadas:
 Dominios implementados:
 
 - Auth e JWT.
-- Dashboard.
+- Painel.
 - Aulas, modulos, materias e progresso.
 - Exercicios e respostas.
 - Redacoes, temas, historico e correcoes.
@@ -57,7 +57,7 @@ Areas:
 
 - Auth: login, cadastro e recuperacao.
 - App shell: sidebar, topbar, dark mode e usuario.
-- Dashboard: metricas e graficos.
+- Painel: metricas e graficos.
 - Aulas: trilhas e detalhe com player.
 - Exercicios: treino objetivo com feedback.
 - Redacao: editor principal com autosave e correcao.
@@ -81,4 +81,3 @@ Areas:
 - Enviar recuperacao de senha por e-mail transacional.
 - Adicionar observabilidade, logs estruturados e rate limiting.
 - Cobrir services com testes automatizados de unidade e integracao.
-

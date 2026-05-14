@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BookOpenCheck, Flame, LineChart, PenLine, Target, Trophy, Zap } from "lucide-react";
 
 import { ScoreAreaChart } from "@/components/app/charts";
+import { MiniTrailPreview } from "@/components/app/exercise-game";
 import { LoadingCard } from "@/components/app/loading-card";
 import { AchievementChip, PageHeader, RankPodium, StatTile, StreakStrip, Surface, XpRing } from "@/components/app/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -81,11 +82,39 @@ export default function DashboardPage() {
         <StatTile label="Aulas" value={`${data.completed_lessons}`} helper="Concluidas na trilha" progress={Math.min(data.completed_lessons * 12, 100)} icon={BookOpenCheck} />
       </div>
 
+      <div className="grid gap-4 xl:grid-cols-[1fr_0.85fr]">
+        <Surface>
+          <MiniTrailPreview progress={Math.max(18, data.correct_exercises_rate)} />
+          <Button asChild className="mt-5 w-full">
+            <Link href="/exercicios">
+              Abrir mapa de missoes
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </Surface>
+        <Surface className="bg-primary text-primary-foreground">
+          <div className="flex h-full flex-col justify-between gap-5">
+            <div>
+              <p className="text-xs font-black uppercase text-white/62">Missoes da semana</p>
+              <h2 className="mt-2 text-2xl font-black tracking-normal">Desbloqueie uma fase completa</h2>
+              <p className="mt-3 text-sm leading-6 text-white/74">Complete etapas em sequencia para manter combo, ganhar XP e subir na liga.</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {["5 acertos", "1 trilha", "3x combo"].map((item) => (
+                <div key={item} className="rounded-lg bg-white/10 p-3 text-center text-xs font-black text-white/86">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Surface>
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-[1.45fr_0.55fr]">
         <Surface className="min-h-[360px]">
           <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <p className="text-xs font-black uppercase text-muted-foreground">Score tracker</p>
+              <p className="text-xs font-black uppercase text-muted-foreground">Historico de notas</p>
               <h2 className="mt-1 text-xl font-black tracking-normal">Evolucao das redacoes</h2>
             </div>
             <div className="inline-flex w-fit items-center gap-2 rounded-md bg-accent/12 px-3 py-2 text-xs font-black text-accent">
@@ -130,7 +159,7 @@ export default function DashboardPage() {
 
         <Surface>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-black tracking-normal">Quests</h2>
+            <h2 className="text-lg font-black tracking-normal">Missoes</h2>
             <Target className="h-5 w-5 text-secondary" aria-hidden="true" />
           </div>
           <div className="space-y-3">
@@ -161,4 +190,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

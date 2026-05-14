@@ -24,10 +24,430 @@ from app.models import (
     UserRole,
 )
 
+EXERCISE_SPECS = [
+    {
+        "module": "Fundamentos da Redacao",
+        "lesson": "Como decodificar o tema",
+        "statement": "Em uma proposta sobre invisibilidade do trabalho de cuidado, qual alternativa melhor identifica o recorte tematico?",
+        "options": [
+            "A) Qualquer atividade profissional feminina.",
+            "B) A falta de reconhecimento social e economico de atividades de cuidado.",
+            "C) A defesa de que todo trabalho deve ser voluntario.",
+            "D) A historia do mercado financeiro brasileiro.",
+            "E) O fim das relacoes familiares contemporaneas.",
+        ],
+        "correct_answer": "B",
+        "explanation": "O recorte combina invisibilidade, cuidado e reconhecimento social/economico, nao apenas trabalho feminino de forma ampla.",
+        "skill": "Compreensao do tema",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Competencias do ENEM",
+        "lesson": "Competencia 5 sem formula vazia",
+        "statement": "Qual item completa melhor uma proposta de intervencao ENEM?",
+        "options": [
+            "A) Apenas citar o governo.",
+            "B) Apresentar agente, acao, meio, finalidade e detalhamento.",
+            "C) Encerrar com uma pergunta retorica.",
+            "D) Repetir a tese da introducao.",
+            "E) Usar um repertorio historico sem relacao com a solucao.",
+        ],
+        "correct_answer": "B",
+        "explanation": "A Competencia 5 exige uma proposta detalhada, articulada ao problema e respeitosa aos direitos humanos.",
+        "skill": "Competencia 5",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "Assinale a frase em que a virgula evita ambiguidade.",
+        "options": [
+            "A) Os alunos que estudaram passaram.",
+            "B) Ao chegar em casa, revisei a redacao.",
+            "C) A sociedade brasileira enfrenta desafios.",
+            "D) A proposta precisa de detalhamento.",
+            "E) O texto apresenta tese clara.",
+        ],
+        "correct_answer": "B",
+        "explanation": "A virgula separa a oracao deslocada e facilita a leitura da relacao temporal.",
+        "skill": "Pontuacao",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "Em charges, a critica social costuma surgir principalmente da relacao entre:",
+        "options": [
+            "A) Titulo, linguagem visual e contexto.",
+            "B) Numero de linhas e tamanho da fonte.",
+            "C) Apenas a biografia do autor.",
+            "D) Regras de acentuacao.",
+            "E) Ordem alfabetica das palavras.",
+        ],
+        "correct_answer": "A",
+        "explanation": "Textos multimodais exigem leitura integrada entre elementos verbais, visuais e contexto sociocultural.",
+        "skill": "Textos multimodais",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "Ao ler um infografico do ENEM, qual procedimento aumenta a precisao da interpretacao?",
+        "options": [
+            "A) Observar apenas o titulo principal.",
+            "B) Relacionar dados numericos, legenda, fonte e contexto.",
+            "C) Ignorar a fonte para evitar interferencias.",
+            "D) Procurar a alternativa com mais palavras.",
+            "E) Escolher a opcao que repete literalmente o enunciado.",
+        ],
+        "correct_answer": "B",
+        "explanation": "Infograficos articulam linguagem verbal, visual e numerica; a leitura precisa depende da relacao entre esses elementos.",
+        "skill": "Textos multimodais",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "Quando uma questao pede o efeito de sentido de uma ironia, o aluno deve priorizar:",
+        "options": [
+            "A) A contradicao entre o sentido literal e a intencao critica.",
+            "B) A classificacao morfologica de todas as palavras.",
+            "C) A memorizacao da biografia do autor.",
+            "D) A contagem de frases do texto.",
+            "E) A alternativa mais curta.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A ironia produz sentido pela distancia entre o que e dito literalmente e a critica sugerida pelo contexto.",
+        "skill": "Compreensao de ironia",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "Em textos jornalisticos opinativos, a tese costuma aparecer como:",
+        "options": [
+            "A) Uma enumeracao de datas sem relacao entre si.",
+            "B) Uma posicao defendida sobre determinado problema.",
+            "C) Uma lista de sinonimos tecnicos.",
+            "D) Uma pergunta sem desenvolvimento.",
+            "E) Uma citacao isolada no final do texto.",
+        ],
+        "correct_answer": "B",
+        "explanation": "A tese e o posicionamento central que organiza argumentos e escolhas linguisticas do texto.",
+        "skill": "Compreensao textual",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "O reconhecimento do genero textual ajuda o aluno porque permite:",
+        "options": [
+            "A) Ignorar o contexto de circulacao.",
+            "B) Antecipar finalidade, publico e organizacao do texto.",
+            "C) Responder sem ler o enunciado.",
+            "D) Trocar interpretacao por opiniao pessoal.",
+            "E) Eliminar todas as alternativas longas.",
+        ],
+        "correct_answer": "B",
+        "explanation": "Genero textual orienta expectativas sobre finalidade, interlocutores, estrutura e recursos de linguagem.",
+        "skill": "Generos textuais",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "Uma inferencia valida em questoes de interpretacao deve ser baseada em:",
+        "options": [
+            "A) Pistas do texto e conhecimento de mundo pertinente.",
+            "B) Preferencia pessoal do leitor.",
+            "C) Uma palavra isolada fora de contexto.",
+            "D) Chute pela alternativa mais tecnica.",
+            "E) Exclusivamente na primeira frase.",
+        ],
+        "correct_answer": "A",
+        "explanation": "Inferir nao e inventar; e construir sentido a partir de pistas textuais articuladas ao contexto.",
+        "skill": "Inferencia",
+        "difficulty": Difficulty.HARD,
+    },
+    {
+        "module": "Leitura Estrategica",
+        "lesson": "Inferencia em textos multimodais",
+        "statement": "Em um poema, a repeticao de uma palavra pode funcionar para:",
+        "options": [
+            "A) Criar ritmo, reforcar uma ideia ou intensificar uma emocao.",
+            "B) Provar erro gramatical obrigatorio.",
+            "C) Eliminar qualquer possibilidade de interpretacao.",
+            "D) Substituir a pontuacao de todo o texto.",
+            "E) Transformar o texto em noticia.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A repeticao pode ter valor expressivo, ritmico e semantico, especialmente em textos literarios.",
+        "skill": "Textos literarios",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "Qual frase apresenta uso adequado da crase?",
+        "options": [
+            "A) Entreguei o projeto a escola ontem.",
+            "B) Cheguei cedo a reuniao.",
+            "C) Refiro-me a uma proposta ampla.",
+            "D) O aluno respondeu a todas as perguntas.",
+            "E) A pesquisa foi feita a lapis.",
+        ],
+        "correct_answer": "B",
+        "explanation": "Ha crase em 'a reuniao' porque ocorre a preposicao 'a' exigida por 'chegar' e o artigo feminino 'a'.",
+        "skill": "Crase",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "Assinale a alternativa em que a concordancia verbal esta adequada.",
+        "options": [
+            "A) Fazem muitos anos que o problema existe.",
+            "B) Haviam varias propostas no debate.",
+            "C) Existem desafios urgentes na educacao.",
+            "D) Precisa-se de voluntarios foram chamados.",
+            "E) A maioria dos estudantes chegaram cedo ontem.",
+        ],
+        "correct_answer": "C",
+        "explanation": "O verbo 'existir' concorda com o sujeito plural 'desafios urgentes'.",
+        "skill": "Concordancia verbal",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "Qual alternativa apresenta coesao referencial?",
+        "options": [
+            "A) A tecnologia mudou a escola. Ela tambem transformou a relacao com o conhecimento.",
+            "B) A tecnologia mudou a escola. Portanto, entretanto, contudo.",
+            "C) A tecnologia mudou a escola. Mesa, janela, horario.",
+            "D) A tecnologia mudou a escola. A escola mudou a tecnologia sem relacao.",
+            "E) A tecnologia mudou a escola. Porque sim.",
+        ],
+        "correct_answer": "A",
+        "explanation": "O pronome 'Ela' retoma 'A tecnologia', evitando repeticao e mantendo continuidade textual.",
+        "skill": "Coesao referencial",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "No trecho 'Estudou muito; portanto, melhorou seu desempenho', o conectivo indica:",
+        "options": [
+            "A) Oposicao.",
+            "B) Conclusao.",
+            "C) Alternancia.",
+            "D) Comparacao.",
+            "E) Explicacao sem causa.",
+        ],
+        "correct_answer": "B",
+        "explanation": "'Portanto' estabelece relacao conclusiva entre o estudo e a melhora do desempenho.",
+        "skill": "Coesao sequencial",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "Em 'Nao basta informar; e preciso formar leitores criticos', o ponto e virgula:",
+        "options": [
+            "A) Separa ideias relacionadas e reforca contraste argumentativo.",
+            "B) Marca uma pergunta indireta.",
+            "C) Indica fala de personagem.",
+            "D) Substitui todos os acentos.",
+            "E) Torna a frase informal obrigatoriamente.",
+        ],
+        "correct_answer": "A",
+        "explanation": "O ponto e virgula aproxima duas oracoes coordenadas com relacao argumentativa clara.",
+        "skill": "Pontuacao",
+        "difficulty": Difficulty.HARD,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "A funcao conativa da linguagem aparece com mais forca quando o texto busca:",
+        "options": [
+            "A) Convencer ou orientar diretamente o leitor.",
+            "B) Descrever apenas sentimentos do emissor.",
+            "C) Explicar o codigo pelo codigo.",
+            "D) Manter contato sem informar nada.",
+            "E) Valorizar apenas a forma poetica.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A funcao conativa ou apelativa se concentra no interlocutor e costuma usar imperativos e chamadas para acao.",
+        "skill": "Funcoes da linguagem",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Norma-padrao Essencial",
+        "lesson": "Pontuacao que muda sentido",
+        "statement": "Em 'A educacao, que deveria emancipar, ainda reproduz desigualdades', as virgulas isolam:",
+        "options": [
+            "A) Uma oracao subordinada adjetiva explicativa.",
+            "B) Um sujeito simples sem complemento.",
+            "C) Um vocativo obrigatorio.",
+            "D) Uma enumeracao de objetos.",
+            "E) Um erro de concordancia nominal.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A oracao 'que deveria emancipar' acrescenta explicacao sobre educacao e fica isolada por virgulas.",
+        "skill": "Pontuacao",
+        "difficulty": Difficulty.HARD,
+    },
+    {
+        "module": "Repertorio Literario",
+        "lesson": "Modernismo como repertorio",
+        "statement": "A metafora ocorre quando uma palavra e usada para:",
+        "options": [
+            "A) Estabelecer comparacao implicita entre ideias.",
+            "B) Repetir exatamente o sentido literal.",
+            "C) Apagar qualquer imagem do texto.",
+            "D) Corrigir a grafia de um termo.",
+            "E) Indicar somente dados estatisticos.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A metafora aproxima sentidos sem usar conectivos comparativos explicitos como 'como' ou 'tal qual'.",
+        "skill": "Figuras de linguagem",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Fundamentos da Redacao",
+        "lesson": "Tese forte em 3 movimentos",
+        "statement": "Uma tese produtiva para a redacao ENEM deve:",
+        "options": [
+            "A) Apresentar uma posicao clara sobre o problema.",
+            "B) Copiar integralmente a frase da proposta.",
+            "C) Evitar qualquer relacao com os argumentos.",
+            "D) Ser vaga para servir a qualquer tema.",
+            "E) Terminar sempre com pergunta.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A tese orienta o projeto de texto e antecipa o caminho argumentativo da redacao.",
+        "skill": "Redacao ENEM",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Fundamentos da Redacao",
+        "lesson": "Tese forte em 3 movimentos",
+        "statement": "Qual repertorio esta mais bem articulado ao tema da democratizacao da leitura?",
+        "options": [
+            "A) Uma citacao sem autor e sem relacao com livros.",
+            "B) A ideia de que leitura amplia participacao social e autonomia critica.",
+            "C) Um dado sobre esportes sem conexao com educacao.",
+            "D) Uma referencia historica usada apenas para preencher linhas.",
+            "E) Um exemplo pessoal sem generalizacao possivel.",
+        ],
+        "correct_answer": "B",
+        "explanation": "Repertorio produtivo precisa dialogar com o problema e fortalecer a argumentacao.",
+        "skill": "Repertorio sociocultural",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Competencias do ENEM",
+        "lesson": "Competencia 5 sem formula vazia",
+        "statement": "Na proposta de intervencao, o elemento 'meio' corresponde:",
+        "options": [
+            "A) Ao responsavel pela execucao.",
+            "B) Ao modo ou instrumento usado para realizar a acao.",
+            "C) Ao problema social apresentado no tema.",
+            "D) Ao repertorio citado na introducao.",
+            "E) A uma conclusao sem detalhamento.",
+        ],
+        "correct_answer": "B",
+        "explanation": "O meio indica como a acao sera executada, tornando a proposta mais concreta.",
+        "skill": "Competencia 5",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Competencias do ENEM",
+        "lesson": "Competencia 5 sem formula vazia",
+        "statement": "A Competencia 3 avalia principalmente:",
+        "options": [
+            "A) Selecao, organizacao e interpretacao de informacoes para defender um ponto de vista.",
+            "B) Apenas a ortografia das palavras.",
+            "C) Somente o numero de linhas escritas.",
+            "D) A presenca obrigatoria de titulo.",
+            "E) O uso de letras maiusculas no texto inteiro.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A Competencia 3 observa o projeto argumentativo: como informacoes e argumentos sao selecionados e articulados.",
+        "skill": "Competencia 3",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Competencias do ENEM",
+        "lesson": "Competencia 5 sem formula vazia",
+        "statement": "Quando um paragrafo apresenta topico frasal, explicacao e exemplo, ele tende a melhorar:",
+        "options": [
+            "A) A progressao argumentativa e a clareza do raciocinio.",
+            "B) Apenas a quantidade de linhas.",
+            "C) A memorizacao de formulas prontas.",
+            "D) A eliminacao da tese.",
+            "E) O uso de linguagem informal.",
+        ],
+        "correct_answer": "A",
+        "explanation": "Essa estrutura ajuda o leitor a acompanhar a ideia central, seu desenvolvimento e sua comprovacao.",
+        "skill": "Argumentacao",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Fundamentos da Redacao",
+        "lesson": "Como decodificar o tema",
+        "statement": "Diante do tema 'Desafios para combater a evasao escolar', qual recorte e mais adequado?",
+        "options": [
+            "A) Falar genericamente sobre todos os problemas do Brasil.",
+            "B) Discutir causas e consequencias do abandono da escola por estudantes.",
+            "C) Escrever apenas sobre preferencias pessoais de estudo.",
+            "D) Narrar a rotina de um professor sem relacao com evasao.",
+            "E) Defender o fim da educacao formal.",
+        ],
+        "correct_answer": "B",
+        "explanation": "O recorte adequado precisa manter foco no problema da evasao escolar e em seus fatores sociais.",
+        "skill": "Compreensao do tema",
+        "difficulty": Difficulty.MEDIUM,
+    },
+    {
+        "module": "Competencias do ENEM",
+        "lesson": "Competencia 5 sem formula vazia",
+        "statement": "Uma conclusao nota alta no ENEM deve:",
+        "options": [
+            "A) Retomar o problema e apresentar proposta de intervencao viavel.",
+            "B) Repetir a introducao palavra por palavra.",
+            "C) Introduzir um tema novo no ultimo periodo.",
+            "D) Encerrar com uma opiniao sem acao concreta.",
+            "E) Usar apenas uma citacao decorada.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A conclusao deve fechar o projeto de texto e apresentar solucao articulada ao problema discutido.",
+        "skill": "Redacao ENEM",
+        "difficulty": Difficulty.EASY,
+    },
+    {
+        "module": "Competencias do ENEM",
+        "lesson": "Competencia 5 sem formula vazia",
+        "statement": "A Competencia 4 valoriza principalmente:",
+        "options": [
+            "A) O uso de mecanismos linguisticos para conectar partes do texto.",
+            "B) A quantidade de repertorios citados sem explicacao.",
+            "C) A presenca de desenho na folha de redacao.",
+            "D) A ausencia total de conectivos.",
+            "E) O uso obrigatorio de linguagem coloquial.",
+        ],
+        "correct_answer": "A",
+        "explanation": "A Competencia 4 avalia coesao e articulacao textual por pronomes, conectivos, retomadas e progressao.",
+        "skill": "Competencia 4",
+        "difficulty": Difficulty.MEDIUM,
+    },
+]
+
 
 def seed_database(db: Session) -> None:
     user_count = db.scalar(select(func.count(User.id))) or 0
     if user_count:
+        seed_missing_exercises(db)
         return
 
     student = User(
@@ -154,73 +574,9 @@ def seed_database(db: Session) -> None:
     db.add_all(lessons)
     db.flush()
 
-    exercises = [
-        Exercise(
-            module_id=modules[0].id,
-            lesson_id=lessons[0].id,
-            statement="Em uma proposta sobre invisibilidade do trabalho de cuidado, qual alternativa melhor identifica o recorte tematico?",
-            options=[
-                "A) Qualquer atividade profissional feminina.",
-                "B) A falta de reconhecimento social e economico de atividades de cuidado.",
-                "C) A defesa de que todo trabalho deve ser voluntario.",
-                "D) A historia do mercado financeiro brasileiro.",
-                "E) O fim das relacoes familiares contemporaneas.",
-            ],
-            correct_answer="B",
-            explanation="O recorte combina invisibilidade, cuidado e reconhecimento social/economico, nao apenas trabalho feminino de forma ampla.",
-            skill="Compreensao do tema",
-            difficulty=Difficulty.MEDIUM,
-        ),
-        Exercise(
-            module_id=modules[1].id,
-            lesson_id=lessons[2].id,
-            statement="Qual item completa melhor uma proposta de intervencao ENEM?",
-            options=[
-                "A) Apenas citar o governo.",
-                "B) Apresentar agente, acao, meio, finalidade e detalhamento.",
-                "C) Encerrar com uma pergunta retorica.",
-                "D) Repetir a tese da introducao.",
-                "E) Usar um repertorio historico sem relacao com a solucao.",
-            ],
-            correct_answer="B",
-            explanation="A Competencia 5 exige uma proposta detalhada, articulada ao problema e respeitosa aos direitos humanos.",
-            skill="Competencia 5",
-            difficulty=Difficulty.EASY,
-        ),
-        Exercise(
-            module_id=modules[2].id,
-            lesson_id=lessons[3].id,
-            statement="Assinale a frase em que a virgula evita ambiguidade.",
-            options=[
-                "A) Os alunos que estudaram passaram.",
-                "B) Ao chegar em casa, revisei a redacao.",
-                "C) A sociedade brasileira enfrenta desafios.",
-                "D) A proposta precisa de detalhamento.",
-                "E) O texto apresenta tese clara.",
-            ],
-            correct_answer="B",
-            explanation="A virgula separa a oracao deslocada e facilita a leitura da relacao temporal.",
-            skill="Pontuacao",
-            difficulty=Difficulty.MEDIUM,
-        ),
-        Exercise(
-            module_id=modules[3].id,
-            lesson_id=lessons[4].id,
-            statement="Em charges, a critica social costuma surgir principalmente da relacao entre:",
-            options=[
-                "A) Titulo, linguagem visual e contexto.",
-                "B) Numero de linhas e tamanho da fonte.",
-                "C) Apenas a biografia do autor.",
-                "D) Regras de acentuacao.",
-                "E) Ordem alfabetica das palavras.",
-            ],
-            correct_answer="A",
-            explanation="Textos multimodais exigem leitura integrada entre elementos verbais, visuais e contexto sociocultural.",
-            skill="Textos multimodais",
-            difficulty=Difficulty.MEDIUM,
-        ),
-    ]
-    db.add_all(exercises)
+    module_by_title = {module.title: module for module in modules}
+    lesson_by_title = {lesson.title: lesson for lesson in lessons}
+    db.add_all(build_exercises(module_by_title, lesson_by_title))
 
     themes = [
         EssayTheme(
@@ -334,3 +690,43 @@ def seed_database(db: Session) -> None:
 
     db.commit()
 
+
+def seed_missing_exercises(db: Session) -> None:
+    module_by_title = {module.title: module for module in db.scalars(select(Module))}
+    lesson_by_title = {lesson.title: lesson for lesson in db.scalars(select(Lesson))}
+    existing_statements = set(db.scalars(select(Exercise.statement)))
+    exercises = build_exercises(module_by_title, lesson_by_title, existing_statements)
+    if exercises:
+        db.add_all(exercises)
+        db.commit()
+
+
+def build_exercises(
+    module_by_title: dict[str, Module],
+    lesson_by_title: dict[str, Lesson],
+    existing_statements: set[str] | None = None,
+) -> list[Exercise]:
+    existing = existing_statements or set()
+    exercises: list[Exercise] = []
+
+    for spec in EXERCISE_SPECS:
+        statement = str(spec["statement"])
+        module = module_by_title.get(str(spec["module"]))
+        lesson = lesson_by_title.get(str(spec["lesson"]))
+        if not module or statement in existing:
+            continue
+
+        exercises.append(
+            Exercise(
+                module_id=module.id,
+                lesson_id=lesson.id if lesson else None,
+                statement=statement,
+                options=list(spec["options"]),
+                correct_answer=str(spec["correct_answer"]),
+                explanation=str(spec["explanation"]),
+                skill=str(spec["skill"]),
+                difficulty=spec["difficulty"],
+            )
+        )
+
+    return exercises
