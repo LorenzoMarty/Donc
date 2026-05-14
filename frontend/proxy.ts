@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedRoutes = ["/dashboard", "/aulas", "/exercicios", "/redacao", "/redacoes", "/tutor", "/simulados", "/admin", "/onboarding"];
+const protectedRoutes = ["/dashboard", "/aulas", "/exercicios", "/conquistas", "/redacao", "/redacoes", "/tutor", "/simulados", "/admin", "/onboarding"];
 const authRoutes = ["/login", "/cadastro", "/recuperar-senha"];
 
 export function proxy(request: NextRequest) {
@@ -23,4 +23,3 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
-

@@ -47,13 +47,18 @@ export function Surface({
   className?: string;
   delay?: number;
 }) {
+  const solidPrimary = className?.split(/\s+/).includes("bg-primary");
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.32, delay, ease: "easeOut" }}
-      className={cn("glass-surface rounded-lg p-4 md:p-5", className)}
+      className={cn(
+        solidPrimary ? "rounded-lg border border-primary/25 bg-primary p-4 text-primary-foreground shadow-premium md:p-5" : "glass-surface rounded-lg p-4 md:p-5",
+        className,
+      )}
     >
       {children}
     </motion.section>
