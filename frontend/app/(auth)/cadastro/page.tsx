@@ -40,7 +40,7 @@ export default function RegisterPage() {
             <GraduationCap className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-muted-foreground">Lume ENEM</p>
+            <p className="text-sm font-semibold text-muted-foreground">Donk</p>
             <h1 className="text-2xl font-black tracking-normal">Criar conta</h1>
           </div>
         </div>

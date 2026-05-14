@@ -722,6 +722,7 @@ export function RewardModal({
   combo,
   title,
   nextLabel,
+  actionLabel = "Continuar trilha",
   onClose,
 }: {
   open: boolean;
@@ -729,6 +730,7 @@ export function RewardModal({
   combo: number;
   title: string;
   nextLabel?: string;
+  actionLabel?: string;
   onClose: () => void;
 }) {
   if (!open) return null;
@@ -748,7 +750,7 @@ export function RewardModal({
         >
           <Gem className="h-8 w-8" aria-hidden="true" />
         </motion.div>
-        <p className="text-sm font-black uppercase text-muted-foreground">Node concluido</p>
+        <p className="text-sm font-black uppercase text-muted-foreground">Etapa concluida</p>
         <h2 className="mt-2 text-3xl font-black tracking-normal">{title}</h2>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-lg border bg-background/58 p-4">
@@ -765,7 +767,7 @@ export function RewardModal({
           <p className="mt-1 text-muted-foreground">{nextLabel ?? "Campanha completa"}</p>
         </div>
         <Button className="mt-5 w-full" onClick={onClose}>
-          Continuar trilha
+          {actionLabel}
         </Button>
       </motion.div>
     </div>

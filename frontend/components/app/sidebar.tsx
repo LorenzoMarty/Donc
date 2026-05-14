@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, ClipboardList, FilePenLine, GraduationCap, LayoutDashboard, MessageCircle, ShieldCheck, Sparkles, Trophy, Zap } from "lucide-react";
+import { BarChart3, BookOpen, ClipboardList, FilePenLine, GraduationCap, LayoutDashboard, Medal, MessageCircle, ShieldCheck, Sparkles, Trophy, Zap } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const nav = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/exercicios", label: "Exercicios", icon: ClipboardList },
+  { href: "/conquistas", label: "Conquistas", icon: Medal },
   { href: "/redacao", label: "Redacao", icon: FilePenLine },
   { href: "/redacoes", label: "Historico", icon: BarChart3 },
   { href: "/tutor", label: "IA Tutora", icon: MessageCircle },
@@ -29,7 +30,7 @@ export function Sidebar() {
           <GraduationCap className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-xs font-black uppercase text-muted-foreground">Lume</p>
+          <p className="text-xs font-black uppercase text-muted-foreground">Donk</p>
           <h1 className="text-xl font-black leading-none tracking-normal">ENEM</h1>
         </div>
       </div>

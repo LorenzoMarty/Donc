@@ -4,8 +4,8 @@ import { Providers } from "@/components/app/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Lume ENEM | Portugues e Redacao",
-  description: "Plataforma premium de Portugues e Redacao focada no ENEM.",
+  title: "Donk | Portugues e Redacao ENEM",
+  description: "Donk e uma plataforma premium de Portugues e Redacao focada no ENEM.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -17,4 +17,3 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     </html>
   );
 }
-

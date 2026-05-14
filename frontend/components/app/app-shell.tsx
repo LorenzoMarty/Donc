@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, FilePenLine, Home, MessageCircle, Trophy } from "lucide-react";
+import { ClipboardList, FilePenLine, Home, Medal, MessageCircle, Trophy } from "lucide-react";
 
 import { useAuth } from "@/components/app/providers";
 import { Sidebar } from "@/components/app/sidebar";
@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils";
 
 const mobileDock = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/aulas", label: "Aulas", icon: BookOpen },
+  { href: "/exercicios", label: "Trilhas", icon: ClipboardList },
   { href: "/redacao", label: "Texto", icon: FilePenLine },
+  { href: "/conquistas", label: "Trof.", icon: Medal },
   { href: "/tutor", label: "IA", icon: MessageCircle },
-  { href: "/simulados", label: "Rank", icon: Trophy },
+  { href: "/simulados", label: "Sim.", icon: Trophy },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -50,7 +51,7 @@ function MobileDock() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-3 left-3 right-3 z-40 grid grid-cols-5 gap-1 rounded-lg border bg-card/88 p-1 shadow-glow backdrop-blur-xl lg:hidden">
+    <nav className="fixed bottom-3 left-3 right-3 z-40 grid grid-cols-6 gap-1 rounded-lg border bg-card/88 p-1 shadow-glow backdrop-blur-xl lg:hidden">
       {mobileDock.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
@@ -59,7 +60,7 @@ function MobileDock() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-md py-2 text-[11px] font-bold text-muted-foreground transition-all",
+              "flex min-h-[52px] flex-col items-center justify-center gap-1 rounded-md py-2 text-[10px] font-bold text-muted-foreground transition-all sm:text-[11px]",
               active && "bg-primary text-primary-foreground shadow-sm",
             )}
           >

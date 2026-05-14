@@ -185,6 +185,12 @@ export default function DashboardPage() {
               <AchievementChip key={achievement.id} title={achievement.title} description={achievement.description} index={index} />
             ))}
           </div>
+          <Button asChild variant="outline" className="mt-4 w-full">
+            <Link href="/conquistas">
+              Abrir sala de trofeus
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
         </Surface>
       </div>
     </div>
