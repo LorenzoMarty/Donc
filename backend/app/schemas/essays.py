@@ -1,0 +1,76 @@
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class EssayThemeRead(BaseModel):
+    id: int
+    title: str
+    context: str
+    source: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EssayCreateRequest(BaseModel):
+    theme_id: int
+    title: str = Field(min_length=4, max_length=220)
+
+
+class EssayAutosaveRequest(BaseModel):
+    title: str = Field(min_length=4, max_length=220)
+    content: str = Field(max_length=20000)
+
+
+class EssayCorrectionRead(BaseModel):
+    id: int
+    total_score: int
+    competency_1: int
+    competency_2: int
+    competency_3: int
+    competency_4: int
+    competency_5: int
+    strengths: list[str]
+    errors: list[str]
+    suggestions: list[str]
+    feedback: str
+    recurrent_patterns: list[str]
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EssayRead(BaseModel):
+    id: int
+    title: str
+    content: str
+    status: str
+    word_count: int
+    line_count: int
+    score: int | None
+    created_at: datetime
+    updated_at: datetime
+    submitted_at: datetime | None
+    theme: EssayThemeRead
+    correction: EssayCorrectionRead | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EssayEvolutionPoint(BaseModel):
+    label: str
+    score: int
+    c1: int
+    c2: int
+    c3: int
+    c4: int
+    c5: int
+
+
+class EssayHistoryResponse(BaseModel):
+    essays: list[EssayRead]
+    average_score: int
+    weakest_competency: str
+    recurrent_errors: list[str]
+    evolution: list[EssayEvolutionPoint]
+
