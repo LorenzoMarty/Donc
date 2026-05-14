@@ -142,7 +142,7 @@ export function XpRing({
         <div className="min-w-0">
           <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-white/12 px-2.5 py-1 text-xs font-semibold text-white/86">
             <Zap className="h-3.5 w-3.5 text-secondary" aria-hidden="true" />
-            Sprint ativo
+            Ritmo ativo
           </div>
           <p className="text-3xl font-black tracking-normal">{xp} XP</p>
           <p className="mt-2 text-sm leading-6 text-white/74">Ritmo consistente desbloqueia titulos, medalhas e metas mais ambiciosas.</p>
@@ -254,4 +254,3 @@ export function CompetencyMeter({
     </div>
   );
 }
-

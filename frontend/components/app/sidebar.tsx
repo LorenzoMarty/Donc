@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/app/providers";
 
 const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/exercicios", label: "Exercicios", icon: ClipboardList },
   { href: "/redacao", label: "Redacao", icon: FilePenLine },
@@ -71,7 +71,7 @@ export function Sidebar() {
           <Sparkles className="h-4 w-4 text-secondary" aria-hidden="true" />
           <Badge variant="secondary">Premium</Badge>
         </div>
-        <p className="text-sm font-black">Sprint de evolucao</p>
+        <p className="text-sm font-black">Sequencia de evolucao</p>
         <div className="mt-3 flex items-center gap-2 rounded-md bg-secondary/12 px-3 py-2 text-xs font-bold text-secondary">
           <Zap className="h-3.5 w-3.5" aria-hidden="true" />
           +120 XP por redacao
@@ -80,4 +80,3 @@ export function Sidebar() {
     </aside>
   );
 }
-

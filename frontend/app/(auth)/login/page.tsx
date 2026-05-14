@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { ArrowRight, GraduationCap } from "lucide-react";
 
@@ -12,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/app/providers";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState("aluno@demo.com");
   const [password, setPassword] = useState("12345678");
@@ -25,7 +23,7 @@ export default function LoginPage() {
     setError("");
     try {
       await login(email, password);
-      router.push("/dashboard");
+      window.location.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao entrar.");
     } finally {

@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, PenLine, Target, Trophy } from "lucide-react";
+import { ArrowRight, Map, PenLine, Target, Trophy } from "lucide-react";
 
+import { MiniTrailPreview } from "@/components/app/exercise-game";
 import { PageHeader, Surface } from "@/components/app/premium-ui";
 import { Button } from "@/components/ui/button";
 
 const steps = [
-  { title: "Rotina", description: "Metas curtas para manter o streak vivo.", icon: Target },
-  { title: "Escrita", description: "Editor limpo para entrar em foco rapido.", icon: PenLine },
-  { title: "Feedback", description: "Competencias e insights viram acao.", icon: CheckCircle2 },
-  { title: "Recompensa", description: "XP, titulos e conquistas sem ruido.", icon: Trophy },
+  { title: "Mapa", description: "Etapas douradas mostram a proxima missao liberada.", icon: Map },
+  { title: "Combo", description: "Sequencias de acertos aceleram XP e missoes.", icon: Target },
+  { title: "Escrita", description: "Redacao tambem entra na progressao semanal.", icon: PenLine },
+  { title: "Recompensa", description: "Titulos e conquistas surgem por consistencia.", icon: Trophy },
 ];
 
 export default function OnboardingPage() {
@@ -19,7 +20,7 @@ export default function OnboardingPage() {
       <PageHeader
         eyebrow="Boas-vindas"
         title="Sua temporada ENEM comecou"
-        description="Estude em ciclos pequenos, acompanhe cada ganho e volte todos os dias com clareza."
+        description="Complete etapas, desbloqueie fases e transforme exercicios em uma jornada diaria."
         action={
           <Button asChild size="lg" className="w-full md:w-auto">
             <Link href="/dashboard">
@@ -43,14 +44,17 @@ export default function OnboardingPage() {
           );
         })}
       </div>
+      <Surface>
+        <MiniTrailPreview progress={42} />
+      </Surface>
       <Surface className="overflow-hidden bg-primary text-primary-foreground">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-bold text-white/70">Primeira missao</p>
-            <h2 className="mt-1 text-2xl font-black tracking-normal">Escrever uma redacao e ganhar +120 XP</h2>
+            <h2 className="mt-1 text-2xl font-black tracking-normal">Concluir 3 etapas e ganhar combo inicial</h2>
           </div>
           <Button asChild variant="secondary">
-            <Link href="/redacao">
+            <Link href="/exercicios">
               Comecar
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
@@ -60,4 +64,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-

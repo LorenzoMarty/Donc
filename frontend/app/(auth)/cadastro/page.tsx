@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { ArrowRight, GraduationCap } from "lucide-react";
 
@@ -12,7 +11,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +24,7 @@ export default function RegisterPage() {
     setError("");
     try {
       await register(name, email, password);
-      router.push("/onboarding");
+      window.location.replace("/onboarding");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao cadastrar.");
     } finally {

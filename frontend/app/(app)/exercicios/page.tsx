@@ -1,53 +1,142 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Circle, Filter, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Flame, Sparkles, Trophy, Zap } from "lucide-react";
 
+import {
+  buildExerciseTracks,
+  CompletionScreen,
+  ExercisePlayPanel,
+  ExerciseTrackTabs,
+  getFirstAvailableNode,
+  getTrackProgress,
+  MissionCard,
+  RewardModal,
+  TrailMap,
+  XpBar,
+  type ExerciseNode,
+  type ExerciseResult,
+} from "@/components/app/exercise-game";
 import { LoadingCard } from "@/components/app/loading-card";
-import { MotionShell } from "@/components/app/motion-shell";
 import { PageHeader, Surface } from "@/components/app/premium-ui";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch, type Exercise } from "@/lib/api";
-import { cn } from "@/lib/utils";
 
-type Result = {
-  exercise_id: number;
-  selected_answer: string;
-  correct_answer: string;
-  is_correct: boolean;
-  explanation: string;
-  next_difficulty: string;
-  xp_earned: number;
-};
+const completedStorageKey = "lume.exercise.completed";
+const completedNodeStorageKey = "lume.exercise.completed.nodes";
+const comboStorageKey = "lume.exercise.combo";
 
 export default function ExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [filter, setFilter] = useState("all");
-  const [selected, setSelected] = useState<Record<number, string>>({});
-  const [results, setResults] = useState<Record<number, Result>>({});
+  const [completedNodeIds, setCompletedNodeIds] = useState<string[]>([]);
+  const [activeTrackId, setActiveTrackId] = useState("interpretacao");
+  const [activeNodeId, setActiveNodeId] = useState<string | undefined>();
+  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<Record<string, ExerciseResult>>({});
+  const [combo, setCombo] = useState(0);
+  const [sessionXp, setSessionXp] = useState(0);
+  const [reward, setReward] = useState<{ xp: number; combo: number; title: string; nextLabel?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const savedCompleted = window.localStorage.getItem(completedNodeStorageKey);
+    const savedCombo = window.localStorage.getItem(comboStorageKey);
+    if (savedCompleted) {
+      setCompletedNodeIds(JSON.parse(savedCompleted).map(String));
+    } else {
+      window.localStorage.removeItem(completedStorageKey);
+    }
+    if (savedCombo) setCombo(Number(savedCombo) || 0);
+
     apiFetch<Exercise[]>("/exercises")
       .then(setExercises)
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    if (filter === "all") return exercises;
-    return exercises.filter((exercise) => exercise.difficulty === filter);
-  }, [exercises, filter]);
+  const tracks = useMemo(() => buildExerciseTracks(exercises, completedNodeIds), [completedNodeIds, exercises]);
+  const activeTrack = tracks.find((track) => track.id === activeTrackId) ?? tracks[0];
+  const activeNode = useMemo(() => {
+    if (!activeTrack) return undefined;
+    return activeTrack.phases.flatMap((phase) => phase.nodes).find((node) => node.id === activeNodeId) ?? getFirstAvailableNode(activeTrack);
+  }, [activeNodeId, activeTrack]);
+  const activeExercise = activeNode?.exercise;
+  const activeResult = activeNode ? results[activeNode.id] : undefined;
+  const trackProgress = activeTrack ? getTrackProgress(activeTrack) : { completed: 0, total: 0, percent: 0 };
+  const totalCompleted = completedNodeIds.length;
+  const currentLevel = Math.max(1, Math.floor((680 + sessionXp) / 250) + 1);
 
-  async function submit(exercise: Exercise) {
-    const answer = selected[exercise.id];
+  function persistCompleted(nextCompleted: string[]) {
+    setCompletedNodeIds(nextCompleted);
+    window.localStorage.setItem(completedNodeStorageKey, JSON.stringify(nextCompleted));
+  }
+
+  function persistCombo(nextCombo: number) {
+    setCombo(nextCombo);
+    window.localStorage.setItem(comboStorageKey, String(nextCombo));
+  }
+
+  function selectTrack(trackId: string) {
+    const track = tracks.find((item) => item.id === trackId);
+    setActiveTrackId(trackId);
+    setActiveNodeId(track ? getFirstAvailableNode(track)?.id : undefined);
+  }
+
+  function selectNode(node: ExerciseNode) {
+    if (node.state === "locked" || !node.exercise) return;
+    setActiveNodeId(node.id);
+  }
+
+  async function submit() {
+    if (!activeExercise || !activeNode) return;
+    const answer = selected[activeNode.id];
     if (!answer) return;
-    const result = await apiFetch<Result>(`/exercises/${exercise.id}/submit`, {
+
+    const result = await apiFetch<ExerciseResult>(`/exercises/${activeExercise.id}/submit`, {
       method: "POST",
       body: JSON.stringify({ selected_answer: answer }),
     });
-    setResults((current) => ({ ...current, [exercise.id]: result }));
+    setResults((current) => ({ ...current, [activeNode.id]: result }));
+
+    if (result.is_correct) {
+      const nextCombo = combo + 1;
+      const nextCompleted = completedNodeIds.includes(activeNode.id) ? completedNodeIds : [...completedNodeIds, activeNode.id];
+      const updatedTrack = buildExerciseTracks(exercises, nextCompleted).find((track) => track.id === activeTrackId);
+      const nextNode = updatedTrack ? getFirstAvailableNode(updatedTrack) : undefined;
+      persistCompleted(nextCompleted);
+      persistCombo(nextCombo);
+      setSessionXp((current) => current + result.xp_earned);
+      setReward({
+        xp: result.xp_earned,
+        combo: nextCombo,
+        title: activeNode.kind === "boss" ? "Desafio final vencido" : nextCombo >= 3 ? "Combo relampago" : "Etapa liberada",
+        nextLabel: nextNode ? `${nextNode.phaseTitle} - ${nextNode.label}` : "Campanha finalizada",
+      });
+    } else {
+      persistCombo(0);
+    }
+  }
+
+  function continueTrail() {
+    setReward(null);
+    const updatedTracks = buildExerciseTracks(exercises, completedNodeIds);
+    const updatedTrack = updatedTracks.find((track) => track.id === activeTrackId);
+    const nextNode = updatedTrack ? getFirstAvailableNode(updatedTrack) : undefined;
+    if (nextNode) setActiveNodeId(nextNode.id);
+  }
+
+  function retryActiveNode() {
+    if (!activeNode) return;
+    setResults((current) => {
+      const next = { ...current };
+      delete next[activeNode.id];
+      return next;
+    });
+    setSelected((current) => {
+      const next = { ...current };
+      delete next[activeNode.id];
+      return next;
+    });
   }
 
   if (loading) {
@@ -60,78 +149,103 @@ export default function ExercisesPage() {
   }
 
   return (
-    <MotionShell className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
       <PageHeader
-        eyebrow="Treino adaptativo"
-        title="Quests de Linguagens"
-        description="Questoes objetivas com feedback rapido, XP e ajuste de dificuldade."
+        eyebrow="Modo jornada"
+        title="Campanha de Portugues"
+        description="Avance em uma trilha vertical: uma etapa por vez, XP imediato, desafio final no encerramento e desbloqueio controlado."
         action={
-          <div className="flex w-full items-center gap-2 md:w-auto">
-            <Filter className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <Tabs value={filter} onValueChange={setFilter}>
-              <TabsList>
-                <TabsTrigger value="all">Todos</TabsTrigger>
-                <TabsTrigger value="easy">Facil</TabsTrigger>
-                <TabsTrigger value="medium">Medio</TabsTrigger>
-                <TabsTrigger value="hard">Dificil</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          <Button onClick={() => activeTrack && setActiveNodeId(getFirstAvailableNode(activeTrack)?.id)} size="lg" className="w-full md:w-auto">
+            Ir para proxima missao
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
         }
       />
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        {filtered.map((exercise) => {
-          const result = results[exercise.id];
-          return (
-            <Surface key={exercise.id}>
-              <div className="mb-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <Badge>{exercise.skill}</Badge>
-                  <Badge variant="outline">{exercise.difficulty}</Badge>
-                </div>
-                <h2 className="text-base font-black leading-6 tracking-normal">{exercise.statement}</h2>
+      <div className="grid gap-4 xl:grid-cols-[1fr_330px]">
+        <div className="space-y-4">
+          <ExerciseTrackTabs tracks={tracks} activeTrackId={activeTrack?.id ?? activeTrackId} onChange={selectTrack} />
+          {activeTrack && <TrailMap track={activeTrack} activeNodeId={activeNode?.id} onSelect={selectNode} />}
+        </div>
+
+        <aside className="space-y-4">
+          <XpBar xp={680 + sessionXp} level={currentLevel} combo={combo} />
+          <Surface>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-black uppercase text-muted-foreground">Missoes</p>
+                <h2 className="mt-1 text-xl font-black tracking-normal">Hoje</h2>
               </div>
-              <div className="space-y-3">
-                {exercise.options.map((option) => {
-                  const letter = option.slice(0, 1);
-                  const active = selected[exercise.id] === letter;
-                  const isCorrect = result?.correct_answer === letter;
-                  const isWrong = result?.selected_answer === letter && !result?.is_correct;
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      disabled={Boolean(result)}
-                      onClick={() => setSelected((current) => ({ ...current, [exercise.id]: letter }))}
-                      className={cn(
-                        "flex w-full items-start gap-3 rounded-md border p-3 text-left text-sm transition-colors hover:bg-muted",
-                        active && "border-primary bg-primary/5",
-                        isCorrect && "border-accent bg-accent/10",
-                        isWrong && "border-destructive bg-destructive/10",
-                      )}
-                    >
-                      {isCorrect ? <CheckCircle2 className="h-4 w-4 text-accent" /> : isWrong ? <XCircle className="h-4 w-4 text-destructive" /> : <Circle className="h-4 w-4 text-muted-foreground" />}
-                      <span>{option}</span>
-                    </button>
-                  );
-                })}
-                {result ? (
-                  <div className="rounded-md border bg-muted/45 p-3 text-sm leading-6">
-                    <p className="font-semibold">{result.is_correct ? `Correto +${result.xp_earned} XP` : "Revise este ponto"}</p>
-                    <p className="mt-1 text-muted-foreground">{result.explanation}</p>
-                    <p className="mt-2 text-xs text-muted-foreground">Proxima dificuldade sugerida: {result.next_difficulty}</p>
-                  </div>
-                ) : (
-                  <Button onClick={() => submit(exercise)} disabled={!selected[exercise.id]}>
-                    Corrigir
-                  </Button>
-                )}
+              <Sparkles className="h-5 w-5 text-secondary" aria-hidden="true" />
+            </div>
+            <div className="space-y-3">
+              <MissionCard title="Sem errar" description="Complete 5 questoes mantendo precisao." progress={Math.min(combo, 5)} target={5} reward="+60 XP" icon="combo" />
+              <MissionCard title="Finalizar campanha" description="Venca todas as etapas jogaveis ate o desafio final." progress={trackProgress.completed} target={Math.max(trackProgress.total, 1)} reward="Medalha" icon="weekly" />
+              <MissionCard title="Desafio relampago" description="Responda 3 etapas nesta sessao." progress={Math.min(totalCompleted, 3)} target={3} reward="Titulo" icon="daily" />
+            </div>
+          </Surface>
+          <Surface className="bg-primary text-primary-foreground">
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-lg bg-white/12">
+                <Trophy className="h-5 w-5 text-secondary" aria-hidden="true" />
               </div>
-            </Surface>
-          );
-        })}
+              <div>
+                <p className="text-sm font-black">Titulo em progresso</p>
+                <p className="text-xs text-white/72">{activeTrack?.titleReward ?? "Mestre ENEM"}</p>
+              </div>
+            </div>
+          </Surface>
+        </aside>
       </div>
-    </MotionShell>
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr]">
+        <ExercisePlayPanel
+          node={activeNode}
+          selectedAnswer={activeNode ? selected[activeNode.id] : undefined}
+          result={activeResult}
+          combo={combo}
+          onSelectAnswer={(answer) => activeNode && setSelected((current) => ({ ...current, [activeNode.id]: answer }))}
+          onSubmit={submit}
+          onRetry={retryActiveNode}
+        />
+
+        <Surface>
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase text-muted-foreground">Fase atual</p>
+              <h2 className="mt-1 text-xl font-black tracking-normal">{activeTrack?.title ?? "Trilha"}</h2>
+            </div>
+            <div className="rounded-lg bg-secondary/18 p-3 text-secondary">
+              <Flame className="h-5 w-5" aria-hidden="true" />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <InfoRow label="Progresso da trilha" value={`${trackProgress.percent}%`} />
+            <InfoRow label="Nodes concluidos" value={`${trackProgress.completed}/${trackProgress.total}`} />
+            <InfoRow label="Combo ativo" value={`${combo}x`} />
+            <InfoRow label="XP da sessao" value={`+${sessionXp}`} />
+          </div>
+          <div className="mt-5 rounded-lg border bg-background/58 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-black">
+              <Zap className="h-4 w-4 text-secondary" aria-hidden="true" />
+              Regra de desbloqueio
+            </div>
+            <p className="text-sm leading-6 text-muted-foreground">Acerte a etapa disponivel para abrir a proxima. Errou? A etapa continua ativa para nova tentativa.</p>
+          </div>
+          {activeTrack && <CompletionScreen title={activeTrack.title} completed={trackProgress.completed} total={trackProgress.total} />}
+        </Surface>
+      </div>
+
+      <RewardModal open={Boolean(reward)} xp={reward?.xp ?? 0} combo={reward?.combo ?? 0} title={reward?.title ?? "Missao"} nextLabel={reward?.nextLabel} onClose={continueTrail} />
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <motion.div initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} className="flex items-center justify-between rounded-lg border bg-background/58 p-3">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-black">{value}</span>
+    </motion.div>
   );
 }
