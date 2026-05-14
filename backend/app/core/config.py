@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    project_name: str = "Donk"
+    project_name: str = "Donk ENEM"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+psycopg://enem:enem@localhost:5432/enem_redacao"
     jwt_secret_key: str = "change-this-secret-before-production"

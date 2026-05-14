@@ -1,0 +1,25 @@
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+
+import { cn } from "@/utils";
+
+export const Tabs = TabsPrimitive.Root;
+
+export function TabsList({ className, ...props }: React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>) {
+  return <TabsPrimitive.List className={cn("inline-flex min-h-12 items-center justify-center rounded-2xl border-2 border-foreground bg-muted p-1 shadow-[0_4px_0_hsl(var(--foreground))]", className)} {...props} />;
+}
+
+export function TabsTrigger({ className, ...props }: React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>) {
+  return (
+    <TabsPrimitive.Trigger
+      className={cn(
+        "inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-black text-muted-foreground transition-all hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_3px_0_hsl(var(--foreground))]",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function TabsContent({ className, ...props }: React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>) {
+  return <TabsPrimitive.Content className={cn("mt-4", className)} {...props} />;
+}

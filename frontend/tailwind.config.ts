@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   darkMode: ["class"],
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./hooks/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
+  content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -35,9 +35,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        petroleum: "#0F4C5C",
-        gold: "#C9A227",
-        ink: "#1F2933",
+        yellow: "#F4C542",
+        graphite: "#171717",
+        warm: "#FFF8E8",
+        ink: "#1D1B16",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -45,8 +46,8 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        premium: "0 18px 50px rgba(15, 76, 92, 0.14)",
-        glow: "0 0 0 1px rgba(201, 162, 39, 0.16), 0 18px 45px rgba(15, 76, 92, 0.16)",
+        premium: "0 12px 30px rgba(31, 37, 50, 0.10)",
+        glow: "0 0 0 2px rgba(244, 197, 66, 0.24), 0 10px 22px rgba(31, 37, 50, 0.08)",
       },
     },
   },

@@ -1,10 +1,10 @@
-# Donk
+# Donk ENEM
 
 Plataforma fullstack premium de Portugues e Redacao focada exclusivamente no ENEM.
 
 ## Stack
 
-- Frontend: Next.js 16, TypeScript, TailwindCSS, componentes estilo ShadCN UI, Framer Motion
+- Frontend: Next.js 16, TypeScript, TailwindCSS, ShadCN UI, componentes visuais estilo Aceternity UI e Framer Motion
 - Backend: FastAPI, Python 3.13, SQLAlchemy
 - Banco: PostgreSQL
 - Autenticacao: JWT
@@ -74,11 +74,19 @@ npm run dev
 - Gamificacao com XP, nivel, streak, conquistas e metas.
 - Painel administrativo com usuarios e metricas.
 - Onboarding inicial e tela de boas-vindas.
+- Landing page, paginas publicas de plataforma, trilhas, pricing e sobre.
+- Perfil com navegacao web horizontal.
 
 ## Estrutura
 
 ```text
-/frontend  Aplicacao Next.js
+/frontend  Aplicacao Next.js em src/
+  /src/app         Rotas publicas, auth e area protegida
+  /src/components  ui, sections, game, writing e shared
+  /src/services    Cliente de API
+  /src/providers   Providers da aplicacao
+  /src/contexts    Contextos React
+  /src/utils       Utilitarios
 /backend   API FastAPI
 /docker    Notas e extensoes de infraestrutura
 /docs      Documentacao tecnica
@@ -97,7 +105,6 @@ npm run dev
 - `python -m compileall backend/app`
 - Testes de smoke da API com `TestClient`: health, login, dashboard, aulas, temas, redacao, exercicio, simulado e admin.
 - `npm run typecheck`
-- `npm audit --omit=dev`
 - `npm run build`
-
-Observacao: Docker nao estava instalado no PATH da maquina local durante a validacao, entao o Compose foi entregue mas nao executado neste ambiente.
+- `docker compose up -d --build frontend`
+- Smoke HTTP em rotas publicas e protegidas.
