@@ -100,6 +100,22 @@ npm run dev
 - `OPENAI_MODEL`: modelo usado para tutor e correcao. Padrao: `gpt-5.5`.
 - `NEXT_PUBLIC_API_URL`: URL publica da API para o frontend.
 
+## Deploy na Vercel
+
+O projeto esta preparado para deploy em dois projetos Vercel:
+
+- Backend: Root Directory `backend`, com FastAPI exportado em `backend/app/index.py`.
+- Frontend: Root Directory `frontend`, com `frontend/vercel.json` usando `npm ci` e `npm run build`.
+
+Configure primeiro o backend e depois aponte o frontend para ele com:
+
+```text
+NEXT_PUBLIC_API_URL=/api/backend
+INTERNAL_API_URL=https://seu-backend.vercel.app/api/v1
+```
+
+O passo a passo completo esta em [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md).
+
 ## Validacao local realizada
 
 - `python -m compileall backend/app`
