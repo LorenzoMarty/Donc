@@ -17,6 +17,12 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    @property
+    def cors_origins(self) -> list[str]:
+        configured = [origin.strip() for origin in self.frontend_origin.split(",") if origin.strip()]
+        defaults = ["http://localhost:3000", "http://127.0.0.1:3000"]
+        return list(dict.fromkeys([*configured, *defaults]))
+
 
 @lru_cache
 def get_settings() -> Settings:
