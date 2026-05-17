@@ -1,14 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect } from "react";
-import { CheckCircle2, Eye, FileText, Maximize2, Save, Send, SpellCheck, Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Save, Send, SpellCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { ENEMWritingSheet, FriendlyErrorFeedback, RewardAnimation, WritingSidebar } from "@/components/shared/motion-system";
 import type { Essay } from "@/services/api";
 import { cn } from "@/utils";
 
@@ -33,12 +33,13 @@ export function EssayEditor({
   onFocusModeChange: (value: boolean) => void;
   onSubmit: () => void;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showSaved, setShowSaved] = useState(false);
   const words = content.trim() ? content.trim().split(/\s+/).length : 0;
   const lines = Math.max(1, content.split("\n").length, Math.ceil(content.length / 92));
-  const lineNumbers = Array.from({ length: Math.min(60, lines) }, (_, index) => index + 1);
   const locked = essay?.status === "corrected";
   const wordProgress = Math.min(100, (words / 320) * 100);
-  const structureProgress = Math.min(100, (lines / 24) * 100);
+  const structureProgress = Math.min(100, (lines / 30) * 100);
 
   useEffect(() => {
     if (!focusMode) return;
@@ -51,28 +52,32 @@ export function EssayEditor({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [focusMode, onFocusModeChange]);
 
+  useEffect(() => {
+    if (saving) return;
+    if (!essay || essay.status === "corrected") return;
+    setShowSaved(true);
+    const id = window.setTimeout(() => setShowSaved(false), 800);
+    return () => window.clearTimeout(id);
+  }, [essay, saving]);
+
   if (focusMode) {
     return (
       <motion.section
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.22, ease: "easeOut" }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         className="fixed inset-0 z-50 grid place-items-center overflow-auto bg-background px-2 py-4 sm:px-4 sm:py-6"
       >
         <button type="button" className="sr-only" onClick={() => onFocusModeChange(false)}>
           Sair do modo foco
         </button>
-        <div
-          className="box-border aspect-[210/297] max-h-[calc(100dvh-2rem)] border-2 border-primary bg-[#fffdf7] shadow-none"
-          style={{ width: "min(94vw, calc((100dvh - 2rem) * 210 / 297), 794px)" }}
-        >
-          <textarea
+        <div style={{ width: "min(94vw, calc((100dvh - 2rem) * 210 / 297), 794px)" }}>
+          <ENEMWritingSheet
             value={content}
             disabled={locked}
-            onChange={(event) => onContentChange(event.target.value)}
-            spellCheck
             autoFocus
-            className="h-full w-full resize-none bg-transparent px-[8.5%] py-[9%] text-[clamp(14px,1.45vw,17px)] leading-7 text-foreground outline-none"
+            focusMode
+            onChange={onContentChange}
             placeholder="Comece sua redação ENEM aqui..."
           />
         </div>
@@ -84,10 +89,11 @@ export function EssayEditor({
     <motion.section
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.32, ease: "easeOut" }}
-      className={cn("game-surface overflow-hidden bg-card", focusMode && "fixed inset-0 z-50 rounded-none border-0")}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-card shadow-[0_8px_0_hsl(var(--foreground))]"
     >
-      <div className="flex flex-col gap-4 border-b-2 border-foreground bg-card/86 p-4 lg:flex-row lg:items-center lg:justify-between">
+      <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
+      <div className="flex flex-col gap-4 border-b-2 border-foreground bg-card/90 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
           <Input
             value={title}
@@ -98,16 +104,21 @@ export function EssayEditor({
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="secondary">{words} palavras</Badge>
             <Badge variant="outline">{lines} linhas</Badge>
-            <Badge variant="success">{saving ? "Salvando..." : "Rascunho sincronizado"}</Badge>
+            <Badge variant="success">{saving ? "Salvando..." : "Sincronizado"}</Badge>
           </div>
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
-          <div className="game-tile flex items-center gap-2 bg-background/62 px-3 py-2 text-sm">
+          <div className="game-tile flex items-center gap-2 bg-background/72 px-3 py-2 text-sm">
             <SpellCheck className="h-4 w-4 text-secondary" aria-hidden="true" />
             <span className="font-bold">Ortografia</span>
             <Switch checked aria-label="Corretor ortográfico" />
           </div>
-          <Button variant="outline" onClick={() => onFocusModeChange(!focusMode)}>
+          <Button variant="outline" onClick={() => setSidebarOpen((value) => !value)}>
+            {sidebarOpen ? <PanelRightClose className="h-4 w-4" aria-hidden="true" /> : <PanelRightOpen className="h-4 w-4" aria-hidden="true" />}
+            Guia
+          </Button>
+          <Button variant="outline" onClick={() => onFocusModeChange(true)}>
             <Maximize2 className="h-4 w-4" aria-hidden="true" />
             Foco
           </Button>
@@ -122,79 +133,40 @@ export function EssayEditor({
         </div>
       </div>
 
-      <div className="grid bg-white text-ink dark:bg-background dark:text-foreground xl:grid-cols-[1fr_290px]">
-        <div className="grid min-h-[650px] grid-cols-[48px_1fr]">
-          <div className="select-none border-r bg-muted/32 px-2 py-6 text-right font-mono text-xs leading-7 text-muted-foreground">
-            {lineNumbers.map((line) => (
-              <div key={line}>{line}</div>
-            ))}
-          </div>
-          <textarea
-            value={content}
-            disabled={locked}
-            onChange={(event) => onContentChange(event.target.value)}
-            spellCheck
-            className="min-h-[650px] resize-none bg-transparent px-4 py-6 text-[16px] leading-7 outline-none md:px-8"
-            placeholder="Comece sua redação ENEM aqui..."
-          />
+      <div className={cn("grid gap-4 bg-[#f7f0de] p-3 md:p-5 dark:bg-background", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_320px]" : "xl:grid-cols-1")}>
+        <div className="min-w-0">
+          <ENEMWritingSheet value={content} disabled={locked} onChange={onContentChange} placeholder="Comece sua redação ENEM aqui..." />
         </div>
 
-        <aside className="border-t bg-muted/20 p-4 xl:border-l xl:border-t-0">
-          <div className="sticky top-20 space-y-4">
-            <div className="game-tile bg-background/72 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-black">Radar do texto</p>
-                <Eye className="h-4 w-4 text-secondary" aria-hidden="true" />
+        <AnimatePresence initial={false}>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 28, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: "auto" }}
+              exit={{ opacity: 0, x: 28, width: 0 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              className="min-w-0 overflow-hidden"
+            >
+              <WritingSidebar words={words} lines={lines} wordProgress={wordProgress} structureProgress={structureProgress} />
+              <div className="mt-3">
+                <FriendlyErrorFeedback
+                  show={words > 0 && words < 80}
+                  message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
+                />
               </div>
-              <Metric label="Volume" value={`${Math.round(wordProgress)}%`} progress={wordProgress} />
-              <Metric label="Estrutura" value={`${Math.round(structureProgress)}%`} progress={structureProgress} />
-            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-            <div className="game-tile bg-background/72 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-black">
-                <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
-                Marco
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <Signal active={words >= 80} text="Texto elegível para correção" />
-                <Signal active={lines >= 4} text="Blocos argumentativos visíveis" />
-                <Signal active={content.toLowerCase().includes("portanto") || content.toLowerCase().includes("assim")} text="Conectivos detectados" />
-              </ul>
-            </div>
-
-            <div className="game-tile bg-primary/8 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-black text-primary">
-                <FileText className="h-4 w-4" aria-hidden="true" />
-                Status
-              </div>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {locked ? "Versão corrigida e bloqueada." : saving ? "Sincronizando seu rascunho." : "Pronto para continuar."}
-              </p>
-            </div>
+      {locked && (
+        <div className="border-t-2 border-foreground bg-accent/12 p-3 text-sm font-bold text-accent">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+            Versão corrigida e bloqueada.
           </div>
-        </aside>
-      </div>
+        </div>
+      )}
     </motion.section>
-  );
-}
-
-function Metric({ label, value, progress }: { label: string; value: string; progress: number }) {
-  return (
-    <div className="mb-4 last:mb-0">
-      <div className="mb-2 flex items-center justify-between text-xs">
-        <span className="font-bold text-muted-foreground">{label}</span>
-        <span className="font-black">{value}</span>
-      </div>
-      <Progress value={progress} />
-    </div>
-  );
-}
-
-function Signal({ active, text }: { active: boolean; text: string }) {
-  return (
-    <li className="flex items-center gap-2">
-      <CheckCircle2 className={cn("h-4 w-4", active ? "text-accent" : "text-muted-foreground/45")} aria-hidden="true" />
-      <span className={active ? "text-foreground" : undefined}>{text}</span>
-    </li>
   );
 }
