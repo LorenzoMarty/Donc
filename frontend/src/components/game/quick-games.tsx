@@ -3,7 +3,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { Award, Bolt, Brain, Check, CheckCircle2, Flame, Flag, Gem, HeartPulse, Lock, Play, Search, Shield, Sparkles, Star, Swords, Timer, Trophy, Zap } from "lucide-react";
+import { Award, Bolt, Brain, Check, CheckCircle2, Flame, Flag, Gem, HeartPulse, Lock, Play, Search, Shield, Sparkles, Star, Swords, Trophy, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -112,14 +112,12 @@ export function GameHUD({
   combo,
   xp,
   energy,
-  seconds,
   multiplier = 1,
 }: {
   title: string;
   combo: number;
   xp: number;
   energy: number;
-  seconds?: number;
   multiplier?: number;
 }) {
   return (
@@ -135,7 +133,7 @@ export function GameHUD({
         <HudPill icon={Bolt} label="XP" value={String(xp)} />
         <HudPill icon={Flame} label="Combo" value={`${combo}x`} />
         <HudPill icon={HeartPulse} label="Energia" value={`${energy}%`} />
-        <HudPill icon={Timer} label="Tempo" value={seconds === undefined ? `${multiplier}x` : `${seconds}s`} />
+        <HudPill icon={Sparkles} label="Ritmo" value={`${multiplier}x`} />
       </div>
     </div>
   );
@@ -459,7 +457,6 @@ export function ConnectiveChallenge({ combo, onComplete, onMiss }: MiniGameProps
 
 export function StopGame({ combo, onComplete, onMiss }: MiniGameProps) {
   const letter = ["B", "C", "M", "A"][combo % 4];
-  const [seconds, setSeconds] = useState(35);
   const [burst, setBurst] = useState(false);
   const categories = useMemo(
     () => [
@@ -473,12 +470,6 @@ export function StopGame({ combo, onComplete, onMiss }: MiniGameProps) {
   );
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const completed = Object.keys(answers).length;
-
-  useEffect(() => {
-    if (seconds <= 0 || completed === categories.length) return;
-    const id = window.setTimeout(() => setSeconds((value) => value - 1), 1000);
-    return () => window.clearTimeout(id);
-  }, [categories.length, completed, seconds]);
 
   function choose(categoryId: string, option: string, correct: boolean) {
     if (!correct) {
@@ -496,7 +487,7 @@ export function StopGame({ combo, onComplete, onMiss }: MiniGameProps) {
   }, [categories.length, combo, completed, letter, onComplete]);
 
   return (
-    <GameStage title="Stop Rush" subtitle="Cartas rápidas, letra surpresa e pressão boa." icon={Timer} combo={combo} xp={75 + combo * 6} energy={Math.max(20, Math.round((seconds / 35) * 100))} seconds={seconds}>
+    <GameStage title="Stop Rush" subtitle="Cartas rápidas, letra surpresa e ritmo confortável." icon={Sparkles} combo={combo} xp={75 + combo * 6} energy={Math.min(100, 54 + completed * 9)}>
       <XPBurst amount={75 + combo * 6} show={burst} />
       <div className="grid gap-3 sm:grid-cols-[130px_1fr]">
         <motion.div animate={{ rotate: [0, -2, 2, 0], scale: [1, 1.03, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="grid min-h-32 place-items-center rounded-3xl border-2 border-foreground bg-primary text-primary-foreground shadow-[0_6px_0_hsl(var(--foreground))]">
@@ -816,7 +807,6 @@ function GameStage({
   combo,
   xp,
   energy,
-  seconds,
   mascotMood = "ready",
   children,
 }: {
@@ -826,7 +816,6 @@ function GameStage({
   combo: number;
   xp: number;
   energy: number;
-  seconds?: number;
   mascotMood?: "ready" | "happy" | "alert";
   children: ReactNode;
 }) {
@@ -841,7 +830,7 @@ function GameStage({
       <RewardExplosion active={false} />
       <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-primary/25" />
       <div className="relative space-y-3">
-        <GameHUD title={title} combo={combo} xp={xp} energy={energy} seconds={seconds} multiplier={Math.max(1, Math.floor(combo / 3) + 1)} />
+        <GameHUD title={title} combo={combo} xp={xp} energy={energy} multiplier={Math.max(1, Math.floor(combo / 3) + 1)} />
         <div className="grid gap-3 lg:grid-cols-[96px_1fr]">
           <div className="hidden lg:block">
             <GameMascot mood={mascotMood} />

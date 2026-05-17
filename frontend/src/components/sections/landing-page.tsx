@@ -12,7 +12,6 @@ import {
   FilePenLine,
   Flame,
   Gamepad2,
-  GraduationCap,
   Layers3,
   Medal,
   PenTool,
@@ -25,6 +24,7 @@ import {
 
 import { HoverGlowCard, MetricRail, MovingBorderPanel, Reveal } from "@/components/sections/aceternity-primitives";
 import { MarketingShell } from "@/components/sections/marketing-shell";
+import { AnimatedGameCard, InteractiveMascot, SmoothProgressPath } from "@/components/shared/motion-system";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils";
@@ -206,9 +206,7 @@ function HeroConsole() {
       <div className="game-surface bg-background p-4 text-foreground">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl border-2 border-foreground bg-primary text-primary-foreground shadow-[0_3px_0_hsl(var(--foreground))]">
-              <GraduationCap className="h-5 w-5" aria-hidden="true" />
-            </div>
+            <InteractiveMascot size="sm" mood="happy" />
             <div>
               <p className="text-sm font-black">Campanha de hoje</p>
               <p className="text-xs font-bold text-muted-foreground">42 min de foco</p>
@@ -221,6 +219,10 @@ function HeroConsole() {
           <PreviewTile icon={Flame} label="Sequência" value="12 dias" progress={86} />
           <PreviewTile icon={Award} label="Troféus" value="18/32" progress={56} />
           <PreviewTile icon={BookOpenCheck} label="Trilha ativa" value="Coesão" progress={68} />
+        </div>
+
+        <div className="mt-3">
+          <SmoothProgressPath progress={72} />
         </div>
 
         <div className="game-tile mt-3 bg-primary/14 p-3">
@@ -237,7 +239,7 @@ function HeroConsole() {
 
 function PreviewTile({ icon: Icon, label, value, progress }: { icon: LucideIcon; label: string; value: string; progress: number }) {
   return (
-    <div className="game-tile bg-card p-3">
+    <AnimatedGameCard className="bg-card p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="grid h-9 w-9 place-items-center rounded-xl border-2 border-foreground bg-primary text-primary-foreground">
           <Icon className="h-4 w-4" aria-hidden="true" />
@@ -246,7 +248,7 @@ function PreviewTile({ icon: Icon, label, value, progress }: { icon: LucideIcon;
       </div>
       <p className="mb-2 text-xs font-bold text-muted-foreground">{label}</p>
       <Progress value={progress} />
-    </div>
+    </AnimatedGameCard>
   );
 }
 
@@ -262,7 +264,7 @@ function CampaignCard({
 
   return (
     <Reveal delay={index * 0.04}>
-      <div className={cn("game-tile min-h-[160px] bg-card p-4", locked && "opacity-70")}>
+      <AnimatedGameCard className={cn("min-h-[160px] bg-card p-4", locked && "opacity-70")}>
         <div className="mb-5 flex items-center justify-between gap-3">
           <span className="rounded-full border-2 border-foreground bg-muted px-3 py-1 text-xs font-black">{step.label}</span>
           <div className={cn("grid h-11 w-11 place-items-center rounded-2xl border-2 border-foreground shadow-[0_3px_0_hsl(var(--foreground))]", locked ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground")}>
@@ -271,7 +273,7 @@ function CampaignCard({
         </div>
         <h3 className="text-xl font-black tracking-normal">{step.title}</h3>
         <p className="mt-3 text-sm font-bold text-muted-foreground">{step.status}</p>
-      </div>
+      </AnimatedGameCard>
     </Reveal>
   );
 }
