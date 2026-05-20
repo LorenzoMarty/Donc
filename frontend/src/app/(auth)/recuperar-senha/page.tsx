@@ -32,7 +32,7 @@ export default function RecoverPage() {
               <MailCheck className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-normal">Recuperar senha</h1>
+              <h1 className="text-2xl font-semibold tracking-normal">Recuperar senha</h1>
               <p className="text-sm text-muted-foreground">Receba instruções no seu e-mail.</p>
             </div>
           </div>

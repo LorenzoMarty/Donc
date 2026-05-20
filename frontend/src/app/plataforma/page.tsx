@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 
 const pillars = [
   { title: "Diagnóstico contínuo", text: "Painel com metas, notas, sequência e habilidades fracas.", icon: LineChart },
-  { title: "Prática guiada", text: "Trilhas, fases e desafios com desbloqueio gradual.", icon: PlayCircle },
+  { title: "Pratica guiada", text: "Trilhas, etapas curtas e revisoes com progresso gradual.", icon: PlayCircle },
   { title: "Redação ativa", text: "Editor, IA, repertório, conectivos e laboratório de argumentos.", icon: FilePenLine },
-  { title: "Coleção de domínio", text: "Conquistas por raridade e platina da plataforma.", icon: Medal },
+  { title: "Dominio gradual", text: "Marcos discretos para registrar constancia e melhoria real.", icon: Medal },
 ];
 
 export default function PlatformPage() {
@@ -19,13 +19,13 @@ export default function PlatformPage() {
         <AceternityGrid className="rounded-[2rem] p-6 md:p-10">
           <div className="grid gap-10 md:grid-cols-[0.95fr_1.05fr] md:items-center">
             <Reveal>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/16 px-3 py-1 text-xs font-black uppercase text-foreground/70">
+              <div className="game-chip mb-4 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
                 <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
                 Plataforma
               </div>
-              <h1 className="max-w-3xl text-4xl font-black tracking-normal md:text-6xl">Uma plataforma de estudo com ritmo de jogo moderno.</h1>
+              <h1 className="max-w-3xl text-4xl font-semibold tracking-normal md:text-6xl">Uma plataforma de estudo clara, moderna e constante.</h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Donk ENEM organiza Português e Redação em uma experiência aberta, visual e progressiva: conteúdo, prática, IA e conquistas no mesmo fluxo.
+                Donk ENEM organiza Portugues e Redacao em uma experiencia visual e progressiva: conteudo, pratica, IA e historico de evolucao no mesmo fluxo.
               </p>
               <Button asChild size="lg" className="mt-7">
                 <Link href="/cadastro">
@@ -39,12 +39,12 @@ export default function PlatformPage() {
                 {pillars.map((pillar) => {
                   const Icon = pillar.icon;
                   return (
-                    <div key={pillar.title} className="flex gap-4 rounded-lg border bg-card/80 p-4 shadow-sm">
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+                    <div key={pillar.title} className="game-tile flex gap-4 bg-card/80 p-4">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <div>
-                        <p className="font-black">{pillar.title}</p>
+                        <p className="font-semibold">{pillar.title}</p>
                         <p className="mt-1 text-sm leading-6 text-muted-foreground">{pillar.text}</p>
                       </div>
                     </div>
@@ -59,7 +59,7 @@ export default function PlatformPage() {
           {["Aprender", "Praticar", "Evoluir"].map((item, index) => (
             <HoverGlowCard key={item} delay={index * 0.05}>
               <Brain className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-2xl font-black tracking-normal">{item}</h2>
+              <h2 className="text-2xl font-semibold tracking-normal">{item}</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">Cada módulo leva o aluno para uma próxima ação clara, curta e mensurável.</p>
             </HoverGlowCard>
           ))}

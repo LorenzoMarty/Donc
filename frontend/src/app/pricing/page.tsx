@@ -16,24 +16,24 @@ export default function PricingPage() {
     <MarketingShell>
       <main className="mx-auto max-w-7xl px-4 py-10 md:px-6">
         <Reveal className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-black uppercase text-primary">Planos</p>
-          <h1 className="mt-3 text-4xl font-black tracking-normal md:text-6xl">Planos simples para uma rotina séria.</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Planos</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-normal md:text-6xl">Planos simples para uma rotina seria.</h1>
           <p className="mt-5 text-lg leading-8 text-muted-foreground">Estrutura moderna, gamificação elegante e IA aplicada à redação.</p>
         </Reveal>
 
         <section className="grid gap-4 py-12 lg:grid-cols-3">
           {plans.map((plan, index) => (
             <HoverGlowCard key={plan.name} delay={index * 0.06} className={plan.featured ? "border-primary/50 bg-primary/10" : undefined}>
-              <h2 className="text-2xl font-black tracking-normal">{plan.name}</h2>
+              <h2 className="text-2xl font-semibold tracking-normal">{plan.name}</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.description}</p>
-              <p className="mt-6 text-5xl font-black tracking-normal">
+              <p className="mt-6 text-5xl font-semibold tracking-normal">
                 {plan.price}
-                <span className="text-base font-bold text-muted-foreground">/mês</span>
+                <span className="text-base font-medium text-muted-foreground">/mes</span>
               </p>
               <div className="mt-7 space-y-3">
                 {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-3 text-sm font-bold">
-                    <Check className="h-4 w-4 text-accent" aria-hidden="true" />
+                  <div key={feature} className="flex items-center gap-3 text-sm font-medium">
+                    <Check className="h-4 w-4 text-primary" aria-hidden="true" />
                     {feature}
                   </div>
                 ))}

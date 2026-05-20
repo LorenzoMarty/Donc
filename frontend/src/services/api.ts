@@ -86,6 +86,7 @@ export type Essay = {
   submitted_at: string | null;
   theme: EssayTheme;
   correction: EssayCorrection | null;
+  versions: EssayVersion[];
 };
 
 export type EssayCorrection = {
@@ -102,6 +103,21 @@ export type EssayCorrection = {
   feedback: string;
   recurrent_patterns: string[];
   created_at: string;
+};
+
+export type EssayVersion = {
+  id: number;
+  version_number: number;
+  title: string;
+  content: string;
+  status: "draft" | "submitted" | "corrected";
+  word_count: number;
+  line_count: number;
+  score: number | null;
+  created_at: string;
+  updated_at: string;
+  submitted_at: string | null;
+  correction: EssayCorrection | null;
 };
 
 export type EssayHistory = {

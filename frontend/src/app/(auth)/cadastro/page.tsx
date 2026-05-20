@@ -41,7 +41,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <p className="text-sm font-semibold text-muted-foreground">Donk ENEM</p>
-            <h1 className="text-2xl font-black tracking-normal">Criar conta</h1>
+            <h1 className="text-2xl font-semibold tracking-normal">Criar conta</h1>
           </div>
         </div>
         <Card className="p-6">

@@ -3,23 +3,17 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { AlertCircle, Brain, CheckCircle2, FilePenLine, FlaskConical, Lightbulb, Sparkles, Trophy } from "lucide-react";
+import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbulb, Sparkles } from "lucide-react";
 
 import { EssayEditor } from "@/components/writing/essay-editor";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { CompetencyMeter, PageHeader, Surface } from "@/components/shared/premium-ui";
-import {
-  ArgumentChallenge,
-  ConnectiveGame,
-  ConnectiveLibrary,
-  EssayAnalysisViewer,
-  EssayPuzzle,
-  RepertoireSuggestions,
-} from "@/components/writing/writing-lab";
+import { ConnectiveLibrary, RepertoireSuggestions } from "@/components/writing/writing-lab";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDebouncedEffect } from "@/hooks/use-debounced-effect";
-import { apiFetch, type Essay, type EssayTheme } from "@/services/api";
+import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
 import { cn } from "@/utils";
 
 export default function EssayPage() {
@@ -28,45 +22,99 @@ export default function EssayPage() {
   const [essay, setEssay] = useState<Essay | null>(null);
   const [title, setTitle] = useState("Minha redação ENEM");
   const [content, setContent] = useState("");
+  const [draftStarted, setDraftStarted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<EssayTheme[]>("/essays/themes")
-      .then((items) => {
+    let mounted = true;
+
+    async function loadInitialState() {
+      try {
+        const items = await apiFetch<EssayTheme[]>("/essays/themes");
+        if (!mounted) return;
         setThemes(items);
+
+        const essayId = new URLSearchParams(window.location.search).get("essayId");
+        if (essayId) {
+          const openedEssay = await apiFetch<Essay>(`/essays/${essayId}`);
+          if (!mounted) return;
+          setEssay(openedEssay);
+          setTitle(openedEssay.title);
+          setContent(openedEssay.content);
+          setSelectedTheme(openedEssay.theme);
+          setDraftStarted(true);
+          return;
+        }
+
         setSelectedTheme(items[0] ?? null);
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Nao foi possivel abrir a redacao.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadInitialState();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useDebouncedEffect(
     () => {
-      if (!essay || essay.status === "corrected") return;
+      const hasContent = content.trim().length > 0;
+
+      if (!essay) {
+        if (!draftStarted || !selectedTheme || !hasContent) return;
+        setSaving(true);
+        apiFetch<Essay>("/essays", {
+          method: "POST",
+          body: JSON.stringify({ theme_id: selectedTheme.id, title, content }),
+        })
+          .then(setEssay)
+          .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho."))
+          .finally(() => setSaving(false));
+        return;
+      }
+
+      if (essay.status === "corrected") return;
+
+      if (!hasContent) {
+        setSaving(true);
+        apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" })
+          .then(() => {
+            setEssay(null);
+            setDraftStarted(true);
+          })
+          .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel remover o rascunho vazio."))
+          .finally(() => setSaving(false));
+        return;
+      }
+
       setSaving(true);
       apiFetch<Essay>(`/essays/${essay.id}/autosave`, {
         method: "PUT",
         body: JSON.stringify({ title, content }),
       })
         .then(setEssay)
+        .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho."))
         .finally(() => setSaving(false));
     },
-    [essay?.id, title, content],
+    [content, draftStarted, essay?.id, essay?.status, selectedTheme?.id, title],
     900,
   );
 
-  async function createDraft(theme = selectedTheme) {
+  function createDraft(theme = selectedTheme) {
     if (!theme) return;
     setError("");
-    const draft = await apiFetch<Essay>("/essays", {
-      method: "POST",
-      body: JSON.stringify({ theme_id: theme.id, title: `Redação - ${theme.title.slice(0, 70)}` }),
-    });
-    setEssay(draft);
-    setTitle(draft.title);
-    setContent(draft.content);
+    setSelectedTheme(theme);
+    setEssay(null);
+    setDraftStarted(true);
+    setTitle(`Redacao - ${theme.title.slice(0, 70)}`);
+    setContent("");
   }
 
   async function submit() {
@@ -76,28 +124,70 @@ export default function EssayPage() {
       const corrected = await apiFetch<Essay>(`/essays/${essay.id}/submit`, { method: "POST" });
       setEssay(corrected);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível corrigir.");
+      setError(err instanceof Error ? err.message : "Nao foi possivel corrigir.");
+    }
+  }
+
+  function readVersion(version: EssayVersion) {
+    setError("");
+    setTitle(version.title);
+    setContent(version.content);
+  }
+
+  async function rewriteFromVersion(version: EssayVersion) {
+    if (!essay) return;
+    setError("");
+    try {
+      const draft = await apiFetch<Essay>(`/essays/${essay.id}/versions/${version.id}/rewrite`, { method: "POST" });
+      setEssay(draft);
+      setTitle(draft.title);
+      setContent(draft.content);
+      setDraftStarted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nao foi possivel iniciar a reescrita.");
     }
   }
 
   if (loading) return <LoadingCard />;
 
+  const hasCorrection = Boolean(essay?.correction);
+  const isWriting = draftStarted && essay?.status !== "corrected";
+
+  if (isWriting) {
+    return (
+      <div className="min-h-[calc(100dvh-7rem)]">
+        <EssayEditor
+          essay={essay}
+          title={title}
+          content={content}
+          saving={saving}
+          error={error}
+          focusMode={focusMode}
+          onTitleChange={setTitle}
+          onContentChange={setContent}
+          onFocusModeChange={setFocusMode}
+          onSubmit={submit}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 md:space-y-6">
       <PageHeader
-        eyebrow="Laboratório de redação"
-        title="Treine, escreva e evolua como em uma campanha."
-        description="Editor focado, repertório guiado, jogos de conectivos, análise anotada e progressão por competências."
+        eyebrow="Laboratorio de redacao"
+        title="Escreva com foco e revise por competencia."
+        description="Editor limpo e repertorio guiado para desenvolver sua redacao com clareza."
         action={
           <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
             <Button onClick={() => createDraft()} disabled={!selectedTheme} size="lg">
               <FilePenLine className="h-4 w-4" aria-hidden="true" />
-              Nova redação
+              Nova redacao
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="/conquistas">
-                <Trophy className="h-4 w-4" aria-hidden="true" />
-                Troféus
+              <Link href="/redacoes">
+                <Files className="h-4 w-4" aria-hidden="true" />
+                Historico
               </Link>
             </Button>
           </div>
@@ -107,52 +197,36 @@ export default function EssayPage() {
       <Tabs defaultValue="editor" className="space-y-4">
         <TabsList className="h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
           <TabsTrigger value="editor">Editor</TabsTrigger>
-          <TabsTrigger value="repertorio">Repertório</TabsTrigger>
-          <TabsTrigger value="jogos">Treinos</TabsTrigger>
-          <TabsTrigger value="analise">Análise</TabsTrigger>
+          <TabsTrigger value="repertorio">Repertorio</TabsTrigger>
         </TabsList>
 
         <TabsContent value="editor" className="mt-0 space-y-4">
-          <div className="grid gap-4 lg:grid-cols-[0.86fr_1.14fr]">
-            <Surface>
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black uppercase text-muted-foreground">Banco de temas</p>
-                  <h2 className="mt-1 text-xl font-black tracking-normal">Escolha o recorte</h2>
-                </div>
-                <Sparkles className="h-5 w-5 text-secondary" aria-hidden="true" />
-              </div>
-              <div className="grid gap-3">
-                {themes.map((theme) => (
-                  <button
-                    type="button"
-                    key={theme.id}
-                    onClick={() => setSelectedTheme(theme)}
-                    className={cn(
-                      "game-tile group w-full bg-background/54 p-3 text-left transition-all hover:bg-muted/62",
-                      selectedTheme?.id === theme.id && "bg-primary/20",
-                    )}
-                  >
-                    <p className="text-sm font-black">{theme.title}</p>
-                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
-                  </button>
-                ))}
-              </div>
-            </Surface>
-
-            <CorrectionPanel essay={essay} error={error} />
-          </div>
-
           {!essay ? (
+            <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
+          ) : (
+            <div className={cn("grid gap-4", hasCorrection ? "lg:grid-cols-[0.86fr_1.14fr]" : "lg:grid-cols-1")}>
+              <VersionPanel essay={essay} onRead={readVersion} onRewrite={rewriteFromVersion} />
+              {hasCorrection ? <CorrectionPanel essay={essay} error={error} /> : null}
+            </div>
+          )}
+
+          {error && !hasCorrection ? (
+            <div className="game-tile flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {error}
+            </div>
+          ) : null}
+
+          {!essay && !draftStarted ? (
             <Surface className="grid min-h-[280px] place-items-center text-center">
               <div>
-                <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl border-2 border-foreground bg-primary text-primary-foreground shadow-[0_4px_0_hsl(var(--foreground))]">
+                <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
                   <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
                 </div>
-                <p className="text-xl font-black tracking-normal">Seu próximo rascunho está pronto.</p>
-                <p className="mt-2 text-sm text-muted-foreground">Escolha um tema e entre no fluxo.</p>
+                <p className="text-xl font-semibold tracking-normal">Escolha um tema e comece a escrever.</p>
+                <p className="mt-2 text-sm text-muted-foreground">O editor abre limpo para voce desenvolver a redacao no seu ritmo.</p>
                 <Button className="mt-5" onClick={() => createDraft()} disabled={!selectedTheme}>
-                  Começar redação
+                  Comecar redacao
                 </Button>
               </div>
             </Surface>
@@ -162,6 +236,7 @@ export default function EssayPage() {
               title={title}
               content={content}
               saving={saving}
+              error={error}
               focusMode={focusMode}
               onTitleChange={setTitle}
               onContentChange={setContent}
@@ -176,43 +251,103 @@ export default function EssayPage() {
           <ConnectiveLibrary />
         </TabsContent>
 
-        <TabsContent value="jogos" className="mt-0">
-          <div className="grid gap-4 xl:grid-cols-3">
-            <ConnectiveGame />
-            <EssayPuzzle />
-            <ArgumentChallenge />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="analise" className="mt-0">
-          <div className="grid gap-4 xl:grid-cols-[1fr_0.72fr]">
-            <EssayAnalysisViewer />
-            <Surface>
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black uppercase text-muted-foreground">Competências</p>
-                  <h2 className="mt-1 text-xl font-black tracking-normal">O que observar</h2>
-                </div>
-                <FlaskConical className="h-5 w-5 text-secondary" aria-hidden="true" />
-              </div>
-              <div className="space-y-3">
-                {[
-                  "Tese explícita no fim da introdução.",
-                  "Repertorio produtivo conectado ao argumento.",
-                  "Conectivos com função lógica clara.",
-                  "Intervenção com agente, ação, meio e finalidade.",
-                ].map((item) => (
-                  <div key={item} className="game-tile flex gap-3 bg-background/54 p-3 text-sm">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
-                    <span className="leading-6 text-muted-foreground">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </Surface>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function ThemePicker({
+  themes,
+  selectedTheme,
+  onSelect,
+}: {
+  themes: EssayTheme[];
+  selectedTheme: EssayTheme | null;
+  onSelect: (theme: EssayTheme) => void;
+}) {
+  return (
+    <Surface>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Banco de temas</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-normal">Escolha o tema</h2>
+        </div>
+        <Sparkles className="h-5 w-5 text-secondary" aria-hidden="true" />
+      </div>
+      <div className="grid gap-3">
+        {themes.map((theme) => (
+          <button
+            type="button"
+            key={theme.id}
+            onClick={() => onSelect(theme)}
+            className={cn(
+              "game-tile group w-full bg-background/54 p-3 text-left transition-all hover:bg-muted/62",
+              selectedTheme?.id === theme.id && "bg-primary/20",
+            )}
+          >
+            <p className="text-sm font-semibold">{theme.title}</p>
+            <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
+          </button>
+        ))}
+      </div>
+    </Surface>
+  );
+}
+
+function VersionPanel({
+  essay,
+  onRead,
+  onRewrite,
+}: {
+  essay: Essay;
+  onRead: (version: EssayVersion) => void;
+  onRewrite: (version: EssayVersion) => void;
+}) {
+  const versions = essay.versions.length
+    ? [...essay.versions].sort((a, b) => b.version_number - a.version_number)
+    : [];
+
+  return (
+    <Surface>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Versoes salvas</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-normal">Escolha onde continuar</h2>
+        </div>
+        <History className="h-5 w-5 text-secondary" aria-hidden="true" />
+      </div>
+
+      {versions.length ? (
+        <div className="space-y-3">
+          {versions.map((version) => (
+            <div key={version.id} className="game-tile bg-background/56 p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">Versao {version.version_number}</Badge>
+                    {version.score ? <Badge variant="success">{version.score}</Badge> : <Badge variant="secondary">Em escrita</Badge>}
+                  </div>
+                  <p className="mt-2 line-clamp-1 text-sm font-semibold">{version.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{formatDate(version.updated_at)}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => onRead(version)}>
+                    Ler
+                  </Button>
+                  <Button type="button" size="sm" onClick={() => onRewrite(version)}>
+                    <FilePenLine className="h-4 w-4" aria-hidden="true" />
+                    Reescrever
+                  </Button>
+                </div>
+              </div>
+              {version.correction?.feedback ? <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{version.correction.feedback}</p> : null}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm leading-6 text-muted-foreground">As correcoes desta redacao ficarao salvas aqui a cada nova reescrita.</p>
+      )}
+    </Surface>
   );
 }
 
@@ -221,8 +356,8 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
     <Surface>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase text-muted-foreground">Coach IA</p>
-          <h2 className="mt-1 text-xl font-black tracking-normal">Análise da correção</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correcao</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-normal">Análise da correção</h2>
         </div>
         <Brain className="h-5 w-5 text-secondary" aria-hidden="true" />
       </div>
@@ -236,7 +371,7 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
                   initial={{ scale: 0.92, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.35 }}
-                  className="text-5xl font-black tracking-normal"
+                  className="text-5xl font-semibold tracking-normal"
                 >
                   {essay.correction.total_score}
                 </motion.p>
@@ -251,7 +386,7 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
             </div>
           </div>
           <div className="game-tile bg-background/56 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-black">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <Lightbulb className="h-4 w-4 text-secondary" aria-hidden="true" />
               Insight principal
             </div>
@@ -261,20 +396,24 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
       ) : (
         <div className="game-surface grid min-h-[210px] place-items-center border-dashed bg-background/46 p-6 text-center">
           <div>
-            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl border-2 border-foreground bg-secondary text-secondary-foreground shadow-[0_3px_0_hsl(var(--foreground))]">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
               <Brain className="h-6 w-6" aria-hidden="true" />
             </div>
-            <p className="font-black">Aguardando envio</p>
+            <p className="font-semibold">Aguardando envio</p>
             <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">A nota e os insights aparecem aqui quando a redação for corrigida.</p>
           </div>
         </div>
       )}
       {error && (
-        <div className="game-tile mt-4 flex gap-2 bg-destructive/10 p-3 text-sm font-bold text-destructive">
+        <div className="game-tile mt-4 flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
           <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
     </Surface>
   );
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(value));
 }

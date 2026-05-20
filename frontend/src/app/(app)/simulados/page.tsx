@@ -60,7 +60,7 @@ export default function ExamsPage() {
         description="Blocos rápidos de Linguagens com desempenho por habilidade."
         action={
           active ? (
-            <div className="game-chip flex w-full items-center justify-center gap-2 bg-card/82 px-4 py-3 text-sm font-black md:w-auto">
+            <div className="game-chip flex w-full items-center justify-center gap-2 bg-card/82 px-4 py-3 text-sm font-semibold md:w-auto">
               <Clock className="h-4 w-4 text-secondary" aria-hidden="true" />
               {elapsed}
             </div>
@@ -73,11 +73,11 @@ export default function ExamsPage() {
           {exams.map((exam) => (
             <Surface key={exam.id}>
               <div className="mb-4">
-                <h2 className="text-xl font-black tracking-normal">{exam.title}</h2>
+                <h2 className="text-xl font-semibold tracking-normal">{exam.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{exam.description}</p>
               </div>
               <div className="space-y-4">
-                <div className="game-tile flex items-center justify-between bg-background p-3 text-sm font-bold">
+                <div className="game-tile flex items-center justify-between bg-background/58 p-3 text-sm font-semibold">
                   <span>{exam.area}</span>
                   <span>{exam.duration_minutes} min</span>
                 </div>
@@ -103,7 +103,7 @@ export default function ExamsPage() {
               <Surface key={question.id}>
                 <div className="mb-4">
                   <Badge>{question.skill}</Badge>
-                  <h2 className="mt-3 text-base font-black leading-6 tracking-normal">
+                  <h2 className="mt-3 text-base font-semibold leading-6 tracking-normal">
                     {index + 1}. {question.statement}
                   </h2>
                 </div>
@@ -116,7 +116,7 @@ export default function ExamsPage() {
                         type="button"
                         disabled={Boolean(result)}
                         onClick={() => setAnswers((current) => ({ ...current, [String(question.id)]: letter }))}
-                        className={`game-tile w-full bg-background p-3 text-left text-sm font-bold transition-colors hover:bg-muted ${answers[String(question.id)] === letter ? "bg-primary/20" : ""}`}
+                        className={`game-tile w-full bg-background/58 p-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 ${answers[String(question.id)] === letter ? "bg-primary/20" : ""}`}
                       >
                         {option}
                       </button>
@@ -128,7 +128,7 @@ export default function ExamsPage() {
           </div>
           <Surface className="h-fit">
             <div className="mb-4">
-              <h2 className="text-xl font-black tracking-normal">Resumo</h2>
+              <h2 className="text-xl font-semibold tracking-normal">Resumo</h2>
               <p className="mt-1 text-sm text-muted-foreground">{Object.keys(answers).length}/{active.questions.length} respondidas</p>
             </div>
             <div className="space-y-4">

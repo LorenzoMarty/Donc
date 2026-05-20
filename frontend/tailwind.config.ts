@@ -46,8 +46,8 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        premium: "0 12px 30px rgba(31, 37, 50, 0.10)",
-        glow: "0 0 0 2px rgba(244, 197, 66, 0.24), 0 10px 22px rgba(31, 37, 50, 0.08)",
+        premium: "0 12px 30px rgba(48, 38, 18, 0.10)",
+        glow: "0 0 0 2px rgba(244, 197, 66, 0.24), 0 10px 22px rgba(48, 38, 18, 0.08)",
       },
     },
   },

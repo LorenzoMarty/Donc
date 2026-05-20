@@ -73,7 +73,7 @@ const trackBlueprints = [
   {
     id: "interpretacao",
     title: "Interpretação Textual",
-    subtitle: "Campanha linear para dominar leitura, inferência e distratores do ENEM.",
+    subtitle: "Sequencia curta para dominar leitura, inferencia e distratores do ENEM.",
     titleReward: "Mestre da Interpretação",
     difficulty: "Base ao avançado",
     color: "primary" as const,
@@ -513,7 +513,7 @@ function NodeBrief({ node, align }: { node: ExerciseNode; align: "left" | "right
       <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{node.subtitle}</p>
       <div className={cn("mt-2 flex items-center gap-2 text-xs font-black text-secondary", align === "right" && "justify-end")}>
         <Zap className="h-3.5 w-3.5" aria-hidden="true" />
-        +{node.xp} XP
+        dominio +{Math.min(100, node.xp)}%
       </div>
     </div>
   );
@@ -584,14 +584,14 @@ export function XpBar({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase text-muted-foreground">Progressão</p>
-          <p className="mt-1 text-2xl font-black tracking-normal">Nível {level}</p>
+          <p className="mt-1 text-2xl font-black tracking-normal">Consistencia {level}</p>
         </div>
-        <div className="rounded-lg bg-secondary/18 px-3 py-2 text-sm font-black text-secondary">{xp} XP</div>
+        <div className="rounded-lg bg-secondary/18 px-3 py-2 text-sm font-black text-secondary">{xp} pts</div>
       </div>
       <Progress value={progress} className="h-2.5" />
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-md border bg-background/54 p-2">
-          <p className="text-[11px] text-muted-foreground">Combo</p>
+          <p className="text-[11px] text-muted-foreground">Sequencia</p>
           <p className="text-sm font-black text-accent">{combo}x</p>
         </div>
         <div className="rounded-md border bg-background/54 p-2">
@@ -627,8 +627,8 @@ export function ExercisePlayPanel({
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-lg bg-secondary/18 text-secondary shadow-glow">
             <Sparkles className="h-7 w-7" aria-hidden="true" />
           </div>
-          <p className="text-xl font-black tracking-normal">Continue pela campanha</p>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">A etapa amarela é a única liberada agora. Complete para abrir a próxima.</p>
+          <p className="text-xl font-black tracking-normal">Continue pela sequencia</p>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">A etapa amarela e a unica liberada agora. Complete para abrir a proxima.</p>
         </div>
       </section>
     );
@@ -653,7 +653,7 @@ export function ExercisePlayPanel({
         </div>
         <div className="flex items-center gap-3">
           <Progress value={result ? 100 : selectedAnswer ? 72 : 34} className="h-2.5" />
-          <span className="text-xs font-black text-secondary">+{node.xp} XP</span>
+          <span className="text-xs font-black text-secondary">dominio +{Math.min(100, node.xp)}%</span>
         </div>
       </div>
 
@@ -696,7 +696,7 @@ export function ExercisePlayPanel({
 
         {result ? (
           <div className={cn("rounded-lg border p-4 text-sm leading-6", result.is_correct ? "bg-accent/10" : "bg-destructive/10")}>
-            <p className="font-black">{result.is_correct ? `Etapa concluída +${result.xp_earned} XP` : "Etapa não concluída"}</p>
+            <p className="font-black">{result.is_correct ? `Pratica concluida: dominio +${result.xp_earned}%` : "Pratica nao concluida"}</p>
             <p className="mt-1 text-muted-foreground">{result.explanation}</p>
             {!result.is_correct && (
               <Button onClick={onRetry} variant="outline" className="mt-4 w-full">
@@ -754,17 +754,17 @@ export function RewardModal({
         <h2 className="mt-2 text-3xl font-black tracking-normal">{title}</h2>
         <div className="mt-5 grid grid-cols-2 gap-3">
           <div className="rounded-lg border bg-background/58 p-4">
-            <p className="text-xs text-muted-foreground">XP ganho</p>
+            <p className="text-xs text-muted-foreground">Dominio</p>
             <p className="mt-1 text-2xl font-black text-secondary">+{xp}</p>
           </div>
           <div className="rounded-lg border bg-background/58 p-4">
-            <p className="text-xs text-muted-foreground">Combo</p>
+            <p className="text-xs text-muted-foreground">Sequencia</p>
             <p className="mt-1 text-2xl font-black text-accent">{combo}x</p>
           </div>
         </div>
         <div className="mt-3 rounded-lg border bg-accent/10 p-3 text-sm">
           <p className="font-black text-accent">Proximo desbloqueio</p>
-          <p className="mt-1 text-muted-foreground">{nextLabel ?? "Campanha completa"}</p>
+          <p className="mt-1 text-muted-foreground">{nextLabel ?? "Sequencia completa"}</p>
         </div>
         <Button className="mt-5 w-full" onClick={onClose}>
           {actionLabel}
@@ -792,7 +792,7 @@ export function CompletionScreen({
         </div>
         <div>
           <p className="font-black">{title} finalizada</p>
-          <p className="text-sm text-muted-foreground">Desafio final vencido. Nova campanha pronta para o proximo ciclo.</p>
+          <p className="text-sm text-muted-foreground">Desafio final concluido. Nova sequencia pronta para o proximo ciclo.</p>
         </div>
       </div>
     </motion.div>
@@ -805,7 +805,7 @@ export function MiniTrailPreview({ progress = 42 }: { progress?: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase text-muted-foreground">Campanha ativa</p>
+          <p className="text-xs font-black uppercase text-muted-foreground">Sequencia ativa</p>
           <h2 className="mt-1 text-xl font-black tracking-normal">Interpretação Textual</h2>
         </div>
         <div className="rounded-md bg-secondary/14 px-3 py-2 text-xs font-black text-secondary">{progress}%</div>
@@ -844,10 +844,10 @@ function getFirstIncompleteIndex(trackId: string, completedNodeIds: string[], ha
 }
 
 function templateSubtitle(kind: ExerciseNodeKind, exercise?: Exercise) {
-  if (kind === "boss") return "Mini simulado final para fechar a campanha.";
+  if (kind === "boss") return "Mini simulado final para fechar a sequencia.";
   if (kind === "checkpoint") return `Marco de ${exercise?.skill ?? "habilidade"}.`;
   if (kind === "review") return `Revisão curta antes da próxima fase.`;
-  if (kind === "challenge") return `Desafio rápido com ganho maior de XP.`;
+  if (kind === "challenge") return `Pratica rapida com feedback mais exigente.`;
   return exercise?.skill ?? "Exercício bloqueado";
 }
 

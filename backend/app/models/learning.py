@@ -21,7 +21,7 @@ class Subject(Base):
     title: Mapped[str] = mapped_column(String(120), nullable=False)
     slug: Mapped[str] = mapped_column(String(140), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    color: Mapped[str] = mapped_column(String(40), default="#0F4C5C")
+    color: Mapped[str] = mapped_column(String(40), default="#C9A227")
 
     modules = relationship("Module", back_populates="subject", cascade="all, delete-orphan")
 

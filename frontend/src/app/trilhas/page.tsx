@@ -13,13 +13,13 @@ export default function TracksPage() {
       <main className="mx-auto max-w-7xl px-4 py-10 md:px-6">
         <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <Reveal>
-            <p className="mb-4 text-xs font-black uppercase text-primary">Trilhas</p>
-            <h1 className="text-4xl font-black tracking-normal md:text-6xl">Campanhas de Português com progressão clara.</h1>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Trilhas</p>
+            <h1 className="text-4xl font-semibold tracking-normal md:text-6xl">Trilhas de Portugues com progressao clara.</h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
-              O aluno avança por fases, checkpoints e desafios finais, mantendo foco no próximo passo em vez de enfrentar uma lista infinita.
+              O aluno avanca por etapas curtas e revisoes guiadas, mantendo foco no proximo passo em vez de enfrentar uma lista infinita.
             </p>
             <Button asChild size="lg" className="mt-7">
-              <Link href="/exercicios">
+              <Link href="/games">
                 Abrir trilhas
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
@@ -37,7 +37,7 @@ export default function TracksPage() {
                       {state === "completed" ? <CheckCircle2 className="h-5 w-5" /> : state === "available" ? <Play className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
                     </div>
                     <div>
-                      <p className="font-black">Fase {index + 1}</p>
+                      <p className="font-semibold">Etapa {index + 1}</p>
                       <p className="text-sm text-muted-foreground">{state === "locked" ? "Bloqueada" : state === "available" ? "Liberada agora" : "Concluída"}</p>
                     </div>
                   </div>
@@ -51,8 +51,8 @@ export default function TracksPage() {
           {tracks.map((track, index) => (
             <HoverGlowCard key={track} delay={index * 0.05}>
               <Trophy className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-xl font-black tracking-normal">{track}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">Fases progressivas, XP, checkpoints e desafio final no encerramento.</p>
+              <h2 className="text-xl font-semibold tracking-normal">{track}</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Etapas progressivas, revisao curta e fechamento com pratica aplicada.</p>
             </HoverGlowCard>
           ))}
         </section>

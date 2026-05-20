@@ -1,8 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { Crown, Flame, Gamepad2, Gem, Medal, Shield, Sparkles, Trophy, Zap } from "lucide-react";
+import { BookOpenCheck, Crown, Flame, Gem, Medal, Shield, Trophy, Zap } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils";
@@ -16,29 +17,29 @@ export function PageHeader({
   eyebrow: string;
   title: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="game-surface relative overflow-hidden bg-card p-4 md:p-5"
+      transition={{ duration: 0.24, ease: "easeOut" }}
+      className="game-surface relative overflow-hidden bg-card p-5 md:p-6"
     >
-      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full border-2 border-foreground bg-primary/35" aria-hidden="true" />
-      <div className="relative flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/55 to-transparent" aria-hidden="true" />
+      <div className="relative flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div className="min-w-0">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-primary px-3 py-1 text-xs font-black text-primary-foreground shadow-[0_3px_0_hsl(var(--foreground))]">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          <div className="game-chip mb-4 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
             {eyebrow}
           </div>
           <div className="flex items-start gap-3">
-            <div className="hidden h-12 w-12 shrink-0 place-items-center rounded-2xl border-2 border-foreground bg-secondary text-secondary-foreground shadow-[0_4px_0_hsl(var(--foreground))] sm:grid">
-              <Gamepad2 className="h-6 w-6" aria-hidden="true" />
+            <div className="hidden h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary sm:grid">
+              <BookOpenCheck className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h1 className="max-w-3xl text-3xl font-black tracking-normal md:text-5xl">{title}</h1>
-              {description && <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">{description}</p>}
+              <h1 className="max-w-3xl text-2xl font-semibold leading-tight tracking-normal sm:text-3xl">{title}</h1>
+              {description && <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted-foreground md:text-base">{description}</p>}
             </div>
           </div>
         </div>
@@ -53,7 +54,7 @@ export function Surface({
   className,
   delay = 0,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   delay?: number;
 }) {
@@ -63,12 +64,9 @@ export function Surface({
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.32, delay, ease: "easeOut" }}
-      className={cn(
-        solidPrimary ? "game-surface bg-primary p-4 text-primary-foreground md:p-5" : "game-surface p-4 md:p-5",
-        className,
-      )}
+      whileHover={{ y: -1 }}
+      transition={{ duration: 0.24, delay, ease: "easeOut" }}
+      className={cn(solidPrimary ? "game-surface bg-primary p-5 text-primary-foreground md:p-6" : "game-surface bg-card p-4 md:p-5", className)}
     >
       {children}
     </motion.section>
@@ -91,23 +89,23 @@ export function StatTile({
   tone?: "primary" | "gold" | "accent";
 }) {
   const toneClass = {
-    primary: "bg-primary/12 text-primary",
-    gold: "bg-primary/18 text-primary",
-    accent: "bg-accent/12 text-accent",
+    primary: "bg-primary/12 text-secondary",
+    gold: "bg-accent/22 text-accent-foreground",
+    accent: "bg-secondary/10 text-secondary",
   }[tone];
 
   return (
     <Surface className="min-h-[154px]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-black tracking-normal">{value}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
         </div>
-        <div className={cn("grid h-11 w-11 place-items-center rounded-2xl border-2 border-foreground p-2.5 shadow-[0_3px_0_hsl(var(--foreground))]", toneClass)}>
+        <div className={cn("grid h-11 w-11 place-items-center rounded-md border border-border p-2.5 shadow-sm", toneClass)}>
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">{helper}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{helper}</p>
       {progress !== undefined && <Progress value={progress} className="mt-4 h-2.5" />}
     </Surface>
   );
@@ -127,39 +125,39 @@ export function XpRing({
   const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
 
   return (
-    <Surface className="relative overflow-hidden bg-primary text-primary-foreground">
+    <Surface className="relative overflow-hidden">
       <div className="relative flex items-center gap-5">
         <div className="relative h-32 w-32 shrink-0">
           <svg className="h-32 w-32 -rotate-90" viewBox="0 0 132 132" aria-hidden="true">
-            <circle cx="66" cy="66" r={radius} stroke="rgba(29,27,22,.16)" strokeWidth="10" fill="none" />
+            <circle cx="66" cy="66" r={radius} stroke="hsl(var(--muted))" strokeWidth="10" fill="none" />
             <motion.circle
               cx="66"
               cy="66"
               r={radius}
-              stroke="#1D1B16"
+              stroke="hsl(var(--primary))"
               strokeWidth="10"
               strokeLinecap="round"
               fill="none"
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
               animate={{ strokeDashoffset: offset }}
-              transition={{ duration: 1, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             />
           </svg>
           <div className="absolute inset-0 grid place-items-center text-center">
             <div>
-              <p className="text-xs text-foreground/70">Nível</p>
-              <p className="text-4xl font-black">{level}</p>
+              <p className="text-xs text-muted-foreground">Consistencia</p>
+              <p className="text-4xl font-semibold">{level}</p>
             </div>
           </div>
         </div>
         <div className="min-w-0">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-foreground/10 px-2.5 py-1 text-xs font-black text-foreground/82">
-            <Zap className="h-3.5 w-3.5 text-foreground" aria-hidden="true" />
-            Ritmo ativo
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-primary/10 px-2.5 py-1 text-xs font-semibold text-secondary">
+            <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+            Progressao secundaria
           </div>
-          <p className="text-3xl font-black tracking-normal">{xp} XP</p>
-          <p className="mt-2 text-sm leading-6 text-foreground/74">Ritmo consistente desbloqueia titulos, medalhas e metas mais ambiciosas.</p>
+          <p className="text-3xl font-semibold tracking-normal">{xp} pts</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Pontos existem apenas como reforco. O foco principal e frequencia, revisao e melhora por competencia.</p>
         </div>
       </div>
     </Surface>
@@ -175,11 +173,11 @@ export function StreakStrip({ days }: { days: number }) {
         return (
           <motion.div
             key={index}
-            initial={{ scale: 0.92, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: index * 0.04 }}
+            transition={{ delay: index * 0.035 }}
             className={cn(
-              "grid h-11 min-w-11 place-items-center rounded-2xl border-2 border-foreground text-xs font-black shadow-[0_3px_0_hsl(var(--foreground))]",
+              "grid h-11 min-w-11 place-items-center rounded-md border border-border text-xs font-semibold shadow-sm",
               isActive ? "bg-primary text-primary-foreground" : "bg-muted/55 text-muted-foreground",
             )}
           >
@@ -207,13 +205,13 @@ export function AchievementChip({
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="game-tile flex gap-3 bg-background/54 p-3 transition-colors hover:bg-primary/10"
+      className="game-tile flex gap-3 bg-background/54 p-3 transition-colors hover:bg-muted/70"
     >
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border-2 border-foreground bg-primary text-primary-foreground">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary shadow-sm">
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-bold">{title}</p>
+        <p className="truncate text-sm font-semibold">{title}</p>
         <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{description}</p>
       </div>
     </motion.div>
@@ -222,9 +220,9 @@ export function AchievementChip({
 
 export function RankPodium({ xp }: { xp: number }) {
   const ranks = [
-    { name: "Lia", score: xp + 420, tag: "Diamante" },
-    { name: "Você", score: xp, tag: "Ascensão" },
-    { name: "Theo", score: Math.max(120, xp - 180), tag: "Ouro" },
+    { name: "Lia", score: xp + 420, tag: "Consistencia alta" },
+    { name: "Voce", score: xp, tag: "Evolucao ativa" },
+    { name: "Theo", score: Math.max(120, xp - 180), tag: "Rotina estavel" },
   ];
 
   return (
@@ -235,16 +233,16 @@ export function RankPodium({ xp }: { xp: number }) {
           initial={{ opacity: 0, x: 8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.06 }}
-          className={cn("game-tile flex items-center gap-3 p-3", rank.name === "Você" ? "bg-primary/10" : "bg-background/54")}
+          className={cn("game-tile flex items-center gap-3 p-3", rank.name === "Voce" ? "bg-primary/8" : "bg-background/54")}
         >
-          <div className={cn("grid h-8 w-8 place-items-center rounded-xl border-2 border-foreground text-sm font-black", index === 0 ? "bg-primary text-primary-foreground" : "bg-muted")}>
+          <div className={cn("grid h-8 w-8 place-items-center rounded-md border border-border text-sm font-semibold", index === 0 ? "bg-primary text-primary-foreground" : "bg-muted")}>
             {index + 1}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold">{rank.name}</p>
+            <p className="truncate text-sm font-semibold">{rank.name}</p>
             <p className="text-xs text-muted-foreground">{rank.tag}</p>
           </div>
-          <p className="text-sm font-black">{rank.score}</p>
+          <p className="text-sm font-semibold">{rank.score}</p>
         </motion.div>
       ))}
     </div>
@@ -261,8 +259,8 @@ export function CompetencyMeter({
   return (
     <div className="game-tile bg-background/56 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-muted-foreground">{label}</span>
-        <span className="text-sm font-black">{value}</span>
+        <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+        <span className="text-sm font-semibold">{value}</span>
       </div>
       <Progress value={(value / 200) * 100} className="h-2" />
     </div>

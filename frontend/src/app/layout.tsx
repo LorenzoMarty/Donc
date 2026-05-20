@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Donk ENEM | Português e Redação",
-  description: "Donk ENEM é uma plataforma moderna para estudar Português e Redação com IA, jogos rápidos, conquistas e progresso real.",
+  description: "Donk ENEM e uma plataforma moderna para estudar Portugues e Redacao com IA, praticas curtas, rotina e progresso real.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

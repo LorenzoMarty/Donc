@@ -9,42 +9,45 @@
   --card-foreground: 220 18% 12%;
   --popover: 0 0% 100%;
   --popover-foreground: 220 18% 12%;
-  --primary: 45 94% 56%;
+  --primary: 45 92% 56%;
   --primary-foreground: 220 18% 12%;
-  --secondary: 211 76% 43%;
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 38 45% 34%;
+  --secondary-foreground: 42 56% 98%;
   --muted: 42 28% 91%;
   --muted-foreground: 220 9% 39%;
-  --accent: 149 43% 39%;
+  --accent: 149 36% 36%;
   --accent-foreground: 0 0% 100%;
   --destructive: 2 72% 58%;
   --destructive-foreground: 0 0% 100%;
   --border: 42 22% 84%;
   --input: 42 22% 84%;
-  --ring: 45 94% 56%;
+  --ring: 45 92% 56%;
   --radius: 8px;
+  --shadow-soft: 0 14px 34px rgba(48, 38, 18, 0.08);
+  --shadow-elevated: 0 22px 54px rgba(48, 38, 18, 0.12);
+  --shadow-control: 0 10px 24px rgba(48, 38, 18, 0.10);
 }
 
 .dark {
-  --background: 220 16% 9%;
-  --foreground: 42 44% 94%;
-  --card: 220 15% 12%;
-  --card-foreground: 42 44% 94%;
-  --popover: 220 15% 12%;
-  --popover-foreground: 42 44% 94%;
-  --primary: 45 94% 56%;
+  --background: 42 48% 97%;
+  --foreground: 220 18% 12%;
+  --card: 42 56% 99%;
+  --card-foreground: 220 18% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 18% 12%;
+  --primary: 45 92% 56%;
   --primary-foreground: 220 18% 12%;
-  --secondary: 211 70% 52%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 220 11% 18%;
-  --muted-foreground: 42 8% 72%;
-  --accent: 149 42% 45%;
+  --secondary: 38 45% 34%;
+  --secondary-foreground: 42 56% 98%;
+  --muted: 42 28% 91%;
+  --muted-foreground: 220 9% 39%;
+  --accent: 149 36% 36%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 2 70% 61%;
+  --destructive: 2 72% 58%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 18% 22%;
-  --input: 214 18% 22%;
-  --ring: 45 94% 56%;
+  --border: 42 22% 84%;
+  --input: 42 22% 84%;
+  --ring: 45 92% 56%;
 }
 
 * {
@@ -53,84 +56,80 @@
 
 body {
   min-height: 100vh;
-  background: hsl(var(--background));
+  background:
+    radial-gradient(circle at 16% -10%, hsl(var(--primary) / 0.20), transparent 34%),
+    radial-gradient(circle at 92% 8%, hsl(42 55% 91% / 0.75), transparent 32%),
+    linear-gradient(180deg, hsl(42 56% 99%) 0%, hsl(var(--background)) 54%, hsl(42 45% 95%) 100%);
   color: hsl(var(--foreground));
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0;
   text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
 }
 
 ::selection {
-  background: rgba(244, 197, 66, 0.36);
+  background: hsl(var(--primary) / 0.28);
 }
 
 @layer utilities {
   .soft-grid {
     background-image:
-      linear-gradient(rgba(31, 37, 50, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(31, 37, 50, 0.045) 1px, transparent 1px);
-    background-size: 36px 36px;
+      linear-gradient(hsl(var(--foreground) / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
-  .glass-surface {
-    background: hsl(var(--card));
-    border: 2px solid hsl(var(--foreground));
-    border-radius: 24px;
-    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 14px 26px rgba(31, 37, 50, 0.08);
-  }
-
-  .dark .glass-surface {
-    background: hsl(var(--card));
-    border-color: hsl(var(--foreground));
-    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 18px 32px rgba(0, 0, 0, 0.26);
-  }
-
+  .glass-surface,
   .game-surface {
-    background: hsl(var(--card));
-    border: 2px solid hsl(var(--foreground));
-    border-radius: 24px;
-    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 14px 26px rgba(31, 37, 50, 0.08);
-  }
-
-  .dark .game-surface {
-    box-shadow: 0 6px 0 hsl(var(--foreground)), 0 18px 32px rgba(0, 0, 0, 0.26);
+    background:
+      linear-gradient(180deg, hsl(var(--card) / 0.94), hsl(42 50% 98% / 0.88)),
+      linear-gradient(135deg, hsl(var(--primary) / 0.07), transparent 54%);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(14px);
   }
 
   .game-tile {
-    border: 2px solid hsl(var(--foreground));
-    border-radius: 18px;
-    box-shadow: 0 4px 0 hsl(var(--foreground));
-    transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.82) inset, 0 8px 18px rgba(48, 38, 18, 0.055);
+    transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
   }
 
   .game-tile:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 0 hsl(var(--foreground));
+    transform: translateY(-1px);
+    border-color: hsl(var(--primary) / 0.32);
+    box-shadow: var(--shadow-control);
   }
 
   .game-tile:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 hsl(var(--foreground));
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(48, 38, 18, 0.05);
   }
 
   .game-chip {
-    border: 2px solid hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
     border-radius: 999px;
-    box-shadow: 0 3px 0 hsl(var(--foreground));
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.045) inset;
   }
 
   .game-focus-card {
-    border: 2px solid hsl(var(--primary));
-    border-radius: 20px;
-    box-shadow: 0 4px 0 hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.42);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-control);
   }
 
   .focus-ring-soft {
-    box-shadow: 0 0 0 2px rgba(248, 200, 48, 0.28), 0 10px 24px rgba(31, 37, 50, 0.10);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.20), 0 12px 26px rgba(48, 38, 18, 0.10);
   }
 
   .website-shell {
-    background: hsl(var(--background));
+    background:
+      radial-gradient(circle at 18% 0%, hsl(var(--primary) / 0.16), transparent 30%),
+      radial-gradient(circle at 96% 10%, hsl(42 42% 88% / 0.55), transparent 28%),
+      linear-gradient(180deg, hsl(42 56% 99% / 0.98), hsl(var(--background) / 1));
   }
 
   .accent-panel {
@@ -141,22 +140,48 @@ body {
     background: hsl(var(--foreground));
   }
 
-  .bg-primary .text-white,
-  .bg-primary .text-white\/62,
-  .bg-primary .text-white\/70,
-  .bg-primary .text-white\/72,
-  .bg-primary .text-white\/74,
-  .bg-primary .text-white\/76,
-  .bg-primary .text-white\/78,
-  .bg-primary .text-white\/82,
-  .bg-primary .text-white\/86 {
-    color: rgba(29, 27, 22, 0.72);
+  [class~="border-2"] {
+    border-width: 1px !important;
   }
 
-  .bg-primary .bg-white\/10,
-  .bg-primary .bg-white\/12,
-  .bg-primary .bg-white\/16 {
-    background-color: rgba(29, 27, 22, 0.08);
+  [class~="rounded-xl"],
+  [class~="rounded-2xl"],
+  [class~="rounded-3xl"],
+  [class*="rounded-["] {
+    border-radius: var(--radius) !important;
+  }
+
+  [class~="font-black"] {
+    font-weight: 650 !important;
+  }
+
+  [class*="text-6xl"] {
+    font-size: clamp(2.35rem, 6vw, 3.75rem) !important;
+    line-height: 1.04 !important;
+  }
+
+  [class*="text-7xl"],
+  [class*="text-8xl"] {
+    font-size: clamp(2.75rem, 7vw, 4.75rem) !important;
+    line-height: 1 !important;
+  }
+
+  [class*="border-foreground"] {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  [class*="shadow-[0_"] {
+    box-shadow: var(--shadow-control) !important;
+  }
+
+  [class~="shadow-lg"],
+  [class~="shadow-xl"],
+  [class~="shadow-2xl"] {
+    box-shadow: var(--shadow-soft) !important;
+  }
+
+  [class*="shadow-glow"] {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.20), 0 12px 28px rgba(48, 38, 18, 0.10) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {

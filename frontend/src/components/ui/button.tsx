@@ -5,19 +5,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl border-2 border-foreground text-sm font-black shadow-[0_4px_0_hsl(var(--foreground))] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-1 active:shadow-[0_1px_0_hsl(var(--foreground))]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/92",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/90",
-        outline: "bg-card text-foreground hover:bg-muted",
-        ghost: "border-transparent bg-transparent shadow-none hover:border-foreground hover:bg-muted hover:shadow-[0_4px_0_hsl(var(--foreground))]",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        default: "border-primary/70 bg-primary text-primary-foreground shadow-sm hover:bg-primary/92 hover:shadow-md",
+        secondary: "border-secondary/45 bg-secondary/14 text-secondary hover:border-secondary/65 hover:bg-secondary/18",
+        outline: "border-border bg-card/70 text-foreground hover:border-primary/38 hover:bg-primary/8 hover:text-foreground",
+        ghost: "border-transparent bg-transparent shadow-none hover:border-border hover:bg-muted/70 hover:text-foreground",
+        destructive: "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90",
       },
       size: {
         default: "h-11 px-4 py-2",
-        sm: "h-9 rounded-xl px-3 text-xs shadow-[0_3px_0_hsl(var(--foreground))]",
+        sm: "h-9 rounded-md px-3 text-xs",
         lg: "h-12 px-5",
         icon: "h-11 w-11",
       },

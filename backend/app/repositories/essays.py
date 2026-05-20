@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Essay, EssayTheme
+from app.models import Essay, EssayTheme, EssayVersion
 
 
 class EssayRepository:
@@ -17,7 +17,7 @@ class EssayRepository:
     def get_essay(self, essay_id: int, user_id: int | None = None) -> Essay | None:
         stmt = (
             select(Essay)
-            .options(selectinload(Essay.theme), selectinload(Essay.correction))
+            .options(selectinload(Essay.theme), selectinload(Essay.correction), selectinload(Essay.versions).selectinload(EssayVersion.correction))
             .where(Essay.id == essay_id)
         )
         if user_id is not None:
@@ -27,9 +27,8 @@ class EssayRepository:
     def list_by_user(self, user_id: int) -> list[Essay]:
         stmt = (
             select(Essay)
-            .options(selectinload(Essay.theme), selectinload(Essay.correction))
+            .options(selectinload(Essay.theme), selectinload(Essay.correction), selectinload(Essay.versions).selectinload(EssayVersion.correction))
             .where(Essay.user_id == user_id)
             .order_by(Essay.updated_at.desc())
         )
         return list(self.db.scalars(stmt))
-

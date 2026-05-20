@@ -32,9 +32,9 @@ export default function LessonsPage() {
   return (
     <MotionShell className="space-y-6">
       <PageHeader
-        eyebrow="Trilhas guiadas"
-        title="Aulas em ritmo de sprint"
-        description="Módulos curtos, progresso visível e prática conectada a cada habilidade."
+        eyebrow="Biblioteca de aulas"
+        title="Conteudo organizado para redacao ENEM"
+        description="Modulos curtos, progresso discreto e pratica conectada a cada habilidade de escrita."
       />
 
       <div className="space-y-5">
@@ -43,7 +43,7 @@ export default function LessonsPage() {
             <div className="flex items-center gap-3">
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: subject.color }} />
               <div>
-                <h2 className="text-xl font-bold tracking-normal">{subject.title}</h2>
+                <h2 className="text-xl font-semibold tracking-normal">{subject.title}</h2>
                 <p className="text-sm text-muted-foreground">{subject.description}</p>
               </div>
             </div>
@@ -52,13 +52,13 @@ export default function LessonsPage() {
               {subject.modules.map((module) => (
                 <Surface key={module.id}>
                   <div className="mb-4">
-                    <h3 className="text-xl font-black tracking-normal">{module.title}</h3>
+                    <h3 className="text-xl font-semibold tracking-normal">{module.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.description}</p>
                   </div>
                   <div className="grid gap-3">
                     {module.lessons.map((lesson) => (
-                      <Link key={lesson.id} href={`/aulas/${lesson.id}`} className="game-tile group grid gap-3 bg-background p-3 transition-colors hover:bg-muted md:grid-cols-[120px_1fr_auto]">
-                        <img src={lesson.thumbnail_url} alt="" className="h-20 w-full rounded-2xl border-2 border-foreground object-cover md:w-[120px]" />
+                      <Link key={lesson.id} href={`/aulas/${lesson.id}`} className="game-tile group grid gap-3 bg-background/58 p-3 transition-colors hover:bg-muted/60 md:grid-cols-[120px_1fr_auto]">
+                        <img src={lesson.thumbnail_url} alt="" className="h-20 w-full rounded-md border border-border object-cover opacity-90 md:w-[120px]" />
                         <div className="min-w-0">
                           <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                             <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />

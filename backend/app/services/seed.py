@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -448,6 +448,7 @@ def seed_database(db: Session) -> None:
     user_count = db.scalar(select(func.count(User.id))) or 0
     if user_count:
         seed_missing_exercises(db)
+        seed_missing_demo_essays(db)
         return
 
     student = User(
@@ -484,13 +485,13 @@ def seed_database(db: Session) -> None:
             title="Gramatica",
             slug="gramatica",
             description="Norma-padrao aplicada a questoes e redacoes, sem decoreba improdutiva.",
-            color="#0F4C5C",
+            color="#8A6F2A",
         ),
         Subject(
             title="Interpretacao",
             slug="interpretacao",
             description="Leitura de textos verbais, nao verbais, generos e estrategias ENEM.",
-            color="#2F4858",
+            color="#6F6A2A",
         ),
         Subject(
             title="Literatura",
@@ -688,7 +689,156 @@ def seed_database(db: Session) -> None:
         ]
     )
 
+    seed_missing_demo_essays(db)
     db.commit()
+
+
+def seed_missing_demo_essays(db: Session) -> None:
+    student = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+    if not student:
+        return
+
+    themes = {theme.title: theme for theme in db.scalars(select(EssayTheme))}
+    if not themes:
+        return
+
+    existing_titles = set(db.scalars(select(Essay.title).where(Essay.user_id == student.id)))
+    now = datetime.now(UTC)
+    specs = [
+        {
+            "theme": "Desafios para a democratizacao do acesso a educacao digital no Brasil",
+            "title": "Educacao digital e cidadania V2",
+            "status": EssayStatus.CORRECTED,
+            "days": 5,
+            "score": 900,
+            "competencies": (180, 200, 180, 180, 160),
+            "patterns": ["detalhamento da intervencao", "repertorio em amadurecimento"],
+            "feedback": "A segunda versao aprofunda o repertorio e sustenta melhor a progressao argumentativa. A intervencao ainda pode detalhar melhor o monitoramento da politica publica.",
+            "content": (
+                "A democratizacao do acesso a educacao digital e uma exigencia para a cidadania no Brasil. "
+                "Embora ferramentas tecnologicas ampliem possibilidades de aprendizagem, a desigualdade de infraestrutura ainda impede que parte dos estudantes participe plenamente desse processo. "
+                "Nesse sentido, a exclusao digital nao e apenas um problema tecnico, mas tambem social, pois limita acesso a informacao, autonomia e qualificacao profissional.\n\n"
+                "Alem disso, a escola publica muitas vezes recebe equipamentos sem formacao docente continuada. Assim, mesmo quando ha internet, faltam planejamento pedagogico e leitura critica das plataformas. "
+                "Tal quadro mostra que inclusao digital depende de politica publica integrada, com rede, materiais, formacao e acompanhamento.\n\n"
+                "Portanto, o Ministerio da Educacao deve implementar um programa nacional de letramento digital, por meio de financiamento para conectividade, capacitacao docente e avaliacao anual das escolas, "
+                "a fim de reduzir desigualdades e garantir que a tecnologia seja instrumento efetivo de aprendizagem."
+            ),
+        },
+        {
+            "theme": "Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
+            "title": "Trabalho de cuidado e reconhecimento V1",
+            "status": EssayStatus.CORRECTED,
+            "days": 13,
+            "score": 760,
+            "competencies": (160, 160, 140, 160, 140),
+            "patterns": ["argumento pouco desenvolvido", "proposta generica"],
+            "feedback": "O texto compreende o problema, mas precisa selecionar melhor dados e exemplos. A proposta aparece, porem ainda depende de agente, meio e detalhamento mais precisos.",
+            "content": (
+                "No Brasil, o trabalho de cuidado permanece pouco valorizado, apesar de sustentar a rotina de criancas, idosos e pessoas com deficiencia. "
+                "Essa invisibilidade atinge principalmente mulheres, que acumulam tarefas domesticas e responsabilidades familiares sem reconhecimento economico adequado. "
+                "Como consequencia, muitas deixam o mercado de trabalho formal ou aceitam ocupacoes com baixa remuneracao.\n\n"
+                "O problema tambem revela uma falha cultural, pois a sociedade tende a tratar o cuidado como obrigacao natural feminina. "
+                "Essa visao impede a criacao de politicas publicas mais amplas e reforca desigualdades de genero. Desse modo, e necessario reconhecer que cuidar tambem e trabalho e produz valor social.\n\n"
+                "Assim, o governo deve criar campanhas de conscientizacao e ampliar servicos publicos de cuidado, com creches e centros de apoio, para dividir responsabilidades e garantir dignidade a quem cuida."
+            ),
+        },
+        {
+            "theme": "A importancia da leitura critica na formacao dos jovens brasileiros",
+            "title": "Leitura critica e autonomia V1",
+            "status": EssayStatus.CORRECTED,
+            "days": 21,
+            "score": 680,
+            "competencies": (140, 160, 120, 140, 120),
+            "patterns": ["tese pouco explicita", "coesao limitada", "repertorio pouco desenvolvido"],
+            "feedback": "Ha entendimento do tema, mas a tese precisa ficar mais explicita. Os paragrafos ainda listam ideias sem hierarquia argumentativa suficiente.",
+            "content": (
+                "A leitura critica e importante para a formacao dos jovens brasileiros porque permite interpretar informacoes de modo mais consciente. "
+                "Em uma sociedade marcada por redes sociais e circulacao rapida de noticias, muitos estudantes entram em contato com textos sem avaliar fonte, contexto e intencao. "
+                "Isso pode favorecer desinformacao e reduzir a autonomia intelectual.\n\n"
+                "A escola possui papel central nesse processo, pois deve ensinar o aluno a comparar argumentos, identificar manipulacoes e relacionar repertorios. "
+                "No entanto, parte das praticas escolares ainda se concentra na memorizacao, o que limita a construcao de leitores ativos.\n\n"
+                "Portanto, escolas e secretarias de educacao devem ampliar projetos de leitura orientada, debates e analise de midias, para desenvolver jovens capazes de ler, questionar e participar melhor da vida publica."
+            ),
+        },
+        {
+            "theme": "A importancia da leitura critica na formacao dos jovens brasileiros",
+            "title": "Leitura critica e autonomia V2",
+            "status": EssayStatus.DRAFT,
+            "days": 1,
+            "score": None,
+            "competencies": None,
+            "patterns": [],
+            "feedback": "",
+            "content": (
+                "A leitura critica deve ser compreendida como uma competencia de cidadania. Em um ambiente digital no qual opinioes, noticias e publicidade circulam de modo acelerado, "
+                "o jovem precisa aprender a identificar interesses, verificar fontes e comparar argumentos. Sem essa formacao, a escola corre o risco de preparar estudantes apenas para repetir informacoes, "
+                "e nao para interpretar o mundo de forma autonoma.\n\n"
+                "Nesse contexto, pretendo desenvolver um segundo argumento sobre o papel das redes sociais e finalizar com uma proposta voltada a projetos interdisciplinares de leitura."
+            ),
+        },
+        {
+            "theme": "Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
+            "title": "Reconhecimento do cuidado - rascunho",
+            "status": EssayStatus.DRAFT,
+            "days": 0,
+            "score": None,
+            "competencies": None,
+            "patterns": [],
+            "feedback": "",
+            "content": (
+                "A invisibilidade do trabalho de cuidado revela uma contradicao social: atividades indispensaveis para a manutencao da vida sao tratadas como secundarias. "
+                "Esse apagamento afeta especialmente mulheres e familias de baixa renda. O texto ainda precisa de um repertorio mais forte e de uma proposta com agente publico definido."
+            ),
+        },
+    ]
+
+    new_essays: list[Essay] = []
+    for spec in specs:
+        if spec["title"] in existing_titles:
+            continue
+        theme = themes.get(str(spec["theme"]))
+        if not theme:
+            continue
+        content = str(spec["content"])
+        created_at = now - timedelta(days=int(spec["days"]))
+        essay = Essay(
+            user_id=student.id,
+            theme_id=theme.id,
+            title=str(spec["title"]),
+            content=content,
+            status=spec["status"],
+            word_count=len(content.split()),
+            line_count=max(1, len([line for line in content.splitlines() if line.strip()]), len(content) // 92),
+            score=spec["score"],
+            created_at=created_at,
+            updated_at=created_at,
+            submitted_at=created_at if spec["status"] == EssayStatus.CORRECTED else None,
+        )
+        db.add(essay)
+        db.flush()
+        if spec["status"] == EssayStatus.CORRECTED and spec["competencies"]:
+            c1, c2, c3, c4, c5 = spec["competencies"]
+            db.add(
+                EssayCorrection(
+                    essay_id=essay.id,
+                    total_score=int(spec["score"]),
+                    competency_1=c1,
+                    competency_2=c2,
+                    competency_3=c3,
+                    competency_4=c4,
+                    competency_5=c5,
+                    strengths=["Recorte tematico compreensivel.", "Projeto de texto em evolucao."],
+                    errors=["Aprofundar repertorio e detalhamento quando necessario."],
+                    suggestions=["Revisar a hierarquia dos argumentos.", "Conectar melhor repertorio e tese.", "Detalhar agente, meio e finalidade na intervencao."],
+                    feedback=str(spec["feedback"]),
+                    recurrent_patterns=list(spec["patterns"]),
+                    created_at=created_at,
+                )
+            )
+        new_essays.append(essay)
+
+    if new_essays:
+        db.commit()
 
 
 def seed_missing_exercises(db: Session) -> None:
