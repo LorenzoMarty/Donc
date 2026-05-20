@@ -2,31 +2,46 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Crown, Gem, Medal, Trophy } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Brain, CheckCircle2, Flame, Gem, LockKeyhole, Medal, PenLine, ShieldCheck, Target, Trophy, Zap } from "lucide-react";
 
-import {
-  AchievementCard,
-  PlatinumAchievement,
-  TrophyShowcase,
-  XPRewardModal,
-  achievementCategories,
-  buildAchievements,
-  type AchievementMetrics,
-  type AchievementProgress,
-} from "@/components/game/achievements-system";
+import { achievementCategories, buildAchievements, type AchievementMetrics, type AchievementProgress } from "@/components/game/achievements-system";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
-import { useAuth } from "@/providers/app-providers";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type EssayHistory, type Exercise } from "@/services/api";
+import { cn } from "@/utils";
 
 const completedNodeStorageKey = "donk.exercise.completed.nodes";
 const connectiveStorageKey = "donk.essay.lab.connective.wins";
 const puzzleStorageKey = "donk.essay.lab.puzzle.wins";
 const argumentStorageKey = "donk.essay.lab.argument.wins";
-const seenStorageKey = "donk.achievements.seen";
 const trackIds = ["interpretacao", "gramatica", "redacao"];
+
+const achievementIcons: Record<AchievementProgress["icon"], LucideIcon> = {
+  trophy: Trophy,
+  pen: PenLine,
+  flame: Flame,
+  target: Target,
+  brain: Brain,
+  crown: Medal,
+  shield: ShieldCheck,
+  gem: Gem,
+  book: BookOpenCheck,
+  zap: Zap,
+};
+
+const rarityLabel: Record<AchievementProgress["rarity"], string> = {
+  comum: "Base",
+  rara: "Avancado",
+  epica: "Alto impacto",
+  lendaria: "Dominio",
+  platina: "Completo",
+};
 
 export default function AchievementsPage() {
   const { user } = useAuth();
@@ -37,8 +52,6 @@ export default function AchievementsPage() {
   const [puzzleWins, setPuzzleWins] = useState(0);
   const [argumentWins, setArgumentWins] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [reward, setReward] = useState<AchievementProgress | null>(null);
-  const [rewardChecked, setRewardChecked] = useState(false);
 
   useEffect(() => {
     function readLocalProgress() {
@@ -52,8 +65,12 @@ export default function AchievementsPage() {
     window.addEventListener("storage", readLocalProgress);
 
     Promise.all([
-      apiFetch<EssayHistory>("/essays/history").then(setHistory).catch(() => setHistory({ essays: [], average_score: 0, weakest_competency: "C1", recurrent_errors: [], evolution: [] })),
-      apiFetch<Exercise[]>("/exercises").then(setExercises).catch(() => setExercises([])),
+      apiFetch<EssayHistory>("/essays/history")
+        .then(setHistory)
+        .catch(() => setHistory({ essays: [], average_score: 0, weakest_competency: "C1", recurrent_errors: [], evolution: [] })),
+      apiFetch<Exercise[]>("/exercises")
+        .then(setExercises)
+        .catch(() => setExercises([])),
     ]).finally(() => setLoading(false));
 
     return () => window.removeEventListener("storage", readLocalProgress);
@@ -82,27 +99,10 @@ export default function AchievementsPage() {
   }, [argumentWins, completedNodeIds, connectiveWins, exercises.length, history, puzzleWins, user?.level, user?.streak_days, user?.xp]);
 
   const achievements = useMemo(() => buildAchievements(metrics), [metrics]);
-  const platinum = achievements.find((achievement) => achievement.rarity === "platina") ?? achievements[achievements.length - 1];
   const regularAchievements = achievements.filter((achievement) => achievement.rarity !== "platina");
-
-  useEffect(() => {
-    if (loading || rewardChecked || !achievements.length) return;
-    const seen = new Set(readStringArray(seenStorageKey));
-    const candidate =
-      achievements.find((achievement) => achievement.unlocked && !seen.has(achievement.id) && achievement.rarity !== "comum") ??
-      achievements.find((achievement) => achievement.unlocked && !seen.has(achievement.id));
-    if (candidate) setReward(candidate);
-    setRewardChecked(true);
-  }, [achievements, loading, rewardChecked]);
-
-  function closeReward() {
-    if (reward) {
-      const seen = new Set(readStringArray(seenStorageKey));
-      seen.add(reward.id);
-      window.localStorage.setItem(seenStorageKey, JSON.stringify(Array.from(seen)));
-    }
-    setReward(null);
-  }
+  const unlocked = regularAchievements.filter((achievement) => achievement.unlocked);
+  const completion = regularAchievements.length ? Math.round((unlocked.length / regularAchievements.length) * 100) : 0;
+  const nextMilestone = regularAchievements.find((achievement) => !achievement.unlocked) ?? regularAchievements[0];
 
   if (loading || !user) {
     return (
@@ -116,61 +116,54 @@ export default function AchievementsPage() {
   return (
     <div className="space-y-5 md:space-y-6">
       <PageHeader
-        eyebrow="Conquistas"
-        title="Platine sua evolução"
-        description="Uma coleção de troféus para registrar constância, domínio de redação, progresso nas trilhas e desafios secretos."
+        eyebrow="Evolucao"
+        title="Marcos de consistencia"
+        description="Acompanhe conquistas como evidencias de rotina, qualidade de escrita e dominio gradual."
         action={
           <Button asChild size="lg" className="w-full md:w-auto">
             <Link href="/redacao">
-              Evoluir redação
+              Evoluir redacao
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
         }
       />
 
-      <TrophyShowcase achievements={achievements} level={user.level} streak={user.streak_days} />
-      {platinum && <PlatinumAchievement achievement={platinum} />}
+      <section className="grid gap-4 md:grid-cols-4">
+        <Metric label="Marcos ativos" value={`${unlocked.length}/${regularAchievements.length}`} />
+        <Metric label="Sequencia" value={`${user.streak_days} dias`} />
+        <Metric label="Melhor nota" value={metrics.bestEssayScore ? String(metrics.bestEssayScore) : "--"} />
+        <Metric label="Redacoes" value={String(metrics.essaysWritten)} />
+      </section>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Surface>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase text-muted-foreground">Perfil</p>
-              <h2 className="mt-1 text-xl font-black tracking-normal">{user.name}</h2>
-            </div>
-            <Medal className="h-5 w-5 text-secondary" aria-hidden="true" />
+      <Surface>
+        <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Progresso geral</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-normal">Evolucao registrada em marcos discretos</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              O foco e manter constancia e melhorar a escrita. Pontos e raridades aparecem apenas como sinal secundario.
+            </p>
+            <Progress value={completion} className="mt-5 h-2.5" />
           </div>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">Nível {user.level}, {user.xp} XP e {user.streak_days} dias de sequência.</p>
-        </Surface>
-        <Surface>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase text-muted-foreground">Redação</p>
-              <h2 className="mt-1 text-xl font-black tracking-normal">{metrics.bestEssayScore || "Sem nota"}</h2>
+          {nextMilestone && (
+            <div className="game-tile bg-background/58 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proximo marco</p>
+              <p className="mt-2 font-semibold">{nextMilestone.title}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{nextMilestone.description}</p>
+              <div className="mt-4 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                <span>{nextMilestone.current}/{nextMilestone.target}</span>
+                <span>{nextMilestone.progress}%</span>
+              </div>
+              <Progress value={nextMilestone.progress} className="mt-2 h-2" />
             </div>
-            <Crown className="h-5 w-5 text-secondary" aria-hidden="true" />
-          </div>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">Melhor nota registrada e {metrics.essaysWritten} textos no histórico.</p>
-        </Surface>
-        <Surface>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase text-muted-foreground">Laboratório</p>
-              <h2 className="mt-1 text-xl font-black tracking-normal">{connectiveWins + puzzleWins + argumentWins} vitórias</h2>
-            </div>
-            <Gem className="h-5 w-5 text-secondary" aria-hidden="true" />
-          </div>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">Conectivos, encaixes e argumentação alimentam troféus de domínio.</p>
-        </Surface>
-      </div>
+          )}
+        </div>
+      </Surface>
 
       <Tabs defaultValue="todos" className="space-y-4">
         <TabsList className="h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
-          <TabsTrigger value="todos" className="gap-2">
-            <Trophy className="h-4 w-4" aria-hidden="true" />
-            Todos
-          </TabsTrigger>
+          <TabsTrigger value="todos">Todos</TabsTrigger>
           {achievementCategories
             .filter((category) => category.id !== "platina")
             .map((category) => (
@@ -191,27 +184,59 @@ export default function AchievementsPage() {
             </TabsContent>
           ))}
       </Tabs>
-
-      <XPRewardModal
-        open={Boolean(reward)}
-        title={reward?.title ?? "Conquista desbloqueada"}
-        description={reward?.description ?? "Nova recompensa adicionada ao seu perfil."}
-        xp={reward?.xp ?? 0}
-        rarity={reward?.rarity ?? "rara"}
-        actionLabel="Adicionar à coleção"
-        onClose={closeReward}
-      />
     </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <Surface className="min-h-[128px]">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="mt-3 text-3xl font-semibold tracking-normal">{value}</p>
+    </Surface>
   );
 }
 
 function AchievementGrid({ achievements }: { achievements: AchievementProgress[] }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {achievements.map((achievement, index) => (
-        <AchievementCard key={achievement.id} achievement={achievement} index={index} />
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {achievements.map((achievement) => (
+        <AchievementCard key={achievement.id} achievement={achievement} />
       ))}
     </div>
+  );
+}
+
+function AchievementCard({ achievement }: { achievement: AchievementProgress }) {
+  const Icon = achievementIcons[achievement.icon] ?? Trophy;
+  const hidden = achievement.secret && !achievement.unlocked;
+
+  return (
+    <article className={cn("game-tile bg-background/58 p-4 transition-colors hover:bg-muted/60", achievement.unlocked && "border-primary/30 bg-primary/8")}>
+      <div className="flex items-start gap-3">
+        <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-md border", achievement.unlocked ? "border-primary/30 bg-primary/12 text-primary" : "border-border bg-muted/50 text-muted-foreground")}>
+          {achievement.unlocked ? <Icon className="h-5 w-5" aria-hidden="true" /> : <LockKeyhole className="h-4 w-4" aria-hidden="true" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">{hidden ? "Marco em progresso" : achievement.title}</h3>
+            {achievement.unlocked && (
+              <Badge className="border-primary/20 bg-primary/10 text-primary">
+                <CheckCircle2 className="mr-1 h-3 w-3" aria-hidden="true" />
+                Concluido
+              </Badge>
+            )}
+          </div>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{hidden ? "Continue estudando para revelar este marco." : achievement.description}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
+        <span>{rarityLabel[achievement.rarity]}</span>
+        <span>{achievement.progress}%</span>
+      </div>
+      <Progress value={achievement.progress} className="mt-2 h-2" />
+    </article>
   );
 }
 

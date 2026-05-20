@@ -30,24 +30,24 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils";
 
 const features = [
-  { title: "Jogos rápidos", text: "Conectivos, interpretação e argumentação em fases curtas com combo, XP e feedback imediato.", icon: Gamepad2, tone: "bg-primary text-primary-foreground" },
+  { title: "Praticas rapidas", text: "Conectivos, interpretacao e argumentacao em sessoes curtas com feedback imediato.", icon: Gamepad2, tone: "bg-primary text-primary-foreground" },
   { title: "Redação ENEM", text: "Editor A4, repertório guiado, análise por competência e correção com IA.", icon: FilePenLine, tone: "bg-secondary text-secondary-foreground" },
-  { title: "Trilhas guiadas", text: "Português em campanha: desbloqueios, boss stage, revisão e avanço controlado.", icon: Layers3, tone: "bg-accent text-accent-foreground" },
-  { title: "Conquistas", text: "Troféus por raridade, objetivos secretos e platina para completar a jornada.", icon: Trophy, tone: "bg-foreground text-background" },
+  { title: "Trilhas guiadas", text: "Portugues em sequencias organizadas: revisao, pratica e avanco controlado.", icon: Layers3, tone: "bg-accent text-accent-foreground" },
+  { title: "Evolucao", text: "Marcos discretos para registrar constancia, dominio e qualidade de escrita.", icon: Trophy, tone: "bg-primary/12 text-primary" },
 ];
 
 const games = [
-  { title: "Connect Flow", text: "Encaixe conectivos e veja o texto ganhar coesão.", icon: Zap },
-  { title: "Argument Rush", text: "Escolha o argumento mais forte antes do tempo acabar.", icon: Brain },
-  { title: "Repertório Hunter", text: "Desbloqueie referências úteis para temas prováveis.", icon: Medal },
-  { title: "Essay Builder", text: "Monte introdução, tese e intervenção como peças de estratégia.", icon: PenTool },
+  { title: "Conectivo preciso", text: "Selecione conectivos e refine a coesao textual.", icon: Zap },
+  { title: "Argumentacao", text: "Escolha o argumento mais forte para sustentar a tese.", icon: Brain },
+  { title: "Repertorio produtivo", text: "Ative referencias uteis para temas provaveis.", icon: Medal },
+  { title: "Estrutura textual", text: "Organize introducao, tese e intervencao com clareza.", icon: PenTool },
 ];
 
 const campaign = [
-  { label: "Fase 1", title: "Interpretação", status: "Liberada", icon: Play },
-  { label: "Fase 2", title: "Conectivos", status: "Combo x3", icon: Zap },
-  { label: "Fase 3", title: "Argumentação", status: "Em progresso", icon: Target },
-  { label: "Boss", title: "Redação rápida", status: "Bloqueado", icon: Crown },
+  { label: "Etapa 1", title: "Interpretacao", status: "Disponivel", icon: Play },
+  { label: "Etapa 2", title: "Conectivos", status: "Em revisao", icon: Zap },
+  { label: "Etapa 3", title: "Argumentacao", status: "Em progresso", icon: Target },
+  { label: "Etapa 4", title: "Redacao curta", status: "A seguir", icon: Crown },
 ];
 
 export function LandingPage() {
@@ -55,23 +55,23 @@ export function LandingPage() {
     <MarketingShell>
       <main className="overflow-hidden">
         <section className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-          <div className="game-surface relative min-h-[570px] overflow-hidden bg-foreground p-4 text-background md:p-6 lg:p-8">
+          <div className="game-surface relative min-h-[570px] overflow-hidden bg-card p-4 text-foreground md:p-6 lg:p-8">
             <img src="/study-collaboration.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
-            <div className="absolute inset-0 bg-foreground/70" aria-hidden="true" />
+            <div className="absolute inset-0 bg-background/76" aria-hidden="true" />
             <div className="relative grid min-h-[530px] gap-6 lg:grid-cols-[1fr_420px] lg:items-center">
               <Reveal className="max-w-4xl">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border-2 border-background bg-primary px-3 py-1 text-xs font-black uppercase text-primary-foreground shadow-[0_3px_0_hsl(var(--background))]">
+                <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                  Português e Redação em modo campanha
+                  Portugues e Redacao com rotina guiada
                 </div>
-                <h1 className="text-5xl font-black leading-[0.95] tracking-normal md:text-7xl lg:text-8xl">Donk ENEM</h1>
-                <p className="mt-5 max-w-2xl text-lg font-semibold leading-7 text-background/82 md:text-2xl md:leading-9">
-                  Estude como quem avança de fase: jogos rápidos, redação com IA, trilhas guiadas e conquistas para manter ritmo todos os dias.
+                <h1 className="text-5xl font-semibold leading-[0.95] tracking-normal md:text-7xl lg:text-8xl">Donk ENEM</h1>
+                <p className="mt-5 max-w-2xl text-lg font-medium leading-7 text-muted-foreground md:text-2xl md:leading-9">
+                  Pratique escrita com constancia: aulas, redacao com IA, exercicios curtos e indicadores de evolucao real.
                 </p>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <Button asChild size="lg" className="bg-primary text-primary-foreground">
                     <Link href="/cadastro">
-                      Começar campanha
+                      Comecar rotina
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                   </Button>
@@ -92,8 +92,8 @@ export function LandingPage() {
           <MetricRail
             items={[
               { value: "5", label: "competências ENEM acompanhadas" },
-              { value: "12", label: "tipos de missão para estudar sem travar" },
-              { value: "XP", label: "recompensa visual a cada prática" },
+              { value: "12", label: "formatos de pratica para estudar sem travar" },
+              { value: "PTS", label: "reforco secundario de consistencia" },
               { value: "1000", label: "meta final para redação" },
             ]}
           />
@@ -104,10 +104,10 @@ export function LandingPage() {
             const Icon = feature.icon;
             return (
               <HoverGlowCard key={feature.title} delay={index * 0.05}>
-                <div className={cn("mb-5 grid h-12 w-12 place-items-center rounded-2xl border-2 border-foreground shadow-[0_3px_0_hsl(var(--foreground))]", feature.tone)}>
+                <div className={cn("mb-5 grid h-10 w-10 place-items-center rounded-md border border-primary/25", feature.tone)}>
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <h2 className="text-xl font-black tracking-normal">{feature.title}</h2>
+                <h2 className="text-xl font-semibold tracking-normal">{feature.title}</h2>
                 <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">{feature.text}</p>
               </HoverGlowCard>
             );
@@ -117,17 +117,17 @@ export function LandingPage() {
         <section className="mx-auto grid max-w-7xl gap-4 px-4 py-8 md:px-6 lg:grid-cols-[0.85fr_1.15fr]">
           <Reveal>
             <div className="game-surface h-full bg-primary p-5 text-primary-foreground md:p-7">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-background/70 px-3 py-1 text-xs font-black text-foreground shadow-[0_3px_0_hsl(var(--foreground))]">
+              <div className="game-chip mb-5 inline-flex items-center gap-2 bg-background/70 px-3 py-1 text-xs font-semibold text-foreground">
                 <Flame className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 Fluxo contínuo
               </div>
-              <h2 className="text-3xl font-black tracking-normal md:text-5xl">A próxima fase sempre fica clara.</h2>
+              <h2 className="text-3xl font-semibold tracking-normal md:text-5xl">O proximo passo sempre fica claro.</h2>
               <p className="mt-4 text-sm font-semibold leading-6 text-foreground/74 md:text-base">
-                Sem listas infinitas. O aluno abre uma trilha, joga uma fase curta, recebe recompensa e já sabe qual é o próximo passo.
+                Sem listas infinitas. O aluno abre uma trilha, conclui uma pratica curta, recebe feedback e sabe qual e o proximo passo.
               </p>
-              <Button asChild className="mt-7 bg-foreground text-background">
-                <Link href="/exercicios">
-                  Ver jogos
+              <Button asChild className="mt-7 bg-background text-foreground hover:bg-background/90">
+                <Link href="/games">
+                  Ver praticas
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
@@ -145,14 +145,14 @@ export function LandingPage() {
           <MovingBorderPanel>
             <div className="grid gap-6 p-5 md:grid-cols-[1fr_0.85fr] md:p-8 lg:p-10">
               <div>
-                <p className="text-xs font-black uppercase text-muted-foreground">Laboratório de redação</p>
-                <h2 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">Escrever fica mais leve quando o foco parece uma folha real.</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratorio de redacao</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-normal md:text-5xl">Escrever fica mais leve quando o foco parece uma folha real.</h2>
                 <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">
-                  A redação tem modo foco em A4, banco de conectivos, repertórios por tema e mini jogos para treinar coesão antes da correção.
+                  A redacao tem modo foco em A4, banco de conectivos, repertorios por tema e praticas curtas para treinar coesao antes da correcao.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {["A4", "IA por competência", "Repertório", "Conectivos"].map((item) => (
-                    <span key={item} className="game-chip bg-primary/12 px-3 py-2 text-xs font-black text-foreground">
+                    <span key={item} className="game-chip bg-primary/12 px-3 py-2 text-xs font-semibold text-foreground">
                       {item}
                     </span>
                   ))}
@@ -169,12 +169,12 @@ export function LandingPage() {
             return (
               <HoverGlowCard key={game.title} delay={index * 0.05} className="min-h-[190px]">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="grid h-11 w-11 place-items-center rounded-2xl border-2 border-foreground bg-secondary text-secondary-foreground shadow-[0_3px_0_hsl(var(--foreground))]">
+                  <div className="grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <span className="rounded-full border-2 border-foreground bg-primary px-2 py-1 text-[11px] font-black text-primary-foreground">+XP</span>
+                  <span className="game-chip bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">PTS</span>
                 </div>
-                <h3 className="text-lg font-black tracking-normal">{game.title}</h3>
+                <h3 className="text-lg font-semibold tracking-normal">{game.title}</h3>
                 <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">{game.text}</p>
               </HoverGlowCard>
             );
@@ -184,10 +184,10 @@ export function LandingPage() {
         <section className="mx-auto max-w-7xl px-4 py-8 md:px-6">
           <div className="game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8">
             <div>
-              <p className="text-xs font-black uppercase text-foreground/62">Pronto para sair da lista de exercícios?</p>
-              <h2 className="mt-2 text-3xl font-black tracking-normal md:text-5xl">Entre e comece pela sua primeira fase.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">Pronto para sair da lista de exercicios?</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-normal md:text-5xl">Entre e comece pela sua primeira pratica.</h2>
             </div>
-            <Button asChild size="lg" className="bg-foreground text-background">
+            <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
                 Criar conta
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -208,16 +208,16 @@ function HeroConsole() {
           <div className="flex items-center gap-3">
             <InteractiveMascot size="sm" mood="happy" />
             <div>
-              <p className="text-sm font-black">Campanha de hoje</p>
+              <p className="text-sm font-semibold">Rotina de hoje</p>
               <p className="text-xs font-bold text-muted-foreground">42 min de foco</p>
             </div>
           </div>
-          <span className="rounded-full border-2 border-foreground bg-accent px-3 py-1 text-xs font-black text-accent-foreground shadow-[0_2px_0_hsl(var(--foreground))]">Nível 8</span>
+          <span className="game-chip bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Consistencia 8</span>
         </div>
 
         <div className="grid gap-3">
           <PreviewTile icon={Flame} label="Sequência" value="12 dias" progress={86} />
-          <PreviewTile icon={Award} label="Troféus" value="18/32" progress={56} />
+          <PreviewTile icon={Award} label="Marcos" value="18/32" progress={56} />
           <PreviewTile icon={BookOpenCheck} label="Trilha ativa" value="Coesão" progress={68} />
         </div>
 
@@ -226,7 +226,7 @@ function HeroConsole() {
         </div>
 
         <div className="game-tile mt-3 bg-primary/14 p-3">
-          <div className="mb-2 flex items-center justify-between text-sm font-black">
+          <div className="mb-2 flex items-center justify-between text-sm font-semibold">
             <span>Nota estimada</span>
             <span>920</span>
           </div>
@@ -241,10 +241,10 @@ function PreviewTile({ icon: Icon, label, value, progress }: { icon: LucideIcon;
   return (
     <AnimatedGameCard className="bg-card p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded-xl border-2 border-foreground bg-primary text-primary-foreground">
+        <div className="grid h-9 w-9 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
-        <p className="text-lg font-black tracking-normal">{value}</p>
+        <p className="text-lg font-semibold tracking-normal">{value}</p>
       </div>
       <p className="mb-2 text-xs font-bold text-muted-foreground">{label}</p>
       <Progress value={progress} />
@@ -266,12 +266,12 @@ function CampaignCard({
     <Reveal delay={index * 0.04}>
       <AnimatedGameCard className={cn("min-h-[160px] bg-card p-4", locked && "opacity-70")}>
         <div className="mb-5 flex items-center justify-between gap-3">
-          <span className="rounded-full border-2 border-foreground bg-muted px-3 py-1 text-xs font-black">{step.label}</span>
-          <div className={cn("grid h-11 w-11 place-items-center rounded-2xl border-2 border-foreground shadow-[0_3px_0_hsl(var(--foreground))]", locked ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground")}>
+          <span className="game-chip bg-muted/70 px-3 py-1 text-xs font-semibold text-muted-foreground">{step.label}</span>
+          <div className={cn("grid h-10 w-10 place-items-center rounded-md border border-primary/25", locked ? "bg-muted text-muted-foreground" : "bg-primary/12 text-primary")}>
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
         </div>
-        <h3 className="text-xl font-black tracking-normal">{step.title}</h3>
+        <h3 className="text-xl font-semibold tracking-normal">{step.title}</h3>
         <p className="mt-3 text-sm font-bold text-muted-foreground">{step.status}</p>
       </AnimatedGameCard>
     </Reveal>
@@ -281,7 +281,7 @@ function CampaignCard({
 function EssaySheetPreview() {
   return (
     <div className="mx-auto w-full max-w-[280px]">
-      <div className="aspect-[210/297] border-2 border-primary bg-[#fffdf7] p-5 text-foreground shadow-[0_5px_0_hsl(var(--primary))]">
+      <div className="aspect-[210/297] border border-primary/35 bg-[#fffdf7] p-5 text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]">
         <div className="mb-4 h-3 w-2/3 rounded-full bg-primary/40" />
         <div className="space-y-2">
           <div className="h-2 rounded-full bg-muted" />
@@ -290,10 +290,10 @@ function EssaySheetPreview() {
           <div className="h-2 w-full rounded-full bg-muted" />
           <div className="h-2 w-8/12 rounded-full bg-muted" />
         </div>
-        <div className="mt-5 rounded-xl border-2 border-foreground bg-primary/12 p-3 text-xs font-black">
+        <div className="mt-5 rounded-md border border-primary/20 bg-primary/12 p-3 text-xs font-semibold">
           C1 180 • C2 200 • C3 180
         </div>
-        <div className="mt-4 flex items-center gap-2 text-xs font-black text-accent">
+        <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-primary">
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           Pronta para correção
         </div>

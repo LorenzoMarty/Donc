@@ -41,7 +41,7 @@ export default function LoginPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-muted-foreground">Donk ENEM</p>
-              <h1 className="text-2xl font-black tracking-normal">Entrar na plataforma</h1>
+              <h1 className="text-2xl font-semibold tracking-normal">Entrar na plataforma</h1>
             </div>
           </div>
 
@@ -76,14 +76,14 @@ export default function LoginPage() {
           </Card>
         </MotionShell>
       </section>
-      <section className="hidden border-l bg-card lg:block">
+      <section className="hidden border-l border-border bg-card lg:block">
         <div
           className="flex h-full items-end bg-cover bg-center p-10"
           style={{ backgroundImage: "url('/study-collaboration.jpg')" }}
         >
-          <div className="max-w-lg rounded-lg border bg-background/90 p-5 shadow-sm">
+          <div className="game-surface max-w-lg bg-background/90 p-5">
             <p className="mb-3 text-sm font-semibold text-primary">Redação, dados e IA</p>
-            <h2 className="text-4xl font-black tracking-normal">Estudo guiado para evoluir com clareza.</h2>
+            <h2 className="text-4xl font-semibold tracking-normal">Estudo guiado para evoluir com clareza.</h2>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">Acompanhe competências, rotina, simulados e feedbacks em uma experiência única.</p>
           </div>
         </div>

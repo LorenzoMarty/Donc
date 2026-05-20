@@ -5,14 +5,14 @@ import { cn } from "@/utils";
 export const Tabs = TabsPrimitive.Root;
 
 export function TabsList({ className, ...props }: React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>) {
-  return <TabsPrimitive.List className={cn("inline-flex min-h-12 items-center justify-center rounded-2xl border-2 border-foreground bg-muted p-1 shadow-[0_4px_0_hsl(var(--foreground))]", className)} {...props} />;
+  return <TabsPrimitive.List className={cn("inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-muted/70 p-1", className)} {...props} />;
 }
 
 export function TabsTrigger({ className, ...props }: React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>) {
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-black text-muted-foreground transition-all hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-[0_3px_0_hsl(var(--foreground))]",
+        "inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-semibold text-muted-foreground transition-all hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
         className,
       )}
       {...props}

@@ -8,7 +8,7 @@ import { animate as motionOneAnimate } from "motion";
 import gsap from "gsap";
 import Lottie from "lottie-react";
 import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, Lightbulb, Sparkles, Star, Target, Trophy, Zap } from "lucide-react";
+import { CheckCircle2, Lightbulb, Star, Target, Trophy, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -132,9 +132,9 @@ export function XPBurst({ amount, show, className }: { amount: number; show: boo
           animate={{ opacity: [0, 1, 1, 0], scale: [0.7, 1.14, 1], y: -36 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.85, ease: easeOut }}
-          className={cn("pointer-events-none absolute right-4 top-4 z-20 rounded-full border-2 border-foreground bg-primary px-3 py-1 text-sm font-black text-primary-foreground shadow-[0_4px_0_hsl(var(--foreground))]", className)}
+          className={cn("pointer-events-none absolute right-4 top-4 z-20 rounded-full border border-border bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground shadow-sm", className)}
         >
-          +{amount} XP
+          +{Math.min(100, amount)}% dominio
         </motion.div>
       )}
     </AnimatePresence>
@@ -148,10 +148,10 @@ export function ComboAnimation({ combo }: { combo: number }) {
       initial={{ scale: 0.86, rotate: -2 }}
       animate={{ scale: [0.86, 1.08, 1], rotate: [-2, 1, 0] }}
       transition={{ duration: 0.38, ease: easeOut }}
-      className="game-chip inline-flex items-center gap-2 bg-primary px-3 py-2 text-xs font-black text-primary-foreground"
+      className="game-chip inline-flex items-center gap-2 bg-primary/12 px-3 py-2 text-xs font-semibold text-secondary"
     >
       <FlareIcon />
-      Combo {combo}x
+      Ritmo {combo}x
     </motion.div>
   );
 }
@@ -187,12 +187,12 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
             animate={{ y: 0, scale: 1, rotate: 0 }}
             exit={{ y: -10, opacity: 0 }}
             transition={{ type: "spring", stiffness: 320, damping: 18 }}
-            className="relative rounded-3xl border-2 border-foreground bg-card px-5 py-4 text-center shadow-[0_7px_0_hsl(var(--foreground))]"
+            className="game-surface relative bg-card px-5 py-4 text-center"
           >
             <Lottie animationData={pulseLottie} loop={false} className="absolute -top-12 left-1/2 h-24 w-24 -translate-x-1/2" />
             <Trophy className="relative mx-auto h-7 w-7 text-primary" aria-hidden="true" />
-            <p className="relative mt-2 text-lg font-black">{title}</p>
-            <p className="relative text-sm font-black text-secondary">+{xp} XP</p>
+            <p className="relative mt-2 text-lg font-semibold">{title}</p>
+            <p className="relative text-sm font-semibold text-secondary">progresso +{xp}</p>
           </motion.div>
         </motion.div>
       )}
@@ -201,18 +201,17 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
 }
 
 export function InteractiveMascot({ mood = "ready", size = "md" }: { mood?: "ready" | "happy" | "thinking"; size?: "sm" | "md" }) {
+  const Icon = mood === "thinking" ? Lightbulb : mood === "happy" ? CheckCircle2 : Target;
+
   return (
     <motion.div
-      animate={{ y: [0, -4, 0], rotate: mood === "thinking" ? [0, -3, 3, 0] : [0, 1, 0] }}
-      transition={{ duration: mood === "thinking" ? 0.8 : 2.4, repeat: Infinity, ease: "easeInOut" }}
-      className={cn("relative shrink-0 rounded-2xl border-2 border-foreground bg-primary shadow-[0_4px_0_hsl(var(--foreground))]", size === "sm" ? "h-10 w-10" : "h-16 w-16")}
-      aria-label="Mascote Donk"
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.22, ease: easeOut }}
+      className={cn("grid shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary", size === "sm" ? "h-10 w-10" : "h-16 w-16")}
+      aria-label="Indicador de progresso"
     >
-      <div className="absolute inset-2 rounded-xl bg-background/42" />
-      <div className="absolute left-3 top-4 h-2 w-2 rounded-full bg-foreground" />
-      <div className="absolute right-3 top-4 h-2 w-2 rounded-full bg-foreground" />
-      <div className={cn("absolute left-1/2 top-7 h-1.5 -translate-x-1/2 rounded-full bg-foreground", mood === "happy" ? "w-6" : mood === "thinking" ? "w-2" : "w-4")} />
-      <Sparkles className="absolute -right-2 -top-2 h-4 w-4 text-accent" aria-hidden="true" />
+      <Icon className={cn(size === "sm" ? "h-5 w-5" : "h-7 w-7")} aria-hidden="true" />
     </motion.div>
   );
 }
@@ -233,10 +232,11 @@ export function ResponsiveHUD({
       <InteractiveMascot mood={progress > 70 ? "happy" : "ready"} />
       <div className="min-w-0">
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="game-chip bg-primary px-3 py-1 text-xs font-black text-primary-foreground">Nível {level}</span>
-          <span className="game-chip bg-accent/12 px-3 py-1 text-xs font-black text-accent">{streak} dias</span>
+          <span className="game-chip bg-primary/12 px-3 py-1 text-xs font-semibold text-secondary">Consistencia {level}</span>
+          <span className="game-chip bg-primary/8 px-3 py-1 text-xs font-semibold text-muted-foreground">{streak} dias</span>
         </div>
-        <p className="truncate text-2xl font-black tracking-normal">{xp} XP acumulado</p>
+        <p className="truncate text-2xl font-semibold tracking-normal">Progresso academico</p>
+        <p className="mt-1 text-xs text-muted-foreground">{xp} pontos secundarios</p>
         <Progress value={progress} className="mt-3" />
       </div>
       <ComboAnimation combo={Math.max(1, Math.round(streak / 2))} />
@@ -300,14 +300,10 @@ export function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
 }
 
 export function WritingSidebar({
-  words,
   lines,
-  wordProgress,
   structureProgress,
 }: {
-  words: number;
   lines: number;
-  wordProgress: number;
   structureProgress: number;
 }) {
   return (
@@ -319,14 +315,13 @@ export function WritingSidebar({
     >
       <div className="game-tile bg-background/82 p-4">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-black">Radar da folha</p>
+          <p className="text-sm font-semibold">Painel de escrita</p>
           <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
         </div>
-        <WriterMetric label="Volume" value={`${words} palavras`} progress={wordProgress} />
         <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
       </div>
       <div className="game-tile bg-primary/10 p-4">
-        <p className="mb-3 text-sm font-black">Sugestões rápidas</p>
+        <p className="mb-3 text-sm font-semibold">Sugestões rápidas</p>
         <SmartSuggestions
           suggestions={[
             "Use um repertório conectado à tese, não solto.",
@@ -362,7 +357,7 @@ export function ENEMWritingSheet({
         autoFocus={autoFocus}
         onChange={(event) => onChange(event.target.value)}
         spellCheck
-        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-[clamp(14px,1.45vw,17px)] leading-[32px] text-foreground caret-primary outline-none selection:bg-primary/28"
+        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-[clamp(14px,1.45vw,17px)] leading-[32px] text-[#1f1a12] caret-primary outline-none selection:bg-primary/28 placeholder:text-[#6d6251]/60"
         placeholder={placeholder}
       />
     </EssayPaper>
@@ -376,13 +371,13 @@ export function EssayPaper({ children, focusMode }: { children: React.ReactNode;
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.42, ease: easeOut }}
       className={cn(
-        "relative mx-auto aspect-[210/297] w-full overflow-hidden border-2 border-primary bg-[#fffdf7] text-foreground shadow-[0_5px_0_hsl(var(--primary)),0_18px_40px_rgba(31,37,50,.14)]",
+        "relative mx-auto aspect-[210/297] w-full overflow-hidden border border-primary/35 bg-[#fffdf7] text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]",
         focusMode ? "max-h-[calc(100dvh-2rem)]" : "max-w-[794px]",
       )}
-      style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, rgba(31,37,50,.16) 32px), radial-gradient(circle at 30% 10%, rgba(244,197,66,.08), transparent 32%)", backgroundSize: "100% 32px, 100% 100%" }}
+      style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, rgba(48,38,18,.14) 32px), radial-gradient(circle at 30% 10%, rgba(244,197,66,.08), transparent 32%)", backgroundSize: "100% 32px, 100% 100%" }}
     >
       <div className="pointer-events-none absolute inset-y-[7%] left-[7%] w-px bg-primary/35" />
-      <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-black text-muted-foreground/70">
+      <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-semibold text-[#7c705e]/70">
         {Array.from({ length: 30 }, (_, index) => (
           <span key={index}>{String(index + 1).padStart(2, "0")}</span>
         ))}
@@ -396,8 +391,8 @@ function WriterMetric({ label, value, progress }: { label: string; value: string
   return (
     <div className="mb-4 last:mb-0">
       <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-        <span className="font-black text-muted-foreground">{label}</span>
-        <span className="font-black">{value}</span>
+        <span className="font-semibold text-muted-foreground">{label}</span>
+        <span className="font-semibold">{value}</span>
       </div>
       <Progress value={progress} />
     </div>

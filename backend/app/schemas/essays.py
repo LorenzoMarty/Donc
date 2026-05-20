@@ -15,6 +15,7 @@ class EssayThemeRead(BaseModel):
 class EssayCreateRequest(BaseModel):
     theme_id: int
     title: str = Field(min_length=4, max_length=220)
+    content: str = Field(default="", max_length=20000)
 
 
 class EssayAutosaveRequest(BaseModel):
@@ -40,6 +41,41 @@ class EssayCorrectionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class EssayVersionCorrectionRead(BaseModel):
+    id: int
+    total_score: int
+    competency_1: int
+    competency_2: int
+    competency_3: int
+    competency_4: int
+    competency_5: int
+    strengths: list[str]
+    errors: list[str]
+    suggestions: list[str]
+    feedback: str
+    recurrent_patterns: list[str]
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EssayVersionRead(BaseModel):
+    id: int
+    version_number: int
+    title: str
+    content: str
+    status: str
+    word_count: int
+    line_count: int
+    score: int | None
+    created_at: datetime
+    updated_at: datetime
+    submitted_at: datetime | None
+    correction: EssayVersionCorrectionRead | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class EssayRead(BaseModel):
     id: int
     title: str
@@ -53,6 +89,7 @@ class EssayRead(BaseModel):
     submitted_at: datetime | None
     theme: EssayThemeRead
     correction: EssayCorrectionRead | None = None
+    versions: list[EssayVersionRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -73,4 +110,3 @@ class EssayHistoryResponse(BaseModel):
     weakest_competency: str
     recurrent_errors: list[str]
     evolution: list[EssayEvolutionPoint]
-

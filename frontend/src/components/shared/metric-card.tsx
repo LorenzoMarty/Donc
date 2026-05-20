@@ -22,9 +22,9 @@ export function MetricCard({
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="mt-2 text-3xl font-bold tracking-normal">{value}</p>
+            <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
           </div>
-          <div className="grid h-11 w-11 place-items-center rounded-2xl border-2 border-foreground bg-secondary text-secondary-foreground shadow-[0_3px_0_hsl(var(--foreground))]">
+          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
         </div>

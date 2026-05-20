@@ -98,8 +98,8 @@ const catalog: AchievementDefinition[] = [
   },
   {
     id: "nivel-dez",
-    title: "Nível 10",
-    description: "Alcance o nível 10 da sua jornada.",
+    title: "Consistencia 10",
+    description: "Alcance o marco 10 de consistencia.",
     category: "progressao",
     rarity: "rara",
     target: 10,
@@ -110,7 +110,7 @@ const catalog: AchievementDefinition[] = [
   {
     id: "trilha-finalizada",
     title: "Trilha finalizada",
-    description: "Feche uma campanha completa até o desafio final.",
+    description: "Conclua uma sequencia completa ate o desafio final.",
     category: "progressao",
     rarity: "rara",
     target: 1,
@@ -198,7 +198,7 @@ const catalog: AchievementDefinition[] = [
   {
     id: "rei-conectivos",
     title: "Rei dos conectivos",
-    description: "Vença 10 rodadas no jogo de conectivos.",
+    description: "Venca 10 rodadas na pratica de conectivos.",
     category: "dominio",
     rarity: "rara",
     target: 10,
@@ -253,8 +253,8 @@ const catalog: AchievementDefinition[] = [
   },
   {
     id: "secreto-combo",
-    title: "Combo invisível",
-    description: "Some vitórias em conectivos e argumentação para liberar um troféu oculto.",
+    title: "Ritmo invisivel",
+    description: "Some vitorias em conectivos e argumentacao para liberar um marco oculto.",
     category: "secreta",
     rarity: "epica",
     target: 14,
@@ -374,14 +374,14 @@ export function AchievementCard({ achievement, index = 0 }: { achievement: Achie
           </div>
           <h3 className="text-base font-black tracking-normal">{hidden ? "Conquista secreta" : achievement.title}</h3>
           <p className="mt-2 min-h-10 text-sm leading-6 text-muted-foreground">
-            {hidden ? "Continue explorando o laboratório e as trilhas para revelar este troféu." : achievement.description}
+            {hidden ? "Continue explorando o laboratorio e as trilhas para revelar este marco." : achievement.description}
           </p>
         </div>
       </div>
       <div className="relative mt-4">
         <div className="mb-2 flex items-center justify-between text-xs">
           <span className="font-bold text-muted-foreground">{hidden ? "Progresso oculto" : `${Math.min(achievement.current, achievement.target)}/${achievement.target}`}</span>
-          <span className="font-black text-secondary">+{achievement.xp} XP</span>
+          <span className="font-black text-secondary">+{achievement.xp} pts</span>
         </div>
         <Progress value={hidden ? 0 : achievement.progress} className="h-2.5" />
       </div>
@@ -443,9 +443,9 @@ export function TrophyShowcase({
               Cada troféu registra uma habilidade real: constância, domínio de competência, precisão em conectivos e maturidade argumentativa.
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-4">
-              <ShowcaseMetric label="Nível" value={String(level)} />
+              <ShowcaseMetric label="Consistencia" value={String(level)} />
               <ShowcaseMetric label="Sequência" value={`${streak}d`} />
-              <ShowcaseMetric label="Troféus" value={`${summary.unlocked}/${summary.total}`} />
+              <ShowcaseMetric label="Marcos" value={`${summary.unlocked}/${summary.total}`} />
               <ShowcaseMetric label="Raros+" value={String(rareUnlocked)} />
             </div>
           </div>
@@ -453,7 +453,7 @@ export function TrophyShowcase({
       </motion.div>
 
       <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-        <ProgressTracker title="XP de conquistas" value={`${summary.xp} XP`} progress={Math.min(100, summary.xp / 24)} icon={Zap} tone="gold" />
+        <ProgressTracker title="Pontos secundarios" value={`${summary.xp} pts`} progress={Math.min(100, summary.xp / 24)} icon={Zap} tone="gold" />
         <ProgressTracker title="Raridade média" value={summary.averageRarity} progress={summary.unlocked ? Math.min(100, summary.unlocked * 8) : 0} icon={Gem} tone="primary" />
         <ProgressTracker title="Para platinar" value={`${summary.unlockedRegular}/${summary.regularTotal}`} progress={(summary.unlockedRegular / Math.max(1, summary.regularTotal)) * 100} icon={Crown} tone="accent" />
       </div>
@@ -563,7 +563,7 @@ export function XPRewardModal({
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>
         <div className="game-tile mt-5 bg-secondary/12 p-4">
           <p className="text-xs font-black uppercase text-muted-foreground">Recompensa</p>
-          <p className="mt-1 text-3xl font-black text-secondary">+{xp} XP</p>
+          <p className="mt-1 text-3xl font-black text-secondary">+{xp} pts</p>
         </div>
         <Button onClick={onClose} className="mt-5 w-full">
           {actionLabel}

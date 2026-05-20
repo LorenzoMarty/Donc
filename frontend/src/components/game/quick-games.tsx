@@ -30,7 +30,7 @@ type Piece = {
   id: string;
   label: string;
   hint?: string;
-  tone?: "yellow" | "blue" | "green" | "red" | "dark";
+  tone?: "yellow" | "amber" | "green" | "red" | "dark";
 };
 
 type Slot = {
@@ -54,8 +54,8 @@ export function XPBar({ xp, level, nextXp = 1000 }: { xp: number; level: number;
             <Zap className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-xs font-black text-muted-foreground">Nível {level}</p>
-            <p className="text-sm font-black">{xp} XP</p>
+            <p className="text-xs font-semibold text-muted-foreground">Consistencia {level}</p>
+            <p className="text-sm font-semibold">{xp} pts secundarios</p>
           </div>
         </div>
         <span className="rounded-lg bg-muted px-2 py-1 text-xs font-black">{progress}%</span>
@@ -87,7 +87,7 @@ export function ComboSystem({ combo }: { combo: number }) {
 }
 
 export function ComboMeter({ combo }: { combo: number }) {
-  const label = combo >= 8 ? "Modo imparável" : combo >= 5 ? "Ritmo quente" : combo >= 3 ? "Combo vivo" : "Carregando combo";
+  const label = combo >= 8 ? "Ritmo excelente" : combo >= 5 ? "Ritmo forte" : combo >= 3 ? "Boa sequencia" : "Rotina em formacao";
   return (
     <motion.div
       key={combo}
@@ -126,13 +126,13 @@ export function GameHUD({
         <GameMascot mood={combo > 2 ? "happy" : "ready"} size="sm" />
         <div className="min-w-0">
           <p className="truncate text-sm font-black">{title}</p>
-          <p className="text-xs font-bold text-muted-foreground">toque, encaixe, avance</p>
+          <p className="text-xs font-bold text-muted-foreground">pratica curta com feedback</p>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-1.5 text-center">
-        <HudPill icon={Bolt} label="XP" value={String(xp)} />
-        <HudPill icon={Flame} label="Combo" value={`${combo}x`} />
-        <HudPill icon={HeartPulse} label="Energia" value={`${energy}%`} />
+        <HudPill icon={Bolt} label="Dominio" value={`${Math.min(100, xp)}%`} />
+        <HudPill icon={Flame} label="Sequencia" value={`${combo}x`} />
+        <HudPill icon={HeartPulse} label="Foco" value={`${energy}%`} />
         <HudPill icon={Sparkles} label="Ritmo" value={`${multiplier}x`} />
       </div>
     </div>
@@ -217,7 +217,7 @@ export function XPBurst({ amount, show }: { amount: number; show: boolean }) {
           transition={{ duration: 0.9, ease: "easeOut" }}
           className="pointer-events-none absolute right-5 top-5 z-20 rounded-full border-2 border-foreground bg-primary px-3 py-1 text-sm font-black text-primary-foreground shadow-[0_4px_0_hsl(var(--foreground))]"
         >
-          +{amount} XP
+          +{Math.min(100, amount)}% dominio
         </motion.div>
       )}
     </AnimatePresence>
@@ -357,11 +357,11 @@ export function RewardPopup({ reward, onContinue }: { reward: GameReward | null;
             <div className="relative mx-auto grid h-20 w-20 place-items-center rounded-3xl border-2 border-foreground bg-primary text-primary-foreground shadow-[0_5px_0_hsl(var(--foreground))]">
               <Trophy className="h-10 w-10" aria-hidden="true" />
             </div>
-            <p className="relative mt-4 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">fase vencida</p>
+            <p className="relative mt-4 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">pratica concluida</p>
             <h2 className="relative mt-2 text-3xl font-black">{reward.title}</h2>
             <p className="relative mt-2 text-sm leading-6 text-muted-foreground">{reward.description}</p>
             <div className="relative mt-4 flex items-center justify-center gap-2">
-              <span className="rounded-2xl border-2 border-foreground bg-primary px-3 py-1.5 text-sm font-black text-primary-foreground">+{reward.xp} XP</span>
+              <span className="rounded-2xl border-2 border-foreground bg-primary px-3 py-1.5 text-sm font-black text-primary-foreground">dominio +{Math.min(100, reward.xp)}%</span>
               {reward.badge && <span className="rounded-2xl border-2 border-foreground bg-accent px-3 py-1.5 text-sm font-black text-accent-foreground">{reward.badge}</span>}
             </div>
             <Button className="relative mt-5 w-full rounded-2xl" onClick={onContinue}>
@@ -400,7 +400,7 @@ export function QuickQuiz({
     if (result.correct) {
       setStatus("hit");
       setBurst(true);
-      window.setTimeout(() => onComplete({ title: "Survival limpo", description: "Você desviou do distrator e manteve a leitura viva.", xp: 45 + combo * 5, badge: "Survival" }), 520);
+      window.setTimeout(() => onComplete({ title: "Leitura precisa", description: "Voce reconheceu o sentido central e evitou o distrator.", xp: 45 + combo * 5, badge: "Interpretacao" }), 520);
       return;
     }
     setStatus("miss");
@@ -409,7 +409,7 @@ export function QuickQuiz({
   }
 
   return (
-    <GameStage title="Interpretação Survival" subtitle="Escolha a carta certa antes que o distrator domine." icon={Play} combo={combo} xp={45 + combo * 5} energy={status === "miss" ? 62 : 94} mascotMood={status === "miss" ? "alert" : status === "hit" ? "happy" : "ready"}>
+    <GameStage title="Interpretacao textual" subtitle="Escolha a alternativa que preserva o sentido do texto." icon={Play} combo={combo} xp={45 + combo * 5} energy={status === "miss" ? 62 : 94} mascotMood={status === "miss" ? "alert" : status === "hit" ? "happy" : "ready"}>
       <XPBurst amount={45 + combo * 5} show={burst} />
       <motion.div animate={status === "miss" ? { x: [-8, 8, -4, 4, 0] } : undefined} className="rounded-3xl border-2 border-foreground bg-background p-4 shadow-[0_5px_0_hsl(var(--foreground))]">
         <p className="text-base font-black leading-7 md:text-lg">{statement}</p>
@@ -433,12 +433,12 @@ export function ConnectiveChallenge({ combo, onComplete, onMiss }: MiniGameProps
   const pieces: Piece[] = [
     { id: "entretanto", label: "Entretanto", hint: "contraste", tone: "red" },
     { id: "portanto", label: "Portanto", hint: "consequência", tone: "green" },
-    { id: "alem", label: "Além disso", hint: "adição", tone: "blue" },
+    { id: "alem", label: "Além disso", hint: "adição", tone: "amber" },
   ];
   const slots: Slot[] = [{ id: "ponte", label: "ponte lógica", accepts: "portanto" }];
 
   return (
-    <GameStage title="Connect Flow" subtitle="Encaixe o conectivo e veja a frase acender." icon={Zap} combo={combo} xp={38 + combo * 4} energy={88}>
+    <GameStage title="Conectivo preciso" subtitle="Selecione a ponte logica que sustenta a progressao." icon={Zap} combo={combo} xp={38 + combo * 4} energy={88}>
       <div className="rounded-3xl border-2 border-foreground bg-background p-4 text-sm font-bold leading-7 shadow-[0_5px_0_hsl(var(--foreground))]">
         O acesso desigual à tecnologia limita a participação dos estudantes.
         <span className="mx-2 inline-flex rounded-xl bg-primary/22 px-3 py-1 font-black">ponte</span>
@@ -448,7 +448,7 @@ export function ConnectiveChallenge({ combo, onComplete, onMiss }: MiniGameProps
         pieces={pieces}
         slots={slots}
         successLabel="Frase conectada"
-        onSuccess={() => onComplete({ title: "Fluxo conectado", description: "A relação de consequência ficou clara e a coesão subiu.", xp: 38 + combo * 4, badge: "Connect Flow" })}
+        onSuccess={() => onComplete({ title: "Coesao reforcada", description: "A relacao de consequencia ficou clara e a progressao textual melhorou.", xp: 38 + combo * 4, badge: "Coesao" })}
         onFail={() => onMiss?.("Essa peça muda o sentido. Procure a ponte de consequência.")}
       />
     </GameStage>
@@ -482,12 +482,12 @@ export function StopGame({ combo, onComplete, onMiss }: MiniGameProps) {
   useEffect(() => {
     if (completed !== categories.length) return;
     setBurst(true);
-    const id = window.setTimeout(() => onComplete({ title: "Stop estourado", description: "Você fechou a rodada como party game de repertório.", xp: 75 + combo * 6, badge: `Letra ${letter}` }), 520);
+    const id = window.setTimeout(() => onComplete({ title: "Repertorio ativado", description: "Voce recuperou conectivos, tese e repertorio sob limite curto.", xp: 75 + combo * 6, badge: `Letra ${letter}` }), 520);
     return () => window.clearTimeout(id);
   }, [categories.length, combo, completed, letter, onComplete]);
 
   return (
-    <GameStage title="Stop Rush" subtitle="Cartas rápidas, letra surpresa e ritmo confortável." icon={Sparkles} combo={combo} xp={75 + combo * 6} energy={Math.min(100, 54 + completed * 9)}>
+    <GameStage title="Repertorio rapido" subtitle="Associe ideias com agilidade, sem perder precisao conceitual." icon={Sparkles} combo={combo} xp={75 + combo * 6} energy={Math.min(100, 54 + completed * 9)}>
       <XPBurst amount={75 + combo * 6} show={burst} />
       <div className="grid gap-3 sm:grid-cols-[130px_1fr]">
         <motion.div animate={{ rotate: [0, -2, 2, 0], scale: [1, 1.03, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="grid min-h-32 place-items-center rounded-3xl border-2 border-foreground bg-primary text-primary-foreground shadow-[0_6px_0_hsl(var(--foreground))]">
@@ -531,7 +531,7 @@ export function StopGame({ combo, onComplete, onMiss }: MiniGameProps) {
 export function EssayPuzzle({ combo, onComplete, onMiss }: MiniGameProps) {
   const pieces: Piece[] = [
     { id: "intro", label: "Bauman ajuda a explicar relações instáveis.", hint: "introdução", tone: "yellow" },
-    { id: "dev", label: "A escola precisa ensinar leitura crítica de mídia.", hint: "desenvolvimento", tone: "blue" },
+    { id: "dev", label: "A escola precisa ensinar leitura crítica de mídia.", hint: "desenvolvimento", tone: "amber" },
     { id: "fim", label: "MEC e plataformas devem criar ações de educação digital.", hint: "conclusão", tone: "green" },
   ];
   const slots: Slot[] = [
@@ -541,11 +541,11 @@ export function EssayPuzzle({ combo, onComplete, onMiss }: MiniGameProps) {
   ];
 
   return (
-    <GameStage title="Essay Builder" subtitle="Construa a redação como blocos de estratégia." icon={Flag} combo={combo} xp={64 + combo * 5} energy={90}>
+    <GameStage title="Organizacao textual" subtitle="Ordene repertorio, argumento e proposta com criterio." icon={Flag} combo={combo} xp={64 + combo * 5} energy={90}>
       <EssayBuilder
         pieces={pieces}
         slots={slots}
-        onSuccess={() => onComplete({ title: "Redação construída", description: "Você organizou repertório, argumento e proposta como uma estrutura jogável.", xp: 64 + combo * 5, badge: "Builder" })}
+        onSuccess={() => onComplete({ title: "Redacao estruturada", description: "Voce organizou repertorio, argumento e proposta em uma estrutura clara.", xp: 64 + combo * 5, badge: "Estrutura" })}
         onFail={() => onMiss?.("Esse bloco encaixa melhor em outra parte da estrutura.")}
       />
     </GameStage>
@@ -565,15 +565,15 @@ export function ErrorHuntGame({ combo, onComplete, onMiss }: MiniGameProps) {
     setPicked(fragment.id);
     if (fragment.error) {
       setHit(true);
-      window.setTimeout(() => onComplete({ title: "Alvo encontrado", description: "Você caçou a falha de concordância no mapa textual.", xp: 48 + combo * 4, badge: "Hunter" }), 480);
+      window.setTimeout(() => onComplete({ title: "Falha identificada", description: "Voce localizou a falha de concordancia e revisou a norma-padrao.", xp: 48 + combo * 4, badge: "Revisao" }), 480);
       return;
     }
     onMiss?.("Esse fragmento está limpo. Procure a carta com ruído gramatical.");
   }
 
   return (
-    <GameStage title="Caça-Erro Hunter" subtitle="Procure o ruído gramatical no campo de cartas." icon={Search} combo={combo} xp={48 + combo * 4} energy={picked && !hit ? 58 : 92} mascotMood={picked && !hit ? "alert" : "ready"}>
-      <div className="relative min-h-[320px] overflow-hidden rounded-3xl border-2 border-foreground bg-[#e9f6ff] p-4 shadow-[0_5px_0_hsl(var(--foreground))] dark:bg-card">
+    <GameStage title="Revisao gramatical" subtitle="Identifique o trecho que exige correcao de norma-padrao." icon={Search} combo={combo} xp={48 + combo * 4} energy={picked && !hit ? 58 : 92} mascotMood={picked && !hit ? "alert" : "ready"}>
+      <div className="relative min-h-[320px] overflow-hidden rounded-3xl border-2 border-foreground bg-[#fff4cf] p-4 shadow-[0_5px_0_hsl(var(--foreground))] dark:bg-card">
         <RewardExplosion active={hit} />
         <div className="absolute inset-x-6 top-1/2 h-1 rounded-full bg-secondary/20" />
         {fragments.map((fragment, index) => (
@@ -619,7 +619,7 @@ export function BossChallenge({ combo, onComplete, onMiss }: MiniGameProps) {
   function answer(index: number) {
     if (index !== current.correct) {
       setHp((value) => Math.max(30, value - 18));
-      onMiss?.("O chefe absorveu esse golpe. Use uma carta mais específica.");
+      onMiss?.("A resposta ainda esta generica. Use uma formulacao mais especifica.");
       return;
     }
     const nextHp = Math.max(0, hp - 50);
@@ -628,11 +628,11 @@ export function BossChallenge({ combo, onComplete, onMiss }: MiniGameProps) {
       setStep((value) => value + 1);
       return;
     }
-    window.setTimeout(() => onComplete({ title: "Chefe derrotado", description: "Você venceu com tese forte e intervenção completa.", xp: 120 + combo * 8, badge: "Boss" }), 500);
+    window.setTimeout(() => onComplete({ title: "Argumentacao consolidada", description: "Voce escolheu tese forte e intervencao completa.", xp: 120 + combo * 8, badge: "Sintese" }), 500);
   }
 
   return (
-    <GameStage title="Boss da Argumentação" subtitle="Use cartas fortes para quebrar a defesa do desafio final." icon={Swords} combo={combo} xp={120 + combo * 8} energy={hp} mascotMood={hp <= 50 ? "happy" : "ready"}>
+    <GameStage title="Sintese argumentativa" subtitle="Escolha a formulacao mais completa para fechar a pratica." icon={Swords} combo={combo} xp={120 + combo * 8} energy={hp} mascotMood={hp <= 50 ? "happy" : "ready"}>
       <BossBattleUI hp={hp} round={step + 1} total={rounds.length} />
       <div className="rounded-3xl border-2 border-foreground bg-background p-4 shadow-[0_5px_0_hsl(var(--foreground))]">
         <p className="text-lg font-black">{current.question}</p>
@@ -658,8 +658,8 @@ export function BossBattleUI({ hp, round, total }: { hp: number; round: number; 
             <Swords className="h-6 w-6" aria-hidden="true" />
           </motion.div>
           <div>
-            <p className="text-xs font-black uppercase text-secondary-foreground/70">chefe final</p>
-            <p className="font-black">Guardião da Banca</p>
+            <p className="text-xs font-black uppercase text-secondary-foreground/70">rodada final</p>
+            <p className="font-black">Criterio da banca</p>
           </div>
         </div>
         <span className="rounded-xl bg-background/20 px-3 py-1 text-xs font-black">
@@ -794,7 +794,7 @@ export function CompletionScreen({ title, description, onContinue }: { title: st
       <h2 className="mt-4 text-2xl font-black">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
       <Button className="mt-5 w-full sm:w-auto" onClick={onContinue}>
-        Próxima fase
+        Continuar pratica
       </Button>
     </div>
   );
@@ -856,7 +856,7 @@ function regionForTrack(title: string) {
 }
 
 function toneClass(tone: Piece["tone"]) {
-  if (tone === "blue") return "bg-secondary text-secondary-foreground";
+  if (tone === "amber") return "bg-secondary text-secondary-foreground";
   if (tone === "green") return "bg-accent text-accent-foreground";
   if (tone === "red") return "bg-destructive text-destructive-foreground";
   if (tone === "dark") return "bg-foreground text-background";

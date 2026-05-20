@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Save, Send, SpellCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Save, Send, SpellCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ export function EssayEditor({
   title,
   content,
   saving,
+  error,
   focusMode,
   onTitleChange,
   onContentChange,
@@ -27,6 +28,7 @@ export function EssayEditor({
   title: string;
   content: string;
   saving: boolean;
+  error?: string;
   focusMode: boolean;
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
@@ -38,7 +40,6 @@ export function EssayEditor({
   const words = content.trim() ? content.trim().split(/\s+/).length : 0;
   const lines = Math.max(1, content.split("\n").length, Math.ceil(content.length / 92));
   const locked = essay?.status === "corrected";
-  const wordProgress = Math.min(100, (words / 320) * 100);
   const structureProgress = Math.min(100, (lines / 30) * 100);
 
   useEffect(() => {
@@ -90,21 +91,20 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-[2rem] border-2 border-foreground bg-card shadow-[0_8px_0_hsl(var(--foreground))]"
+      className="game-surface relative overflow-hidden bg-card"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
-      <div className="flex flex-col gap-4 border-b-2 border-foreground bg-card/90 p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border bg-card/90 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 flex-1">
           <Input
             value={title}
             disabled={locked}
             onChange={(event) => onTitleChange(event.target.value)}
-            className="h-auto border-0 bg-transparent px-0 py-0 text-xl font-black shadow-none focus-visible:ring-0 md:text-2xl"
+            className="h-auto border-0 bg-transparent px-0 py-0 text-xl font-semibold shadow-none focus-visible:ring-0 md:text-2xl"
           />
           <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="secondary">{words} palavras</Badge>
             <Badge variant="outline">{lines} linhas</Badge>
-            <Badge variant="success">{saving ? "Salvando..." : "Sincronizado"}</Badge>
+            <Badge variant="success">{saving ? "Salvando..." : essay ? "Sincronizado" : "Rascunho local"}</Badge>
           </div>
         </div>
 
@@ -133,7 +133,7 @@ export function EssayEditor({
         </div>
       </div>
 
-      <div className={cn("grid gap-4 bg-[#f7f0de] p-3 md:p-5 dark:bg-background", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_320px]" : "xl:grid-cols-1")}>
+      <div className={cn("grid gap-4 bg-background/72 p-3 md:p-5", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_320px]" : "xl:grid-cols-1")}>
         <div className="min-w-0">
           <ENEMWritingSheet value={content} disabled={locked} onChange={onContentChange} placeholder="Comece sua redação ENEM aqui..." />
         </div>
@@ -147,7 +147,7 @@ export function EssayEditor({
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
               className="min-w-0 overflow-hidden"
             >
-              <WritingSidebar words={words} lines={lines} wordProgress={wordProgress} structureProgress={structureProgress} />
+              <WritingSidebar lines={lines} structureProgress={structureProgress} />
               <div className="mt-3">
                 <FriendlyErrorFeedback
                   show={words > 0 && words < 80}
@@ -160,13 +160,22 @@ export function EssayEditor({
       </div>
 
       {locked && (
-        <div className="border-t-2 border-foreground bg-accent/12 p-3 text-sm font-bold text-accent">
+        <div className="border-t border-border bg-primary/10 p-3 text-sm font-semibold text-primary">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
             Versão corrigida e bloqueada.
           </div>
         </div>
       )}
+
+      {error ? (
+        <div className="border-t border-border bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        </div>
+      ) : null}
     </motion.section>
   );
 }
