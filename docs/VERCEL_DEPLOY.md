@@ -15,20 +15,21 @@ Variaveis:
 
 ```text
 DATABASE_URL=postgresql+psycopg://user:password@host:5432/database?sslmode=require
-DATABASE_CONNECT_TIMEOUT_SECONDS=5
 JWT_SECRET_KEY=um-segredo-forte
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-5.5
-REDIS_URL=redis://default:senha@host:6379/0
-SEED_DEMO_DATA=false
-FRONTEND_ORIGIN=https://seu-frontend.vercel.app
+FRONTEND_ORIGIN=https://app-redacao-five.vercel.app
 ENVIRONMENT=production
+
+# opcionais
+OPENAI_API_KEY=sk-...
+SEED_DEMO_DATA=true
 ```
+
+No Supabase, use a connection string do projeto em `DATABASE_URL`. O backend tambem aceita URLs `postgresql://...` e `postgres://...`; elas sao normalizadas automaticamente para o driver `psycopg`.
 
 Valide:
 
 ```text
-https://seu-backend.vercel.app/health
+https://app-redacao-back.vercel.app/health
 ```
 
 ## Frontend
@@ -43,17 +44,16 @@ Configuracao do projeto:
 Variaveis:
 
 ```text
-NEXT_PUBLIC_SITE_URL=https://seu-frontend.vercel.app
-NEXT_PUBLIC_API_URL=/api/backend
-INTERNAL_API_URL=https://seu-backend.vercel.app/api/v1
+NEXT_PUBLIC_SITE_URL=https://app-redacao-five.vercel.app
+INTERNAL_API_URL=https://app-redacao-back.vercel.app/api/v1
 ```
 
-Com essa configuracao, o browser fala com o proprio dominio do frontend e o Next.js repassa para o backend.
+Com essa configuracao, o browser fala com o proprio dominio do frontend e o Next.js repassa para o backend. `NEXT_PUBLIC_API_URL` ja usa `/api/backend` por padrao.
 
 ## Ordem de publicacao
 
 1. Publique o backend.
-2. Configure `INTERNAL_API_URL` no frontend com a URL publica do backend.
+2. Configure `INTERNAL_API_URL` no frontend com `https://app-redacao-back.vercel.app/api/v1`.
 3. Publique o frontend.
-4. Atualize `FRONTEND_ORIGIN` no backend com a URL final do frontend.
+4. Atualize `FRONTEND_ORIGIN` no backend com `https://app-redacao-five.vercel.app`.
 5. Faça redeploy do backend.
