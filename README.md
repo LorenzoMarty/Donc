@@ -109,20 +109,20 @@ O frontend centraliza chamadas em `frontend/src/lib/http-client.ts` e desempacot
 
 ## Variaveis de ambiente
 
-Use `.env.example` para Docker/local completo. Tambem existem exemplos por servico:
+Use `.env.example` para Docker/local. Para Vercel, use os exemplos por servico:
 
 - `backend/.env.example`
 - `frontend/.env.example`
 
 Em producao, configure:
 
-- `JWT_SECRET_KEY` com segredo forte
 - `DATABASE_URL` com Postgres gerenciado
-- `REDIS_URL` com Redis gerenciado
-- `OPENAI_API_KEY` quando IA real estiver habilitada
-- `SEED_DEMO_DATA=false`
-- `FRONTEND_ORIGIN=https://seu-frontend`
-- `INTERNAL_API_URL=https://seu-backend/api/v1`
+- `JWT_SECRET_KEY` com segredo forte
+- `FRONTEND_ORIGIN=https://app-redacao-five.vercel.app`
+- `INTERNAL_API_URL=https://app-redacao-back.vercel.app/api/v1`
+- `OPENAI_API_KEY` se quiser IA real
+
+Para Supabase, use a connection string do projeto em `DATABASE_URL`.
 
 ## Deploy
 
@@ -130,8 +130,7 @@ Frontend:
 
 - Vercel com Root Directory `frontend`
 - Build Command `npm run build`
-- `NEXT_PUBLIC_API_URL=/api/backend`
-- `INTERNAL_API_URL` apontando para o backend `/api/v1`
+- `INTERNAL_API_URL=https://app-redacao-back.vercel.app/api/v1`
 
 Backend:
 
