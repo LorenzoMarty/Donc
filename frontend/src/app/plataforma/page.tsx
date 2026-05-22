@@ -16,16 +16,19 @@ export default function PlatformPage() {
   return (
     <MarketingShell>
       <main className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-        <AceternityGrid className="rounded-[2rem] p-6 md:p-10">
+        <AceternityGrid className="rounded-[2rem] p-4 xs:p-6 md:p-10">
           <div className="grid gap-10 md:grid-cols-[0.95fr_1.05fr] md:items-center">
             <Reveal>
               <div className="game-chip mb-4 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
                 <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
                 Plataforma
               </div>
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-normal md:text-6xl">Uma plataforma de estudo clara, moderna e constante.</h1>
+              <h1 className="max-w-3xl text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
+                Uma plataforma de estudo clara, moderna e constante.
+              </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Donk ENEM organiza Portugues e Redacao em uma experiencia visual e progressiva: conteudo, pratica, IA e historico de evolucao no mesmo fluxo.
+                Donk ENEM organiza Portugues e Redacao em uma experiencia visual e progressiva: conteudo, pratica, IA e historico de
+                evolucao no mesmo fluxo.
               </p>
               <Button asChild size="lg" className="mt-7">
                 <Link href="/cadastro">
@@ -55,12 +58,14 @@ export default function PlatformPage() {
           </div>
         </AceternityGrid>
 
-        <section className="grid gap-4 py-12 md:grid-cols-3">
+        <section className="fluid-grid gap-4 py-12 [--grid-min:16rem]">
           {["Aprender", "Praticar", "Evoluir"].map((item, index) => (
             <HoverGlowCard key={item} delay={index * 0.05}>
               <Brain className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-2xl font-semibold tracking-normal">{item}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">Cada módulo leva o aluno para uma próxima ação clara, curta e mensurável.</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Cada módulo leva o aluno para uma próxima ação clara, curta e mensurável.
+              </p>
             </HoverGlowCard>
           ))}
         </section>

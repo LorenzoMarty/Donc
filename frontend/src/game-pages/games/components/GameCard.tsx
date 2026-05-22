@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, Gamepad2, Lock, Sparkles, Timer, Trophy, Zap } from "lucide-react";
 
-import type { GameDefinition, GameProgress, GameRarity } from "@/features/gamification/types";
+import type { GameDefinition, GameProgress } from "@/features/gamification/types";
 import { getCategoryBySlug } from "@/features/gamification/catalog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,10 @@ type GameCardProps = {
   className?: string;
 };
 
-export function GameCard({ game, progress, variant = "default", index = 0, className }: GameCardProps) {
+function GameCard({ game, progress, variant = "default", index = 0, className }: GameCardProps) {
   const category = getCategoryBySlug(game.category);
   const Icon = category?.icon ?? Gamepad2;
   const value = progress?.progress ?? game.progress;
-  const rarity = rarityMeta[game.rarity];
 
   return (
     <motion.article
@@ -43,23 +42,37 @@ export function GameCard({ game, progress, variant = "default", index = 0, class
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
-      <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 translate-x-1/3 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-40 w-40 translate-x-1/3 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl transition-opacity duration-300 group-hover:opacity-100"
+        aria-hidden="true"
+      />
 
-      <GameThumbnail game={game} icon={<Icon className="h-6 w-6" aria-hidden="true" />} accent={rarity.accent} compact={variant === "compact"} />
+      <GameThumbnail
+        game={game}
+        icon={<Icon className="h-6 w-6" aria-hidden="true" />}
+        accent={category?.secondaryColor ?? "hsl(46 96% 50%)"}
+        compact={variant === "compact"}
+      />
 
       <div className="mt-4 flex flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className="border-primary/20 bg-primary/10 text-primary">{category?.name ?? game.category}</Badge>
-          <RarityBadge rarity={game.rarity} />
         </div>
 
         <div className="mt-3">
-          <h3 className={cn("font-semibold tracking-normal text-foreground", variant === "compact" ? "text-lg" : "text-xl")}>{game.name}</h3>
-          <p className={cn("mt-2 text-sm leading-6 text-muted-foreground", variant === "compact" ? "line-clamp-2" : "line-clamp-3")}>{game.description}</p>
+          <h3 className={cn("font-semibold tracking-normal text-foreground", variant === "compact" ? "text-lg" : "text-xl")}>
+            {game.name}
+          </h3>
+          <p className={cn("mt-2 text-sm leading-6 text-muted-foreground", variant === "compact" ? "line-clamp-2" : "line-clamp-3")}>
+            {game.description}
+          </p>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 xs:grid-cols-3">
           <GameMetric icon={<Trophy className="h-3.5 w-3.5" aria-hidden="true" />} label="Nivel" value={game.difficulty} />
           <GameMetric icon={<Zap className="h-3.5 w-3.5" aria-hidden="true" />} label="XP" value={`+${game.xpReward}`} />
           <GameMetric icon={<Clock className="h-3.5 w-3.5" aria-hidden="true" />} label="Tempo" value={game.estimatedTime} />
@@ -106,7 +119,7 @@ export function GameCardGrid({
   className?: string;
 }) {
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-3", className)}>
+    <div className={cn("fluid-grid gap-4 [--grid-min:18rem]", className)}>
       {games.map((game, index) => (
         <GameCard key={game.id} game={game} progress={progress[game.id]} variant={variant} index={index} />
       ))}
@@ -118,7 +131,12 @@ function GameThumbnail({ game, icon, accent, compact }: { game: GameDefinition; 
   const code = game.thumbnail.replace(/-/g, " / ");
 
   return (
-    <div className={cn("relative overflow-hidden rounded-md border border-border bg-background/64", compact ? "aspect-[16/8]" : "aspect-[16/9]")}>
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border border-border bg-background/64",
+        compact ? "aspect-[16/8]" : "aspect-[16/9]",
+      )}
+    >
       <div
         className="absolute inset-0 opacity-80"
         style={{
@@ -134,9 +152,7 @@ function GameThumbnail({ game, icon, accent, compact }: { game: GameDefinition; 
 
       <div className="relative flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
-            {icon}
-          </div>
+          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">{icon}</div>
           <span className="game-chip inline-flex items-center gap-1 bg-card/80 px-2.5 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
             treino
@@ -178,40 +194,3 @@ function AnimatedProgress({ value }: { value: number }) {
     </div>
   );
 }
-
-function RarityBadge({ rarity }: { rarity: GameRarity }) {
-  const meta = rarityMeta[rarity];
-  return (
-    <Badge className={cn("border-border bg-card text-foreground", meta.className)}>
-      <span className="mr-1.5 h-1.5 w-1.5 rounded-full" style={{ background: meta.dot }} aria-hidden="true" />
-      {meta.label}
-    </Badge>
-  );
-}
-
-const rarityMeta: Record<GameRarity, { label: string; accent: string; dot: string; className: string }> = {
-  comum: {
-    label: "Bronze",
-    accent: "rgba(190, 128, 52, .32)",
-    dot: "rgb(190, 128, 52)",
-    className: "text-amber-700",
-  },
-  raro: {
-    label: "Prata",
-    accent: "rgba(214, 214, 214, .28)",
-    dot: "rgb(214, 214, 214)",
-    className: "text-muted-foreground",
-  },
-  epico: {
-    label: "Ouro",
-    accent: "rgba(250, 204, 21, .34)",
-    dot: "rgb(250, 204, 21)",
-    className: "text-primary",
-  },
-  lendario: {
-    label: "Diamante",
-    accent: "rgba(255, 255, 255, .34)",
-    dot: "rgb(255, 255, 255)",
-    className: "text-secondary",
-  },
-};

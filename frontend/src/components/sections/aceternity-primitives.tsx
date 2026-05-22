@@ -6,7 +6,13 @@ import { cn } from "@/utils";
 
 export function Reveal({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.5, delay, ease: "easeOut" }} className={className}>
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      className={className}
+    >
       {children}
     </motion.div>
   );
@@ -29,10 +35,7 @@ export function HoverGlowCard({ children, className, delay = 0 }: { children: Re
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.42, delay, ease: "easeOut" }}
       whileHover={{ y: -6 }}
-      className={cn(
-        "game-tile group relative overflow-hidden bg-card p-5 transition-colors hover:bg-primary/10",
-        className,
-      )}
+      className={cn("game-tile group relative overflow-hidden bg-card p-5 transition-colors hover:bg-primary/10", className)}
     >
       {children}
     </motion.div>
@@ -49,10 +52,10 @@ export function MovingBorderPanel({ children, className }: { children: React.Rea
 
 export function MetricRail({ items }: { items: { value: string; label: string }[] }) {
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="fluid-grid gap-3 [--grid-min:12rem]">
       {items.map((item, index) => (
         <Reveal key={item.label} delay={index * 0.05} className="game-tile bg-card p-4 text-center md:text-left">
-          <p className="text-4xl font-semibold tracking-normal text-foreground">{item.value}</p>
+          <p className="text-[clamp(2rem,8vw,2.5rem)] font-semibold tracking-normal text-foreground">{item.value}</p>
           <p className="mt-2 text-sm font-medium text-muted-foreground">{item.label}</p>
         </Reveal>
       ))}

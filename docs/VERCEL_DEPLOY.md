@@ -33,6 +33,8 @@ DATABASE_URL=postgresql+psycopg://user:password@host:5432/database?sslmode=requi
 JWT_SECRET_KEY=um-segredo-forte
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5.5
+REDIS_URL=redis://default:senha@host:6379/0
+SEED_DEMO_DATA=false
 FRONTEND_ORIGIN=https://seu-frontend.vercel.app
 ENVIRONMENT=production
 ```

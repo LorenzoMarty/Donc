@@ -12,7 +12,6 @@ export const structureGames: GameDefinition[] = [
     thumbnail: "estrutura-monte-redacao",
     progress: 0,
     unlocked: true,
-    rarity: "epico",
     engine: "sequence",
     skill: "Estrutura logica",
     questions: [
@@ -21,7 +20,8 @@ export const structureGames: GameDefinition[] = [
         prompt: "Organize os blocos da redacao na estrutura correta.",
         options: ["Introducao", "Desenvolvimento", "Conclusao", "Banco de frases"],
         answerIndex: 0,
-        explanation: "Uma redacao ENEM coerente apresenta contextualizacao e tese, desenvolve argumentos e fecha com proposta de intervencao.",
+        explanation:
+          "Uma redacao ENEM coerente apresenta contextualizacao e tese, desenvolve argumentos e fecha com proposta de intervencao.",
       },
     ],
   },
@@ -36,14 +36,18 @@ export const structureGames: GameDefinition[] = [
     thumbnail: "estrutura-paragrafo",
     progress: 0,
     unlocked: true,
-    rarity: "comum",
     engine: "sequence",
     skill: "Estrutura",
     questions: [
       {
         id: "q1",
         prompt: "Qual ordem deixa o desenvolvimento mais claro?",
-        options: ["Topico frasal > explicacao > exemplo > fechamento", "Exemplo > proposta > tese > titulo", "Fechamento > exemplo > tema > agente", "Repertorio > titulo > conclusao > causa"],
+        options: [
+          "Topico frasal > explicacao > exemplo > fechamento",
+          "Exemplo > proposta > tese > titulo",
+          "Fechamento > exemplo > tema > agente",
+          "Repertorio > titulo > conclusao > causa",
+        ],
         answerIndex: 0,
         explanation: "A ordem conduz a ideia central antes de provar e concluir o raciocinio.",
       },
@@ -60,7 +64,6 @@ export const structureGames: GameDefinition[] = [
     thumbnail: "estrutura-intervencao",
     progress: 0,
     unlocked: true,
-    rarity: "epico",
     engine: "quiz",
     skill: "Competencia 5",
     questions: [
@@ -89,7 +92,6 @@ export const structureGames: GameDefinition[] = [
     thumbnail: "competencias-diagnostico",
     progress: 0,
     unlocked: true,
-    rarity: "raro",
     engine: "quiz",
     skill: "Competencias ENEM",
     questions: [
@@ -113,14 +115,18 @@ export const structureGames: GameDefinition[] = [
     thumbnail: "daily-sprint",
     progress: 0,
     unlocked: true,
-    rarity: "comum",
     engine: "quiz",
     skill: "Rotina",
     questions: [
       {
         id: "q1",
         prompt: "Qual acao de 10 minutos mais melhora a escrita hoje?",
-        options: ["Revisar uma tese e um conectivo", "Abrir varias abas sem escrever", "Copiar repertorios sem contexto", "Contar apenas XP"],
+        options: [
+          "Revisar uma tese e um conectivo",
+          "Abrir varias abas sem escrever",
+          "Copiar repertorios sem contexto",
+          "Contar apenas XP",
+        ],
         answerIndex: 0,
         explanation: "Rotina pequena e objetiva gera consistencia real.",
       },

@@ -5,11 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatScore(score?: number | null) {
-  if (score === null || score === undefined) return "0";
-  return new Intl.NumberFormat("pt-BR").format(score);
-}
-
 export function initials(name: string) {
   return name
     .split(" ")
@@ -18,4 +13,3 @@ export function initials(name: string) {
     .join("")
     .toUpperCase();
 }
-

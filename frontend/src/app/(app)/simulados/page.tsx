@@ -69,7 +69,7 @@ export default function ExamsPage() {
       />
 
       {!active ? (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="fluid-grid gap-4 [--grid-min:17rem]">
           {exams.map((exam) => (
             <Surface key={exam.id}>
               <div className="mb-4">
@@ -82,6 +82,7 @@ export default function ExamsPage() {
                   <span>{exam.duration_minutes} min</span>
                 </div>
                 <Button
+                  className="w-full"
                   onClick={() => {
                     setActive(exam);
                     setSeconds(0);
@@ -97,7 +98,7 @@ export default function ExamsPage() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)]">
           <div className="space-y-4">
             {active.questions.map((question, index) => (
               <Surface key={question.id}>
@@ -116,7 +117,7 @@ export default function ExamsPage() {
                         type="button"
                         disabled={Boolean(result)}
                         onClick={() => setAnswers((current) => ({ ...current, [String(question.id)]: letter }))}
-                        className={`game-tile w-full bg-background/58 p-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 ${answers[String(question.id)] === letter ? "bg-primary/20" : ""}`}
+                        className={`game-tile min-h-11 w-full bg-background/58 p-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 ${answers[String(question.id)] === letter ? "bg-primary/20" : ""}`}
                       >
                         {option}
                       </button>
@@ -129,14 +130,16 @@ export default function ExamsPage() {
           <Surface className="h-fit">
             <div className="mb-4">
               <h2 className="text-xl font-semibold tracking-normal">Resumo</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{Object.keys(answers).length}/{active.questions.length} respondidas</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {Object.keys(answers).length}/{active.questions.length} respondidas
+              </p>
             </div>
             <div className="space-y-4">
               {result ? (
                 <>
                   <div className="game-tile bg-secondary/10 p-4 text-center">
                     <Trophy className="mx-auto mb-2 h-6 w-6 text-secondary" aria-hidden="true" />
-                    <p className="text-4xl font-bold tracking-normal">{result.score}%</p>
+                    <p className="text-[clamp(2rem,9vw,2.5rem)] font-bold tracking-normal">{result.score}%</p>
                     <p className="text-sm text-muted-foreground">{result.correct_answers} acertos</p>
                   </div>
                   {Object.entries(result.performance_by_skill).map(([skill, value]) => (

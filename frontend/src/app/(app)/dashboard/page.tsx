@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, ArrowRight, BookOpenCheck, CalendarDays, Clock3, FileText, LineChart, PenLine, ShieldCheck, Target } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarDays, FileText, PenLine, Target } from "lucide-react";
 
 import { CompetencyBarChart, ScoreAreaChart } from "@/components/shared/charts";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
   if (!data) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="fluid-grid gap-4 [--grid-min:16rem]">
         <LoadingCard />
         <LoadingCard />
         <LoadingCard />
@@ -55,7 +55,6 @@ export default function DashboardPage() {
   const nextLesson = data.recent_lessons[0];
   const nextExercise = data.pending_exercises[0];
   const consistency = Math.min(100, Math.round((data.streak_days / 7) * 100));
-  const practiceMinutes = Math.max(45, data.completed_lessons * 18 + data.essays_written * 35);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -73,7 +72,7 @@ export default function DashboardPage() {
         }
       />
 
-      <section className="grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
         <Surface className="min-h-[300px]">
           <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
@@ -105,27 +104,37 @@ export default function DashboardPage() {
             <MiniMetric label="Media" value={String(data.essay_average)} />
             <MiniMetric label="Textos" value={String(data.essays_written)} />
           </div>
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">XP: {data.xp} pontos secundarios. A progressao principal e medida por escrita e desempenho.</p>
+          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+            XP: {data.xp} pontos secundarios. A progressao principal e medida por escrita e desempenho.
+          </p>
         </Surface>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <AcademicMetric label="Frequencia" value={`${data.streak_days}/7`} helper="dias recentes com estudo" icon={CalendarDays} />
-        <AcademicMetric label="Precisao" value={`${data.correct_exercises_rate}%`} helper="media nas praticas" icon={Target} />
-        <AcademicMetric label="Tempo" value={`${practiceMinutes} min`} helper="estimativa da semana" icon={Clock3} />
-        <AcademicMetric label="Aulas" value={String(data.completed_lessons)} helper="conteudos concluidos" icon={BookOpenCheck} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <Surface>
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Continue evoluindo</p>
             <h2 className="mt-1 text-xl font-semibold tracking-normal">Proximo passo recomendado</h2>
           </div>
           <div className="space-y-3">
-            <ActionRow icon={PenLine} title="Continuar redacao em andamento" detail="Retome o texto e finalize um paragrafo antes da proxima correcao." href="/redacao" />
-            <ActionRow icon={FileText} title="Revisar historico de correcoes" detail={`${data.essays_written} textos registrados para comparar evolucao.`} href="/redacoes" />
-            <ActionRow icon={Target} title={nextExercise?.skill ?? "Praticar conectivos"} detail="Exercicio curto baseado nos pontos que mais derrubam coesao." href="/games" />
+            <ActionRow
+              icon={PenLine}
+              title="Continuar redacao em andamento"
+              detail="Retome o texto e finalize um paragrafo antes da proxima correcao."
+              href="/redacao"
+            />
+            <ActionRow
+              icon={FileText}
+              title="Revisar historico de correcoes"
+              detail={`${data.essays_written} textos registrados para comparar evolucao.`}
+              href="/redacoes"
+            />
+            <ActionRow
+              icon={Target}
+              title={nextExercise?.skill ?? "Praticar conectivos"}
+              detail="Exercicio curto baseado nos pontos que mais derrubam coesao."
+              href="/games"
+            />
           </div>
         </Surface>
 
@@ -141,16 +150,32 @@ export default function DashboardPage() {
         </Surface>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
         <Surface>
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Pratica inteligente</p>
             <h2 className="mt-1 text-xl font-semibold tracking-normal">Sugestoes contextualizadas</h2>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Recommendation title="Coesao textual" description="Treine retomadas e conectivos para reduzir repeticao no desenvolvimento." href="/games" />
-            <Recommendation title="Repertorio produtivo" description="Reescreva uma referencia conectando causa, tese e consequencia." href="/redacao" />
-            <Recommendation title={nextLesson?.title ?? "Aula recomendada"} description={nextLesson ? `Continue ${nextLesson.module} em ${nextLesson.progress_percent}% de progresso.` : "Assista uma aula curta antes da proxima escrita."} href={nextLesson ? `/aulas/${nextLesson.id}` : "/aulas"} />
+          <div className="fluid-grid gap-3 [--grid-min:13rem]">
+            <Recommendation
+              title="Coesao textual"
+              description="Treine retomadas e conectivos para reduzir repeticao no desenvolvimento."
+              href="/games"
+            />
+            <Recommendation
+              title="Repertorio produtivo"
+              description="Reescreva uma referencia conectando causa, tese e consequencia."
+              href="/redacao"
+            />
+            <Recommendation
+              title={nextLesson?.title ?? "Aula recomendada"}
+              description={
+                nextLesson
+                  ? `Continue ${nextLesson.module} em ${nextLesson.progress_percent}% de progresso.`
+                  : "Assista uma aula curta antes da proxima escrita."
+              }
+              href={nextLesson ? `/aulas/${nextLesson.id}` : "/aulas"}
+            />
           </div>
         </Surface>
 
@@ -179,8 +204,11 @@ export default function DashboardPage() {
             <Link href="/redacoes">Abrir workspace</Link>
           </Button>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
-          {(data.recent_lessons.length ? data.recent_lessons.slice(0, 3) : [{ id: 1, title: "Estrutura dissertativa", module: "Redacao", progress_percent: 64 }]).map((lesson) => (
+        <div className="fluid-grid gap-3 [--grid-min:13rem]">
+          {(data.recent_lessons.length
+            ? data.recent_lessons.slice(0, 3)
+            : [{ id: 1, title: "Estrutura dissertativa", module: "Redacao", progress_percent: 64 }]
+          ).map((lesson) => (
             <div key={lesson.id} className="game-tile bg-background/58 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Aula</p>
               <p className="mt-2 font-semibold">{lesson.title}</p>
@@ -191,23 +219,6 @@ export default function DashboardPage() {
         </div>
       </Surface>
     </div>
-  );
-}
-
-function AcademicMetric({ label, value, helper, icon: Icon }: { label: string; value: string; helper: string; icon: LucideIcon }) {
-  return (
-    <Surface className="min-h-[142px]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
-        </div>
-        <div className="grid h-10 w-10 place-items-center rounded-md bg-primary/12 text-secondary">
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </div>
-      </div>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{helper}</p>
-    </Surface>
   );
 }
 

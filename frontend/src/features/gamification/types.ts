@@ -1,14 +1,21 @@
 import type { LucideIcon } from "lucide-react";
 
-export type GameCategoryId = "estrutura" | "coesao" | "argumentacao" | "repertorio" | "gramatica" | "competencias-enem" | "desafios-diarios";
+export type GameCategoryId =
+  | "estrutura"
+  | "coesao"
+  | "argumentacao"
+  | "repertorio"
+  | "gramatica"
+  | "competencias-enem"
+  | "desafios-diarios";
 
 export type GameDifficulty = "Essencial" | "Intermediario" | "Avancado";
 
-export type GameRarity = "comum" | "raro" | "epico" | "lendario";
+type BadgeRarity = "comum" | "raro" | "epico" | "lendario";
 
-export type GameEngine = "quiz" | "choice" | "sequence";
+type GameEngine = "quiz" | "choice" | "sequence";
 
-export type GameQuestion = {
+type GameQuestion = {
   id: string;
   prompt: string;
   options: string[];
@@ -27,7 +34,6 @@ export type GameDefinition = {
   thumbnail: string;
   progress: number;
   unlocked: boolean;
-  rarity: GameRarity;
   engine: GameEngine;
   skill: string;
   questions: GameQuestion[];
@@ -72,7 +78,7 @@ export type BadgeDefinition = {
   name: string;
   description: string;
   icon: LucideIcon;
-  rarity: GameRarity;
+  rarity: BadgeRarity;
 };
 
 export type StreakState = {

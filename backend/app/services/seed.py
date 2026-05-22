@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.security import get_password_hash
 from app.models import (
     Achievement,
+    Course,
     Difficulty,
     Essay,
     EssayCorrection,
@@ -18,7 +19,6 @@ from app.models import (
     MockExam,
     MockExamQuestion,
     Module,
-    Subject,
     User,
     UserAchievement,
     UserRole,
@@ -444,11 +444,26 @@ EXERCISE_SPECS = [
 ]
 
 
-def seed_database(db: Session) -> None:
+def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
     user_count = db.scalar(select(func.count(User.id))) or 0
     if user_count:
+        ensure_course_catalog(db)
         seed_missing_exercises(db)
-        seed_missing_demo_essays(db)
+        seed_missing_themes(db)
+        seed_missing_mock_exam(db)
+        seed_missing_achievements(db)
+        if include_demo_data:
+            seed_missing_demo_essays(db)
+        db.commit()
+        return
+
+    if not include_demo_data:
+        ensure_course_catalog(db)
+        seed_missing_exercises(db)
+        seed_missing_themes(db)
+        seed_missing_mock_exam(db)
+        seed_missing_achievements(db)
+        db.commit()
         return
 
     student = User(
@@ -474,106 +489,7 @@ def seed_database(db: Session) -> None:
     db.add_all([student, admin])
     db.flush()
 
-    subjects = [
-        Subject(
-            title="Redacao ENEM",
-            slug="redacao-enem",
-            description="Metodo completo para tese, argumentacao, repertorio e intervencao nota 1000.",
-            color="#C9A227",
-        ),
-        Subject(
-            title="Gramatica",
-            slug="gramatica",
-            description="Norma-padrao aplicada a questoes e redacoes, sem decoreba improdutiva.",
-            color="#8A6F2A",
-        ),
-        Subject(
-            title="Interpretacao",
-            slug="interpretacao",
-            description="Leitura de textos verbais, nao verbais, generos e estrategias ENEM.",
-            color="#6F6A2A",
-        ),
-        Subject(
-            title="Literatura",
-            slug="literatura",
-            description="Movimentos literarios, repertorios e relacao com linguagem contemporanea.",
-            color="#8A6F2A",
-        ),
-    ]
-    db.add_all(subjects)
-    db.flush()
-
-    module_specs = [
-        (subjects[0], "Fundamentos da Redacao", "Da compreensao do tema ao projeto de texto.", 1),
-        (subjects[0], "Competencias do ENEM", "Como a banca enxerga cada criterio da matriz.", 2),
-        (subjects[1], "Norma-padrao Essencial", "Concordancia, regencia, crase e pontuacao aplicadas.", 1),
-        (subjects[2], "Leitura Estrategica", "Inferencia, intencionalidade e efeitos de sentido.", 1),
-        (subjects[3], "Repertorio Literario", "Autores, escolas e conexoes para argumentar melhor.", 1),
-    ]
-    modules = [Module(subject_id=subject.id, title=title, description=description, order=order) for subject, title, description, order in module_specs]
-    db.add_all(modules)
-    db.flush()
-
-    lesson_specs = [
-        (
-            modules[0],
-            "Como decodificar o tema",
-            "Aprenda a encontrar recorte, palavras-chave e problema social.",
-            "Identifique comando, eixo tematico, publico atingido e conflito social. O primeiro paragrafo precisa mostrar que voce entendeu o recorte, nao apenas o assunto geral.",
-            1,
-        ),
-        (
-            modules[0],
-            "Tese forte em 3 movimentos",
-            "Construa uma tese clara, defensavel e produtiva.",
-            "Uma boa tese antecipa a linha argumentativa. Use causa, consequencia e responsabilidade social para abrir caminhos para os paragrafos seguintes.",
-            2,
-        ),
-        (
-            modules[1],
-            "Competencia 5 sem formula vazia",
-            "Monte intervencoes completas e realistas.",
-            "A proposta de intervencao precisa ter agente, acao, meio, finalidade e detalhamento. Evite solucoes genericas que nao enfrentam a raiz do problema.",
-            1,
-        ),
-        (
-            modules[2],
-            "Pontuacao que muda sentido",
-            "Use virgulas para clareza e precisao argumentativa.",
-            "Pontuacao organiza relacoes sintaticas e argumentativas. No ENEM, pontuar bem melhora fluidez e reduz ambiguidades.",
-            1,
-        ),
-        (
-            modules[3],
-            "Inferencia em textos multimodais",
-            "Leia imagem, legenda, ironia e contexto como um conjunto.",
-            "Questoes ENEM raramente pedem definicao isolada. Elas avaliam relacoes entre linguagem, contexto e intencao comunicativa.",
-            1,
-        ),
-        (
-            modules[4],
-            "Modernismo como repertorio",
-            "Use literatura para discutir identidade nacional e desigualdade.",
-            "O Modernismo oferece repertorios para cultura brasileira, ruptura estetica e tensoes sociais. Use a referencia quando ela servir ao argumento.",
-            1,
-        ),
-    ]
-    lessons: list[Lesson] = []
-    for index, (module, title, description, summary, order) in enumerate(lesson_specs, start=1):
-        lessons.append(
-            Lesson(
-                module_id=module.id,
-                title=title,
-                description=description,
-                thumbnail_url=f"https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80&ixid=lesson-{index}",
-                video_url="https://www.youtube.com/embed/dQw4w9WgXcQ",
-                summary=summary,
-                duration_minutes=14 + index * 3,
-                order=order,
-            )
-        )
-    db.add_all(lessons)
-    db.flush()
+    _, modules, lessons = ensure_course_catalog(db)
 
     module_by_title = {module.title: module for module in modules}
     lesson_by_title = {lesson.title: lesson for lesson in lessons}
@@ -691,6 +607,181 @@ def seed_database(db: Session) -> None:
 
     seed_missing_demo_essays(db)
     db.commit()
+
+
+def ensure_course_catalog(db: Session) -> tuple[Course, list[Module], list[Lesson]]:
+    course = db.scalar(select(Course).where(Course.slug == "destrave-redacao"))
+    if not course:
+        course = Course(slug="destrave-redacao")
+        db.add(course)
+
+    course.title = "Destrave a redação"
+    course.description = "Curso inicial para sair do bloqueio e montar uma redação ENEM com tema, tese, argumentos, coesão e intervenção."
+    course.color = "#C9A227"
+    db.flush()
+
+    module_specs = [
+        ("Fundamentos da Redacao", "Da compreensao do tema ao projeto de texto.", 1),
+        ("Competencias do ENEM", "Como a banca enxerga cada criterio da matriz.", 2),
+        ("Norma-padrao Essencial", "Concordancia, regencia, crase e pontuacao aplicadas.", 3),
+        ("Leitura Estrategica", "Inferencia, intencionalidade e efeitos de sentido.", 4),
+        ("Repertorio Literario", "Autores, escolas e conexoes para argumentar melhor.", 5),
+    ]
+    existing_modules = {
+        module.title: module
+        for module in db.scalars(select(Module).where(Module.course_id == course.id))
+    }
+    modules: list[Module] = []
+    for title, description, order in module_specs:
+        module = existing_modules.get(title)
+        if not module:
+            module = Module(course_id=course.id, title=title)
+            db.add(module)
+        module.description = description
+        module.order = order
+        modules.append(module)
+    db.flush()
+
+    modules_by_title = {module.title: module for module in modules}
+    lesson_specs = [
+        (
+            "Fundamentos da Redacao",
+            "Como decodificar o tema",
+            "Aprenda a encontrar recorte, palavras-chave e problema social.",
+            "Identifique comando, eixo tematico, publico atingido e conflito social. O primeiro paragrafo precisa mostrar que voce entendeu o recorte, nao apenas o assunto geral.",
+            1,
+        ),
+        (
+            "Fundamentos da Redacao",
+            "Tese forte em 3 movimentos",
+            "Construa uma tese clara, defensavel e produtiva.",
+            "Uma boa tese antecipa a linha argumentativa. Use causa, consequencia e responsabilidade social para abrir caminhos para os paragrafos seguintes.",
+            2,
+        ),
+        (
+            "Competencias do ENEM",
+            "Competencia 5 sem formula vazia",
+            "Monte intervencoes completas e realistas.",
+            "A proposta de intervencao precisa ter agente, acao, meio, finalidade e detalhamento. Evite solucoes genericas que nao enfrentam a raiz do problema.",
+            1,
+        ),
+        (
+            "Norma-padrao Essencial",
+            "Pontuacao que muda sentido",
+            "Use virgulas para clareza e precisao argumentativa.",
+            "Pontuacao organiza relacoes sintaticas e argumentativas. No ENEM, pontuar bem melhora fluidez e reduz ambiguidades.",
+            1,
+        ),
+        (
+            "Leitura Estrategica",
+            "Inferencia em textos multimodais",
+            "Leia imagem, legenda, ironia e contexto como um conjunto.",
+            "Questoes ENEM raramente pedem definicao isolada. Elas avaliam relacoes entre linguagem, contexto e intencao comunicativa.",
+            1,
+        ),
+        (
+            "Repertorio Literario",
+            "Modernismo como repertorio",
+            "Use literatura para discutir identidade nacional e desigualdade.",
+            "O Modernismo oferece repertorios para cultura brasileira, ruptura estetica e tensoes sociais. Use a referencia quando ela servir ao argumento.",
+            1,
+        ),
+    ]
+    existing_lessons = {
+        (lesson.module_id, lesson.title): lesson
+        for lesson in db.scalars(select(Lesson).where(Lesson.module_id.in_([module.id for module in modules])))
+    }
+    lessons: list[Lesson] = []
+    for index, (module_title, title, description, summary, order) in enumerate(lesson_specs, start=1):
+        module = modules_by_title[module_title]
+        lesson = existing_lessons.get((module.id, title))
+        if not lesson:
+            lesson = Lesson(module_id=module.id, title=title)
+            db.add(lesson)
+        lesson.description = description
+        lesson.thumbnail_url = f"https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80&ixid=lesson-{index}"
+        lesson.video_url = "https://www.youtube.com/embed/dQw4w9WgXcQ"
+        lesson.summary = summary
+        lesson.duration_minutes = 14 + index * 3
+        lesson.order = order
+        lessons.append(lesson)
+    db.flush()
+
+    return course, modules, lessons
+
+
+def seed_missing_themes(db: Session) -> None:
+    theme_specs = [
+        (
+            "Desafios para a democratizacao do acesso a educacao digital no Brasil",
+            "Considere desigualdade de acesso a internet, infraestrutura escolar, formacao docente e cidadania digital.",
+            "Donk ENEM",
+        ),
+        (
+            "Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
+            "Reflita sobre genero, economia, politicas publicas, reconhecimento social e direitos trabalhistas.",
+            "Donk ENEM",
+        ),
+        (
+            "A importancia da leitura critica na formacao dos jovens brasileiros",
+            "Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
+            "Donk ENEM",
+        ),
+    ]
+    existing_titles = set(db.scalars(select(EssayTheme.title)))
+    for title, context, source in theme_specs:
+        if title not in existing_titles:
+            db.add(EssayTheme(title=title, context=context, source=source))
+
+
+def seed_missing_mock_exam(db: Session) -> None:
+    title = "Simulado ENEM Linguagens I"
+    if db.scalar(select(MockExam).where(MockExam.title == title)):
+        return
+
+    exam = MockExam(title=title, description="Bloco curto para treino de interpretacao, gramatica e redacao.", duration_minutes=45)
+    db.add(exam)
+    db.flush()
+    db.add_all(
+        [
+            MockExamQuestion(
+                exam_id=exam.id,
+                statement="Em textos publicitarios, o uso do imperativo geralmente busca:",
+                options=["A) Narrar eventos passados.", "B) Convocar o leitor a uma acao.", "C) Apagar a intencao persuasiva.", "D) Descrever apenas paisagens.", "E) Eliminar marcas de interlocucao."],
+                correct_answer="B",
+                explanation="O imperativo aproxima o interlocutor e reforca a chamada para acao.",
+                skill="Funcoes da linguagem",
+            ),
+            MockExamQuestion(
+                exam_id=exam.id,
+                statement="A coesao referencial ocorre quando um termo:",
+                options=["A) Retoma ou antecipa outro elemento textual.", "B) Contradiz a tese obrigatoriamente.", "C) Substitui a pontuacao.", "D) Remove conectivos.", "E) Impede inferencias."],
+                correct_answer="A",
+                explanation="Pronomes, sinonimos e expressoes equivalentes podem retomar informacoes e evitar repeticao.",
+                skill="Coesao",
+            ),
+            MockExamQuestion(
+                exam_id=exam.id,
+                statement="Uma tese produtiva para redacao deve:",
+                options=["A) Ser vaga para servir a qualquer tema.", "B) Apresentar posicao clara sobre o problema.", "C) Evitar relacao com os argumentos.", "D) Copiar integralmente a proposta.", "E) Ser sempre uma pergunta."],
+                correct_answer="B",
+                explanation="A tese orienta o projeto de texto e precisa deixar evidente o posicionamento do autor.",
+                skill="Redacao ENEM",
+            ),
+        ]
+    )
+
+
+def seed_missing_achievements(db: Session) -> None:
+    specs = [
+        ("first_essay", "Primeira Redacao", "Enviou a primeira redacao para correcao.", "pen-line", 100),
+        ("streak_7", "Sequencia 7 dias", "Manteve uma rotina de estudo por sete dias.", "flame", 120),
+        ("grammar_focus", "Precisao Gramatical", "Concluiu uma trilha de norma-padrao.", "badge-check", 80),
+    ]
+    existing_codes = set(db.scalars(select(Achievement.code)))
+    for code, title, description, icon, xp_reward in specs:
+        if code not in existing_codes:
+            db.add(Achievement(code=code, title=title, description=description, icon=icon, xp_reward=xp_reward))
 
 
 def seed_missing_demo_essays(db: Session) -> None:
@@ -842,10 +933,19 @@ def seed_missing_demo_essays(db: Session) -> None:
 
 
 def seed_missing_exercises(db: Session) -> None:
-    module_by_title = {module.title: module for module in db.scalars(select(Module))}
-    lesson_by_title = {lesson.title: lesson for lesson in db.scalars(select(Lesson))}
-    existing_statements = set(db.scalars(select(Exercise.statement)))
-    exercises = build_exercises(module_by_title, lesson_by_title, existing_statements)
+    course = db.scalar(select(Course).where(Course.slug == "destrave-redacao"))
+    if not course:
+        return
+
+    modules = list(db.scalars(select(Module).where(Module.course_id == course.id)))
+    module_ids = [module.id for module in modules]
+    if not module_ids:
+        return
+
+    module_by_title = {module.title: module for module in modules}
+    lesson_by_title = {lesson.title: lesson for lesson in db.scalars(select(Lesson).where(Lesson.module_id.in_(module_ids)))}
+    existing_exercises = {tuple(row) for row in db.execute(select(Exercise.module_id, Exercise.statement))}
+    exercises = build_exercises(module_by_title, lesson_by_title, existing_exercises)
     if exercises:
         db.add_all(exercises)
         db.commit()
@@ -854,16 +954,16 @@ def seed_missing_exercises(db: Session) -> None:
 def build_exercises(
     module_by_title: dict[str, Module],
     lesson_by_title: dict[str, Lesson],
-    existing_statements: set[str] | None = None,
+    existing_exercises: set[tuple[int, str]] | None = None,
 ) -> list[Exercise]:
-    existing = existing_statements or set()
+    existing = existing_exercises or set()
     exercises: list[Exercise] = []
 
     for spec in EXERCISE_SPECS:
         statement = str(spec["statement"])
         module = module_by_title.get(str(spec["module"]))
         lesson = lesson_by_title.get(str(spec["lesson"]))
-        if not module or statement in existing:
+        if not module or (module.id, statement) in existing:
             continue
 
         exercises.append(

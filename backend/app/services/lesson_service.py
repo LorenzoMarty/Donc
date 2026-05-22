@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.middlewares.errors import AppError
 from app.models import LessonProgress
 from app.repositories.learning import LearningRepository
-from app.schemas.lessons import ExercisePreview, LessonProgressRead, LessonRead, ModuleRead, SubjectRead
+from app.schemas.lessons import CourseRead, ExercisePreview, LessonProgressRead, LessonRead, ModuleRead
 
 
 class LessonService:
@@ -11,15 +11,15 @@ class LessonService:
         self.db = db
         self.repo = LearningRepository(db)
 
-    def list_subjects(self, user_id: int) -> list[SubjectRead]:
-        subjects = self.repo.list_subjects()
+    def list_courses(self, user_id: int) -> list[CourseRead]:
+        courses = self.repo.list_courses()
         return [
-            SubjectRead(
-                id=subject.id,
-                title=subject.title,
-                slug=subject.slug,
-                description=subject.description,
-                color=subject.color,
+            CourseRead(
+                id=course.id,
+                title=course.title,
+                slug=course.slug,
+                description=course.description,
+                color=course.color,
                 modules=[
                     ModuleRead(
                         id=module.id,
@@ -28,10 +28,10 @@ class LessonService:
                         order=module.order,
                         lessons=[self._lesson_schema(lesson, user_id) for lesson in sorted(module.lessons, key=lambda item: item.order)],
                     )
-                    for module in sorted(subject.modules, key=lambda item: item.order)
+                    for module in sorted(course.modules, key=lambda item: item.order)
                 ],
             )
-            for subject in subjects
+            for course in courses
         ]
 
     def get_lesson(self, lesson_id: int, user_id: int) -> LessonRead:
@@ -80,4 +80,3 @@ class LessonService:
                 for ex in lesson.exercises
             ],
         )
-

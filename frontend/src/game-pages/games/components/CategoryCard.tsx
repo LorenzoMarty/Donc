@@ -28,7 +28,10 @@ export function CategoryCard({ category, index }: { category: GameCategory; inde
           style={{ background: category.secondaryColor }}
           aria-hidden="true"
         />
-        <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-primary/55 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
+        <div
+          className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-primary/55 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          aria-hidden="true"
+        />
 
         <div className="relative flex items-start justify-between gap-4">
           <div className="grid h-14 w-14 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
@@ -39,13 +42,13 @@ export function CategoryCard({ category, index }: { category: GameCategory; inde
           </div>
         </div>
 
-        <div className="relative mt-6">
+        <div className="relative mt-5 md:mt-6">
           <div className="game-chip mb-2 inline-flex items-center gap-2 bg-card/80 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <Layers3 className="h-3.5 w-3.5 text-secondary" aria-hidden="true" />
             {category.gameCount} jogos
           </div>
           <h2 className="text-xl font-semibold tracking-normal text-foreground">{category.name}</h2>
-          <p className="mt-2 min-h-[3rem] text-sm leading-6 text-muted-foreground">{category.description}</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground md:min-h-[3rem]">{category.description}</p>
         </div>
 
         <div className="relative mt-6 space-y-2">

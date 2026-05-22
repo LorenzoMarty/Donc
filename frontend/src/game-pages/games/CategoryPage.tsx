@@ -10,10 +10,8 @@ import { defaultGameFilters, GameFilters, type GameFilterState } from "@/game-pa
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useGameStore } from "@/stores/game-store";
 
 export default function CategoryPage({ categorySlug }: { categorySlug: string }) {
-  const progress = useGameStore((state) => state.progress);
   const category = getCategoryBySlug(categorySlug);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<GameFilterState>(defaultGameFilters);
@@ -22,18 +20,11 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
     if (!category) return [];
     const normalizedQuery = query.trim().toLowerCase();
     return getGamesByCategory(category.id).filter((game) => {
-      const gameProgress = progress[game.id]?.progress ?? 0;
       const matchesQuery = !normalizedQuery || `${game.name} ${game.description} ${game.skill}`.toLowerCase().includes(normalizedQuery);
       const matchesDifficulty = filters.difficulty === "Todos" || game.difficulty === filters.difficulty;
-      const matchesRarity = filters.rarity === "Todas" || game.rarity === filters.rarity;
-      const matchesStatus =
-        filters.status === "Todos" ||
-        (filters.status === "Nao iniciados" && gameProgress === 0) ||
-        (filters.status === "Em progresso" && gameProgress > 0 && gameProgress < 90) ||
-        (filters.status === "Dominados" && gameProgress >= 90);
-      return matchesQuery && matchesDifficulty && matchesRarity && matchesStatus;
+      return matchesQuery && matchesDifficulty;
     });
-  }, [category, filters, progress, query]);
+  }, [category, filters, query]);
 
   if (!category) {
     return (
@@ -76,8 +67,16 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
             </div>
           </div>
           <div className="relative w-full lg:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar jogo ou habilidade" className="pl-9" />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar jogo ou habilidade"
+              className="pl-9"
+            />
           </div>
         </div>
         <div className="mt-5">
@@ -85,7 +84,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
         </div>
       </Surface>
 
-      <GameCardGrid games={games} progress={progress} />
+      <GameCardGrid games={games} progress={{}} />
     </div>
   );
 }

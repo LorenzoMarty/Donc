@@ -14,7 +14,7 @@ class Difficulty(str, Enum):
     HARD = "hard"
 
 
-class Subject(Base):
+class Course(Base):
     __tablename__ = "subjects"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -23,19 +23,19 @@ class Subject(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     color: Mapped[str] = mapped_column(String(40), default="#C9A227")
 
-    modules = relationship("Module", back_populates="subject", cascade="all, delete-orphan")
+    modules = relationship("Module", back_populates="course", cascade="all, delete-orphan")
 
 
 class Module(Base):
     __tablename__ = "modules"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    subject_id: Mapped[int] = mapped_column(ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
+    course_id: Mapped[int] = mapped_column("subject_id", ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0)
 
-    subject = relationship("Subject", back_populates="modules")
+    course = relationship("Course", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     exercises = relationship("Exercise", back_populates="module", cascade="all, delete-orphan")
 

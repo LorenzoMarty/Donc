@@ -1,31 +1,76 @@
 "use client";
 
+import { useEffect, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, ChevronRight, Gamepad2, FilePenLine, LayoutDashboard, Medal, ShieldCheck, UserRound } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  ChevronRight,
+  FilePenLine,
+  Gamepad2,
+  LayoutDashboard,
+  LogOut,
+  Medal,
+  Menu,
+  ShieldCheck,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
-import { useAuth } from "@/providers/app-providers";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/providers/app-providers";
 import { cn, initials } from "@/utils";
 
-const workspaceNav = [
+type WorkspaceNavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+const workspaceNav: WorkspaceNavItem[] = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/games", label: "Jogos", icon: Gamepad2 },
-  { href: "/redacao", label: "Redação", icon: FilePenLine },
+  { href: "/redacao", label: "Redacao", icon: FilePenLine },
   { href: "/conquistas", label: "Evolucao", icon: Medal },
-  { href: "/redacoes", label: "Histórico", icon: BarChart3 },
+  { href: "/redacoes", label: "Historico", icon: BarChart3 },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }] : workspaceNav;
+
+  useEffect(() => {
+    if (!drawerOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDrawerOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [drawerOpen]);
 
   if (loading) {
     return (
-      <main className="website-shell grid min-h-screen place-items-center bg-background p-6">
-        <div className="game-surface w-full max-w-md p-6">
+      <main className="website-shell grid min-h-screen place-items-center bg-background p-4 xs:p-6">
+        <div className="game-surface w-full max-w-md p-5 xs:p-6">
           <Skeleton className="mb-5 h-12 w-36" />
           <Skeleton className="mb-3 h-4 w-full" />
           <Skeleton className="mb-3 h-4 w-5/6" />
@@ -37,88 +82,218 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="website-shell min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/82 backdrop-blur-xl">
-        <div className="mx-auto flex min-h-20 w-full max-w-7xl flex-col gap-3 px-4 py-3 md:px-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex items-center justify-between gap-4">
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-md border border-primary/35 bg-primary text-primary-foreground">
-                <span className="text-sm font-semibold">D</span>
-              </div>
-              <div>
-                <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-                  Donk ENEM
-                </p>
-                <p className="text-lg font-semibold tracking-normal">Area ENEM</p>
-              </div>
+      <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
+      <DesktopSidebar
+        items={navItems}
+        pathname={pathname}
+        userName={user?.name ?? "Aluno"}
+        userLevel={user?.level ?? 1}
+        onLogout={logout}
+      />
+      <MobileDrawer
+        items={navItems}
+        open={drawerOpen}
+        pathname={pathname}
+        userName={user?.name ?? "Aluno"}
+        userLevel={user?.level ?? 1}
+        onClose={() => setDrawerOpen(false)}
+        onLogout={logout}
+      />
+
+      <div className="min-h-screen md:pl-20 xl:pl-72">
+        <main className="mx-auto min-h-[calc(100dvh-11rem)] w-full max-w-[1536px] px-3 pb-5 pt-[calc(4.75rem+env(safe-area-inset-top))] xs:px-4 sm:px-5 md:px-6 md:pt-6 lg:py-8 xl:px-8">
+          {children}
+        </main>
+
+        <footer className="mx-auto w-full max-w-[1536px] px-3 pb-5 pt-2 xs:px-4 sm:px-5 md:px-6 md:pb-8 xl:px-8">
+          <div className="game-surface flex flex-col justify-between gap-3 bg-card p-4 text-sm text-muted-foreground sm:flex-row sm:items-center">
+            <p>Donk ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
+            <Link href="/pricing" className="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground">
+              Ver planos
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Link>
-            <div className="flex items-center gap-2 xl:hidden">
-              <Link href="/perfil" className="grid h-11 w-11 place-items-center rounded-md border border-border bg-card shadow-sm">
-                <UserRound className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </div>
           </div>
-
-          <nav className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar xl:justify-center xl:pb-0">
-            {workspaceNav.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-transparent px-3 text-sm font-semibold text-muted-foreground transition-all hover:border-primary/25 hover:bg-primary/10 hover:text-foreground",
-                    active && "border-primary/35 bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  {item.label}
-                </Link>
-              );
-            })}
-            {user?.role === "admin" && (
-              <Link
-                href="/admin"
-                className={cn(
-                  "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-md border border-transparent px-3 text-sm font-semibold text-muted-foreground transition-all hover:border-primary/25 hover:bg-primary/10 hover:text-foreground",
-                  pathname.startsWith("/admin") && "bg-primary text-primary-foreground",
-                )}
-              >
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                Administração
-              </Link>
-            )}
-          </nav>
-
-          <div className="hidden items-center gap-3 xl:flex">
-            <Link href="/perfil" className="flex items-center gap-3 rounded-md border border-border bg-card/72 py-1.5 pl-1.5 pr-4 transition-all hover:-translate-y-0.5 hover:border-primary/35">
-              <div className="grid h-9 w-9 place-items-center rounded-sm border border-primary/30 bg-primary text-sm font-semibold text-primary-foreground">
-                {initials(user?.name ?? "Aluno")}
-              </div>
-              <div className="leading-tight">
-                <p className="text-sm font-semibold">{user?.name ?? "Aluno"}</p>
-                <p className="text-xs text-muted-foreground">Consistencia {user?.level ?? 1}</p>
-              </div>
-            </Link>
-            <Button variant="outline" onClick={logout}>
-              Sair
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-7xl px-4 py-5 md:px-6 md:py-8">{children}</main>
-
-      <footer className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 md:px-6">
-        <div className="game-surface flex flex-col justify-between gap-3 bg-card p-4 text-sm text-muted-foreground md:flex-row md:items-center">
-          <p>Donk ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
-          <Link href="/pricing" className="inline-flex items-center gap-2 font-semibold text-foreground">
-            Ver planos
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
+  );
+}
+
+function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
+  return (
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/88 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
+      <div className="flex min-h-16 items-center justify-between gap-3 px-3 xs:px-4">
+        <BrandLink compact />
+        <Button variant="outline" size="icon" aria-label="Abrir menu" onClick={onMenuClick}>
+          <Menu className="h-5 w-5" aria-hidden="true" />
+        </Button>
+      </div>
+    </header>
+  );
+}
+
+function DesktopSidebar({
+  items,
+  pathname,
+  userName,
+  userLevel,
+  onLogout,
+}: {
+  items: WorkspaceNavItem[];
+  pathname: string;
+  userName: string;
+  userLevel: number;
+  onLogout: () => void;
+}) {
+  return (
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col border-r border-border bg-background/88 px-3 py-4 backdrop-blur-xl md:flex xl:w-72 xl:px-4">
+      <div className="mb-5">
+        <BrandLink />
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-1.5" aria-label="Navegacao principal">
+        {items.map((item) => (
+          <ShellNavLink key={item.href} item={item} pathname={pathname} />
+        ))}
+      </nav>
+
+      <div className="mt-5 grid gap-2">
+        <Link
+          href="/perfil"
+          className="game-tile flex min-h-12 items-center justify-center gap-3 bg-card/72 px-2 py-2 text-sm font-semibold transition-colors xl:justify-start xl:px-3"
+          aria-label={`Perfil de ${userName}`}
+        >
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-primary/30 bg-primary text-sm font-semibold text-primary-foreground">
+            {initials(userName)}
+          </span>
+          <span className="hidden min-w-0 leading-tight xl:block">
+            <span className="block truncate">{userName}</span>
+            <span className="block text-xs font-medium text-muted-foreground">Consistencia {userLevel}</span>
+          </span>
+        </Link>
+        <Button variant="outline" size="icon" className="xl:hidden" aria-label="Sair" onClick={onLogout}>
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button variant="outline" className="hidden xl:inline-flex" onClick={onLogout}>
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Sair
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+function MobileDrawer({
+  items,
+  open,
+  pathname,
+  userName,
+  userLevel,
+  onClose,
+  onLogout,
+}: {
+  items: WorkspaceNavItem[];
+  open: boolean;
+  pathname: string;
+  userName: string;
+  userLevel: number;
+  onClose: () => void;
+  onLogout: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div className="fixed inset-0 z-[60] md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <button className="absolute inset-0 bg-foreground/28 backdrop-blur-sm" aria-label="Fechar menu" onClick={onClose} />
+          <motion.aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu de navegacao"
+            className="safe-bottom mobile-scroll absolute inset-y-0 left-0 flex w-[min(86vw,22.5rem)] flex-col overflow-y-auto border-r border-border bg-background p-4 shadow-2xl"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <BrandLink />
+              <Button variant="outline" size="icon" aria-label="Fechar menu" onClick={onClose}>
+                <X className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </div>
+
+            <nav className="grid gap-1.5" aria-label="Navegacao principal">
+              {items.map((item) => (
+                <ShellNavLink key={item.href} item={item} pathname={pathname} expanded onNavigate={onClose} />
+              ))}
+            </nav>
+
+            <div className="mt-auto grid gap-3 pt-8">
+              <Link href="/perfil" className="game-surface flex items-center gap-3 bg-card p-3" onClick={onClose}>
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-sm border border-primary/30 bg-primary font-semibold text-primary-foreground">
+                  {initials(userName)}
+                </span>
+                <span className="min-w-0 leading-tight">
+                  <span className="block truncate font-semibold">{userName}</span>
+                  <span className="block text-sm text-muted-foreground">Consistencia {userLevel}</span>
+                </span>
+              </Link>
+              <Button variant="outline" onClick={onLogout}>
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                Sair
+              </Button>
+            </div>
+          </motion.aside>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+function ShellNavLink({
+  item,
+  pathname,
+  expanded = false,
+  onNavigate,
+}: {
+  item: WorkspaceNavItem;
+  pathname: string;
+  expanded?: boolean;
+  onNavigate?: () => void;
+}) {
+  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const Icon = item.icon;
+
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      onClick={onNavigate}
+      className={cn(
+        "game-tile flex min-h-12 items-center justify-center gap-3 bg-card/45 px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground xl:justify-start",
+        expanded && "justify-start",
+        active && "border-primary/45 bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground",
+      )}
+    >
+      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+      <span className={cn("hidden truncate xl:block", expanded && "block")}>{item.label}</span>
+    </Link>
+  );
+}
+
+function BrandLink({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link href="/dashboard" className={cn("flex min-w-0 items-center gap-3", !compact && "md:justify-center xl:justify-start")}>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/35 bg-primary text-sm font-semibold text-primary-foreground">
+        D
+      </span>
+      <span className={cn("min-w-0 leading-tight", !compact && "hidden xl:block")}>
+        <span className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+          Donk ENEM
+        </span>
+        <span className="block truncate text-lg font-semibold tracking-normal">Area ENEM</span>
+      </span>
+    </Link>
   );
 }

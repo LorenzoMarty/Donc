@@ -16,17 +16,23 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="website-shell min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border bg-background/82 backdrop-blur-xl">
-        <div className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-md border border-primary/35 bg-primary text-sm font-semibold text-primary-foreground">D</div>
-            <div>
+        <div className="mx-auto flex min-h-[72px] w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:flex-nowrap">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-md border border-primary/35 bg-primary text-sm font-semibold text-primary-foreground">
+              D
+            </div>
+            <div className="min-w-0">
               <p className="text-lg font-semibold leading-none tracking-normal">Donk ENEM</p>
               <p className="text-xs font-medium text-muted-foreground">Português e Redação</p>
             </div>
           </Link>
-          <nav className="hidden items-center gap-1 rounded-md border border-border bg-card/72 p-1 lg:flex">
+          <nav className="mobile-scroll order-3 flex w-full items-center gap-1 overflow-x-auto rounded-md border border-border bg-card/72 p-1 no-scrollbar lg:order-none lg:w-auto">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className="rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="shrink-0 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              >
                 {link.label}
               </Link>
             ))}

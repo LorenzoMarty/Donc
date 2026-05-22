@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuote, PenLine, SpellCheck } from "lucide-react";
+import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuote, SpellCheck } from "lucide-react";
 
 import type { GameCategory, GameCategoryId, GameDefinition, GameProgress } from "@/features/gamification/types";
 import { connectiveGames } from "@/games/connectives";
@@ -7,9 +7,9 @@ import { repertoireGames } from "@/games/repertoire";
 import { structureGames } from "@/games/structure";
 import { thesisGames } from "@/games/thesis";
 
-export const gamesCatalog: GameDefinition[] = [...structureGames, ...connectiveGames, ...thesisGames, ...repertoireGames, ...grammarGames];
+const gamesCatalog: GameDefinition[] = [...structureGames, ...connectiveGames, ...thesisGames, ...repertoireGames, ...grammarGames];
 
-export const baseCategories: GameCategory[] = [
+const baseCategories: GameCategory[] = [
   {
     id: "estrutura",
     slug: "estrutura",
@@ -122,7 +122,9 @@ export function getEnrichedGames(progress: Record<string, GameProgress>) {
 export function getEnrichedCategories(progress: Record<string, GameProgress>) {
   return baseCategories.map((category) => {
     const games = getGamesByCategory(category.id);
-    const categoryProgress = games.length ? Math.round(games.reduce((sum, game) => sum + (progress[game.id]?.progress ?? 0), 0) / games.length) : 0;
+    const categoryProgress = games.length
+      ? Math.round(games.reduce((sum, game) => sum + (progress[game.id]?.progress ?? 0), 0) / games.length)
+      : 0;
     return {
       ...category,
       progress: categoryProgress,
@@ -132,11 +134,9 @@ export function getEnrichedCategories(progress: Record<string, GameProgress>) {
   });
 }
 
-export function masteryLabel(progress: number) {
+function masteryLabel(progress: number) {
   if (progress >= 90) return "Dominio";
   if (progress >= 65) return "Avancando";
   if (progress >= 35) return "Em progresso";
   return "Inicial";
 }
-
-export const fallbackGameIcon = PenLine;

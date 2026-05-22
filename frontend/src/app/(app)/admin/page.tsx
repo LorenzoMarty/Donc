@@ -53,21 +53,28 @@ export default function AdminPage() {
       <div>
         <Badge variant="secondary">Painel administrativo</Badge>
         <h1 className="mt-3 text-3xl font-bold tracking-normal md:text-4xl">Operação e dados</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Gerencie usuários, acompanhe métricas e monitore a produção pedagógica.</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Gerencie usuários, acompanhe métricas e monitore a produção pedagógica.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="fluid-grid gap-4 [--grid-min:15rem]">
         <MetricCard title="Usuários" value={`${metrics.users}`} detail="Contas cadastradas" icon={Users} />
         <MetricCard title="Redações" value={`${metrics.essays}`} detail={`${metrics.corrected_essays} corrigidas`} icon={FileText} />
         <MetricCard title="Aulas" value={`${metrics.lessons}`} detail={`${metrics.exercises} exercícios`} icon={BookOpen} />
-        <MetricCard title="Média geral" value={`${metrics.average_score}`} detail={`${metrics.active_themes} temas ativos`} icon={BarChart3} />
+        <MetricCard
+          title="Média geral"
+          value={`${metrics.average_score}`}
+          detail={`${metrics.active_themes} temas ativos`}
+          icon={BarChart3}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Usuários</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="mobile-scroll overflow-x-auto">
           <table className="w-full min-w-[680px] text-sm">
             <thead className="text-left text-muted-foreground">
               <tr className="border-b">

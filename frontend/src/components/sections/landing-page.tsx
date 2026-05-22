@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
@@ -30,10 +31,30 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils";
 
 const features = [
-  { title: "Praticas rapidas", text: "Conectivos, interpretacao e argumentacao em sessoes curtas com feedback imediato.", icon: Gamepad2, tone: "bg-primary text-primary-foreground" },
-  { title: "Redação ENEM", text: "Editor A4, repertório guiado, análise por competência e correção com IA.", icon: FilePenLine, tone: "bg-secondary text-secondary-foreground" },
-  { title: "Trilhas guiadas", text: "Portugues em sequencias organizadas: revisao, pratica e avanco controlado.", icon: Layers3, tone: "bg-accent text-accent-foreground" },
-  { title: "Evolucao", text: "Marcos discretos para registrar constancia, dominio e qualidade de escrita.", icon: Trophy, tone: "bg-primary/12 text-primary" },
+  {
+    title: "Praticas rapidas",
+    text: "Conectivos, interpretacao e argumentacao em sessoes curtas com feedback imediato.",
+    icon: Gamepad2,
+    tone: "bg-primary text-primary-foreground",
+  },
+  {
+    title: "Redação ENEM",
+    text: "Editor A4, repertório guiado, análise por competência e correção com IA.",
+    icon: FilePenLine,
+    tone: "bg-secondary text-secondary-foreground",
+  },
+  {
+    title: "Trilhas guiadas",
+    text: "Portugues em sequencias organizadas: revisao, pratica e avanco controlado.",
+    icon: Layers3,
+    tone: "bg-accent text-accent-foreground",
+  },
+  {
+    title: "Evolucao",
+    text: "Marcos discretos para registrar constancia, dominio e qualidade de escrita.",
+    icon: Trophy,
+    tone: "bg-primary/12 text-primary",
+  },
 ];
 
 const games = [
@@ -55,16 +76,18 @@ export function LandingPage() {
     <MarketingShell>
       <main className="overflow-hidden">
         <section className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-          <div className="game-surface relative min-h-[570px] overflow-hidden bg-card p-4 text-foreground md:p-6 lg:p-8">
-            <img src="/study-collaboration.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+          <div className="game-surface relative min-h-[calc(100dvh-9rem)] overflow-hidden bg-card p-4 text-foreground md:min-h-[570px] md:p-6 lg:p-8">
+            <Image src="/study-collaboration.jpg" alt="" fill priority sizes="100vw" className="absolute inset-0 object-cover opacity-35" />
             <div className="absolute inset-0 bg-background/76" aria-hidden="true" />
-            <div className="relative grid min-h-[530px] gap-6 lg:grid-cols-[1fr_420px] lg:items-center">
+            <div className="relative grid min-h-[calc(100dvh-11rem)] gap-6 md:min-h-[530px] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,26.25rem)] lg:items-center">
               <Reveal className="max-w-4xl">
                 <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   Portugues e Redacao com rotina guiada
                 </div>
-                <h1 className="text-5xl font-semibold leading-[0.95] tracking-normal md:text-7xl lg:text-8xl">Donk ENEM</h1>
+                <h1 className="text-[clamp(3rem,17vw,4.75rem)] font-semibold leading-[0.95] tracking-normal lg:text-[clamp(4.5rem,8vw,6rem)]">
+                  Donk ENEM
+                </h1>
                 <p className="mt-5 max-w-2xl text-lg font-medium leading-7 text-muted-foreground md:text-2xl md:leading-9">
                   Pratique escrita com constancia: aulas, redacao com IA, exercicios curtos e indicadores de evolucao real.
                 </p>
@@ -99,7 +122,7 @@ export function LandingPage() {
           />
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-4 px-4 py-8 md:grid-cols-2 md:px-6 xl:grid-cols-4">
+        <section className="fluid-grid mx-auto max-w-7xl gap-4 px-4 py-8 [--grid-min:15rem] md:px-6">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
@@ -121,7 +144,9 @@ export function LandingPage() {
                 <Flame className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 Fluxo contínuo
               </div>
-              <h2 className="text-3xl font-semibold tracking-normal md:text-5xl">O proximo passo sempre fica claro.</h2>
+              <h2 className="text-[clamp(1.8rem,7vw,3rem)] font-semibold leading-tight tracking-normal">
+                O proximo passo sempre fica claro.
+              </h2>
               <p className="mt-4 text-sm font-semibold leading-6 text-foreground/74 md:text-base">
                 Sem listas infinitas. O aluno abre uma trilha, conclui uma pratica curta, recebe feedback e sabe qual e o proximo passo.
               </p>
@@ -146,9 +171,12 @@ export function LandingPage() {
             <div className="grid gap-6 p-5 md:grid-cols-[1fr_0.85fr] md:p-8 lg:p-10">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratorio de redacao</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-normal md:text-5xl">Escrever fica mais leve quando o foco parece uma folha real.</h2>
+                <h2 className="mt-2 text-[clamp(1.8rem,7vw,3rem)] font-semibold leading-tight tracking-normal">
+                  Escrever fica mais leve quando o foco parece uma folha real.
+                </h2>
                 <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">
-                  A redacao tem modo foco em A4, banco de conectivos, repertorios por tema e praticas curtas para treinar coesao antes da correcao.
+                  A redacao tem modo foco em A4, banco de conectivos, repertorios por tema e praticas curtas para treinar coesao antes da
+                  correcao.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {["A4", "IA por competência", "Repertório", "Conectivos"].map((item) => (
@@ -163,7 +191,7 @@ export function LandingPage() {
           </MovingBorderPanel>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-4 px-4 py-8 md:grid-cols-2 md:px-6 xl:grid-cols-4">
+        <section className="fluid-grid mx-auto max-w-7xl gap-4 px-4 py-8 [--grid-min:15rem] md:px-6">
           {games.map((game, index) => {
             const Icon = game.icon;
             return (
@@ -184,8 +212,12 @@ export function LandingPage() {
         <section className="mx-auto max-w-7xl px-4 py-8 md:px-6">
           <div className="game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">Pronto para sair da lista de exercicios?</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal md:text-5xl">Entre e comece pela sua primeira pratica.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">
+                Pronto para sair da lista de exercicios?
+              </p>
+              <h2 className="mt-2 text-[clamp(1.8rem,7vw,3rem)] font-semibold leading-tight tracking-normal">
+                Entre e comece pela sua primeira pratica.
+              </h2>
             </div>
             <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
@@ -252,13 +284,7 @@ function PreviewTile({ icon: Icon, label, value, progress }: { icon: LucideIcon;
   );
 }
 
-function CampaignCard({
-  step,
-  index,
-}: {
-  step: { label: string; title: string; status: string; icon: LucideIcon };
-  index: number;
-}) {
+function CampaignCard({ step, index }: { step: { label: string; title: string; status: string; icon: LucideIcon }; index: number }) {
   const Icon = step.icon;
   const locked = step.status === "Bloqueado";
 
@@ -267,7 +293,12 @@ function CampaignCard({
       <AnimatedGameCard className={cn("min-h-[160px] bg-card p-4", locked && "opacity-70")}>
         <div className="mb-5 flex items-center justify-between gap-3">
           <span className="game-chip bg-muted/70 px-3 py-1 text-xs font-semibold text-muted-foreground">{step.label}</span>
-          <div className={cn("grid h-10 w-10 place-items-center rounded-md border border-primary/25", locked ? "bg-muted text-muted-foreground" : "bg-primary/12 text-primary")}>
+          <div
+            className={cn(
+              "grid h-10 w-10 place-items-center rounded-md border border-primary/25",
+              locked ? "bg-muted text-muted-foreground" : "bg-primary/12 text-primary",
+            )}
+          >
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
         </div>
@@ -290,9 +321,7 @@ function EssaySheetPreview() {
           <div className="h-2 w-full rounded-full bg-muted" />
           <div className="h-2 w-8/12 rounded-full bg-muted" />
         </div>
-        <div className="mt-5 rounded-md border border-primary/20 bg-primary/12 p-3 text-xs font-semibold">
-          C1 180 • C2 200 • C3 180
-        </div>
+        <div className="mt-5 rounded-md border border-primary/20 bg-primary/12 p-3 text-xs font-semibold">C1 180 • C2 200 • C3 180</div>
         <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-primary">
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           Pronta para correção

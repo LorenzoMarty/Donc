@@ -33,7 +33,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="soft-grid grid min-h-screen place-items-center bg-background px-6 py-10">
+    <main className="soft-grid grid min-h-screen place-items-center bg-background px-4 py-8 xs:px-6 xs:py-10">
       <MotionShell className="w-full max-w-md">
         <div className="mb-8 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -44,11 +44,18 @@ export default function RegisterPage() {
             <h1 className="text-2xl font-semibold tracking-normal">Criar conta</h1>
           </div>
         </div>
-        <Card className="p-6">
+        <Card className="p-4 xs:p-6">
           <form onSubmit={onSubmit} className="space-y-4">
             <Input placeholder="Nome completo" value={name} onChange={(event) => setName(event.target.value)} required />
             <Input placeholder="E-mail" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-            <Input placeholder="Senha" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} required />
+            <Input
+              placeholder="Senha"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={8}
+              required
+            />
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             <Button className="w-full" disabled={loading}>
               {loading ? "Criando..." : "Começar"}

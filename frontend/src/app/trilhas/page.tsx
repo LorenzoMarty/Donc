@@ -14,7 +14,9 @@ export default function TracksPage() {
         <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <Reveal>
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Trilhas</p>
-            <h1 className="text-4xl font-semibold tracking-normal md:text-6xl">Trilhas de Portugues com progressao clara.</h1>
+            <h1 className="text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
+              Trilhas de Portugues com progressao clara.
+            </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
               O aluno avanca por etapas curtas e revisoes guiadas, mantendo foco no proximo passo em vez de enfrentar uma lista infinita.
             </p>
@@ -26,7 +28,7 @@ export default function TracksPage() {
             </Button>
           </Reveal>
           <Reveal delay={0.08}>
-            <div className="relative rounded-[2rem] border bg-card p-6 shadow-sm">
+            <div className="relative rounded-[2rem] border bg-card p-4 shadow-sm xs:p-6">
               <div className="absolute bottom-10 left-10 top-10 w-1 rounded-full bg-border">
                 <div className="h-2/3 rounded-full bg-primary shadow-sm" />
               </div>
@@ -34,11 +36,19 @@ export default function TracksPage() {
                 {["completed", "completed", "available", "locked", "locked"].map((state, index) => (
                   <div key={`${state}-${index}`} className="flex items-center gap-4">
                     <div className={stateClass(state)}>
-                      {state === "completed" ? <CheckCircle2 className="h-5 w-5" /> : state === "available" ? <Play className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+                      {state === "completed" ? (
+                        <CheckCircle2 className="h-5 w-5" />
+                      ) : state === "available" ? (
+                        <Play className="h-5 w-5" />
+                      ) : (
+                        <Lock className="h-5 w-5" />
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold">Etapa {index + 1}</p>
-                      <p className="text-sm text-muted-foreground">{state === "locked" ? "Bloqueada" : state === "available" ? "Liberada agora" : "Concluída"}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {state === "locked" ? "Bloqueada" : state === "available" ? "Liberada agora" : "Concluída"}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -47,12 +57,14 @@ export default function TracksPage() {
           </Reveal>
         </section>
 
-        <section className="grid gap-4 py-12 md:grid-cols-2 xl:grid-cols-4">
+        <section className="fluid-grid gap-4 py-12 [--grid-min:15rem]">
           {tracks.map((track, index) => (
             <HoverGlowCard key={track} delay={index * 0.05}>
               <Trophy className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-xl font-semibold tracking-normal">{track}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">Etapas progressivas, revisao curta e fechamento com pratica aplicada.</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Etapas progressivas, revisao curta e fechamento com pratica aplicada.
+              </p>
             </HoverGlowCard>
           ))}
         </section>
@@ -62,7 +74,9 @@ export default function TracksPage() {
 }
 
 function stateClass(state: string) {
-  if (state === "completed") return "relative z-10 grid h-14 w-14 place-items-center rounded-lg border border-accent/40 bg-accent text-accent-foreground shadow-sm";
-  if (state === "available") return "relative z-10 grid h-16 w-16 place-items-center rounded-lg border border-primary/55 bg-primary text-primary-foreground shadow-sm";
+  if (state === "completed")
+    return "relative z-10 grid h-14 w-14 place-items-center rounded-lg border border-accent/40 bg-accent text-accent-foreground shadow-sm";
+  if (state === "available")
+    return "relative z-10 grid h-16 w-16 place-items-center rounded-lg border border-primary/55 bg-primary text-primary-foreground shadow-sm";
   return "relative z-10 grid h-12 w-12 place-items-center rounded-lg border bg-muted text-muted-foreground";
 }

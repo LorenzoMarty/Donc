@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Save, Send, SpellCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ENEMWritingSheet, FriendlyErrorFeedback, RewardAnimation, WritingSidebar } from "@/components/shared/motion-system";
-import type { Essay } from "@/services/api";
+import type { Essay, EssayTheme } from "@/services/api";
 import { cn } from "@/utils";
 
 export function EssayEditor({
   essay,
+  theme,
   title,
   content,
   saving,
@@ -25,6 +26,7 @@ export function EssayEditor({
   onSubmit,
 }: {
   essay: Essay | null;
+  theme: EssayTheme | null;
   title: string;
   content: string;
   saving: boolean;
@@ -37,10 +39,12 @@ export function EssayEditor({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
+  const wasSavingRef = useRef(false);
   const words = content.trim() ? content.trim().split(/\s+/).length : 0;
   const lines = Math.max(1, content.split("\n").length, Math.ceil(content.length / 92));
   const locked = essay?.status === "corrected";
   const structureProgress = Math.min(100, (lines / 30) * 100);
+  const activeTheme = theme ?? essay?.theme ?? null;
 
   useEffect(() => {
     if (!focusMode) return;
@@ -54,11 +58,16 @@ export function EssayEditor({
   }, [focusMode, onFocusModeChange]);
 
   useEffect(() => {
-    if (saving) return;
-    if (!essay || essay.status === "corrected") return;
-    setShowSaved(true);
-    const id = window.setTimeout(() => setShowSaved(false), 800);
-    return () => window.clearTimeout(id);
+    const shouldShowSaved = wasSavingRef.current && !saving && Boolean(essay) && essay?.status !== "corrected";
+    wasSavingRef.current = saving;
+    if (!shouldShowSaved) return;
+
+    const showId = window.setTimeout(() => setShowSaved(true), 0);
+    const hideId = window.setTimeout(() => setShowSaved(false), 800);
+    return () => {
+      window.clearTimeout(showId);
+      window.clearTimeout(hideId);
+    };
   }, [essay, saving]);
 
   if (focusMode) {
@@ -67,20 +76,23 @@ export function EssayEditor({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed inset-0 z-50 grid place-items-center overflow-auto bg-background px-2 py-4 sm:px-4 sm:py-6"
+        className="fixed inset-0 z-[70] grid place-items-center overflow-auto bg-background px-2 py-4 sm:px-4 sm:py-6"
       >
         <button type="button" className="sr-only" onClick={() => onFocusModeChange(false)}>
           Sair do modo foco
         </button>
-        <div style={{ width: "min(94vw, calc((100dvh - 2rem) * 210 / 297), 794px)" }}>
-          <ENEMWritingSheet
-            value={content}
-            disabled={locked}
-            autoFocus
-            focusMode
-            onChange={onContentChange}
-            placeholder="Comece sua redação ENEM aqui..."
-          />
+        <div className="w-full max-w-5xl space-y-3">
+          {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
+          <div style={{ width: "min(94vw, calc((100dvh - 2rem) * 210 / 297), 794px)", marginInline: "auto" }}>
+            <ENEMWritingSheet
+              value={content}
+              disabled={locked}
+              autoFocus
+              focusMode
+              onChange={onContentChange}
+              placeholder="Comece sua redação ENEM aqui..."
+            />
+          </div>
         </div>
       </motion.section>
     );
@@ -91,10 +103,10 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="game-surface relative overflow-hidden bg-card"
+      className="game-surface relative overflow-visible bg-card"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
-      <div className="flex flex-col gap-4 border-b border-border bg-card/90 p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 flex flex-col gap-4 border-b border-border bg-card/95 p-3 shadow-sm backdrop-blur xs:p-4 md:top-0">
         <div className="min-w-0 flex-1">
           <Input
             value={title}
@@ -106,16 +118,21 @@ export function EssayEditor({
             <Badge variant="outline">{lines} linhas</Badge>
             <Badge variant="success">{saving ? "Salvando..." : essay ? "Sincronizado" : "Rascunho local"}</Badge>
           </div>
+          {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="game-tile flex items-center gap-2 bg-background/72 px-3 py-2 text-sm">
+        <div className="grid grid-cols-2 gap-2 xs:flex xs:flex-wrap xs:items-center">
+          <div className="game-tile col-span-2 flex min-h-11 items-center gap-2 bg-background/72 px-3 py-2 text-sm xs:col-span-1">
             <SpellCheck className="h-4 w-4 text-secondary" aria-hidden="true" />
             <span className="font-bold">Ortografia</span>
             <Switch checked aria-label="Corretor ortográfico" />
           </div>
           <Button variant="outline" onClick={() => setSidebarOpen((value) => !value)}>
-            {sidebarOpen ? <PanelRightClose className="h-4 w-4" aria-hidden="true" /> : <PanelRightOpen className="h-4 w-4" aria-hidden="true" />}
+            {sidebarOpen ? (
+              <PanelRightClose className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
+            )}
             Guia
           </Button>
           <Button variant="outline" onClick={() => onFocusModeChange(true)}>
@@ -133,7 +150,12 @@ export function EssayEditor({
         </div>
       </div>
 
-      <div className={cn("grid gap-4 bg-background/72 p-3 md:p-5", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_320px]" : "xl:grid-cols-1")}>
+      <div
+        className={cn(
+          "grid gap-4 bg-background/72 p-3 md:p-5",
+          sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)]" : "lg:grid-cols-1",
+        )}
+      >
         <div className="min-w-0">
           <ENEMWritingSheet value={content} disabled={locked} onChange={onContentChange} placeholder="Comece sua redação ENEM aqui..." />
         </div>
@@ -177,5 +199,15 @@ export function EssayEditor({
         </div>
       ) : null}
     </motion.section>
+  );
+}
+
+function ThemeReference({ theme, compact = false }: { theme: EssayTheme; compact?: boolean }) {
+  return (
+    <section className={cn("mt-3 rounded-md border border-primary/30 bg-primary/10 text-foreground", compact ? "p-3" : "p-4")}>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Tema da redacao</p>
+      <h2 className={cn("mt-1 font-semibold leading-snug tracking-normal", compact ? "text-base" : "text-lg md:text-xl")}>{theme.title}</h2>
+      <p className={cn("mt-2 whitespace-pre-wrap leading-6 text-muted-foreground", compact ? "text-xs" : "text-sm")}>{theme.context}</p>
+    </section>
   );
 }

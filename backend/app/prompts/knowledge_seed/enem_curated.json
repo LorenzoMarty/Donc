@@ -1,0 +1,56 @@
+[
+  {
+    "title": "Competencias ENEM resumo operacional",
+    "category": "competencias_enem",
+    "source": "seed_curado_donc_v1",
+    "content": "Competencia 1 avalia dominio da norma-padrao, incluindo ortografia, concordancia, regencia, pontuacao e formalidade. Competencia 2 avalia compreensao do tema, repertorio e estrutura dissertativo-argumentativa. Competencia 3 avalia selecao, organizacao e interpretacao de informacoes para defender ponto de vista. Competencia 4 avalia mecanismos linguisticos de coesao e progressao textual. Competencia 5 avalia proposta de intervencao completa, viavel, articulada ao problema e respeitosa aos direitos humanos.",
+    "meta": {
+      "version": "v1"
+    }
+  },
+  {
+    "title": "Conectivos por funcao",
+    "category": "coesao",
+    "source": "seed_curado_donc_v1",
+    "content": "Conectivos aditivos: alem disso, ademais, ainda, outrossim. Conectivos adversativos: contudo, entretanto, todavia, porem. Conectivos conclusivos: portanto, logo, assim, desse modo, por conseguinte. Conectivos explicativos: porque, pois, uma vez que. O conectivo deve indicar relacao real entre ideias; repetir marcadores sem funcao reduz a qualidade da progressao.",
+    "meta": {
+      "version": "v1"
+    }
+  },
+  {
+    "title": "Repertorios coringa com cautela",
+    "category": "repertorio",
+    "source": "seed_curado_donc_v1",
+    "content": "A Constituicao Federal de 1988 pode ser usada para discutir direitos sociais, cidadania e dever do Estado. Paulo Freire se conecta a educacao critica, autonomia e leitura do mundo. Dados de IBGE, ONU e UNESCO devem ser usados quando sustentarem diretamente uma causa ou consequencia do problema. Repertorio produtivo nao e citacao decorada; ele precisa explicar a tese.",
+    "meta": {
+      "version": "v1"
+    }
+  },
+  {
+    "title": "Intervencao ENEM completa",
+    "category": "competencia_5",
+    "source": "seed_curado_donc_v1",
+    "content": "Uma intervencao completa apresenta agente, acao, meio, finalidade e detalhamento. O agente precisa ter capacidade de executar a medida. A acao deve enfrentar a causa discutida no desenvolvimento. O meio mostra como a medida sera aplicada. A finalidade explica o efeito esperado. O detalhamento especifica publico, etapa, instrumento ou responsavel.",
+    "meta": {
+      "version": "v1"
+    }
+  },
+  {
+    "title": "Gramatica aplicada a redacao",
+    "category": "gramatica",
+    "source": "seed_curado_donc_v1",
+    "content": "Na redacao ENEM, gramatica deve servir a clareza. Periodos muito longos aumentam risco de ambiguidade. Virgulas isolam termos deslocados e explicativos, mas nao devem separar sujeito e verbo. Concordancia verbal e nominal deve respeitar o nucleo do sujeito. Formalidade exige evitar oralidade, abreviacoes e expressoes vagas.",
+    "meta": {
+      "version": "v1"
+    }
+  },
+  {
+    "title": "Modelo de paragrafo argumentativo",
+    "category": "argumentacao",
+    "source": "seed_curado_donc_v1",
+    "content": "Um paragrafo argumentativo consistente apresenta topico frasal, explicacao, evidencia ou repertorio, analise e fechamento conectado a tese. O repertorio deve provar ou iluminar a ideia central. A conclusao parcial evita que o paragrafo vire uma lista de exemplos.",
+    "meta": {
+      "version": "v1"
+    }
+  }
+]

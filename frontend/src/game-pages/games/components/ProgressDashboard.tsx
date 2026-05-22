@@ -28,8 +28,11 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
       transition={{ duration: 0.42, ease: "easeOut" }}
       className="game-surface relative overflow-hidden bg-card p-4 md:p-5"
     >
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" aria-hidden="true" />
-      <div className="grid gap-3 lg:grid-cols-5">
+      <div
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+        aria-hidden="true"
+      />
+      <div className="fluid-grid gap-3 [--grid-min:11rem]">
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
           return (
@@ -78,7 +81,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
           </div>
         </div>
 
-        <div className="game-tile bg-background/58 px-4 py-3 text-right">
+        <div className="game-tile bg-background/58 px-4 py-3 text-left lg:text-right">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dominio geral</p>
           <p className="mt-1 text-2xl font-semibold text-foreground">{overallProgress}%</p>
         </div>
@@ -89,7 +92,10 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
           visibleBadges.map((badge) => {
             const Icon = badge.icon;
             return (
-              <span key={badge.id} className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <span
+                key={badge.id}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+              >
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                 {badge.name}
               </span>
@@ -100,7 +106,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
             <Medal className="h-3.5 w-3.5" aria-hidden="true" />
             Badges aparecem apos jogar
           </span>
-          )}
+        )}
       </div>
     </motion.section>
   );

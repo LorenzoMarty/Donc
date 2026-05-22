@@ -19,7 +19,7 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Clock, GripVertical, Layers3, RotateCcw, Sparkles, Trophy, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, GripVertical, Layers3, RotateCcw, Sparkles, Trophy } from "lucide-react";
 
 import { getBadgesById } from "@/features/achievements/achievements";
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
@@ -212,7 +212,9 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
               </Link>
             </Button>
             <Badge className="border-primary/20 bg-primary/10 text-primary">Drag and drop</Badge>
-            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground md:text-4xl">{game.name}</h1>
+            <h1 className="mt-3 text-[clamp(1.75rem,7vw,2.75rem)] font-semibold leading-tight tracking-normal text-foreground">
+              {game.name}
+            </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -222,8 +224,10 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
                 type="button"
                 onClick={() => changeLevel(item.id)}
                 className={cn(
-                  "rounded-xl border px-4 py-2 text-sm font-semibold transition-all",
-                  level.id === item.id ? "border-primary/50 bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:border-primary/35 hover:bg-primary/10 hover:text-foreground",
+                  "min-h-11 rounded-md border px-4 py-2 text-sm font-semibold transition-all",
+                  level.id === item.id
+                    ? "border-primary/50 bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/35 hover:bg-primary/10 hover:text-foreground",
                 )}
               >
                 {item.label}
@@ -234,37 +238,74 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
 
         <AssemblyHud validation={validation} seconds={seconds} level={level} />
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,20.625rem)]">
           <motion.main
-            animate={feedback === "wrong" ? { x: [0, -6, 6, -4, 4, 0] } : feedback === "correct" ? { scale: [1, 1.01, 1] } : { x: 0, scale: 1 }}
+            animate={
+              feedback === "wrong" ? { x: [0, -6, 6, -4, 4, 0] } : feedback === "correct" ? { scale: [1, 1.01, 1] } : { x: 0, scale: 1 }
+            }
             transition={{ duration: feedback === "wrong" ? 0.34 : 0.44 }}
             className={cn(
               "game-surface relative overflow-hidden bg-card p-4 md:p-5",
               feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
             )}
           >
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+              aria-hidden="true"
+            />
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{level.title}</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground">Organize a estrutura da redacao</h2>
+              <h2 className="mt-2 text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-normal text-foreground">
+                Organize a estrutura da redacao
+              </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{level.description}</p>
             </div>
 
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-              <div className="grid gap-4 lg:grid-cols-[minmax(240px,0.75fr)_minmax(0,1.25fr)]">
-                <DropZone id="bank" title="Frases embaralhadas" subtitle="Arraste para as secoes corretas" items={board.bank} blockMap={blockMap} validation={validation} />
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid gap-4 lg:grid-cols-[minmax(15rem,0.75fr)_minmax(0,1.25fr)]">
+                <DropZone
+                  id="bank"
+                  title="Frases embaralhadas"
+                  subtitle="Arraste para as secoes corretas"
+                  items={board.bank}
+                  blockMap={blockMap}
+                  validation={validation}
+                />
                 <div className="grid gap-4">
-                  <DropZone id="intro" title="Introducao" subtitle="Contextualizacao e tese" items={board.intro} blockMap={blockMap} validation={validation} />
-                  <DropZone id="development" title="Desenvolvimento" subtitle="Argumentos, provas e progressao" items={board.development} blockMap={blockMap} validation={validation} />
-                  <DropZone id="conclusion" title="Conclusao" subtitle="Retomada e intervencao" items={board.conclusion} blockMap={blockMap} validation={validation} />
+                  <DropZone
+                    id="intro"
+                    title="Introducao"
+                    subtitle="Contextualizacao e tese"
+                    items={board.intro}
+                    blockMap={blockMap}
+                    validation={validation}
+                  />
+                  <DropZone
+                    id="development"
+                    title="Desenvolvimento"
+                    subtitle="Argumentos, provas e progressao"
+                    items={board.development}
+                    blockMap={blockMap}
+                    validation={validation}
+                  />
+                  <DropZone
+                    id="conclusion"
+                    title="Conclusao"
+                    subtitle="Retomada e intervencao"
+                    items={board.conclusion}
+                    blockMap={blockMap}
+                    validation={validation}
+                  />
                 </div>
               </div>
 
-              <DragOverlay>
-                {activeBlock ? (
-                  <EssayBlockCard block={activeBlock} active />
-                ) : null}
-              </DragOverlay>
+              <DragOverlay>{activeBlock ? <EssayBlockCard block={activeBlock} active /> : null}</DragOverlay>
             </DndContext>
           </motion.main>
 
@@ -290,7 +331,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
                 </Button>
               </div>
             </SidePanel>
-
           </aside>
         </div>
       </div>
@@ -346,7 +386,11 @@ function DropZone({
             })}
           </AnimatePresence>
           {items.length === 0 && (
-            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="game-tile grid min-h-28 place-items-center border-dashed bg-card/50 px-4 text-center text-sm leading-6 text-muted-foreground">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="game-tile grid min-h-28 place-items-center border-dashed bg-card/50 px-4 text-center text-sm leading-6 text-muted-foreground"
+            >
               Solte blocos aqui
             </motion.div>
           )}
@@ -404,7 +448,7 @@ function EssayBlockCard({
       <div className="flex items-start gap-3">
         <button
           type="button"
-          className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-primary/20 bg-primary/10 text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/45"
+          className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/45"
           {...(attributes as React.ButtonHTMLAttributes<HTMLButtonElement> | undefined)}
           {...(listeners as React.ButtonHTMLAttributes<HTMLButtonElement> | undefined)}
         >
@@ -422,7 +466,7 @@ function EssayBlockCard({
 function AssemblyHud({ validation, seconds, level }: { validation: ValidationResult; seconds: number; level: AssemblyLevel }) {
   return (
     <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-2 xs:grid-cols-3 md:gap-3">
         <HudMetric icon={<Layers3 className="h-4 w-4" aria-hidden="true" />} label="Dificuldade" value={level.label} />
         <HudMetric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Tempo" value={formatTime(seconds)} />
         <HudMetric icon={<TargetIcon />} label="Precisao" value={`${validation.accuracy}%`} />
@@ -494,20 +538,31 @@ function ResultModal({
   return (
     <AnimatePresence>
       {result && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 grid place-items-center bg-foreground/28 p-4 backdrop-blur-sm">
-          <motion.section initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="game-surface relative max-h-[92vh] w-full max-w-3xl overflow-y-auto bg-card p-5 text-foreground md:p-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[70] grid place-items-center bg-foreground/28 p-3 backdrop-blur-sm xs:p-4"
+        >
+          <motion.section
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
+          >
             {(result.rankUp || unlockedBadges.length > 0) && <ConfettiBurst />}
-            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/75 to-transparent" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/75 to-transparent"
+              aria-hidden="true"
+            />
             <div className="text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
                 <Trophy className="h-8 w-8" aria-hidden="true" />
               </div>
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tentativa finalizada</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal md:text-4xl">Monte a Redacao</h2>
+              <h2 className="mt-2 text-[clamp(1.9rem,8vw,2.75rem)] font-semibold tracking-normal">Monte a Redacao</h2>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {result.rankUp && (
-                  <Badge className="border-primary/25 bg-primary/10 text-primary">Rank up - {result.rankName}</Badge>
-                )}
+                {result.rankUp && <Badge className="border-primary/25 bg-primary/10 text-primary">Rank up - {result.rankName}</Badge>}
                 {unlockedBadges.map((badge) => (
                   <Badge key={badge.id} className="border-primary/25 bg-primary/10 text-primary">
                     {badge.name}
@@ -516,7 +571,7 @@ function ResultModal({
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <SideMetric label="Tempo" value={formatTime(seconds)} />
               <SideMetric label="Precisao" value={`${validation.accuracy}%`} />
               <SideMetric label="XP" value={`+${result.xpEarned}`} />
@@ -548,7 +603,10 @@ function ConfettiBurst() {
           initial={{ opacity: 0, y: -12, rotate: 0 }}
           animate={{ opacity: [0, 1, 0], y: 150 + piece.travel, rotate: piece.rotate }}
           transition={{ delay: piece.delay, duration: 1.15, ease: "easeOut" }}
-          className={cn("absolute top-0 h-2 w-1 rounded-full", index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-yellow-100" : "bg-zinc-100")}
+          className={cn(
+            "absolute top-0 h-2 w-1 rounded-full",
+            index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-yellow-100" : "bg-zinc-100",
+          )}
           style={{ left: `${piece.left}%` }}
         />
       ))}
@@ -618,11 +676,36 @@ const essayLevels: AssemblyLevel[] = [
     title: "Estrutura essencial",
     description: "Poucos blocos para reconhecer a ordem basica: contexto, tese, argumento e intervencao.",
     blocks: [
-      { id: "easy-context", expectedSection: "intro", order: 1, text: "A democratizacao do acesso a leitura e um desafio relevante para a formacao cidadã no Brasil." },
-      { id: "easy-thesis", expectedSection: "intro", order: 2, text: "Nesse sentido, a desigualdade socioeconomica e a baixa mediacao escolar dificultam esse processo." },
-      { id: "easy-arg", expectedSection: "development", order: 3, text: "Em primeiro plano, a falta de bibliotecas e acervos atualizados limita o contato cotidiano com diferentes generos textuais." },
-      { id: "easy-proof", expectedSection: "development", order: 4, text: "Com isso, estudantes de regioes vulneraveis tendem a desenvolver menor repertorio e menor autonomia interpretativa." },
-      { id: "easy-conclusion", expectedSection: "conclusion", order: 5, text: "Portanto, o Ministerio da Educacao deve ampliar bibliotecas escolares, por meio de investimento em acervos e formacao leitora, para reduzir essa desigualdade." },
+      {
+        id: "easy-context",
+        expectedSection: "intro",
+        order: 1,
+        text: "A democratizacao do acesso a leitura e um desafio relevante para a formacao cidadã no Brasil.",
+      },
+      {
+        id: "easy-thesis",
+        expectedSection: "intro",
+        order: 2,
+        text: "Nesse sentido, a desigualdade socioeconomica e a baixa mediacao escolar dificultam esse processo.",
+      },
+      {
+        id: "easy-arg",
+        expectedSection: "development",
+        order: 3,
+        text: "Em primeiro plano, a falta de bibliotecas e acervos atualizados limita o contato cotidiano com diferentes generos textuais.",
+      },
+      {
+        id: "easy-proof",
+        expectedSection: "development",
+        order: 4,
+        text: "Com isso, estudantes de regioes vulneraveis tendem a desenvolver menor repertorio e menor autonomia interpretativa.",
+      },
+      {
+        id: "easy-conclusion",
+        expectedSection: "conclusion",
+        order: 5,
+        text: "Portanto, o Ministerio da Educacao deve ampliar bibliotecas escolares, por meio de investimento em acervos e formacao leitora, para reduzir essa desigualdade.",
+      },
     ],
   },
   {
@@ -631,16 +714,66 @@ const essayLevels: AssemblyLevel[] = [
     title: "Argumentacao completa",
     description: "Mais blocos, dois argumentos e frases parecidas. Deixe distratores no banco para manter a redacao limpa.",
     blocks: [
-      { id: "hard-context", expectedSection: "intro", order: 1, text: "Na sociedade informacional, o dominio da leitura critica tornou-se requisito para participacao social e desempenho escolar." },
-      { id: "hard-thesis", expectedSection: "intro", order: 2, text: "Entretanto, a exclusao digital e a fragilidade das praticas pedagogicas impedem que esse dominio seja universalizado." },
-      { id: "hard-arg1", expectedSection: "development", order: 3, text: "Primeiramente, a desigualdade de acesso a internet impede que parte dos estudantes utilize bibliotecas digitais e plataformas de estudo." },
-      { id: "hard-arg1-proof", expectedSection: "development", order: 4, text: "Esse cenario aprofunda diferencas de repertorio, pois o aluno conectado encontra mais fontes para comparar ideias e ampliar vocabulario." },
-      { id: "hard-arg2", expectedSection: "development", order: 5, text: "Além disso, muitas escolas tratam a leitura apenas como tarefa avaliativa, e nao como habito interpretativo permanente." },
-      { id: "hard-arg2-proof", expectedSection: "development", order: 6, text: "Dessa maneira, o estudante le textos sem aprender a relaciona-los a problemas sociais, o que enfraquece sua argumentacao." },
-      { id: "hard-close", expectedSection: "conclusion", order: 7, text: "Portanto, o Ministerio da Educacao deve criar programas de leitura digital orientada, com formacao docente e acesso gratuito a acervos." },
-      { id: "hard-detail", expectedSection: "conclusion", order: 8, text: "Tal medida deve ocorrer em parceria com secretarias estaduais, a fim de ampliar repertorio e autonomia critica dos estudantes." },
-      { id: "hard-distractor-1", order: 99, distractor: true, text: "Hoje em dia a internet esta em todos os lugares e isso resolve praticamente todos os problemas educacionais." },
-      { id: "hard-distractor-2", order: 100, distractor: true, text: "A leitura e importante desde sempre, entao basta que as pessoas queiram ler mais por vontade propria." },
+      {
+        id: "hard-context",
+        expectedSection: "intro",
+        order: 1,
+        text: "Na sociedade informacional, o dominio da leitura critica tornou-se requisito para participacao social e desempenho escolar.",
+      },
+      {
+        id: "hard-thesis",
+        expectedSection: "intro",
+        order: 2,
+        text: "Entretanto, a exclusao digital e a fragilidade das praticas pedagogicas impedem que esse dominio seja universalizado.",
+      },
+      {
+        id: "hard-arg1",
+        expectedSection: "development",
+        order: 3,
+        text: "Primeiramente, a desigualdade de acesso a internet impede que parte dos estudantes utilize bibliotecas digitais e plataformas de estudo.",
+      },
+      {
+        id: "hard-arg1-proof",
+        expectedSection: "development",
+        order: 4,
+        text: "Esse cenario aprofunda diferencas de repertorio, pois o aluno conectado encontra mais fontes para comparar ideias e ampliar vocabulario.",
+      },
+      {
+        id: "hard-arg2",
+        expectedSection: "development",
+        order: 5,
+        text: "Além disso, muitas escolas tratam a leitura apenas como tarefa avaliativa, e nao como habito interpretativo permanente.",
+      },
+      {
+        id: "hard-arg2-proof",
+        expectedSection: "development",
+        order: 6,
+        text: "Dessa maneira, o estudante le textos sem aprender a relaciona-los a problemas sociais, o que enfraquece sua argumentacao.",
+      },
+      {
+        id: "hard-close",
+        expectedSection: "conclusion",
+        order: 7,
+        text: "Portanto, o Ministerio da Educacao deve criar programas de leitura digital orientada, com formacao docente e acesso gratuito a acervos.",
+      },
+      {
+        id: "hard-detail",
+        expectedSection: "conclusion",
+        order: 8,
+        text: "Tal medida deve ocorrer em parceria com secretarias estaduais, a fim de ampliar repertorio e autonomia critica dos estudantes.",
+      },
+      {
+        id: "hard-distractor-1",
+        order: 99,
+        distractor: true,
+        text: "Hoje em dia a internet esta em todos os lugares e isso resolve praticamente todos os problemas educacionais.",
+      },
+      {
+        id: "hard-distractor-2",
+        order: 100,
+        distractor: true,
+        text: "A leitura e importante desde sempre, entao basta que as pessoas queiram ler mais por vontade propria.",
+      },
     ],
   },
 ];

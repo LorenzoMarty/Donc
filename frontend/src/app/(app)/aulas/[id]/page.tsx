@@ -38,7 +38,7 @@ export default function LessonPage() {
     <MotionShell className="space-y-5">
       <LessonPlayer lesson={lesson} onComplete={complete} />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,21.25rem)]">
         <main className="min-w-0 space-y-4">
           <Surface>
             <div className="mx-auto max-w-[76ch]">
@@ -61,7 +61,7 @@ export default function LessonPage() {
                 <h2 className="text-xl font-semibold tracking-normal">Anotacoes</h2>
               </div>
               <textarea
-                className="min-h-44 w-full resize-y rounded-md border border-input bg-card/90 p-4 text-sm leading-7 outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-ring/15"
+                className="min-h-44 w-full resize-y rounded-md border border-input bg-card/90 p-4 text-base leading-7 outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-ring/15 md:text-sm"
                 placeholder="Registre tese, repertorios, exemplos e duvidas para revisar depois."
               />
             </div>
@@ -74,7 +74,11 @@ export default function LessonPage() {
             <p className="mt-2 text-2xl font-semibold">{lesson.progress.progress_percent}%</p>
             <Progress value={lesson.progress.progress_percent} className="mt-4" />
             <Button onClick={complete} variant={lesson.progress.completed ? "secondary" : "default"} className="mt-4 w-full">
-              {lesson.progress.completed ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <ClipboardList className="h-4 w-4" aria-hidden="true" />}
+              {lesson.progress.completed ? (
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <ClipboardList className="h-4 w-4" aria-hidden="true" />
+              )}
               {lesson.progress.completed ? "Aula concluida" : "Marcar como concluida"}
             </Button>
           </Surface>

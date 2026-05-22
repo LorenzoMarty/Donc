@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: enem-redacao-db
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-enem_redacao}
@@ -16,6 +16,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: enem-redacao-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -25,11 +36,44 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-secret-before-production}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.5}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AI_SYNC_TIMEOUT_SECONDS: ${AI_SYNC_TIMEOUT_SECONDS:-45}
+      ENABLE_AGENTOS: ${ENABLE_AGENTOS:-false}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
     ports:
       - "8000:8000"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+    container_name: enem-redacao-worker
+    command: celery -A app.queues.celery_app:celery_app worker --loglevel=INFO
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://enem:enem@db:5432/enem_redacao}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-secret-before-production}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.5}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      AI_SYNC_TIMEOUT_SECONDS: ${AI_SYNC_TIMEOUT_SECONDS:-45}
+      ENABLE_AGENTOS: ${ENABLE_AGENTOS:-false}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   frontend:

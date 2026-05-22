@@ -14,4 +14,3 @@ export function MotionShell({ children, className }: { children: React.ReactNode
     </motion.div>
   );
 }
-
