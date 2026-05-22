@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import sys
@@ -20,10 +20,10 @@ os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB}"
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["AI_RATE_LIMIT_PER_MINUTE"] = "1000"
 
-from app.core.database import engine, get_db  # noqa: E402
-from app.dependencies import get_current_user  # noqa: E402
-from app.main import app  # noqa: E402
-from app.models import User  # noqa: E402
+from src.database.session import engine, get_db  # noqa: E402
+from src.dependencies import get_current_user  # noqa: E402
+from src.main import app  # noqa: E402
+from src.models import User  # noqa: E402
 
 
 def override_current_user(db: Session = Depends(get_db)) -> User:

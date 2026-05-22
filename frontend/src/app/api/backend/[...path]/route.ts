@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_INTERNAL_API_URL = "http://127.0.0.1:8000/api/v1";
+import { getInternalApiUrl } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ type RouteContext = {
 
 async function forward(request: NextRequest, context: RouteContext) {
   const { path } = await context.params;
-  const internalApiUrl = (process.env.INTERNAL_API_URL ?? DEFAULT_INTERNAL_API_URL).replace(/\/+$/, "");
+  const internalApiUrl = getInternalApiUrl();
   const targetPath = path.map((segment) => encodeURIComponent(segment)).join("/");
   const targetUrl = new URL(`${internalApiUrl}/${targetPath}`);
   request.nextUrl.searchParams.forEach((value, key) => {

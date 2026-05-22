@@ -1,39 +1,40 @@
 # Donk ENEM
 
-Plataforma fullstack para estudo de redacao ENEM, com frontend Next.js, backend FastAPI e camada de IA baseada em agentes Agno.
-
-## Stack
-
-- Frontend: Next.js App Router, React, TypeScript, TailwindCSS, Framer Motion.
-- Backend: FastAPI, Python 3.13, SQLAlchemy, Alembic.
-- IA: Agno, OpenAI Responses API, outputs estruturados e fallback deterministico para desenvolvimento.
-- Dados: PostgreSQL com pgvector.
-- Jobs e cache: Redis e Celery.
-- Observabilidade: Langfuse/OpenTelemetry quando configurado.
+Aplicacao fullstack para estudo de Redacao ENEM com frontend Next.js, backend FastAPI, PostgreSQL/pgvector, Redis, Celery e agentes de IA.
 
 ## Estrutura
 
 ```text
 frontend/
-  src/app/          rotas publicas, auth, area logada e proxy backend
-  src/components/   componentes compartilhados, UI, escrita e gamificacao
-  src/features/     regras de gamificacao, conquistas, streak e XP
-  src/games/        sessoes de jogos ativos
-  src/services/     cliente HTTP tipado
-  src/stores/       estado persistido de gamificacao
+  src/app/          rotas App Router, layouts, loading/error e proxy API
+  src/components/   UI reutilizavel, shell, escrita, secoes e jogos
+  src/contexts/     auth e toasts globais
+  src/features/     gamificacao, XP, streak e conquistas
+  src/lib/          ambiente e client HTTP
+  src/services/     servicos por dominio
+  src/stores/       estado persistido
+  src/types/        contratos TypeScript da API
   src/utils/        utilitarios compartilhados
 
 backend/
-  app/agents/       agentes Agno especializados
-  app/workflows/    orquestracao de IA
-  app/routers/      API REST
-  app/services/     regras de negocio
-  app/models/       SQLAlchemy
-  app/schemas/      Pydantic
-  app/vectorstore/  seed RAG e pgvector
-  app/queues/       Celery
+  src/agents/       agentes especializados de IA
+  src/config/       settings e seguranca
+  src/database/     engine, sessao e base SQLAlchemy
+  src/routes/       endpoints REST por dominio
+  src/services/     regras de negocio
+  src/repositories/ acesso a dados
+  src/schemas/      DTOs Pydantic de entrada e saida
+  src/middlewares/  tratamento global de erros
+  src/vectorstore/  RAG e pgvector
+  src/queues/       Celery e jobs assincronos
   alembic/          migracoes
 ```
+
+## Requisitos
+
+- Node.js 22
+- Python 3.12+ ou 3.13
+- Docker e Docker Compose para o ambiente completo
 
 ## Desenvolvimento
 
@@ -42,87 +43,101 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Servicos locais:
+Servicos:
 
 - Frontend: `http://localhost:3000`
 - Backend: `http://localhost:8000`
 - Swagger: `http://localhost:8000/docs`
 
-Frontend sem Docker:
+Sem Docker:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm --prefix frontend install
+npm run dev:frontend
 ```
-
-Backend sem Docker:
 
 ```bash
 cd backend
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
 $env:DATABASE_URL="sqlite:///./local_dev.db"
-.\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
+python -m uvicorn src.main:app --reload --port 8000
 ```
 
 ## Scripts
 
-Frontend:
+```bash
+npm run dev
+npm run build
+npm run test
+npm run start:backend
+npm run start:frontend
+```
+
+Validações por serviço:
 
 ```bash
-npm run lint
-npm run typecheck
-npm run format:check
-npm run build
+npm --prefix frontend run lint
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+cd backend && python -m pytest
 ```
+
+## Contrato da API
+
+Respostas de sucesso:
+
+```json
+{
+  "success": true,
+  "message": "",
+  "data": {}
+}
+```
+
+Erros:
+
+```json
+{
+  "success": false,
+  "message": "Mensagem legivel",
+  "error": "error_code"
+}
+```
+
+O frontend centraliza chamadas em `frontend/src/lib/http-client.ts` e desempacota `data` automaticamente.
+
+## Variaveis de ambiente
+
+Use `.env.example` para Docker/local completo. Tambem existem exemplos por servico:
+
+- `backend/.env.example`
+- `frontend/.env.example`
+
+Em producao, configure:
+
+- `JWT_SECRET_KEY` com segredo forte
+- `DATABASE_URL` com Postgres gerenciado
+- `REDIS_URL` com Redis gerenciado
+- `OPENAI_API_KEY` quando IA real estiver habilitada
+- `SEED_DEMO_DATA=false`
+- `FRONTEND_ORIGIN=https://seu-frontend`
+- `INTERNAL_API_URL=https://seu-backend/api/v1`
+
+## Deploy
+
+Frontend:
+
+- Vercel com Root Directory `frontend`
+- Build Command `npm run build`
+- `NEXT_PUBLIC_API_URL=/api/backend`
+- `INTERNAL_API_URL` apontando para o backend `/api/v1`
 
 Backend:
 
-```bash
-python -m compileall app tests alembic
-pytest
-```
+- Railway, Render ou Vercel com Root Directory `backend`
+- Entrada ASGI `src.main:app`
+- Porta dinamica via `PORT`
+- Vercel usa `backend/vercel.json` e `src/index.py`
 
-## Variaveis
-
-Copie `.env.example` e configure:
-
-- `DATABASE_URL`
-- `JWT_SECRET_KEY`
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `OPENAI_EMBEDDING_MODEL`
-- `REDIS_URL`
-- `FRONTEND_ORIGIN`
-- `NEXT_PUBLIC_API_URL`
-- `INTERNAL_API_URL`
-- `SEED_DEMO_DATA`
-
-Use `SEED_DEMO_DATA=true` apenas em desenvolvimento ou demo. Em producao, use `SEED_DEMO_DATA=false`.
-
-## Deploy Vercel
-
-O repositorio esta preparado para dois projetos Vercel:
-
-- Backend: Root Directory `backend`, FastAPI exportado em `app/index.py`, config em `backend/vercel.json`.
-- Frontend: Root Directory `frontend`, Next.js, config em `frontend/vercel.json`.
-
-Fluxo recomendado:
-
-1. Publique o backend.
-2. Configure o frontend com `NEXT_PUBLIC_API_URL=/api/backend`.
-3. Configure `INTERNAL_API_URL=https://seu-backend.vercel.app/api/v1`.
-4. Configure o backend com `FRONTEND_ORIGIN=https://seu-frontend.vercel.app`.
-5. Use `SEED_DEMO_DATA=false` em producao.
-
-Detalhes: [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md).
-
-## Qualidade
-
-- TypeScript estrito.
-- ESLint com `--max-warnings=0`.
-- Prettier configurado.
-- Dependencias de animacao antigas removidas.
-- Rotas e componentes de exercicios legacy removidos em favor de `/games`.
-- Login sem credenciais demo preenchidas no cliente.
+O Dockerfile do frontend usa build standalone do Next.js. O Dockerfile do backend inicia `uvicorn src.main:app` com porta dinamica.

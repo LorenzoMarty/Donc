@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { AuthContext, type AuthContextValue } from "@/contexts/auth-context";
+import { ToastProvider } from "@/contexts/toast-context";
 import { authApi, type User } from "@/services/api";
 
 function setSession(token: string) {
@@ -75,7 +76,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <AuthProvider>{children}</AuthProvider>
+      <ToastProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }
