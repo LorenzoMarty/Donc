@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,6 +8,7 @@ class Settings(BaseSettings):
     project_name: str = "Donk ENEM"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+psycopg://enem:enem@localhost:5432/enem_redacao"
+    database_connect_timeout_seconds: int = 5
     jwt_secret_key: str = "change-this-secret-before-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7
@@ -26,6 +28,15 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), env_file_encoding="utf-8", extra="ignore")
+
+    @field_validator("database_url")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        if value.startswith("postgres://"):
+            return "postgresql+psycopg://" + value.removeprefix("postgres://")
+        if value.startswith("postgresql://"):
+            return "postgresql+psycopg://" + value.removeprefix("postgresql://")
+        return value
 
     @property
     def cors_origins(self) -> list[str]:
