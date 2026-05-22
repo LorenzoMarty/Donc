@@ -1,43 +1,62 @@
 # Donk ENEM
 
-Plataforma fullstack premium de Portugues e Redacao focada exclusivamente no ENEM.
+Plataforma fullstack para estudo de redacao ENEM, com frontend Next.js, backend FastAPI e camada de IA baseada em agentes Agno.
 
 ## Stack
 
-- Frontend: Next.js 16, TypeScript, TailwindCSS, ShadCN UI, componentes visuais estilo Aceternity UI e Framer Motion
-- Backend: FastAPI, Python 3.13, SQLAlchemy
-- Banco: PostgreSQL
-- Autenticacao: JWT
-- IA: OpenAI Responses API com Structured Outputs
-- Infra: Docker e Docker Compose
+- Frontend: Next.js App Router, React, TypeScript, TailwindCSS, Framer Motion.
+- Backend: FastAPI, Python 3.13, SQLAlchemy, Alembic.
+- IA: Agno, OpenAI Responses API, outputs estruturados e fallback deterministico para desenvolvimento.
+- Dados: PostgreSQL com pgvector.
+- Jobs e cache: Redis e Celery.
+- Observabilidade: Langfuse/OpenTelemetry quando configurado.
 
-## Como executar
+## Estrutura
 
-### Docker
+```text
+frontend/
+  src/app/          rotas publicas, auth, area logada e proxy backend
+  src/components/   componentes compartilhados, UI, escrita e gamificacao
+  src/features/     regras de gamificacao, conquistas, streak e XP
+  src/games/        sessoes de jogos ativos
+  src/services/     cliente HTTP tipado
+  src/stores/       estado persistido de gamificacao
+  src/utils/        utilitarios compartilhados
 
-1. Opcionalmente, crie o arquivo `.env` na raiz para sobrescrever segredos e configurar OpenAI:
+backend/
+  app/agents/       agentes Agno especializados
+  app/workflows/    orquestracao de IA
+  app/routers/      API REST
+  app/services/     regras de negocio
+  app/models/       SQLAlchemy
+  app/schemas/      Pydantic
+  app/vectorstore/  seed RAG e pgvector
+  app/queues/       Celery
+  alembic/          migracoes
+```
+
+## Desenvolvimento
 
 ```bash
 cp .env.example .env
+docker compose up --build
 ```
 
-2. Preencha `OPENAI_API_KEY` se quiser correcao real por IA. Sem chave, o backend usa um avaliador local de fallback para manter o fluxo funcional.
+Servicos locais:
 
-3. Suba tudo:
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8000`
+- Swagger: `http://localhost:8000/docs`
+
+Frontend sem Docker:
 
 ```bash
-docker-compose up --build
+cd frontend
+npm install
+npm run dev
 ```
 
-4. Acesse:
-
-- Frontend: http://localhost:3000
-- API: http://localhost:8000
-- Swagger: http://localhost:8000/docs
-
-### Desenvolvimento local sem Docker
-
-Backend:
+Backend sem Docker:
 
 ```bash
 cd backend
@@ -47,80 +66,63 @@ $env:DATABASE_URL="sqlite:///./local_dev.db"
 .\.venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
 ```
 
+## Scripts
+
 Frontend:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm run lint
+npm run typecheck
+npm run format:check
+npm run build
 ```
 
-## Contas demo
+Backend:
 
-- Aluno: `aluno@demo.com` / `12345678`
-- Admin: `admin@demo.com` / `12345678`
-
-## Funcionalidades entregues
-
-- Login, cadastro, logout, recuperacao de senha e rotas protegidas.
-- Painel do aluno com progresso, media de redacao, sequencia, XP, metas, grafico e estados de carregamento.
-- Estrutura Materia -> Modulo -> Aula, player, progresso salvo e aulas concluidas.
-- Exercicios ENEM com correcao automatica, explicacao e dificuldade dinamica.
-- Editor de redacao com contador de linhas, contador de palavras, autosave, modo foco e spellcheck.
-- Correcao de redacao ENEM com nota total, competencias 1 a 5, pontos fortes, erros, sugestoes e feedback.
-- Historico de redacoes com evolucao, competencias e erros recorrentes.
-- IA tutora para duvidas de Portugues e Redacao.
-- Simulados com cronometro, correcao automatica e desempenho por habilidade.
-- Gamificacao com XP, nivel, streak, conquistas e metas.
-- Painel administrativo com usuarios e metricas.
-- Onboarding inicial e tela de boas-vindas.
-- Landing page, paginas publicas de plataforma, trilhas, pricing e sobre.
-- Perfil com navegacao web horizontal.
-
-## Estrutura
-
-```text
-/frontend  Aplicacao Next.js em src/
-  /src/app         Rotas publicas, auth e area protegida
-  /src/components  ui, sections, game, writing e shared
-  /src/services    Cliente de API
-  /src/providers   Providers da aplicacao
-  /src/contexts    Contextos React
-  /src/utils       Utilitarios
-/backend   API FastAPI
-/docker    Notas e extensoes de infraestrutura
-/docs      Documentacao tecnica
+```bash
+python -m compileall app tests alembic
+pytest
 ```
 
-## Variaveis principais
+## Variaveis
 
-- `DATABASE_URL`: conexao SQLAlchemy para PostgreSQL.
-- `JWT_SECRET_KEY`: segredo de assinatura JWT.
-- `OPENAI_API_KEY`: chave da OpenAI.
-- `OPENAI_MODEL`: modelo usado para tutor e correcao. Padrao: `gpt-5.5`.
-- `NEXT_PUBLIC_API_URL`: URL publica da API para o frontend.
+Copie `.env.example` e configure:
 
-## Deploy na Vercel
+- `DATABASE_URL`
+- `JWT_SECRET_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_EMBEDDING_MODEL`
+- `REDIS_URL`
+- `FRONTEND_ORIGIN`
+- `NEXT_PUBLIC_API_URL`
+- `INTERNAL_API_URL`
+- `SEED_DEMO_DATA`
 
-O projeto esta preparado para deploy em dois projetos Vercel:
+Use `SEED_DEMO_DATA=true` apenas em desenvolvimento ou demo. Em producao, use `SEED_DEMO_DATA=false`.
 
-- Backend: Root Directory `backend`, com FastAPI exportado em `backend/app/index.py`.
-- Frontend: Root Directory `frontend`, com `frontend/vercel.json` usando `npm ci` e `npm run build`.
+## Deploy Vercel
 
-Configure primeiro o backend e depois aponte o frontend para ele com:
+O repositorio esta preparado para dois projetos Vercel:
 
-```text
-NEXT_PUBLIC_API_URL=/api/backend
-INTERNAL_API_URL=https://seu-backend.vercel.app/api/v1
-```
+- Backend: Root Directory `backend`, FastAPI exportado em `app/index.py`, config em `backend/vercel.json`.
+- Frontend: Root Directory `frontend`, Next.js, config em `frontend/vercel.json`.
 
-O passo a passo completo esta em [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md).
+Fluxo recomendado:
 
-## Validacao local realizada
+1. Publique o backend.
+2. Configure o frontend com `NEXT_PUBLIC_API_URL=/api/backend`.
+3. Configure `INTERNAL_API_URL=https://seu-backend.vercel.app/api/v1`.
+4. Configure o backend com `FRONTEND_ORIGIN=https://seu-frontend.vercel.app`.
+5. Use `SEED_DEMO_DATA=false` em producao.
 
-- `python -m compileall backend/app`
-- Testes de smoke da API com `TestClient`: health, login, dashboard, aulas, temas, redacao, exercicio, simulado e admin.
-- `npm run typecheck`
-- `npm run build`
-- `docker compose up -d --build frontend`
-- Smoke HTTP em rotas publicas e protegidas.
+Detalhes: [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md).
+
+## Qualidade
+
+- TypeScript estrito.
+- ESLint com `--max-warnings=0`.
+- Prettier configurado.
+- Dependencias de animacao antigas removidas.
+- Rotas e componentes de exercicios legacy removidos em favor de `/games`.
+- Login sem credenciais demo preenchidas no cliente.

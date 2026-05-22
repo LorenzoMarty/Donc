@@ -1,15 +1,15 @@
 import type { GameDefinition } from "@/features/gamification/types";
 
-export type RankId = "aprendiz" | "argumentador" | "estrategista" | "orador" | "mestre";
+type RankId = "aprendiz" | "argumentador" | "estrategista" | "orador" | "mestre";
 
-export type RankDefinition = {
+type RankDefinition = {
   id: RankId;
   name: string;
   minXp: number;
   description: string;
 };
 
-export const rankCatalog: RankDefinition[] = [
+const rankCatalog: RankDefinition[] = [
   { id: "aprendiz", name: "Aprendiz", minXp: 0, description: "Construindo constancia e base estrutural." },
   { id: "argumentador", name: "Argumentador", minXp: 350, description: "Transformando ideias em argumentos mais claros." },
   { id: "estrategista", name: "Estrategista", minXp: 900, description: "Escolhendo repertorio, tese e coesao com intencao." },
@@ -24,23 +24,19 @@ export function calculateXpReward(game: GameDefinition, isRepeatToday: boolean, 
   return Math.max(5, Math.round(base * 0.25));
 }
 
-export function xpToLevel(xp: number) {
+function xpToLevel(xp: number) {
   return Math.max(1, Math.floor(xp / 350) + 1);
-}
-
-export function xpLevelProgress(xp: number) {
-  return Math.round(((xp % 350) / 350) * 100);
 }
 
 export function getRankForXp(xp: number) {
   return [...rankCatalog].reverse().find((rank) => xp >= rank.minXp) ?? rankCatalog[0];
 }
 
-export function getNextRank(xp: number) {
+function getNextRank(xp: number) {
   return rankCatalog.find((rank) => rank.minXp > xp) ?? null;
 }
 
-export function getRankProgress(xp: number) {
+function getRankProgress(xp: number) {
   const current = getRankForXp(xp);
   const next = getNextRank(xp);
   if (!next) return 100;
@@ -48,7 +44,7 @@ export function getRankProgress(xp: number) {
   return Math.max(0, Math.min(100, Math.round(((xp - current.minXp) / range) * 100)));
 }
 
-export function getXpToNextRank(xp: number) {
+function getXpToNextRank(xp: number) {
   const next = getNextRank(xp);
   return next ? Math.max(0, next.minXp - xp) : 0;
 }

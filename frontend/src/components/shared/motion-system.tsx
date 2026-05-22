@@ -1,83 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { animated, useSpring } from "@react-spring/web";
-import { useHover } from "@use-gesture/react";
-import { animate as motionOneAnimate } from "motion";
-import gsap from "gsap";
-import Lottie from "lottie-react";
-import type { LucideIcon } from "lucide-react";
-import { CheckCircle2, Lightbulb, Star, Target, Trophy, Zap } from "lucide-react";
+import type { ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, Lightbulb, Target, Trophy } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
-
-const pulseLottie = {
-  v: "5.8.1",
-  fr: 30,
-  ip: 0,
-  op: 60,
-  w: 120,
-  h: 120,
-  nm: "soft-reward",
-  ddd: 0,
-  assets: [],
-  layers: [
-    {
-      ddd: 0,
-      ind: 1,
-      ty: 4,
-      nm: "ring",
-      sr: 1,
-      ks: {
-        o: { a: 1, k: [{ t: 0, s: [0] }, { t: 8, s: [80] }, { t: 60, s: [0] }] },
-        r: { a: 0, k: 0 },
-        p: { a: 0, k: [60, 60, 0] },
-        a: { a: 0, k: [0, 0, 0] },
-        s: { a: 1, k: [{ t: 0, s: [40, 40, 100] }, { t: 60, s: [120, 120, 100] }] },
-      },
-      shapes: [
-        {
-          ty: "el",
-          p: { a: 0, k: [0, 0] },
-          s: { a: 0, k: [52, 52] },
-        },
-        {
-          ty: "st",
-          c: { a: 0, k: [0.96, 0.78, 0.16, 1] },
-          o: { a: 0, k: 100 },
-          w: { a: 0, k: 6 },
-        },
-      ],
-      ip: 0,
-      op: 60,
-      st: 0,
-      bm: 0,
-    },
-  ],
-};
-
-export function useGsapReveal<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ref.current?.querySelectorAll("[data-gsap-card]") ?? [],
-        { y: 18, opacity: 0, scale: 0.98 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.5, stagger: 0.055, ease: "power3.out" },
-      );
-    }, ref);
-    return () => ctx.revert();
-  }, []);
-
-  return ref;
-}
 
 export function AnimatedGameCard({
   children,
@@ -85,32 +15,18 @@ export function AnimatedGameCard({
   active,
   onClick,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   active?: boolean;
   onClick?: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [spring, api] = useSpring(() => ({ y: 0, scale: 1, rotate: 0, config: { tension: 360, friction: 24 } }));
-
-  const bind = useHover(({ hovering }) => {
-    api.start({ y: hovering ? -6 : 0, scale: hovering ? 1.015 : 1, rotate: hovering ? -0.4 : 0 });
-  });
-
-  function tap() {
-    if (ref.current) {
-      motionOneAnimate(ref.current, { transform: ["translateY(0) scale(1)", "translateY(3px) scale(.985)", "translateY(0) scale(1)"] } as Record<string, string[]>, { duration: 0.22, ease: "easeOut" });
-    }
-    onClick?.();
-  }
-
   return (
-    <animated.div
-      {...bind()}
-      ref={ref}
-      data-gsap-card
-      onClick={tap}
-      style={spring}
+    <motion.div
+      initial={false}
+      whileHover={{ y: -6, scale: 1.015, rotate: -0.4 }}
+      whileTap={{ y: 3, scale: 0.985 }}
+      transition={{ type: "spring", stiffness: 360, damping: 24 }}
+      onClick={onClick}
       className={cn(
         "game-tile relative overflow-hidden bg-card p-4 will-change-transform",
         active && "bg-primary text-primary-foreground",
@@ -119,39 +35,6 @@ export function AnimatedGameCard({
       )}
     >
       {children}
-    </animated.div>
-  );
-}
-
-export function XPBurst({ amount, show, className }: { amount: number; show: boolean; className?: string }) {
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.7, y: 10 }}
-          animate={{ opacity: [0, 1, 1, 0], scale: [0.7, 1.14, 1], y: -36 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.85, ease: easeOut }}
-          className={cn("pointer-events-none absolute right-4 top-4 z-20 rounded-full border border-border bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground shadow-sm", className)}
-        >
-          +{Math.min(100, amount)}% dominio
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-export function ComboAnimation({ combo }: { combo: number }) {
-  return (
-    <motion.div
-      key={combo}
-      initial={{ scale: 0.86, rotate: -2 }}
-      animate={{ scale: [0.86, 1.08, 1], rotate: [-2, 1, 0] }}
-      transition={{ duration: 0.38, ease: easeOut }}
-      className="game-chip inline-flex items-center gap-2 bg-primary/12 px-3 py-2 text-xs font-semibold text-secondary"
-    >
-      <FlareIcon />
-      Ritmo {combo}x
     </motion.div>
   );
 }
@@ -181,7 +64,12 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
   return (
     <AnimatePresence>
       {show && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="pointer-events-none absolute inset-0 z-30 grid place-items-center"
+        >
           <motion.div
             initial={{ y: 18, scale: 0.88, rotate: -2 }}
             animate={{ y: 0, scale: 1, rotate: 0 }}
@@ -189,7 +77,13 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
             transition={{ type: "spring", stiffness: 320, damping: 18 }}
             className="game-surface relative bg-card px-5 py-4 text-center"
           >
-            <Lottie animationData={pulseLottie} loop={false} className="absolute -top-12 left-1/2 h-24 w-24 -translate-x-1/2" />
+            <motion.span
+              aria-hidden="true"
+              className="absolute -top-8 left-1/2 h-16 w-16 -translate-x-1/2 rounded-full border-4 border-primary/70"
+              initial={{ opacity: 0, scale: 0.4 }}
+              animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.25, 1.55] }}
+              transition={{ duration: 0.75, ease: easeOut }}
+            />
             <Trophy className="relative mx-auto h-7 w-7 text-primary" aria-hidden="true" />
             <p className="relative mt-2 text-lg font-semibold">{title}</p>
             <p className="relative text-sm font-semibold text-secondary">progresso +{xp}</p>
@@ -208,7 +102,10 @@ export function InteractiveMascot({ mood = "ready", size = "md" }: { mood?: "rea
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, ease: easeOut }}
-      className={cn("grid shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary", size === "sm" ? "h-10 w-10" : "h-16 w-16")}
+      className={cn(
+        "grid shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary",
+        size === "sm" ? "h-10 w-10" : "h-16 w-16",
+      )}
       aria-label="Indicador de progresso"
     >
       <Icon className={cn(size === "sm" ? "h-5 w-5" : "h-7 w-7")} aria-hidden="true" />
@@ -216,39 +113,17 @@ export function InteractiveMascot({ mood = "ready", size = "md" }: { mood?: "rea
   );
 }
 
-export function ResponsiveHUD({
-  level,
-  xp,
-  streak,
-  progress,
-}: {
-  level: number;
-  xp: number;
-  streak: number;
-  progress: number;
-}) {
-  return (
-    <div className="game-surface grid gap-3 bg-card p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-      <InteractiveMascot mood={progress > 70 ? "happy" : "ready"} />
-      <div className="min-w-0">
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="game-chip bg-primary/12 px-3 py-1 text-xs font-semibold text-secondary">Consistencia {level}</span>
-          <span className="game-chip bg-primary/8 px-3 py-1 text-xs font-semibold text-muted-foreground">{streak} dias</span>
-        </div>
-        <p className="truncate text-2xl font-semibold tracking-normal">Progresso academico</p>
-        <p className="mt-1 text-xs text-muted-foreground">{xp} pontos secundarios</p>
-        <Progress value={progress} className="mt-3" />
-      </div>
-      <ComboAnimation combo={Math.max(1, Math.round(streak / 2))} />
-    </div>
-  );
-}
-
 export function SmoothProgressPath({ progress }: { progress: number }) {
   const clamped = Math.max(0, Math.min(100, progress));
   return (
     <svg viewBox="0 0 520 160" className="h-36 w-full" role="img" aria-label={`Progresso ${clamped}%`}>
-      <path d="M30 105 C110 20 165 150 245 80 S390 10 490 86" fill="none" stroke="hsl(var(--border))" strokeWidth="18" strokeLinecap="round" />
+      <path
+        d="M30 105 C110 20 165 150 245 80 S390 10 490 86"
+        fill="none"
+        stroke="hsl(var(--border))"
+        strokeWidth="18"
+        strokeLinecap="round"
+      />
       <motion.path
         d="M30 105 C110 20 165 150 245 80 S390 10 490 86"
         fill="none"
@@ -278,34 +153,7 @@ export function SmoothProgressPath({ progress }: { progress: number }) {
   );
 }
 
-export function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
-  return (
-    <div className="space-y-2">
-      {suggestions.map((suggestion, index) => (
-        <motion.button
-          key={suggestion}
-          type="button"
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.04, ease: easeOut }}
-          whileTap={{ scale: 0.97 }}
-          className="game-tile w-full bg-background/72 p-3 text-left text-xs font-bold leading-5 hover:bg-primary/12"
-        >
-          <Lightbulb className="mb-2 h-4 w-4 text-primary" aria-hidden="true" />
-          {suggestion}
-        </motion.button>
-      ))}
-    </div>
-  );
-}
-
-export function WritingSidebar({
-  lines,
-  structureProgress,
-}: {
-  lines: number;
-  structureProgress: number;
-}) {
+export function WritingSidebar({ lines, structureProgress }: { lines: number; structureProgress: number }) {
   return (
     <motion.aside
       initial={{ opacity: 0, x: 24 }}
@@ -321,12 +169,12 @@ export function WritingSidebar({
         <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
       </div>
       <div className="game-tile bg-primary/10 p-4">
-        <p className="mb-3 text-sm font-semibold">Sugestões rápidas</p>
+        <p className="mb-3 text-sm font-semibold">Sugestoes rapidas</p>
         <SmartSuggestions
           suggestions={[
-            "Use um repertório conectado à tese, não solto.",
-            "Feche o desenvolvimento com consequência clara.",
-            "Na intervenção, garanta agente, ação, meio e finalidade.",
+            "Use um repertorio conectado a tese, nao solto.",
+            "Feche o desenvolvimento com consequencia clara.",
+            "Na intervencao, garanta agente, acao, meio e finalidade.",
           ]}
         />
       </div>
@@ -364,7 +212,28 @@ export function ENEMWritingSheet({
   );
 }
 
-export function EssayPaper({ children, focusMode }: { children: React.ReactNode; focusMode?: boolean }) {
+function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
+  return (
+    <div className="space-y-2">
+      {suggestions.map((suggestion, index) => (
+        <motion.button
+          key={suggestion}
+          type="button"
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: index * 0.04, ease: easeOut }}
+          whileTap={{ scale: 0.97 }}
+          className="game-tile w-full bg-background/72 p-3 text-left text-xs font-bold leading-5 hover:bg-primary/12"
+        >
+          <Lightbulb className="mb-2 h-4 w-4 text-primary" aria-hidden="true" />
+          {suggestion}
+        </motion.button>
+      ))}
+    </div>
+  );
+}
+
+function EssayPaper({ children, focusMode }: { children: ReactNode; focusMode?: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.985, y: 12 }}
@@ -374,7 +243,11 @@ export function EssayPaper({ children, focusMode }: { children: React.ReactNode;
         "relative mx-auto aspect-[210/297] w-full overflow-hidden border border-primary/35 bg-[#fffdf7] text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]",
         focusMode ? "max-h-[calc(100dvh-2rem)]" : "max-w-[794px]",
       )}
-      style={{ backgroundImage: "linear-gradient(to bottom, transparent 31px, rgba(48,38,18,.14) 32px), radial-gradient(circle at 30% 10%, rgba(244,197,66,.08), transparent 32%)", backgroundSize: "100% 32px, 100% 100%" }}
+      style={{
+        backgroundImage:
+          "linear-gradient(to bottom, transparent 31px, rgba(48,38,18,.14) 32px), radial-gradient(circle at 30% 10%, rgba(244,197,66,.08), transparent 32%)",
+        backgroundSize: "100% 32px, 100% 100%",
+      }}
     >
       <div className="pointer-events-none absolute inset-y-[7%] left-[7%] w-px bg-primary/35" />
       <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-semibold text-[#7c705e]/70">
@@ -397,8 +270,4 @@ function WriterMetric({ label, value, progress }: { label: string; value: string
       <Progress value={progress} />
     </div>
   );
-}
-
-function FlareIcon() {
-  return <Star className="h-3.5 w-3.5" aria-hidden="true" />;
 }

@@ -41,7 +41,7 @@ class ModuleRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class SubjectRead(BaseModel):
+class CourseRead(BaseModel):
     id: int
     title: str
     slug: str
@@ -56,4 +56,3 @@ class LessonProgressUpdate(BaseModel):
     progress_percent: int = Field(ge=0, le=100)
     last_position_seconds: int = Field(ge=0)
     completed: bool = False
-

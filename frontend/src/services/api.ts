@@ -1,4 +1,4 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/backend";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/backend";
 
 export type User = {
   id: number;
@@ -47,7 +47,7 @@ export type Lesson = {
   exercises: { id: number; statement: string; skill: string; difficulty: string }[];
 };
 
-export type Subject = {
+export type Course = {
   id: number;
   title: string;
   slug: string;
@@ -89,7 +89,7 @@ export type Essay = {
   versions: EssayVersion[];
 };
 
-export type EssayCorrection = {
+type EssayCorrection = {
   id: number;
   total_score: number;
   competency_1: number;

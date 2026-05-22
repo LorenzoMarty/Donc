@@ -2,21 +2,45 @@ import { BadgeCheck, CalendarCheck, Flame, Gauge, Medal, ShieldCheck, Sparkles, 
 
 import type { BadgeDefinition, GameAttempt, GameProgress, StreakState } from "@/features/gamification/types";
 
-export const badgeCatalog: BadgeDefinition[] = [
+const badgeCatalog: BadgeDefinition[] = [
   { id: "first-clear", name: "Primeira pratica", description: "Concluiu o primeiro jogo do hub.", icon: Medal, rarity: "comum" },
-  { id: "precision-90", name: "Precisao alta", description: "Fechou uma pratica com pelo menos 90% de acerto.", icon: ShieldCheck, rarity: "raro" },
+  {
+    id: "precision-90",
+    name: "Precisao alta",
+    description: "Fechou uma pratica com pelo menos 90% de acerto.",
+    icon: ShieldCheck,
+    rarity: "raro",
+  },
   { id: "perfect-run", name: "Rodada perfeita", description: "Concluiu uma pratica com 100% de acerto.", icon: Target, rarity: "epico" },
   { id: "weekly-3", name: "Semana ativa", description: "Fez tres sessoes na semana atual.", icon: CalendarCheck, rarity: "raro" },
   { id: "weekly-5", name: "Meta semanal", description: "Fez cinco sessoes na semana atual.", icon: Trophy, rarity: "epico" },
   { id: "daily-streak-3", name: "Rotina ativa", description: "Manteve tres dias de sequencia.", icon: Flame, rarity: "raro" },
   { id: "daily-streak-7", name: "Consistencia semanal", description: "Manteve sete dias de estudo.", icon: Trophy, rarity: "epico" },
   { id: "five-games", name: "Centro de treino", description: "Concluiu cinco jogos diferentes.", icon: BadgeCheck, rarity: "epico" },
-  { id: "three-dominated", name: "Dominio tecnico", description: "Dominou tres jogos com pelo menos 90% de progresso.", icon: Gauge, rarity: "epico" },
+  {
+    id: "three-dominated",
+    name: "Dominio tecnico",
+    description: "Dominou tres jogos com pelo menos 90% de progresso.",
+    icon: Gauge,
+    rarity: "epico",
+  },
   { id: "xp-500", name: "Argumentador em marcha", description: "Acumulou 500 pontos secundarios no hub.", icon: Zap, rarity: "raro" },
-  { id: "xp-1000", name: "Dominio em expansao", description: "Acumulou 1000 pontos secundarios no hub.", icon: Sparkles, rarity: "lendario" },
+  {
+    id: "xp-1000",
+    name: "Dominio em expansao",
+    description: "Acumulou 1000 pontos secundarios no hub.",
+    icon: Sparkles,
+    rarity: "lendario",
+  },
 ];
 
-export function evaluateBadges(params: { attempts: GameAttempt[]; streak: StreakState; xp: number; currentBadges: string[]; progress?: Record<string, GameProgress> }) {
+export function evaluateBadges(params: {
+  attempts: GameAttempt[];
+  streak: StreakState;
+  xp: number;
+  currentBadges: string[];
+  progress?: Record<string, GameProgress>;
+}) {
   const unlocked = new Set(params.currentBadges);
   const completedGames = new Set(params.attempts.map((attempt) => attempt.gameId));
   const weekStart = startOfWeek(new Date());

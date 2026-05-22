@@ -15,7 +15,7 @@ class EssayService:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.repo = EssayRepository(db)
-        self.ai = EssayAIService()
+        self.ai = EssayAIService(db)
 
     def list_themes(self):
         return self.repo.list_themes()
@@ -60,7 +60,7 @@ class EssayService:
         self.db.commit()
         return self.repo.get_essay(essay.id, user_id)  # type: ignore[return-value]
 
-    def submit_for_correction(self, *, essay_id: int, user: User) -> Essay:
+    def submit_for_correction(self, *, essay_id: int, user: User, job_id: str | None = None) -> Essay:
         essay = self.repo.get_essay(essay_id, user.id)
         if not essay:
             raise AppError("Redacao nao encontrada.", status_code=404, code="essay_not_found")
@@ -70,7 +70,7 @@ class EssayService:
         essay = self.repo.get_essay(essay_id, user.id) or essay
         self._require_edit_before_new_correction(essay)
 
-        return self._apply_correction(essay=essay, user=user, award_points=True)
+        return self._apply_correction(essay=essay, user=user, award_points=True, job_id=job_id)
 
     def duplicate(self, *, essay_id: int, user_id: int) -> Essay:
         essay = self.get(essay_id=essay_id, user_id=user_id)
@@ -128,8 +128,15 @@ class EssayService:
         self._require_edit_before_new_correction(essay)
         return self._apply_correction(essay=essay, user=user, award_points=False)
 
-    def _apply_correction(self, *, essay: Essay, user: User, award_points: bool) -> Essay:
-        result = self.ai.correct(theme=essay.theme.title, context=essay.theme.context, content=essay.content)
+    def _apply_correction(self, *, essay: Essay, user: User, award_points: bool, job_id: str | None = None) -> Essay:
+        result = self.ai.correct(
+            theme=essay.theme.title,
+            context=essay.theme.context,
+            content=essay.content,
+            user_id=user.id,
+            essay_id=essay.id,
+            job_id=job_id,
+        )
         submitted_at = datetime.now(UTC)
         version = EssayVersion(
             essay_id=essay.id,

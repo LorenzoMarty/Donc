@@ -7,7 +7,7 @@ import useSound from "use-sound";
 import { ArrowLeft, Check, Clock, Flame, RotateCcw, Target, Trophy, X, Zap } from "lucide-react";
 
 import { getBadgesById } from "@/features/achievements/achievements";
-import type { GameCategory, GameCompletion, GameDefinition, GameQuestion } from "@/features/gamification/types";
+import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -74,7 +74,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
       const isCorrect = !timedOut && index === question.answerIndex;
       const nextCombo = isCorrect ? combo + 1 : 0;
       const xpGain = isCorrect ? getLiveXpGain(nextCombo, difficultyStage) : 0;
-      const selectedLabel = timedOut ? "Tempo esgotado" : question.options[index] ?? "Sem resposta";
+      const selectedLabel = timedOut ? "Tempo esgotado" : (question.options[index] ?? "Sem resposta");
       const nextAnswer: AnswerLog = {
         questionId: question.id,
         prompt: question.prompt,
@@ -127,7 +127,8 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
 
   useEffect(() => {
     if (result || feedback || selected !== null || timeLeft > 0) return;
-    answer(-1, true);
+    const id = window.setTimeout(() => answer(-1, true), 0);
+    return () => window.clearTimeout(id);
   }, [answer, feedback, result, selected, timeLeft]);
 
   function restart() {
@@ -158,7 +159,9 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
               </Link>
             </Button>
             <Badge className="border-primary/20 bg-primary/10 text-primary">Modo infinito</Badge>
-            <h1 className="mt-3 text-3xl font-semibold tracking-normal text-foreground md:text-4xl">{game.name}</h1>
+            <h1 className="mt-3 text-[clamp(1.75rem,7vw,2.75rem)] font-semibold leading-tight tracking-normal text-foreground">
+              {game.name}
+            </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
           </div>
           <div className="game-tile bg-primary/10 px-4 py-3 text-sm font-medium text-secondary">
@@ -178,7 +181,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
           progress={progress}
         />
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,20.625rem)]">
           <main>
             <AnimatePresence mode="wait">
               {!result && (
@@ -193,7 +196,10 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                     feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
                   )}
                 >
-                  <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" aria-hidden="true" />
+                  <div
+                    className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+                    aria-hidden="true"
+                  />
                   <div className="mb-5 flex flex-wrap items-center gap-2">
                     <Badge className="border-primary/20 bg-primary/10 text-primary">Coesao textual</Badge>
                     <Badge variant="outline">Velocidade {difficultyStage + 1}</Badge>
@@ -201,9 +207,11 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                   </div>
 
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Complete a lacuna</p>
-                  <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">{question.prompt}</h2>
+                  <h2 className="mt-3 text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-normal text-foreground md:text-[clamp(1.75rem,2.6vw,2.25rem)]">
+                    {question.prompt}
+                  </h2>
 
-                  <div className="mt-7 grid gap-3 md:grid-cols-2">
+                  <div className="mt-7 grid gap-3 lg:grid-cols-2">
                     {question.options.map((option, index) => {
                       const isSelected = selected === index;
                       const isCorrectOption = feedback !== null && index === question.answerIndex;
@@ -223,8 +231,14 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                           )}
                         >
                           <div className="mb-3 flex items-center justify-between gap-3">
-                            <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">{index + 1}</span>
-                            {isCorrectOption ? <Check className="h-5 w-5 text-emerald-700" aria-hidden="true" /> : isWrong ? <X className="h-5 w-5 text-red-700" aria-hidden="true" /> : null}
+                            <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">
+                              {index + 1}
+                            </span>
+                            {isCorrectOption ? (
+                              <Check className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+                            ) : isWrong ? (
+                              <X className="h-5 w-5 text-red-700" aria-hidden="true" />
+                            ) : null}
                           </div>
                           <p className="text-lg font-semibold tracking-normal text-foreground">{option}</p>
                         </motion.button>
@@ -240,7 +254,9 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                         exit={{ opacity: 0, y: -8 }}
                         className={cn(
                           "mt-5 rounded-md border p-4 text-sm leading-6",
-                          feedback === "correct" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800" : "border-destructive/25 bg-destructive/10 text-red-800",
+                          feedback === "correct"
+                            ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
+                            : "border-destructive/25 bg-destructive/10 text-red-800",
                         )}
                       >
                         {feedback === "correct" ? "Boa. " : "Revise: "}
@@ -261,7 +277,12 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                 <SideMetric label="Max combo" value={`${maxCombo}x`} />
                 <SideMetric label="Tempo" value={formatTime(seconds)} />
               </div>
-              <Button onClick={() => finishRound()} disabled={answerLog.length === 0 || result !== null} variant="outline" className="mt-4 w-full">
+              <Button
+                onClick={() => finishRound()}
+                disabled={answerLog.length === 0 || result !== null}
+                variant="outline"
+                className="mt-4 w-full"
+              >
                 Encerrar rodada
               </Button>
             </SidePanel>
@@ -269,7 +290,15 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
         </div>
       </div>
 
-      <ResultModal result={result} accuracy={accuracy} maxCombo={maxCombo} errors={errors} leveledUp={leveledUp} onRestart={restart} categorySlug={category.slug} />
+      <ResultModal
+        result={result}
+        accuracy={accuracy}
+        maxCombo={maxCombo}
+        errors={errors}
+        leveledUp={leveledUp}
+        onRestart={restart}
+        categorySlug={category.slug}
+      />
     </div>
   );
 }
@@ -297,9 +326,15 @@ function ConnectiveHud({
 }) {
   return (
     <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 xs:grid-cols-4 md:gap-3">
         <HudMetric icon={<Flame className="h-4 w-4" aria-hidden="true" />} label="Combo" value={`${combo}x`} />
-        <HudMetric icon={<Zap className="h-4 w-4" aria-hidden="true" />} label="XP" value={`${xp + sessionXp}`} pulse={lastXpGain ? `+${lastXpGain}` : undefined} pulseKey={xpPulseKey} />
+        <HudMetric
+          icon={<Zap className="h-4 w-4" aria-hidden="true" />}
+          label="XP"
+          value={`${xp + sessionXp}`}
+          pulse={lastXpGain ? `+${lastXpGain}` : undefined}
+          pulseKey={xpPulseKey}
+        />
         <HudMetric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Timer" value={`${timeLeft}s`} />
         <HudMetric icon={<Target className="h-4 w-4" aria-hidden="true" />} label="Rodada" value={`${round + 1}`} />
       </div>
@@ -307,7 +342,9 @@ function ConnectiveHud({
       <div className="mt-4">
         <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
           <span>Progresso da rodada</span>
-          <span>{timeLeft}s / {roundDuration}s</span>
+          <span>
+            {timeLeft}s / {roundDuration}s
+          </span>
         </div>
         <div className="h-2.5 overflow-hidden rounded-full border border-border bg-muted/70">
           <motion.div
@@ -322,7 +359,19 @@ function ConnectiveHud({
   );
 }
 
-function HudMetric({ icon, label, value, pulse, pulseKey }: { icon: React.ReactNode; label: string; value: string; pulse?: string; pulseKey?: number }) {
+function HudMetric({
+  icon,
+  label,
+  value,
+  pulse,
+  pulseKey,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  pulse?: string;
+  pulseKey?: number;
+}) {
   return (
     <div className="game-tile relative bg-background/58 px-3 py-2">
       <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -332,7 +381,13 @@ function HudMetric({ icon, label, value, pulse, pulseKey }: { icon: React.ReactN
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
       <AnimatePresence>
         {pulse && pulseKey ? (
-          <motion.span key={pulseKey} initial={{ opacity: 0, y: 8, scale: 0.9 }} animate={{ opacity: 1, y: -4, scale: 1 }} exit={{ opacity: 0, y: -18 }} className="absolute right-3 top-2 text-xs font-semibold text-emerald-700">
+          <motion.span
+            key={pulseKey}
+            initial={{ opacity: 0, y: 8, scale: 0.9 }}
+            animate={{ opacity: 1, y: -4, scale: 1 }}
+            exit={{ opacity: 0, y: -18 }}
+            className="absolute right-3 top-2 text-xs font-semibold text-emerald-700"
+          >
             {pulse}
           </motion.span>
         ) : null}
@@ -384,15 +439,29 @@ function ResultModal({
   return (
     <AnimatePresence>
       {result && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 grid place-items-center bg-foreground/28 p-4 backdrop-blur-sm">
-          <motion.section initial={{ opacity: 0, y: 24, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16, scale: 0.96 }} className="game-surface relative w-full max-w-2xl overflow-hidden bg-card p-5 text-foreground md:p-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[70] grid place-items-center bg-foreground/28 p-3 backdrop-blur-sm xs:p-4"
+        >
+          <motion.section
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-2xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
+          >
             <ConfettiBurst />
             <div className="relative text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
                 <Trophy className="h-8 w-8" aria-hidden="true" />
               </div>
               {leveledUp && (
-                <motion.div initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1 }} className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary"
+                >
                   Rank up - {result.rankName}
                 </motion.div>
               )}
@@ -406,10 +475,10 @@ function ResultModal({
                 </div>
               )}
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rodada finalizada</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal md:text-4xl">+{result.xpEarned} XP</h2>
+              <h2 className="mt-2 text-[clamp(1.9rem,8vw,2.75rem)] font-semibold tracking-normal">+{result.xpEarned} XP</h2>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <SideMetric label="XP ganho" value={`+${result.xpEarned}`} />
               <SideMetric label="Max combo" value={`${maxCombo}x`} />
               <SideMetric label="Acerto" value={`${accuracy}%`} />
@@ -457,7 +526,10 @@ function ConfettiBurst() {
           initial={{ opacity: 0, y: -12, rotate: 0 }}
           animate={{ opacity: [0, 1, 0], y: 160 + piece.travel, rotate: piece.rotate }}
           transition={{ delay: piece.delay, duration: 1.15, ease: "easeOut" }}
-          className={cn("absolute top-0 h-2 w-1 rounded-full", index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-emerald-300" : "bg-zinc-100")}
+          className={cn(
+            "absolute top-0 h-2 w-1 rounded-full",
+            index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-emerald-300" : "bg-zinc-100",
+          )}
           style={{ left: `${piece.left}%` }}
         />
       ))}

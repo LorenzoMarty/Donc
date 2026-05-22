@@ -22,11 +22,7 @@ export function ScoreAreaChart({ data }: { data: { label: string; score: number 
   );
 }
 
-export function CompetencyBarChart({
-  data,
-}: {
-  data: { competency: string; value: number }[];
-}) {
+export function CompetencyBarChart({ data }: { data: { competency: string; value: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} margin={{ left: -18, right: 8, top: 12, bottom: 0 }}>

@@ -39,7 +39,10 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refresh();
+    const id = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [refresh]);
 
   const value = useMemo<AuthContextValue>(

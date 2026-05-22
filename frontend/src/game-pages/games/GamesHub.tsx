@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGameStore } from "@/stores/game-store";
 
+const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
+const pageOpenedAt = Date.now();
+
 export default function GamesHub() {
   const [ready, setReady] = useState(false);
   const attempts = useGameStore((state) => state.attempts);
@@ -32,11 +35,9 @@ export default function GamesHub() {
   const dailyGame = games.find((game) => game.category === "desafios-diarios") ?? recommended[0];
 
   const weeklyProgress = useMemo(() => {
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const sevenDaysAgo = pageOpenedAt - WEEK_IN_MS;
     const activeDays = new Set(
-      attempts
-        .filter((attempt) => new Date(attempt.playedAt).getTime() >= sevenDaysAgo)
-        .map((attempt) => attempt.playedAt.slice(0, 10)),
+      attempts.filter((attempt) => new Date(attempt.playedAt).getTime() >= sevenDaysAgo).map((attempt) => attempt.playedAt.slice(0, 10)),
     );
     return Math.min(100, Math.round((activeDays.size / 5) * 100));
   }, [attempts]);
@@ -52,16 +53,21 @@ export default function GamesHub() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-stretch"
+          className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)] lg:items-stretch"
         >
           <div className="game-surface relative overflow-hidden bg-card p-5 md:p-7">
-            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
+              aria-hidden="true"
+            />
             <div className="relative max-w-3xl">
               <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-secondary">
                 <Dumbbell className="h-4 w-4" aria-hidden="true" />
                 Academia de escrita
               </div>
-              <h1 className="text-3xl font-semibold tracking-normal text-foreground md:text-4xl">Centro de Treinamento</h1>
+              <h1 className="text-[clamp(1.8rem,7vw,2.75rem)] font-semibold leading-tight tracking-normal text-foreground">
+                Centro de Treinamento
+              </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
                 Evolua sua escrita dominando cada habilidade do ENEM.
               </p>
@@ -91,7 +97,10 @@ export default function GamesHub() {
             transition={{ delay: 0.08, duration: 0.36, ease: "easeOut" }}
             className="game-surface relative overflow-hidden bg-primary p-5 text-primary-foreground"
           >
-            <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/30 blur-3xl" aria-hidden="true" />
+            <div
+              className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/30 blur-3xl"
+              aria-hidden="true"
+            />
             <div className="relative flex h-full flex-col">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -121,16 +130,14 @@ export default function GamesHub() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Categorias</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">Academia de habilidades</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Escolha o treino mais útil para sua escrita agora.
-              </p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Escolha o treino mais útil para sua escrita agora.</p>
             </div>
             <div className="game-chip inline-flex w-fit items-center gap-2 bg-background/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 text-secondary" aria-hidden="true" />
               {categories.length} areas
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="fluid-grid gap-3 [--grid-min:17rem]">
             {categories.map((category, index) => (
               <CategoryCard key={category.id} category={category} index={index} />
             ))}
@@ -158,7 +165,7 @@ function GamesHubSkeleton() {
   return (
     <div className="space-y-5 md:space-y-6">
       <div className="space-y-5">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)]">
           <div className="game-surface bg-card p-5 md:p-7">
             <Skeleton className="mb-5 h-8 w-48" />
             <Skeleton className="mb-4 h-12 w-full max-w-xl md:h-16" />
@@ -170,12 +177,12 @@ function GamesHubSkeleton() {
             <Skeleton className="h-24 w-full" />
           </div>
         </div>
-        <div className="grid gap-3 lg:grid-cols-5">
+        <div className="fluid-grid gap-3 [--grid-min:11rem]">
           {Array.from({ length: 5 }).map((_, index) => (
             <Skeleton key={index} className="h-24" />
           ))}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="fluid-grid gap-3 [--grid-min:17rem]">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-64" />
           ))}

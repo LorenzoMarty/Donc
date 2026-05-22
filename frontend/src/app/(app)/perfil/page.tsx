@@ -32,9 +32,9 @@ export default function ProfilePage() {
         }
       />
 
-      <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <Surface className="bg-primary text-primary-foreground">
-          <div className="flex items-center gap-5">
+          <div className="flex flex-col gap-4 xs:flex-row xs:items-center xs:gap-5">
             <div className="grid h-20 w-20 place-items-center rounded-md border border-foreground/20 bg-foreground/10 text-2xl font-semibold text-foreground">
               {initials(user?.name ?? "Aluno")}
             </div>
@@ -46,7 +46,7 @@ export default function ProfilePage() {
           </div>
         </Surface>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="fluid-grid gap-4 [--grid-min:13rem]">
           <Metric icon={Zap} label="Pontos" value={String(xp)} />
           <Metric icon={GraduationCap} label="Consistencia" value={String(level)} />
           <Metric icon={Flame} label="Sequencia" value={`${user?.streak_days ?? 0} dias`} />

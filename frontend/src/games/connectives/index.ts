@@ -12,13 +12,13 @@ export const connectiveGames: GameDefinition[] = [
     thumbnail: "coesao-conectivos",
     progress: 0,
     unlocked: true,
-    rarity: "comum",
     engine: "quiz",
     skill: "Coesao",
     questions: [
       {
         id: "q1",
-        prompt: "A desigualdade digital limita a participacao escolar. ___, politicas de conectividade precisam chegar primeiro as escolas publicas.",
+        prompt:
+          "A desigualdade digital limita a participacao escolar. ___, politicas de conectividade precisam chegar primeiro as escolas publicas.",
         options: ["Portanto", "Entretanto", "Por exemplo", "Apesar disso"],
         answerIndex: 0,
         explanation: "A segunda frase conclui uma consequencia pratica do problema apresentado.",
@@ -46,7 +46,8 @@ export const connectiveGames: GameDefinition[] = [
       },
       {
         id: "q5",
-        prompt: "A proposta de intervencao precisa indicar agente, acao, meio e finalidade. ___, ela se torna mais completa para a Competencia 5.",
+        prompt:
+          "A proposta de intervencao precisa indicar agente, acao, meio e finalidade. ___, ela se torna mais completa para a Competencia 5.",
         options: ["Dessa forma", "Embora", "Por outro lado", "Apesar disso"],
         answerIndex: 0,
         explanation: "A segunda frase apresenta consequencia positiva da estrutura citada antes.",
@@ -113,7 +114,6 @@ export const connectiveGames: GameDefinition[] = [
     thumbnail: "coesao-retomadas",
     progress: 0,
     unlocked: true,
-    rarity: "raro",
     engine: "quiz",
     skill: "Coesao",
     questions: [

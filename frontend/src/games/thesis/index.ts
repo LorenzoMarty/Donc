@@ -12,7 +12,6 @@ export const thesisGames: GameDefinition[] = [
     thumbnail: "argumentacao-tese",
     progress: 0,
     unlocked: true,
-    rarity: "comum",
     engine: "quiz",
     skill: "Argumentacao",
     questions: [
@@ -53,14 +52,18 @@ export const thesisGames: GameDefinition[] = [
     thumbnail: "argumentacao-mapa",
     progress: 0,
     unlocked: true,
-    rarity: "raro",
     engine: "sequence",
     skill: "Argumentacao",
     questions: [
       {
         id: "q1",
         prompt: "Para um paragrafo sobre exclusao digital, qual ordem argumentativa e mais forte?",
-        options: ["Causa > consequencia > exemplo", "Exemplo solto > conclusao > tema", "Citacao > citacao > citacao", "Proposta > introducao > causa"],
+        options: [
+          "Causa > consequencia > exemplo",
+          "Exemplo solto > conclusao > tema",
+          "Citacao > citacao > citacao",
+          "Proposta > introducao > causa",
+        ],
         answerIndex: 0,
         explanation: "Essa ordem conduz o leitor da origem do problema ao impacto concreto.",
       },

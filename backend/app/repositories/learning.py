@@ -1,18 +1,19 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Exercise, Lesson, LessonProgress, Module, Subject
+from app.models import Course, Exercise, Lesson, LessonProgress, Module
 
 
 class LearningRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list_subjects(self) -> list[Subject]:
+    def list_courses(self) -> list[Course]:
         stmt = (
-            select(Subject)
-            .options(selectinload(Subject.modules).selectinload(Module.lessons), selectinload(Subject.modules).selectinload(Module.exercises))
-            .order_by(Subject.id)
+            select(Course)
+            .where(Course.slug == "destrave-redacao")
+            .options(selectinload(Course.modules).selectinload(Module.lessons), selectinload(Course.modules).selectinload(Module.exercises))
+            .order_by(Course.id)
         )
         return list(self.db.scalars(stmt))
 
@@ -24,7 +25,14 @@ class LearningRepository:
         return self.db.get(Exercise, exercise_id)
 
     def list_exercises(self) -> list[Exercise]:
-        return list(self.db.scalars(select(Exercise).order_by(Exercise.id)))
+        stmt = (
+            select(Exercise)
+            .join(Exercise.module)
+            .join(Module.course)
+            .where(Course.slug == "destrave-redacao")
+            .order_by(Exercise.id)
+        )
+        return list(self.db.scalars(stmt))
 
     def get_progress(self, user_id: int, lesson_id: int) -> LessonProgress | None:
         stmt = select(LessonProgress).where(LessonProgress.user_id == user_id, LessonProgress.lesson_id == lesson_id)

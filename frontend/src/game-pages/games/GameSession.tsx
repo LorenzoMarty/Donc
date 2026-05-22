@@ -98,9 +98,16 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
         }
       />
 
-      <SessionHUD accuracy={liveAccuracy} step={Math.min(step + 1, game.questions.length)} total={game.questions.length} seconds={seconds} streak={streak} />
+      <SessionHUD
+        accuracy={liveAccuracy}
+        step={Math.min(step + 1, game.questions.length)}
+        total={game.questions.length}
+        seconds={seconds}
+        streak={streak}
+        xp={game.xpReward}
+      />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,330px)]">
         <main>
           <AnimatePresence mode="wait">
             {!result && question ? (
@@ -114,15 +121,16 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
               >
                 <div className="mb-5 flex flex-wrap gap-2">
                   <Badge variant="secondary">{game.difficulty}</Badge>
-                  <Badge variant="outline">{game.rarity}</Badge>
                   <Badge variant="outline">{game.estimatedTime}</Badge>
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Questao {step + 1} de {game.questions.length}
                 </p>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal md:text-3xl">{question.prompt}</h2>
+                <h2 className="mt-3 text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-normal md:text-[clamp(1.75rem,2.6vw,2.25rem)]">
+                  {question.prompt}
+                </h2>
 
-                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                <div className="mt-6 grid gap-3 lg:grid-cols-2">
                   {question.options.map((option, index) => {
                     const isSelected = selected === index;
                     const isCorrect = selected !== null && index === question.answerIndex;
@@ -141,8 +149,14 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                         )}
                       >
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">{index + 1}</span>
-                          {isCorrect ? <CheckCircle2 className="h-5 w-5 text-secondary" /> : isWrong ? <XCircle className="h-5 w-5 text-destructive" /> : null}
+                          <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">
+                            {index + 1}
+                          </span>
+                          {isCorrect ? (
+                            <CheckCircle2 className="h-5 w-5 text-secondary" />
+                          ) : isWrong ? (
+                            <XCircle className="h-5 w-5 text-destructive" />
+                          ) : null}
                         </div>
                         <p className="text-sm font-semibold leading-6">{option}</p>
                       </motion.button>
@@ -151,7 +165,11 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                 </div>
 
                 {selected !== null && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="game-tile mt-5 bg-primary/10 p-4 text-sm leading-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="game-tile mt-5 bg-primary/10 p-4 text-sm leading-6"
+                  >
                     {question.explanation}
                   </motion.div>
                 )}
@@ -168,13 +186,18 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                 </div>
                 <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessao concluida</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisao</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Voce recebeu {result?.xpEarned ?? 0} pontos secundarios nesta conclusao.</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Voce recebeu {result?.xpEarned ?? 0} pontos secundarios nesta conclusao.
+                </p>
                 {unlockedBadges.length > 0 && (
                   <div className="mt-5 flex flex-wrap justify-center gap-2">
                     {unlockedBadges.map((badge) => {
                       const Icon = badge.icon;
                       return (
-                        <span key={badge.id} className="game-chip inline-flex items-center gap-1.5 bg-primary/12 px-3 py-1.5 text-sm font-semibold text-secondary">
+                        <span
+                          key={badge.id}
+                          className="game-chip inline-flex items-center gap-1.5 bg-primary/12 px-3 py-1.5 text-sm font-semibold text-secondary"
+                        >
                           <Icon className="h-4 w-4" aria-hidden="true" />
                           {badge.name}
                         </span>
@@ -200,13 +223,19 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
           <Surface>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Objetivo</p>
             <h2 className="mt-1 text-xl font-semibold tracking-normal">{game.skill}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">Concluir com alta precisao aumenta o dominio registrado. Repetir no mesmo dia concede XP reduzido.</p>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Concluir com alta precisao aumenta o dominio registrado. Repetir no mesmo dia concede XP reduzido.
+            </p>
           </Surface>
           <Surface>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Feedback</p>
             <div className="mt-3 space-y-2">
-              <div className="game-tile bg-background/58 p-3 text-sm text-muted-foreground">Resposta correta libera explicacao imediata.</div>
-              <div className="game-tile bg-background/58 p-3 text-sm text-muted-foreground">O melhor desempenho define seu progresso no card.</div>
+              <div className="game-tile bg-background/58 p-3 text-sm text-muted-foreground">
+                Resposta correta libera explicacao imediata.
+              </div>
+              <div className="game-tile bg-background/58 p-3 text-sm text-muted-foreground">
+                O melhor desempenho define seu progresso no card.
+              </div>
             </div>
           </Surface>
         </aside>

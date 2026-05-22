@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
+  ChevronDown,
   FilePenLine,
   FileText,
   GitCompareArrows,
@@ -39,6 +40,8 @@ export default function EssayHistoryPage() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [busyAction, setBusyAction] = useState("");
   const [actionError, setActionError] = useState("");
+  const [draftsOpen, setDraftsOpen] = useState(true);
+  const [correctedOpen, setCorrectedOpen] = useState(true);
 
   const loadHistory = useCallback(() => {
     return apiFetch<EssayHistory>("/essays/history").then(setHistory);
@@ -103,7 +106,7 @@ export default function EssayHistoryPage() {
         title="Redacoes, versoes e revisoes em um so lugar."
         description="Continue rascunhos, compare evolucao e reescreva textos corrigidos sem perder o historico."
         action={
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="w-full md:w-auto">
             <Link href="/redacao">
               <Plus className="h-4 w-4" aria-hidden="true" />
               Nova redacao
@@ -112,7 +115,7 @@ export default function EssayHistoryPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="fluid-grid gap-4 [--grid-min:15rem]">
         <Surface>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Media geral</p>
           <p className="mt-2 text-4xl font-semibold tracking-normal">{history.average_score || "--"}</p>
@@ -137,12 +140,20 @@ export default function EssayHistoryPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Organizacao</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-normal">Biblioteca de textos</h2>
           </div>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="relative min-w-0 md:w-[340px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por tema, titulo ou erro" className="pl-9" />
+          <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+            <div className="relative min-w-0 md:w-[min(100vw,340px)]">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar por tema, titulo ou erro"
+                className="pl-9"
+              />
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 overflow-x-auto no-scrollbar">
               {(["all", "draft", "corrected"] as const).map((item) => (
                 <button
                   key={item}
@@ -170,66 +181,94 @@ export default function EssayHistoryPage() {
       {history.essays.length === 0 ? (
         <EmptyState title="Nenhuma redacao registrada" description="Comece pelo editor para ativar sua linha de evolucao." />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)]">
           <div className="space-y-4">
             <Surface>
-              <div className="mb-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setDraftsOpen((value) => !value)}
+                className="mb-4 flex w-full items-center justify-between gap-3 text-left"
+                aria-expanded={draftsOpen}
+              >
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Rascunhos</p>
                   <h2 className="mt-1 text-xl font-semibold tracking-normal">Continue escrevendo</h2>
                 </div>
-                <FilePenLine className="h-5 w-5 text-secondary" aria-hidden="true" />
-              </div>
-              {drafts.length ? (
-                <div className="grid gap-3 lg:grid-cols-2">
-                  {drafts.map((essay) => (
-                    <EssayWorkspaceCard
-                      key={essay.id}
-                      essay={essay}
-                      busyAction={busyAction}
-                      onDelete={() =>
-                        runAction(`delete-${essay.id}`, async () => {
-                          if (!window.confirm("Excluir este rascunho?")) return;
-                          await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
-                          await loadHistory();
-                        })
-                      }
-                    />
-                  ))}
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{drafts.length}</Badge>
+                  <FilePenLine className="h-5 w-5 text-secondary" aria-hidden="true" />
+                  <ChevronDown
+                    className={cn("h-5 w-5 text-muted-foreground transition-transform", !draftsOpen && "-rotate-90")}
+                    aria-hidden="true"
+                  />
                 </div>
-              ) : (
-                <p className="text-sm leading-6 text-muted-foreground">Nenhum rascunho no filtro atual.</p>
-              )}
+              </button>
+              {draftsOpen ? (
+                drafts.length ? (
+                  <div className="grid gap-3 lg:grid-cols-2">
+                    {drafts.map((essay) => (
+                      <EssayWorkspaceCard
+                        key={essay.id}
+                        essay={essay}
+                        busyAction={busyAction}
+                        onDelete={() =>
+                          runAction(`delete-${essay.id}`, async () => {
+                            if (!window.confirm("Excluir este rascunho?")) return;
+                            await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
+                            await loadHistory();
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-6 text-muted-foreground">Nenhum rascunho no filtro atual.</p>
+                )
+              ) : null}
             </Surface>
 
             <Surface>
-              <div className="mb-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setCorrectedOpen((value) => !value)}
+                className="mb-4 flex w-full items-center justify-between gap-3 text-left"
+                aria-expanded={correctedOpen}
+              >
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Corrigidas</p>
                   <h2 className="mt-1 text-xl font-semibold tracking-normal">Revisar, versionar e comparar</h2>
                 </div>
-                <GitCompareArrows className="h-5 w-5 text-secondary" aria-hidden="true" />
-              </div>
-              {corrected.length ? (
-                <div className="grid gap-3">
-                  {corrected.map((essay) => (
-                    <EssayWorkspaceCard
-                      key={essay.id}
-                      essay={essay}
-                      busyAction={busyAction}
-                      onDelete={() =>
-                        runAction(`delete-${essay.id}`, async () => {
-                          if (!window.confirm("Excluir esta redacao e sua correcao?")) return;
-                          await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
-                          await loadHistory();
-                        })
-                      }
-                    />
-                  ))}
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{corrected.length}</Badge>
+                  <GitCompareArrows className="h-5 w-5 text-secondary" aria-hidden="true" />
+                  <ChevronDown
+                    className={cn("h-5 w-5 text-muted-foreground transition-transform", !correctedOpen && "-rotate-90")}
+                    aria-hidden="true"
+                  />
                 </div>
-              ) : (
-                <p className="text-sm leading-6 text-muted-foreground">Nenhuma redacao corrigida no filtro atual.</p>
-              )}
+              </button>
+              {correctedOpen ? (
+                corrected.length ? (
+                  <div className="grid gap-3">
+                    {corrected.map((essay) => (
+                      <EssayWorkspaceCard
+                        key={essay.id}
+                        essay={essay}
+                        busyAction={busyAction}
+                        onDelete={() =>
+                          runAction(`delete-${essay.id}`, async () => {
+                            if (!window.confirm("Excluir esta redacao e sua correcao?")) return;
+                            await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
+                            await loadHistory();
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-6 text-muted-foreground">Nenhuma redacao corrigida no filtro atual.</p>
+                )
+              ) : null}
             </Surface>
           </div>
 
@@ -264,17 +303,19 @@ export default function EssayHistoryPage() {
                     <div key={essay.id} className="game-tile bg-background/56 p-3">
                       <p className="line-clamp-1 text-sm font-semibold">{essay.title}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {[...essay.versions].sort((a, b) => a.version_number - b.version_number).map((version) => (
-                          <span
-                            key={version.id}
-                            className={cn(
-                              "game-chip px-2.5 py-1 text-xs font-semibold",
-                              version.correction ? "bg-primary/12 text-secondary" : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            Versao {version.version_number} {version.score ? `- ${version.score}` : ""}
-                          </span>
-                        ))}
+                        {[...essay.versions]
+                          .sort((a, b) => a.version_number - b.version_number)
+                          .map((version) => (
+                            <span
+                              key={version.id}
+                              className={cn(
+                                "game-chip px-2.5 py-1 text-xs font-semibold",
+                                version.correction ? "bg-primary/12 text-secondary" : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              Versao {version.version_number} {version.score ? `- ${version.score}` : ""}
+                            </span>
+                          ))}
                       </div>
                       <Button asChild size="sm" variant="outline" className="mt-3 w-full">
                         <Link href={`/redacao?essayId=${essay.id}`}>Abrir versoes</Link>
@@ -309,15 +350,7 @@ export default function EssayHistoryPage() {
   );
 }
 
-function EssayWorkspaceCard({
-  essay,
-  busyAction,
-  onDelete,
-}: {
-  essay: Essay;
-  busyAction: string;
-  onDelete: () => void;
-}) {
+function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; busyAction: string; onDelete: () => void }) {
   const score = essay.score ?? 0;
   const busy = busyAction.endsWith(`-${essay.id}`);
 
@@ -327,7 +360,9 @@ function EssayWorkspaceCard({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={essay.status === "corrected" ? "secondary" : "outline"}>{statusLabel[essay.status]}</Badge>
-            <Badge variant="outline">{essay.versions.length || 1} versao{(essay.versions.length || 1) > 1 ? "es" : ""}</Badge>
+            <Badge variant="outline">
+              {essay.versions.length || 1} versao{(essay.versions.length || 1) > 1 ? "es" : ""}
+            </Badge>
             {essay.score ? <Badge variant="success">{essay.score}</Badge> : null}
           </div>
           <h3 className="mt-3 line-clamp-2 text-lg font-semibold tracking-normal">{essay.title}</h3>

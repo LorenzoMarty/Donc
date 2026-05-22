@@ -3,9 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, BookOpenCheck, Brain, CheckCircle2, Flame, Gem, LockKeyhole, Medal, PenLine, ShieldCheck, Target, Trophy, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  Brain,
+  CheckCircle2,
+  Flame,
+  Gem,
+  LockKeyhole,
+  Medal,
+  PenLine,
+  ShieldCheck,
+  Target,
+  Trophy,
+  Zap,
+} from "lucide-react";
 
-import { achievementCategories, buildAchievements, type AchievementMetrics, type AchievementProgress } from "@/components/game/achievements-system";
+import {
+  achievementCategories,
+  buildAchievements,
+  type AchievementMetrics,
+  type AchievementProgress,
+} from "@/components/game/achievements-system";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/providers/app-providers";
-import { apiFetch, type EssayHistory, type Exercise } from "@/services/api";
+import { apiFetch, type Dashboard, type EssayHistory, type Exercise } from "@/services/api";
 import { cn } from "@/utils";
 
 const completedNodeStorageKey = "donk.exercise.completed.nodes";
@@ -45,6 +64,7 @@ const rarityLabel: Record<AchievementProgress["rarity"], string> = {
 
 export default function AchievementsPage() {
   const { user } = useAuth();
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [history, setHistory] = useState<EssayHistory | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [completedNodeIds, setCompletedNodeIds] = useState<string[]>([]);
@@ -71,6 +91,9 @@ export default function AchievementsPage() {
       apiFetch<Exercise[]>("/exercises")
         .then(setExercises)
         .catch(() => setExercises([])),
+      apiFetch<Dashboard>("/dashboard")
+        .then(setDashboard)
+        .catch(() => setDashboard(null)),
     ]).finally(() => setLoading(false));
 
     return () => window.removeEventListener("storage", readLocalProgress);
@@ -79,7 +102,9 @@ export default function AchievementsPage() {
   const metrics = useMemo<AchievementMetrics>(() => {
     const essays = history?.essays ?? [];
     const scores = essays.map((essay) => essay.score ?? 0).filter(Boolean);
-    const completedTracks = trackIds.filter((trackId) => completedNodeIds.some((nodeId) => nodeId.startsWith(`${trackId}-boss-boss`))).length;
+    const completedTracks = trackIds.filter((trackId) =>
+      completedNodeIds.some((nodeId) => nodeId.startsWith(`${trackId}-boss-boss`)),
+    ).length;
 
     return {
       completedExercises: completedNodeIds.length,
@@ -129,15 +154,15 @@ export default function AchievementsPage() {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <Metric label="Marcos ativos" value={`${unlocked.length}/${regularAchievements.length}`} />
+      <section className="grid gap-3 xs:grid-cols-2 lg:grid-cols-4">
+        <Metric label="Aulas assistidas" value={String(dashboard?.completed_lessons ?? 0)} />
         <Metric label="Sequencia" value={`${user.streak_days} dias`} />
         <Metric label="Melhor nota" value={metrics.bestEssayScore ? String(metrics.bestEssayScore) : "--"} />
         <Metric label="Redacoes" value={String(metrics.essaysWritten)} />
       </section>
 
       <Surface>
-        <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-center">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Progresso geral</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-normal">Evolucao registrada em marcos discretos</h2>
@@ -151,9 +176,10 @@ export default function AchievementsPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proximo marco</p>
               <p className="mt-2 font-semibold">{nextMilestone.title}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{nextMilestone.description}</p>
-              <div className="mt-4 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                <span>{nextMilestone.current}/{nextMilestone.target}</span>
-                <span>{nextMilestone.progress}%</span>
+              <div className="mt-4 text-xs font-semibold text-muted-foreground">
+                <span>
+                  {nextMilestone.current}/{nextMilestone.target}
+                </span>
               </div>
               <Progress value={nextMilestone.progress} className="mt-2 h-2" />
             </div>
@@ -162,7 +188,7 @@ export default function AchievementsPage() {
       </Surface>
 
       <Tabs defaultValue="todos" className="space-y-4">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
+        <TabsList className="mobile-scroll h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
           <TabsTrigger value="todos">Todos</TabsTrigger>
           {achievementCategories
             .filter((category) => category.id !== "platina")
@@ -199,7 +225,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function AchievementGrid({ achievements }: { achievements: AchievementProgress[] }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <div className="fluid-grid gap-3 [--grid-min:17rem]">
       {achievements.map((achievement) => (
         <AchievementCard key={achievement.id} achievement={achievement} />
       ))}
@@ -212,9 +238,19 @@ function AchievementCard({ achievement }: { achievement: AchievementProgress }) 
   const hidden = achievement.secret && !achievement.unlocked;
 
   return (
-    <article className={cn("game-tile bg-background/58 p-4 transition-colors hover:bg-muted/60", achievement.unlocked && "border-primary/30 bg-primary/8")}>
+    <article
+      className={cn(
+        "game-tile bg-background/58 p-4 transition-colors hover:bg-muted/60",
+        achievement.unlocked && "border-primary/30 bg-primary/8",
+      )}
+    >
       <div className="flex items-start gap-3">
-        <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-md border", achievement.unlocked ? "border-primary/30 bg-primary/12 text-primary" : "border-border bg-muted/50 text-muted-foreground")}>
+        <div
+          className={cn(
+            "grid h-10 w-10 shrink-0 place-items-center rounded-md border",
+            achievement.unlocked ? "border-primary/30 bg-primary/12 text-primary" : "border-border bg-muted/50 text-muted-foreground",
+          )}
+        >
           {achievement.unlocked ? <Icon className="h-5 w-5" aria-hidden="true" /> : <LockKeyhole className="h-4 w-4" aria-hidden="true" />}
         </div>
         <div className="min-w-0 flex-1">
@@ -227,13 +263,14 @@ function AchievementCard({ achievement }: { achievement: AchievementProgress }) 
               </Badge>
             )}
           </div>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{hidden ? "Continue estudando para revelar este marco." : achievement.description}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+            {hidden ? "Continue estudando para revelar este marco." : achievement.description}
+          </p>
         </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
         <span>{rarityLabel[achievement.rarity]}</span>
-        <span>{achievement.progress}%</span>
       </div>
       <Progress value={achievement.progress} className="mt-2 h-2" />
     </article>

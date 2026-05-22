@@ -30,7 +30,7 @@ export default function OnboardingPage() {
           </Button>
         }
       />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="fluid-grid gap-4 [--grid-min:15rem]">
         {steps.map((step, index) => {
           const Icon = step.icon;
           return (

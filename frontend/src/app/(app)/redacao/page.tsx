@@ -12,7 +12,6 @@ import { ConnectiveLibrary, RepertoireSuggestions } from "@/components/writing/w
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDebouncedEffect } from "@/hooks/use-debounced-effect";
 import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
 import { cn } from "@/utils";
 
@@ -27,6 +26,9 @@ export default function EssayPage() {
   const [focusMode, setFocusMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const essayId = essay?.id;
+  const essayStatus = essay?.status;
+  const selectedThemeId = selectedTheme?.id;
 
   useEffect(() => {
     let mounted = true;
@@ -63,16 +65,16 @@ export default function EssayPage() {
     };
   }, []);
 
-  useDebouncedEffect(
-    () => {
+  useEffect(() => {
+    const id = window.setTimeout(() => {
       const hasContent = content.trim().length > 0;
 
-      if (!essay) {
-        if (!draftStarted || !selectedTheme || !hasContent) return;
+      if (essayId === undefined) {
+        if (!draftStarted || selectedThemeId === undefined || !hasContent) return;
         setSaving(true);
         apiFetch<Essay>("/essays", {
           method: "POST",
-          body: JSON.stringify({ theme_id: selectedTheme.id, title, content }),
+          body: JSON.stringify({ theme_id: selectedThemeId, title, content }),
         })
           .then(setEssay)
           .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho."))
@@ -80,11 +82,11 @@ export default function EssayPage() {
         return;
       }
 
-      if (essay.status === "corrected") return;
+      if (essayStatus === "corrected") return;
 
       if (!hasContent) {
         setSaving(true);
-        apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" })
+        apiFetch<{ message: string }>(`/essays/${essayId}`, { method: "DELETE" })
           .then(() => {
             setEssay(null);
             setDraftStarted(true);
@@ -95,17 +97,17 @@ export default function EssayPage() {
       }
 
       setSaving(true);
-      apiFetch<Essay>(`/essays/${essay.id}/autosave`, {
+      apiFetch<Essay>(`/essays/${essayId}/autosave`, {
         method: "PUT",
         body: JSON.stringify({ title, content }),
       })
         .then(setEssay)
         .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho."))
         .finally(() => setSaving(false));
-    },
-    [content, draftStarted, essay?.id, essay?.status, selectedTheme?.id, title],
-    900,
-  );
+    }, 900);
+
+    return () => window.clearTimeout(id);
+  }, [content, draftStarted, essayId, essayStatus, selectedThemeId, title]);
 
   function createDraft(theme = selectedTheme) {
     if (!theme) return;
@@ -158,6 +160,7 @@ export default function EssayPage() {
       <div className="min-h-[calc(100dvh-7rem)]">
         <EssayEditor
           essay={essay}
+          theme={selectedTheme}
           title={title}
           content={content}
           saving={saving}
@@ -195,7 +198,7 @@ export default function EssayPage() {
       />
 
       <Tabs defaultValue="editor" className="space-y-4">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
+        <TabsList className="mobile-scroll h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
           <TabsTrigger value="editor">Editor</TabsTrigger>
           <TabsTrigger value="repertorio">Repertorio</TabsTrigger>
         </TabsList>
@@ -204,7 +207,7 @@ export default function EssayPage() {
           {!essay ? (
             <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
           ) : (
-            <div className={cn("grid gap-4", hasCorrection ? "lg:grid-cols-[0.86fr_1.14fr]" : "lg:grid-cols-1")}>
+            <div className={cn("grid gap-4", hasCorrection ? "xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]" : "xl:grid-cols-1")}>
               <VersionPanel essay={essay} onRead={readVersion} onRewrite={rewriteFromVersion} />
               {hasCorrection ? <CorrectionPanel essay={essay} error={error} /> : null}
             </div>
@@ -233,6 +236,7 @@ export default function EssayPage() {
           ) : (
             <EssayEditor
               essay={essay}
+              theme={selectedTheme}
               title={title}
               content={content}
               saving={saving}
@@ -250,7 +254,6 @@ export default function EssayPage() {
           <RepertoireSuggestions themeTitle={selectedTheme?.title} />
           <ConnectiveLibrary />
         </TabsContent>
-
       </Tabs>
     </div>
   );
@@ -303,9 +306,7 @@ function VersionPanel({
   onRead: (version: EssayVersion) => void;
   onRewrite: (version: EssayVersion) => void;
 }) {
-  const versions = essay.versions.length
-    ? [...essay.versions].sort((a, b) => b.version_number - a.version_number)
-    : [];
+  const versions = essay.versions.length ? [...essay.versions].sort((a, b) => b.version_number - a.version_number) : [];
 
   return (
     <Surface>
@@ -330,7 +331,7 @@ function VersionPanel({
                   <p className="mt-2 line-clamp-1 text-sm font-semibold">{version.title}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{formatDate(version.updated_at)}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid w-full gap-2 xs:w-auto xs:grid-cols-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => onRead(version)}>
                     Ler
                   </Button>
@@ -340,7 +341,9 @@ function VersionPanel({
                   </Button>
                 </div>
               </div>
-              {version.correction?.feedback ? <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{version.correction.feedback}</p> : null}
+              {version.correction?.feedback ? (
+                <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{version.correction.feedback}</p>
+              ) : null}
             </div>
           ))}
         </div>
@@ -363,7 +366,7 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
       </div>
       {essay?.correction ? (
         <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-[180px_1fr]">
+          <div className="grid gap-4 md:grid-cols-[minmax(8rem,11.25rem)_minmax(0,1fr)]">
             <div className="game-surface grid min-h-[160px] place-items-center bg-primary text-primary-foreground">
               <div className="text-center">
                 <p className="text-xs font-bold text-foreground/70">Nota</p>
@@ -400,7 +403,9 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
               <Brain className="h-6 w-6" aria-hidden="true" />
             </div>
             <p className="font-semibold">Aguardando envio</p>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">A nota e os insights aparecem aqui quando a redação for corrigida.</p>
+            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+              A nota e os insights aparecem aqui quando a redação for corrigida.
+            </p>
           </div>
         </div>
       )}

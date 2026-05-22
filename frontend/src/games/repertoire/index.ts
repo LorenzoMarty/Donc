@@ -12,7 +12,6 @@ export const repertoireGames: GameDefinition[] = [
     thumbnail: "repertorio-contexto",
     progress: 0,
     unlocked: true,
-    rarity: "raro",
     engine: "choice",
     skill: "Repertorio",
     questions: [
@@ -43,7 +42,6 @@ export const repertoireGames: GameDefinition[] = [
     thumbnail: "repertorio-ponte",
     progress: 0,
     unlocked: true,
-    rarity: "epico",
     engine: "quiz",
     skill: "Repertorio",
     questions: [
