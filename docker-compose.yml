@@ -44,6 +44,7 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       LANGFUSE_HOST: ${LANGFUSE_HOST:-}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      PORT: ${PORT:-8000}
     ports:
       - "8000:8000"
     depends_on:
@@ -56,7 +57,7 @@ services:
     build:
       context: ./backend
     container_name: enem-redacao-worker
-    command: celery -A app.queues.celery_app:celery_app worker --loglevel=INFO
+    command: celery -A src.queues.celery_app:celery_app worker --loglevel=INFO
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://enem:enem@db:5432/enem_redacao}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-secret-before-production}
@@ -84,6 +85,7 @@ services:
     container_name: enem-redacao-web
     environment:
       NEXT_PUBLIC_API_URL: /api/backend
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       INTERNAL_API_URL: http://backend:8000/api/v1
     ports:
       - "3000:3000"
