@@ -1,8 +1,10 @@
-﻿from contextlib import asynccontextmanager
+import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.config.settings import settings
 from src.database.session import Base, SessionLocal, engine
@@ -15,19 +17,27 @@ from src.telemetry import configure_ai_telemetry
 from src.vectorstore import seed_knowledge_base
 
 
+logger = logging.getLogger("src.startup")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_ai_telemetry()
-    if settings.database_url.startswith("postgres"):
-        with engine.begin() as connection:
-            connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
     try:
-        seed_database(db, include_demo_data=settings.seed_demo_data)
-        seed_knowledge_base(db)
-    finally:
-        db.close()
+        if settings.database_url.startswith("postgres"):
+            with engine.begin() as connection:
+                connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            seed_database(db, include_demo_data=settings.seed_demo_data)
+            seed_knowledge_base(db)
+        finally:
+            db.close()
+    except SQLAlchemyError:
+        logger.exception("Database startup tasks failed")
+    except Exception:
+        logger.exception("Application startup tasks failed")
     yield
 
 
@@ -60,3 +70,8 @@ app.include_router(admin.router, prefix=settings.api_v1_prefix)
 @app.get("/health", response_model=ApiResponse[HealthData])
 def health() -> ApiResponse[HealthData]:
     return success_response(HealthData(status="ok", service=settings.project_name), "API operacional.")
+
+
+@app.get("/", response_model=ApiResponse[HealthData])
+def root() -> ApiResponse[HealthData]:
+    return health()

@@ -15,6 +15,7 @@ Variaveis:
 
 ```text
 DATABASE_URL=postgresql+psycopg://user:password@host:5432/database?sslmode=require
+DATABASE_CONNECT_TIMEOUT_SECONDS=5
 JWT_SECRET_KEY=um-segredo-forte
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-5.5

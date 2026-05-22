@@ -10,7 +10,11 @@ class Base(DeclarativeBase):
     """Base class for SQLAlchemy ORM models."""
 
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine_options = {"pool_pre_ping": True}
+if settings.database_url.startswith("postgres"):
+    engine_options["connect_args"] = {"connect_timeout": settings.database_connect_timeout_seconds}
+
+engine = create_engine(settings.database_url, **engine_options)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

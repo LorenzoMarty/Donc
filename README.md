@@ -125,7 +125,7 @@ Em producao, configure:
 - `INTERNAL_API_URL=https://seu-backend/api/v1`
 
 ## Deploy
-aaa
+
 Frontend:
 
 - Vercel com Root Directory `frontend`
