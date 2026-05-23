@@ -1,4 +1,4 @@
-# Donk ENEM
+# Donc ENEM
 
 Aplicacao fullstack para estudo de Redacao ENEM com frontend Next.js, backend FastAPI, PostgreSQL/pgvector, Redis, Celery e agentes de IA.
 

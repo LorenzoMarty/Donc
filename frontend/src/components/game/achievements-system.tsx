@@ -263,8 +263,8 @@ export function buildAchievements(metrics: AchievementMetrics): AchievementProgr
   }
 
   const platinumDefinition: AchievementDefinition = {
-    id: "platina-donk",
-    title: "Platina Donk ENEM",
+    id: "platina-donc",
+    title: "Platina Donc ENEM",
     description: "Complete todas as conquistas, domine trilhas e prove excelencia em redacao.",
     category: "platina",
     rarity: "platina",

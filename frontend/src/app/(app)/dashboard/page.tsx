@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import { AlertCircle, ArrowRight, CalendarDays, FileText, PenLine, Target } from "lucide-react";
 
 import { CompetencyBarChart, ScoreAreaChart } from "@/components/shared/charts";
+import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -29,9 +30,27 @@ const recurrentErrors = [
 
 export default function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    apiFetch<Dashboard>("/dashboard").then(setData);
+    let ignore = false;
+
+    apiFetch<Dashboard>("/dashboard")
+      .then((payload) => {
+        if (!ignore) {
+          setData(payload);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setError(err instanceof Error ? err.message : "Nao foi possivel carregar o painel.");
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const weeklyEvolution = useMemo(() => {
@@ -40,6 +59,24 @@ export default function DashboardPage() {
     const last = data.trend.at(-1)?.score ?? first;
     return last - first;
   }, [data]);
+
+  if (error) {
+    return (
+      <div className="space-y-5 md:space-y-6">
+        <PageHeader
+          eyebrow="Painel academico"
+          title="Nao foi possivel carregar seus dados"
+          description="O backend respondeu, mas os dados do painel ainda nao estao disponiveis. Isso costuma acontecer quando o banco acabou de ser configurado."
+          action={
+            <Button size="lg" className="w-full md:w-auto" onClick={() => window.location.reload()}>
+              Tentar novamente
+            </Button>
+          }
+        />
+        <EmptyState title="Dados indisponiveis" description={error} />
+      </div>
+    );
+  }
 
   if (!data) {
     return (

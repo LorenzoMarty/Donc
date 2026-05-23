@@ -13,7 +13,7 @@ export default function AboutPage() {
           <Reveal className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Sobre</p>
             <h1 className="mt-3 text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
-              Donk ENEM existe para transformar estudo em sensacao real de progresso.
+              Donc ENEM existe para transformar estudo em sensacao real de progresso.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
               A plataforma une design moderno, IA aplicada à redação e arquitetura de progressão para alunos que precisam de foco, clareza e

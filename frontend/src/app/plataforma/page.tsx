@@ -27,7 +27,7 @@ export default function PlatformPage() {
                 Uma plataforma de estudo clara, moderna e constante.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Donk ENEM organiza Portugues e Redacao em uma experiencia visual e progressiva: conteudo, pratica, IA e historico de
+                Donc ENEM organiza Portugues e Redacao em uma experiencia visual e progressiva: conteudo, pratica, IA e historico de
                 evolucao no mesmo fluxo.
               </p>
               <Button asChild size="lg" className="mt-7">
