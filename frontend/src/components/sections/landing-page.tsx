@@ -74,11 +74,18 @@ const campaign = [
 export function LandingPage() {
   return (
     <MarketingShell>
-      <main className="overflow-hidden">
+      <main>
         <section className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-          <div className="game-surface relative min-h-[calc(100dvh-9rem)] overflow-hidden bg-card p-4 text-foreground md:min-h-[570px] md:p-6 lg:p-8">
-            <Image src="/study-collaboration.jpg" alt="" fill priority sizes="100vw" className="absolute inset-0 object-cover opacity-35" />
-            <div className="absolute inset-0 bg-background/76" aria-hidden="true" />
+          <div className="game-surface relative min-h-[calc(100dvh-9rem)] overflow-clip bg-card p-4 text-foreground md:min-h-[570px] md:p-6 lg:p-8">
+            <Image
+              src="/study-collaboration.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="pointer-events-none absolute inset-0 object-cover opacity-35"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-background/76" aria-hidden="true" />
             <div className="relative grid min-h-[calc(100dvh-11rem)] gap-6 md:min-h-[530px] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,26.25rem)] lg:items-center">
               <Reveal className="max-w-4xl">
                 <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
