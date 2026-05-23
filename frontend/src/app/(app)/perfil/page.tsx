@@ -39,7 +39,7 @@ export default function ProfilePage() {
               {initials(user?.name ?? "Aluno")}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground/62">Aluno Donk ENEM</p>
+              <p className="text-sm font-semibold text-foreground/62">Aluno Donc ENEM</p>
               <h2 className="mt-1 truncate text-3xl font-semibold tracking-normal">{user?.name ?? "Aluno"}</h2>
               <p className="mt-2 truncate text-sm text-foreground/70">{user?.email}</p>
             </div>

@@ -40,7 +40,7 @@ export default function LoginPage() {
               <GraduationCap className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-muted-foreground">Donk ENEM</p>
+              <p className="text-sm font-semibold text-muted-foreground">Donc ENEM</p>
               <h1 className="text-2xl font-semibold tracking-normal">Entrar na plataforma</h1>
             </div>
           </div>

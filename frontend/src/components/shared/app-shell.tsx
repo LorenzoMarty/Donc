@@ -107,7 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <footer className="mx-auto w-full max-w-[1536px] px-3 pb-5 pt-2 xs:px-4 sm:px-5 md:px-6 md:pb-8 xl:px-8">
           <div className="game-surface flex flex-col justify-between gap-3 bg-card p-4 text-sm text-muted-foreground sm:flex-row sm:items-center">
-            <p>Donk ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
+            <p>Donc ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
             <Link href="/pricing" className="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground">
               Ver planos
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -290,7 +290,7 @@ function BrandLink({ compact = false }: { compact?: boolean }) {
       <span className={cn("min-w-0 leading-tight", !compact && "hidden xl:block")}>
         <span className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-          Donk ENEM
+          Donc ENEM
         </span>
         <span className="block truncate text-lg font-semibold tracking-normal">Area ENEM</span>
       </span>

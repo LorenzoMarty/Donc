@@ -22,7 +22,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
               D
             </div>
             <div className="min-w-0">
-              <p className="text-lg font-semibold leading-none tracking-normal">Donk ENEM</p>
+              <p className="text-lg font-semibold leading-none tracking-normal">Donc ENEM</p>
               <p className="text-xs font-medium text-muted-foreground">Português e Redação</p>
             </div>
           </Link>

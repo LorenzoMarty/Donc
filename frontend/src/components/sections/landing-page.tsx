@@ -86,7 +86,7 @@ export function LandingPage() {
                   Portugues e Redacao com rotina guiada
                 </div>
                 <h1 className="text-[clamp(3rem,17vw,4.75rem)] font-semibold leading-[0.95] tracking-normal lg:text-[clamp(4.5rem,8vw,6rem)]">
-                  Donk ENEM
+                  Donc ENEM
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg font-medium leading-7 text-muted-foreground md:text-2xl md:leading-9">
                   Pratique escrita com constancia: aulas, redacao com IA, exercicios curtos e indicadores de evolucao real.
