@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -43,8 +43,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }] : workspaceNav;
+
+  function scrollContentArea(event: WheelEvent<HTMLElement>) {
+    scrollAreaRef.current?.scrollBy({
+      top: event.deltaY,
+      left: event.deltaX,
+      behavior: "auto",
+    });
+  }
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -81,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="website-shell min-h-screen bg-background text-foreground">
+    <div className="website-shell h-dvh overflow-hidden bg-background text-foreground">
       <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
       <DesktopSidebar
         items={navItems}
@@ -89,6 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         userName={user?.name ?? "Aluno"}
         userLevel={user?.level ?? 1}
         onLogout={logout}
+        onWheel={scrollContentArea}
       />
       <MobileDrawer
         items={navItems}
@@ -100,7 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         onLogout={logout}
       />
 
-      <div className="min-h-screen md:pl-20 xl:pl-72">
+      <div ref={scrollAreaRef} className="h-full overflow-y-auto overscroll-contain md:pl-20 xl:pl-72">
         <main className="mx-auto min-h-[calc(100dvh-11rem)] w-full max-w-[1536px] px-3 pb-5 pt-[calc(4.75rem+env(safe-area-inset-top))] xs:px-4 sm:px-5 md:px-6 md:pt-6 lg:py-8 xl:px-8">
           {children}
         </main>
@@ -138,15 +148,20 @@ function DesktopSidebar({
   userName,
   userLevel,
   onLogout,
+  onWheel,
 }: {
   items: WorkspaceNavItem[];
   pathname: string;
   userName: string;
   userLevel: number;
   onLogout: () => void;
+  onWheel: (event: WheelEvent<HTMLElement>) => void;
 }) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col border-r border-border bg-background/88 px-3 py-4 backdrop-blur-xl md:flex xl:w-72 xl:px-4">
+    <aside
+      className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col border-r border-border bg-background/88 px-3 py-4 backdrop-blur-xl md:flex xl:w-72 xl:px-4"
+      onWheel={onWheel}
+    >
       <div className="mb-5">
         <BrandLink />
       </div>
