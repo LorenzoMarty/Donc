@@ -24,7 +24,7 @@ logger = logging.getLogger("src.startup")
 async def lifespan(_: FastAPI):
     configure_ai_telemetry()
     try:
-        if settings.database_url.startswith("postgres"):
+        if settings.enable_pgvector and settings.database_url.startswith("postgres"):
             with engine.begin() as connection:
                 connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         Base.metadata.create_all(bind=engine)

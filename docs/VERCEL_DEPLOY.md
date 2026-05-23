@@ -22,9 +22,11 @@ ENVIRONMENT=production
 # opcionais
 OPENAI_API_KEY=sk-...
 SEED_DEMO_DATA=true
+ENABLE_PGVECTOR=false
 ```
 
 No Supabase, use a connection string do projeto em `DATABASE_URL`. O backend tambem aceita URLs `postgresql://...` e `postgres://...`; elas sao normalizadas automaticamente para o driver `psycopg`.
+Com `ENABLE_PGVECTOR=false`, o primeiro cold start/redeploy cria as tabelas sem depender da extensao `vector`. Use `SEED_DEMO_DATA=true` no primeiro deploy para criar `aluno@demo.com` e `admin@demo.com`.
 
 Valide:
 

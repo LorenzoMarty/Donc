@@ -13,7 +13,7 @@ except Exception:  # pragma: no cover - optional when running sqlite-only tests
 
 
 def embedding_column_type():
-    if settings.database_url.startswith("postgres") and Vector:
+    if settings.enable_pgvector and settings.database_url.startswith("postgres") and Vector:
         return Vector(settings.openai_embedding_dimensions)
     return JSON
 

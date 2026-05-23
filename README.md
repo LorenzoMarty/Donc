@@ -123,6 +123,7 @@ Em producao, configure:
 - `OPENAI_API_KEY` se quiser IA real
 
 Para Supabase, use a connection string do projeto em `DATABASE_URL`.
+Mantenha `ENABLE_PGVECTOR=false` se o banco ainda nao tiver a extensao `vector`.
 
 ## Deploy
 
