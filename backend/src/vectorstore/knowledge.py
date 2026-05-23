@@ -4,7 +4,7 @@ from src.config.settings import settings
 
 
 def build_agno_knowledge():
-    if not (settings.openai_api_key and settings.database_url.startswith("postgres")):
+    if not (settings.enable_pgvector and settings.openai_api_key and settings.database_url.startswith("postgres")):
         return None
     try:
         from agno.embedder.openai import OpenAIEmbedder
@@ -19,4 +19,3 @@ def build_agno_knowledge():
         return Knowledge(vector_db=vector_db)
     except Exception:
         return None
-

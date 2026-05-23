@@ -18,3 +18,7 @@ def test_database_url_preserves_explicit_driver_and_sqlite_urls():
 
     assert settings.database_url == "postgresql+psycopg://user:pass@localhost:5432/app"
     assert Settings(database_url="sqlite:///local.db").database_url == "sqlite:///local.db"
+
+
+def test_pgvector_is_disabled_by_default():
+    assert Settings().enable_pgvector is False
