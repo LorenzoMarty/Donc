@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbulb, Sparkles } from "lucide-react";
 
 import { EssayEditor } from "@/components/writing/essay-editor";
@@ -23,9 +23,12 @@ export default function EssayPage() {
   const [content, setContent] = useState("");
   const [draftStarted, setDraftStarted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const saveRequestRef = useRef(0);
+  const submittingRef = useRef(false);
   const essayId = essay?.id;
   const essayStatus = essay?.status;
   const selectedThemeId = selectedTheme?.id;
@@ -67,48 +70,75 @@ export default function EssayPage() {
   }, []);
 
   useEffect(() => {
+    if (submitting || essayStatus === "corrected") return;
+
     const id = window.setTimeout(() => {
       const hasContent = content.trim().length > 0;
 
       if (essayId === undefined) {
         if (!draftStarted || selectedThemeId === undefined || !hasContent) return;
+        const requestId = ++saveRequestRef.current;
         setSaving(true);
         apiFetch<Essay>("/essays", {
           method: "POST",
           body: JSON.stringify({ theme_id: selectedThemeId, title, content }),
         })
-          .then(setEssay)
-          .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho."))
-          .finally(() => setSaving(false));
+          .then((saved) => {
+            if (requestId === saveRequestRef.current && !submittingRef.current) setEssay(saved);
+          })
+          .catch((err) => {
+            if (requestId === saveRequestRef.current && !submittingRef.current) {
+              setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho.");
+            }
+          })
+          .finally(() => {
+            if (requestId === saveRequestRef.current && !submittingRef.current) setSaving(false);
+          });
         return;
       }
 
-      if (essayStatus === "corrected") return;
-
       if (!hasContent) {
+        const requestId = ++saveRequestRef.current;
         setSaving(true);
         apiFetch<{ message: string }>(`/essays/${essayId}`, { method: "DELETE" })
           .then(() => {
-            setEssay(null);
-            setDraftStarted(true);
+            if (requestId === saveRequestRef.current && !submittingRef.current) {
+              setEssay(null);
+              setDraftStarted(true);
+            }
           })
-          .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel remover o rascunho vazio."))
-          .finally(() => setSaving(false));
+          .catch((err) => {
+            if (requestId === saveRequestRef.current && !submittingRef.current) {
+              setError(err instanceof Error ? err.message : "Nao foi possivel remover o rascunho vazio.");
+            }
+          })
+          .finally(() => {
+            if (requestId === saveRequestRef.current && !submittingRef.current) setSaving(false);
+          });
         return;
       }
 
+      const requestId = ++saveRequestRef.current;
       setSaving(true);
       apiFetch<Essay>(`/essays/${essayId}/autosave`, {
         method: "PUT",
         body: JSON.stringify({ title, content }),
       })
-        .then(setEssay)
-        .catch((err) => setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho."))
-        .finally(() => setSaving(false));
+        .then((saved) => {
+          if (requestId === saveRequestRef.current && !submittingRef.current) setEssay(saved);
+        })
+        .catch((err) => {
+          if (requestId === saveRequestRef.current && !submittingRef.current) {
+            setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho.");
+          }
+        })
+        .finally(() => {
+          if (requestId === saveRequestRef.current && !submittingRef.current) setSaving(false);
+        });
     }, 900);
 
     return () => window.clearTimeout(id);
-  }, [content, draftStarted, essayId, essayStatus, selectedThemeId, title]);
+  }, [content, draftStarted, essayId, essayStatus, selectedThemeId, submitting, title]);
 
   function createDraft(theme = selectedTheme) {
     if (!theme) return;
@@ -121,14 +151,17 @@ export default function EssayPage() {
   }
 
   async function submit() {
-    if (!essay) return;
+    if (!essay || submittingRef.current) return;
     setError("");
     if (wordCount < 80) {
       setError("A redacao precisa ter pelo menos 80 palavras para ser enviada para correcao.");
       return;
     }
 
-    setSaving(true);
+    submittingRef.current = true;
+    saveRequestRef.current += 1;
+    setSaving(false);
+    setSubmitting(true);
     try {
       const saved = await apiFetch<Essay>(`/essays/${essay.id}/autosave`, {
         method: "PUT",
@@ -140,6 +173,9 @@ export default function EssayPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nao foi possivel corrigir.");
     } finally {
+      submittingRef.current = false;
+      saveRequestRef.current += 1;
+      setSubmitting(false);
       setSaving(false);
     }
   }
@@ -179,6 +215,7 @@ export default function EssayPage() {
           content={content}
           wordCount={wordCount}
           saving={saving}
+          submitting={submitting}
           error={error}
           focusMode={focusMode}
           onTitleChange={setTitle}
@@ -256,6 +293,7 @@ export default function EssayPage() {
               content={content}
               wordCount={wordCount}
               saving={saving}
+              submitting={submitting}
               error={error}
               focusMode={focusMode}
               onTitleChange={setTitle}

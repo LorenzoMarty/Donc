@@ -19,6 +19,7 @@ export function EssayEditor({
   content,
   wordCount,
   saving,
+  submitting,
   error,
   focusMode,
   onTitleChange,
@@ -32,6 +33,7 @@ export function EssayEditor({
   content: string;
   wordCount: number;
   saving: boolean;
+  submitting: boolean;
   error?: string;
   focusMode: boolean;
   onTitleChange: (value: string) => void;
@@ -44,7 +46,8 @@ export function EssayEditor({
   const wasSavingRef = useRef(false);
   const lines = Math.max(1, content.split("\n").length, Math.ceil(content.length / 92));
   const locked = essay?.status === "corrected";
-  const canSubmit = Boolean(essay) && !locked && !saving && wordCount >= 80;
+  const canSubmit = Boolean(essay) && !locked && !saving && !submitting && wordCount >= 80;
+  const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Sincronizado" : "Rascunho local";
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
 
@@ -119,7 +122,7 @@ export function EssayEditor({
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="outline">{lines} linhas</Badge>
             <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount} palavras</Badge>
-            <Badge variant="success">{saving ? "Salvando..." : essay ? "Sincronizado" : "Rascunho local"}</Badge>
+            <Badge variant="success">{syncLabel}</Badge>
           </div>
           {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
         </div>
@@ -148,7 +151,7 @@ export function EssayEditor({
           </Button>
           <Button onClick={onSubmit} disabled={!canSubmit}>
             <Send className="h-4 w-4" aria-hidden="true" />
-            Corrigir
+            {submitting ? "Corrigindo..." : "Corrigir"}
           </Button>
         </div>
       </div>
