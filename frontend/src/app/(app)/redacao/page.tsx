@@ -29,6 +29,7 @@ export default function EssayPage() {
   const essayId = essay?.id;
   const essayStatus = essay?.status;
   const selectedThemeId = selectedTheme?.id;
+  const wordCount = countWords(content);
 
   useEffect(() => {
     let mounted = true;
@@ -122,11 +123,24 @@ export default function EssayPage() {
   async function submit() {
     if (!essay) return;
     setError("");
+    if (wordCount < 80) {
+      setError("A redacao precisa ter pelo menos 80 palavras para ser enviada para correcao.");
+      return;
+    }
+
+    setSaving(true);
     try {
-      const corrected = await apiFetch<Essay>(`/essays/${essay.id}/submit`, { method: "POST" });
+      const saved = await apiFetch<Essay>(`/essays/${essay.id}/autosave`, {
+        method: "PUT",
+        body: JSON.stringify({ title, content }),
+      });
+      setEssay(saved);
+      const corrected = await apiFetch<Essay>(`/essays/${saved.id}/submit`, { method: "POST" });
       setEssay(corrected);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nao foi possivel corrigir.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -163,6 +177,7 @@ export default function EssayPage() {
           theme={selectedTheme}
           title={title}
           content={content}
+          wordCount={wordCount}
           saving={saving}
           error={error}
           focusMode={focusMode}
@@ -239,6 +254,7 @@ export default function EssayPage() {
               theme={selectedTheme}
               title={title}
               content={content}
+              wordCount={wordCount}
               saving={saving}
               error={error}
               focusMode={focusMode}
@@ -421,4 +437,8 @@ function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string 
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(value));
+}
+
+function countWords(value: string) {
+  return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
