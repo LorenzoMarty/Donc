@@ -17,6 +17,7 @@ export function EssayEditor({
   theme,
   title,
   content,
+  wordCount,
   saving,
   error,
   focusMode,
@@ -29,6 +30,7 @@ export function EssayEditor({
   theme: EssayTheme | null;
   title: string;
   content: string;
+  wordCount: number;
   saving: boolean;
   error?: string;
   focusMode: boolean;
@@ -40,9 +42,9 @@ export function EssayEditor({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
   const wasSavingRef = useRef(false);
-  const words = content.trim() ? content.trim().split(/\s+/).length : 0;
   const lines = Math.max(1, content.split("\n").length, Math.ceil(content.length / 92));
   const locked = essay?.status === "corrected";
+  const canSubmit = Boolean(essay) && !locked && !saving && wordCount >= 80;
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
 
@@ -116,6 +118,7 @@ export function EssayEditor({
           />
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="outline">{lines} linhas</Badge>
+            <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount} palavras</Badge>
             <Badge variant="success">{saving ? "Salvando..." : essay ? "Sincronizado" : "Rascunho local"}</Badge>
           </div>
           {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
@@ -143,7 +146,7 @@ export function EssayEditor({
             <Save className="h-4 w-4" aria-hidden="true" />
             Auto
           </Button>
-          <Button onClick={onSubmit} disabled={!essay || locked}>
+          <Button onClick={onSubmit} disabled={!canSubmit}>
             <Send className="h-4 w-4" aria-hidden="true" />
             Corrigir
           </Button>
@@ -172,7 +175,7 @@ export function EssayEditor({
               <WritingSidebar lines={lines} structureProgress={structureProgress} />
               <div className="mt-3">
                 <FriendlyErrorFeedback
-                  show={words > 0 && words < 80}
+                  show={wordCount > 0 && wordCount < 80}
                   message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
                 />
               </div>
