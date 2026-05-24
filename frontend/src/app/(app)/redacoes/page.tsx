@@ -318,7 +318,7 @@ export default function EssayHistoryPage() {
                           ))}
                       </div>
                       <Button asChild size="sm" variant="outline" className="mt-3 w-full">
-                        <Link href={`/redacao?essayId=${essay.id}`}>Abrir versoes</Link>
+                        <Link href={`/redacao?essayId=${essay.id}&view=analise`}>Abrir versoes</Link>
                       </Button>
                     </div>
                   );
@@ -353,6 +353,7 @@ export default function EssayHistoryPage() {
 function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; busyAction: string; onDelete: () => void }) {
   const score = essay.score ?? 0;
   const busy = busyAction.endsWith(`-${essay.id}`);
+  const href = essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`;
 
   return (
     <article className="game-tile bg-background/56 p-4 transition-colors hover:bg-muted/62">
@@ -391,7 +392,7 @@ function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; bus
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Button asChild size="sm">
-          <Link href={`/redacao?essayId=${essay.id}`}>
+          <Link href={href}>
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             {essay.status === "draft" ? "Continuar" : "Abrir versoes"}
           </Link>

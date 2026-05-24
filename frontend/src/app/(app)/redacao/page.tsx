@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbulb, Sparkles } from "lucide-react";
+import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbulb, Loader2, Sparkles } from "lucide-react";
 
 import { EssayEditor } from "@/components/writing/essay-editor";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
 import { cn } from "@/utils";
 
+type EssayViewMode = "editor" | "analysis";
+
 export default function EssayPage() {
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<EssayTheme | null>(null);
@@ -24,6 +26,8 @@ export default function EssayPage() {
   const [draftStarted, setDraftStarted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [mode, setMode] = useState<EssayViewMode>("editor");
+  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -33,6 +37,12 @@ export default function EssayPage() {
   const essayStatus = essay?.status;
   const selectedThemeId = selectedTheme?.id;
   const wordCount = countWords(content);
+  const selectedVersion = selectedVersionId ? (essay?.versions.find((version) => version.id === selectedVersionId) ?? null) : null;
+  const analysisCorrection = selectedVersion?.correction ?? essay?.correction ?? null;
+  const analysisTitle = selectedVersion?.title ?? essay?.title ?? title;
+  const analysisContent = selectedVersion?.content ?? essay?.content ?? content;
+  const analysisTheme = essay?.theme ?? selectedTheme;
+  const analysisVersionLabel = selectedVersion ? `Versao ${selectedVersion.version_number}` : essay?.status === "corrected" ? "Versao atual" : "Rascunho";
 
   useEffect(() => {
     let mounted = true;
@@ -43,15 +53,21 @@ export default function EssayPage() {
         if (!mounted) return;
         setThemes(items);
 
-        const essayId = new URLSearchParams(window.location.search).get("essayId");
+        const params = new URLSearchParams(window.location.search);
+        const essayId = params.get("essayId");
         if (essayId) {
           const openedEssay = await apiFetch<Essay>(`/essays/${essayId}`);
           if (!mounted) return;
+          const versionId = Number(params.get("versionId"));
+          const version = Number.isFinite(versionId) ? (openedEssay.versions.find((item) => item.id === versionId) ?? null) : null;
+          const source = version ?? openedEssay;
           setEssay(openedEssay);
-          setTitle(openedEssay.title);
-          setContent(openedEssay.content);
+          setSelectedVersionId(version?.id ?? null);
+          setTitle(source.title);
+          setContent(source.content);
           setSelectedTheme(openedEssay.theme);
           setDraftStarted(true);
+          setMode(params.get("view") === "analise" || openedEssay.status === "corrected" || Boolean(version?.correction) ? "analysis" : "editor");
           return;
         }
 
@@ -70,7 +86,7 @@ export default function EssayPage() {
   }, []);
 
   useEffect(() => {
-    if (submitting || essayStatus === "corrected") return;
+    if (mode !== "editor" || submitting || essayStatus === "corrected") return;
 
     const id = window.setTimeout(() => {
       const hasContent = content.trim().length > 0;
@@ -138,16 +154,19 @@ export default function EssayPage() {
     }, 900);
 
     return () => window.clearTimeout(id);
-  }, [content, draftStarted, essayId, essayStatus, selectedThemeId, submitting, title]);
+  }, [content, draftStarted, essayId, essayStatus, mode, selectedThemeId, submitting, title]);
 
   function createDraft(theme = selectedTheme) {
     if (!theme) return;
     setError("");
     setSelectedTheme(theme);
     setEssay(null);
+    setMode("editor");
+    setSelectedVersionId(null);
     setDraftStarted(true);
     setTitle(`Redacao - ${theme.title.slice(0, 70)}`);
     setContent("");
+    replaceEssayUrl();
   }
 
   async function submit() {
@@ -169,9 +188,16 @@ export default function EssayPage() {
       });
       setEssay(saved);
       const corrected = await apiFetch<Essay>(`/essays/${saved.id}/submit`, { method: "POST" });
+      const latestVersion = latestCorrectedVersion(corrected);
       setEssay(corrected);
+      setSelectedVersionId(latestVersion?.id ?? null);
+      setTitle((latestVersion ?? corrected).title);
+      setContent((latestVersion ?? corrected).content);
+      setMode("analysis");
+      replaceEssayUrl(corrected.id, latestVersion?.id, "analysis");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nao foi possivel corrigir.");
+      setMode("editor");
     } finally {
       submittingRef.current = false;
       saveRequestRef.current += 1;
@@ -182,8 +208,11 @@ export default function EssayPage() {
 
   function readVersion(version: EssayVersion) {
     setError("");
+    setMode("analysis");
+    setSelectedVersionId(version.id);
     setTitle(version.title);
     setContent(version.content);
+    if (essay) replaceEssayUrl(essay.id, version.id, "analysis");
   }
 
   async function rewriteFromVersion(version: EssayVersion) {
@@ -192,9 +221,12 @@ export default function EssayPage() {
     try {
       const draft = await apiFetch<Essay>(`/essays/${essay.id}/versions/${version.id}/rewrite`, { method: "POST" });
       setEssay(draft);
+      setMode("editor");
+      setSelectedVersionId(null);
       setTitle(draft.title);
       setContent(draft.content);
       setDraftStarted(true);
+      replaceEssayUrl(draft.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nao foi possivel iniciar a reescrita.");
     }
@@ -202,8 +234,60 @@ export default function EssayPage() {
 
   if (loading) return <LoadingCard />;
 
-  const hasCorrection = Boolean(essay?.correction);
-  const isWriting = draftStarted && essay?.status !== "corrected";
+  if (submitting && essay) {
+    return <CorrectionWaitingScreen title={title} wordCount={wordCount} />;
+  }
+
+  const hasCorrection = Boolean(analysisCorrection);
+  const isWriting = mode === "editor" && draftStarted && essay?.status !== "corrected";
+
+  if (mode === "analysis" && essay) {
+    return (
+      <div className="space-y-5 md:space-y-6">
+        <PageHeader
+          eyebrow="Analise da correcao"
+          title="Resultado da sua redacao"
+          description="Leia o texto junto da correcao para entender nota, competencias e proximos ajustes."
+          action={
+            <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  setMode("editor");
+                  setSelectedVersionId(null);
+                  setTitle(essay.title);
+                  setContent(essay.content);
+                  replaceEssayUrl(essay.id);
+                }}
+              >
+                Ver versoes
+              </Button>
+              <Button asChild size="lg">
+                <Link href="/redacoes">
+                  <Files className="h-4 w-4" aria-hidden="true" />
+                  Historico
+                </Link>
+              </Button>
+            </div>
+          }
+        />
+
+        <div className="grid gap-4 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+          <EssayReadPanel
+            title={analysisTitle}
+            content={analysisContent}
+            theme={analysisTheme}
+            versionLabel={analysisVersionLabel}
+            correction={analysisCorrection}
+          />
+          <CorrectionPanel correction={analysisCorrection} error={error} />
+        </div>
+
+        <VersionPanel essay={essay} selectedVersionId={selectedVersionId} onRead={readVersion} onRewrite={rewriteFromVersion} />
+      </div>
+    );
+  }
 
   if (isWriting) {
     return (
@@ -260,8 +344,8 @@ export default function EssayPage() {
             <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
           ) : (
             <div className={cn("grid gap-4", hasCorrection ? "2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "2xl:grid-cols-1")}>
-              <VersionPanel essay={essay} onRead={readVersion} onRewrite={rewriteFromVersion} />
-              {hasCorrection ? <CorrectionPanel essay={essay} error={error} /> : null}
+              <VersionPanel essay={essay} selectedVersionId={selectedVersionId} onRead={readVersion} onRewrite={rewriteFromVersion} />
+              {hasCorrection ? <CorrectionPanel correction={analysisCorrection} error={error} /> : null}
             </div>
           )}
 
@@ -353,10 +437,12 @@ function ThemePicker({
 
 function VersionPanel({
   essay,
+  selectedVersionId,
   onRead,
   onRewrite,
 }: {
   essay: Essay;
+  selectedVersionId: number | null;
   onRead: (version: EssayVersion) => void;
   onRewrite: (version: EssayVersion) => void;
 }) {
@@ -379,7 +465,7 @@ function VersionPanel({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">Versao {version.version_number}</Badge>
+                    <Badge variant={selectedVersionId === version.id ? "secondary" : "outline"}>Versao {version.version_number}</Badge>
                     {version.score ? <Badge variant="success">{version.score}</Badge> : <Badge variant="secondary">Em escrita</Badge>}
                   </div>
                   <p className="text-safe mt-2 text-sm font-semibold">{version.title}</p>
@@ -408,7 +494,70 @@ function VersionPanel({
   );
 }
 
-function CorrectionPanel({ essay, error }: { essay: Essay | null; error: string }) {
+function CorrectionWaitingScreen({ title, wordCount }: { title: string; wordCount: number }) {
+  return (
+    <div className="grid min-h-[calc(100dvh-10rem)] place-items-center">
+      <Surface className="w-full max-w-3xl text-center">
+        <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary/12 text-primary">
+          <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correcao em andamento</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-normal md:text-3xl">Analisando sua redacao</h1>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Estamos salvando a versao final, avaliando as competencias e preparando a tela de analise. Ao terminar, voce sera levado
+          automaticamente para o resultado.
+        </p>
+        <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
+          <div className="game-tile bg-background/58 p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Titulo</p>
+            <p className="text-safe mt-1 text-sm font-semibold">{title}</p>
+          </div>
+          <div className="game-tile bg-background/58 p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Tamanho</p>
+            <p className="mt-1 text-sm font-semibold">{wordCount} palavras</p>
+          </div>
+        </div>
+      </Surface>
+    </div>
+  );
+}
+
+function EssayReadPanel({
+  title,
+  content,
+  theme,
+  versionLabel,
+  correction,
+}: {
+  title: string;
+  content: string;
+  theme: EssayTheme | null;
+  versionLabel: string;
+  correction: Essay["correction"];
+}) {
+  return (
+    <Surface>
+      <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Redacao analisada</p>
+          <h2 className="text-safe mt-1 text-2xl font-semibold tracking-normal">{title}</h2>
+          {theme ? <p className="text-safe mt-2 text-sm leading-6 text-muted-foreground">{theme.title}</p> : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline">{versionLabel}</Badge>
+          {correction ? <Badge variant="success">{correction.total_score} pontos</Badge> : <Badge variant="outline">Sem correcao</Badge>}
+        </div>
+      </div>
+      <div className="game-tile max-h-[70dvh] overflow-y-auto bg-background/56 p-4">
+        <div className="whitespace-pre-wrap text-safe text-sm leading-7 text-foreground">{content}</div>
+      </div>
+    </Surface>
+  );
+}
+
+function CorrectionPanel({ correction, error }: { correction: Essay["correction"]; error: string }) {
+  const essay = correction ? { correction } : null;
+
   return (
     <Surface>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -479,4 +628,25 @@ function formatDate(value: string) {
 
 function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
+}
+
+function latestCorrectedVersion(essay: Essay) {
+  return (
+    [...essay.versions]
+      .filter((version) => version.correction)
+      .sort((a, b) => b.version_number - a.version_number)[0] ?? null
+  );
+}
+
+function replaceEssayUrl(essayId?: number, versionId?: number, mode?: EssayViewMode) {
+  if (typeof window === "undefined") return;
+  if (!essayId) {
+    window.history.replaceState(null, "", "/redacao");
+    return;
+  }
+
+  const params = new URLSearchParams({ essayId: String(essayId) });
+  if (mode === "analysis") params.set("view", "analise");
+  if (versionId) params.set("versionId", String(versionId));
+  window.history.replaceState(null, "", `/redacao?${params.toString()}`);
 }
