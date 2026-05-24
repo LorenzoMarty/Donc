@@ -14,7 +14,7 @@ export default function TracksPage() {
         <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <Reveal>
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Trilhas</p>
-            <h1 className="text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
+            <h1 className="text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
               Trilhas de Portugues com progressao clara.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">

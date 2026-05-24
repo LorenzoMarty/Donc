@@ -33,7 +33,7 @@ export default function PricingPage() {
       <main className="mx-auto max-w-7xl px-4 py-10 md:px-6">
         <Reveal className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Planos</p>
-          <h1 className="mt-3 text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
+          <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
             Planos simples para uma rotina seria.
           </h1>
           <p className="mt-5 text-lg leading-8 text-muted-foreground">Estrutura moderna, gamificação elegante e IA aplicada à redação.</p>
@@ -44,7 +44,7 @@ export default function PricingPage() {
             <HoverGlowCard key={plan.name} delay={index * 0.06} className={plan.featured ? "border-primary/50 bg-primary/10" : undefined}>
               <h2 className="text-2xl font-semibold tracking-normal">{plan.name}</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.description}</p>
-              <p className="mt-6 text-[clamp(2.25rem,11vw,3rem)] font-semibold tracking-normal">
+              <p className="mt-6 text-5xl font-semibold tracking-normal">
                 {plan.price}
                 <span className="text-base font-medium text-muted-foreground">/mes</span>
               </p>

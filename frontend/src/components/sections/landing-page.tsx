@@ -92,7 +92,7 @@ export function LandingPage() {
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   Portugues e Redacao com rotina guiada
                 </div>
-                <h1 className="text-[clamp(3rem,17vw,4.75rem)] font-semibold leading-[0.95] tracking-normal lg:text-[clamp(4.5rem,8vw,6rem)]">
+                <h1 className="text-5xl font-semibold leading-[0.95] tracking-normal md:text-6xl lg:text-7xl">
                   Donc ENEM
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg font-medium leading-7 text-muted-foreground md:text-2xl md:leading-9">
@@ -151,7 +151,7 @@ export function LandingPage() {
                 <Flame className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 Fluxo contínuo
               </div>
-              <h2 className="text-[clamp(1.8rem,7vw,3rem)] font-semibold leading-tight tracking-normal">
+              <h2 className="text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
                 O proximo passo sempre fica claro.
               </h2>
               <p className="mt-4 text-sm font-semibold leading-6 text-foreground/74 md:text-base">
@@ -178,7 +178,7 @@ export function LandingPage() {
             <div className="grid gap-6 p-5 md:grid-cols-[1fr_0.85fr] md:p-8 lg:p-10">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratorio de redacao</p>
-                <h2 className="mt-2 text-[clamp(1.8rem,7vw,3rem)] font-semibold leading-tight tracking-normal">
+                <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
                   Escrever fica mais leve quando o foco parece uma folha real.
                 </h2>
                 <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">
@@ -222,7 +222,7 @@ export function LandingPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">
                 Pronto para sair da lista de exercicios?
               </p>
-              <h2 className="mt-2 text-[clamp(1.8rem,7vw,3rem)] font-semibold leading-tight tracking-normal">
+              <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
                 Entre e comece pela sua primeira pratica.
               </h2>
             </div>

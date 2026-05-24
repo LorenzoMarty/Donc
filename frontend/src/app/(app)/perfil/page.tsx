@@ -40,8 +40,8 @@ export default function ProfilePage() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground/62">Aluno Donc ENEM</p>
-              <h2 className="mt-1 truncate text-3xl font-semibold tracking-normal">{user?.name ?? "Aluno"}</h2>
-              <p className="mt-2 truncate text-sm text-foreground/70">{user?.email}</p>
+              <h2 className="text-safe mt-1 text-3xl font-semibold tracking-normal">{user?.name ?? "Aluno"}</h2>
+              <p className="text-safe mt-2 text-sm text-foreground/70">{user?.email}</p>
             </div>
           </div>
         </Surface>

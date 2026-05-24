@@ -16,7 +16,7 @@ export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplet
         <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
           <div className="min-w-0">
             <p className="text-sm font-bold text-muted-foreground">{lesson.duration_minutes} min</p>
-            <h1 className="text-[clamp(1.35rem,5vw,1.75rem)] font-semibold leading-tight tracking-normal">{lesson.title}</h1>
+            <h1 className="text-2xl font-semibold leading-tight tracking-normal">{lesson.title}</h1>
           </div>
           <Button onClick={onComplete} variant={lesson.progress.completed ? "secondary" : "default"} className="w-full md:w-auto">
             {lesson.progress.completed ? (

@@ -55,7 +55,7 @@ export function MetricRail({ items }: { items: { value: string; label: string }[
     <div className="fluid-grid gap-3 [--grid-min:12rem]">
       {items.map((item, index) => (
         <Reveal key={item.label} delay={index * 0.05} className="game-tile bg-card p-4 text-center md:text-left">
-          <p className="text-[clamp(2rem,8vw,2.5rem)] font-semibold tracking-normal text-foreground">{item.value}</p>
+          <p className="text-4xl font-semibold tracking-normal text-foreground">{item.value}</p>
           <p className="mt-2 text-sm font-medium text-muted-foreground">{item.label}</p>
         </Reveal>
       ))}

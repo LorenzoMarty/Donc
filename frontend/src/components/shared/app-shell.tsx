@@ -111,13 +111,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
 
       <div ref={scrollAreaRef} className="h-full overflow-y-auto overscroll-contain md:pl-20 xl:pl-72">
-        <main className="mx-auto min-h-[calc(100dvh-11rem)] w-full max-w-[1536px] px-3 pb-5 pt-[calc(4.75rem+env(safe-area-inset-top))] xs:px-4 sm:px-5 md:px-6 md:pt-6 lg:py-8 xl:px-8">
+        <main className="mx-auto min-h-[calc(100dvh-10rem)] w-full max-w-[1600px] px-3 pb-4 pt-[calc(4.5rem+env(safe-area-inset-top))] xs:px-4 md:px-5 md:pt-5 lg:px-6 lg:py-6 2xl:px-8">
           {children}
         </main>
 
-        <footer className="mx-auto w-full max-w-[1536px] px-3 pb-5 pt-2 xs:px-4 sm:px-5 md:px-6 md:pb-8 xl:px-8">
+        <footer className="mx-auto w-full max-w-[1600px] px-3 pb-5 pt-2 xs:px-4 md:px-5 lg:px-6 lg:pb-6 2xl:px-8">
           <div className="game-surface flex flex-col justify-between gap-3 bg-card p-4 text-sm text-muted-foreground sm:flex-row sm:items-center">
-            <p>Donc ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
+            <p className="min-w-0 leading-6">Donc ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
             <Link href="/pricing" className="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground">
               Ver planos
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -182,7 +182,7 @@ function DesktopSidebar({
             {initials(userName)}
           </span>
           <span className="hidden min-w-0 leading-tight xl:block">
-            <span className="block truncate">{userName}</span>
+            <span className="block text-safe">{userName}</span>
             <span className="block text-xs font-medium text-muted-foreground">Consistencia {userLevel}</span>
           </span>
         </Link>
@@ -249,7 +249,7 @@ function MobileDrawer({
                   {initials(userName)}
                 </span>
                 <span className="min-w-0 leading-tight">
-                  <span className="block truncate font-semibold">{userName}</span>
+                  <span className="block text-safe font-semibold">{userName}</span>
                   <span className="block text-sm text-muted-foreground">Consistencia {userLevel}</span>
                 </span>
               </Link>
@@ -291,7 +291,7 @@ function ShellNavLink({
       )}
     >
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-      <span className={cn("hidden truncate xl:block", expanded && "block")}>{item.label}</span>
+      <span className={cn("hidden min-w-0 text-safe xl:block", expanded && "block")}>{item.label}</span>
     </Link>
   );
 }
@@ -307,7 +307,7 @@ function BrandLink({ compact = false }: { compact?: boolean }) {
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
           Donc ENEM
         </span>
-        <span className="block truncate text-lg font-semibold tracking-normal">Area ENEM</span>
+        <span className="block text-lg font-semibold tracking-normal">Area ENEM</span>
       </span>
     </Link>
   );

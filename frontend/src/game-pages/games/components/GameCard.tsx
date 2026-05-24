@@ -67,12 +67,12 @@ function GameCard({ game, progress, variant = "default", index = 0, className }:
           <h3 className={cn("font-semibold tracking-normal text-foreground", variant === "compact" ? "text-lg" : "text-xl")}>
             {game.name}
           </h3>
-          <p className={cn("mt-2 text-sm leading-6 text-muted-foreground", variant === "compact" ? "line-clamp-2" : "line-clamp-3")}>
+          <p className="text-safe mt-2 text-sm leading-6 text-muted-foreground">
             {game.description}
           </p>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-2 xs:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <GameMetric icon={<Trophy className="h-3.5 w-3.5" aria-hidden="true" />} label="Nivel" value={game.difficulty} />
           <GameMetric icon={<Zap className="h-3.5 w-3.5" aria-hidden="true" />} label="XP" value={`+${game.xpReward}`} />
           <GameMetric icon={<Clock className="h-3.5 w-3.5" aria-hidden="true" />} label="Tempo" value={game.estimatedTime} />
@@ -158,7 +158,7 @@ function GameThumbnail({ game, icon, accent, compact }: { game: GameDefinition; 
             treino
           </span>
         </div>
-        <p className="max-w-[82%] truncate text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{code}</p>
+        <p className="text-safe text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{code}</p>
       </div>
     </div>
   );
@@ -171,7 +171,7 @@ function GameMetric({ icon, label, value }: { icon: React.ReactNode; label: stri
         {icon}
         {label}
       </p>
-      <p className="mt-1 truncate text-sm font-semibold text-foreground">{value}</p>
+      <p className="text-safe mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

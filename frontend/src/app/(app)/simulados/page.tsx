@@ -139,7 +139,7 @@ export default function ExamsPage() {
                 <>
                   <div className="game-tile bg-secondary/10 p-4 text-center">
                     <Trophy className="mx-auto mb-2 h-6 w-6 text-secondary" aria-hidden="true" />
-                    <p className="text-[clamp(2rem,9vw,2.5rem)] font-bold tracking-normal">{result.score}%</p>
+                    <p className="text-4xl font-bold tracking-normal">{result.score}%</p>
                     <p className="text-sm text-muted-foreground">{result.correct_answers} acertos</p>
                   </div>
                   {Object.entries(result.performance_by_skill).map(([skill, value]) => (

@@ -126,7 +126,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Questao {step + 1} de {game.questions.length}
                 </p>
-                <h2 className="mt-3 text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-normal md:text-[clamp(1.75rem,2.6vw,2.25rem)]">
+                <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal md:text-3xl">
                   {question.prompt}
                 </h2>
 

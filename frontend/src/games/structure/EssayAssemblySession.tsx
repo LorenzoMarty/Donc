@@ -212,7 +212,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
               </Link>
             </Button>
             <Badge className="border-primary/20 bg-primary/10 text-primary">Drag and drop</Badge>
-            <h1 className="mt-3 text-[clamp(1.75rem,7vw,2.75rem)] font-semibold leading-tight tracking-normal text-foreground">
+            <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
               {game.name}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
@@ -255,7 +255,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
             />
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{level.title}</p>
-              <h2 className="mt-2 text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-normal text-foreground">
+              <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
                 Organize a estrutura da redacao
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{level.description}</p>
@@ -560,7 +560,7 @@ function ResultModal({
                 <Trophy className="h-8 w-8" aria-hidden="true" />
               </div>
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tentativa finalizada</p>
-              <h2 className="mt-2 text-[clamp(1.9rem,8vw,2.75rem)] font-semibold tracking-normal">Monte a Redacao</h2>
+              <h2 className="mt-2 text-4xl font-semibold tracking-normal">Monte a Redacao</h2>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {result.rankUp && <Badge className="border-primary/25 bg-primary/10 text-primary">Rank up - {result.rankName}</Badge>}
                 {unlockedBadges.map((badge) => (

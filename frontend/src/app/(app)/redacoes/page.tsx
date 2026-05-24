@@ -129,7 +129,7 @@ export default function EssayHistoryPage() {
         </Surface>
         <Surface>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Ultima atividade</p>
-          <p className="mt-2 line-clamp-2 text-xl font-semibold tracking-normal">{latest?.title ?? "Sem textos"}</p>
+          <p className="text-safe mt-2 text-xl font-semibold tracking-normal">{latest?.title ?? "Sem textos"}</p>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{latest ? formatDate(latest.updated_at) : "Comece pelo editor."}</p>
         </Surface>
       </div>
@@ -181,7 +181,7 @@ export default function EssayHistoryPage() {
       {history.essays.length === 0 ? (
         <EmptyState title="Nenhuma redacao registrada" description="Comece pelo editor para ativar sua linha de evolucao." />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)]">
+        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)]">
           <div className="space-y-4">
             <Surface>
               <button
@@ -301,7 +301,7 @@ export default function EssayHistoryPage() {
                 {versionedEssays.map((essay) => {
                   return (
                     <div key={essay.id} className="game-tile bg-background/56 p-3">
-                      <p className="line-clamp-1 text-sm font-semibold">{essay.title}</p>
+                      <p className="text-safe text-sm font-semibold">{essay.title}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {[...essay.versions]
                           .sort((a, b) => a.version_number - b.version_number)
@@ -365,8 +365,8 @@ function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; bus
             </Badge>
             {essay.score ? <Badge variant="success">{essay.score}</Badge> : null}
           </div>
-          <h3 className="mt-3 line-clamp-2 text-lg font-semibold tracking-normal">{essay.title}</h3>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{essay.theme.title}</p>
+          <h3 className="text-safe mt-3 text-lg font-semibold tracking-normal">{essay.title}</h3>
+          <p className="text-safe mt-2 text-sm leading-6 text-muted-foreground">{essay.theme.title}</p>
         </div>
         <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
           <FileText className="h-5 w-5" aria-hidden="true" />
@@ -385,7 +385,7 @@ function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; bus
             <span>{score}/1000</span>
           </div>
           <Progress value={score / 10} />
-          <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{essay.correction.feedback}</p>
+          <p className="text-safe mt-3 text-sm leading-6 text-muted-foreground">{essay.correction.feedback}</p>
         </div>
       )}
 

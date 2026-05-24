@@ -12,7 +12,7 @@ export default function AboutPage() {
         <AceternityGrid className="rounded-[2rem] p-4 xs:p-6 md:p-10">
           <Reveal className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Sobre</p>
-            <h1 className="mt-3 text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
+            <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
               Donc ENEM existe para transformar estudo em sensacao real de progresso.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
