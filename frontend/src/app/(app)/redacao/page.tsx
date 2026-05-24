@@ -222,7 +222,7 @@ export default function EssayPage() {
           {!essay ? (
             <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
           ) : (
-            <div className={cn("grid gap-4", hasCorrection ? "xl:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]" : "xl:grid-cols-1")}>
+            <div className={cn("grid gap-4", hasCorrection ? "2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "2xl:grid-cols-1")}>
               <VersionPanel essay={essay} onRead={readVersion} onRewrite={rewriteFromVersion} />
               {hasCorrection ? <CorrectionPanel essay={essay} error={error} /> : null}
             </div>
@@ -305,7 +305,7 @@ function ThemePicker({
             )}
           >
             <p className="text-sm font-semibold">{theme.title}</p>
-            <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
+            <p className="text-safe mt-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
           </button>
         ))}
       </div>
@@ -344,7 +344,7 @@ function VersionPanel({
                     <Badge variant="outline">Versao {version.version_number}</Badge>
                     {version.score ? <Badge variant="success">{version.score}</Badge> : <Badge variant="secondary">Em escrita</Badge>}
                   </div>
-                  <p className="mt-2 line-clamp-1 text-sm font-semibold">{version.title}</p>
+                  <p className="text-safe mt-2 text-sm font-semibold">{version.title}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{formatDate(version.updated_at)}</p>
                 </div>
                 <div className="grid w-full gap-2 xs:w-auto xs:grid-cols-2">
@@ -358,7 +358,7 @@ function VersionPanel({
                 </div>
               </div>
               {version.correction?.feedback ? (
-                <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{version.correction.feedback}</p>
+                <p className="text-safe mt-3 text-sm leading-6 text-muted-foreground">{version.correction.feedback}</p>
               ) : null}
             </div>
           ))}

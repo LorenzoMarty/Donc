@@ -109,8 +109,8 @@ export default function DashboardPage() {
         }
       />
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
-        <Surface className="min-h-[300px]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+        <Surface>
           <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Seu desempenho</p>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
           <ScoreAreaChart data={data.trend} />
         </Surface>
 
-        <Surface className="min-h-[300px]">
+        <Surface>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Consistencia</p>
           <div className="mt-4 flex items-end justify-between gap-4">
             <div>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
             <CalendarDays className="h-8 w-8 text-secondary" aria-hidden="true" />
           </div>
           <Progress value={consistency} className="mt-5" />
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             <MiniMetric label="Media" value={String(data.essay_average)} />
             <MiniMetric label="Textos" value={String(data.essays_written)} />
           </div>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
         </Surface>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <section className="grid gap-4 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         <Surface>
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Continue evoluindo</p>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
         </Surface>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+      <section className="grid gap-4 2xl:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]">
         <Surface>
           <div className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Pratica inteligente</p>
@@ -284,7 +284,7 @@ function ActionRow({ icon: Icon, title, detail, href }: { icon: LucideIcon; titl
 
 function Recommendation({ title, description, href }: { title: string; description: string; href: string }) {
   return (
-    <Link href={href} className="game-tile flex min-h-[150px] flex-col justify-between bg-background/58 p-4 hover:bg-primary/8">
+    <Link href={href} className="game-tile flex min-h-[132px] flex-col justify-between bg-background/58 p-4 hover:bg-primary/8">
       <div>
         <p className="font-semibold">{title}</p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>

@@ -18,11 +18,11 @@ export function MetricCard({
 }) {
   return (
     <Card>
-      <CardContent className="p-5">
+      <CardContent className="p-4 lg:p-5">
         <div className="mb-4 flex items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
+            <p className="text-safe mt-2 text-3xl font-semibold tracking-normal">{value}</p>
           </div>
           <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
             <Icon className="h-5 w-5" aria-hidden="true" />

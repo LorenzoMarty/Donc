@@ -108,7 +108,7 @@ export function EssayEditor({
       className="game-surface relative overflow-visible bg-card"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
-      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 flex flex-col gap-4 border-b border-border bg-card/95 p-3 shadow-sm backdrop-blur xs:p-4 md:top-0">
+      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 flex flex-col gap-3 border-b border-border bg-card/95 p-3 shadow-sm backdrop-blur xs:p-4 md:top-0">
         <div className="min-w-0 flex-1">
           <Input
             value={title}
@@ -124,7 +124,7 @@ export function EssayEditor({
           {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 xs:flex xs:flex-wrap xs:items-center">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:flex xl:flex-wrap xl:items-center">
           <div className="game-tile col-span-2 flex min-h-11 items-center gap-2 bg-background/72 px-3 py-2 text-sm xs:col-span-1">
             <SpellCheck className="h-4 w-4 text-secondary" aria-hidden="true" />
             <span className="font-bold">Ortografia</span>
@@ -153,12 +153,7 @@ export function EssayEditor({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "grid gap-4 bg-background/72 p-3 md:p-5",
-          sidebarOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)]" : "lg:grid-cols-1",
-        )}
-      >
+      <div className={cn("grid gap-3 bg-background/72 p-2 xs:p-3 md:p-4", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)]" : "xl:grid-cols-1")}>
         <div className="min-w-0">
           <ENEMWritingSheet value={content} disabled={locked} onChange={onContentChange} placeholder="Comece sua redação ENEM aqui..." />
         </div>

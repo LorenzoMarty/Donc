@@ -23,7 +23,7 @@ export default function PlatformPage() {
                 <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
                 Plataforma
               </div>
-              <h1 className="max-w-3xl text-[clamp(2rem,9vw,3.75rem)] font-semibold leading-tight tracking-normal">
+              <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
                 Uma plataforma de estudo clara, moderna e constante.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">

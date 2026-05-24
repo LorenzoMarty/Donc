@@ -159,7 +159,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
               </Link>
             </Button>
             <Badge className="border-primary/20 bg-primary/10 text-primary">Modo infinito</Badge>
-            <h1 className="mt-3 text-[clamp(1.75rem,7vw,2.75rem)] font-semibold leading-tight tracking-normal text-foreground">
+            <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
               {game.name}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
@@ -207,7 +207,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                   </div>
 
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Complete a lacuna</p>
-                  <h2 className="mt-3 text-[clamp(1.35rem,5vw,2rem)] font-semibold leading-tight tracking-normal text-foreground md:text-[clamp(1.75rem,2.6vw,2.25rem)]">
+                  <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
                     {question.prompt}
                   </h2>
 
@@ -475,7 +475,7 @@ function ResultModal({
                 </div>
               )}
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rodada finalizada</p>
-              <h2 className="mt-2 text-[clamp(1.9rem,8vw,2.75rem)] font-semibold tracking-normal">+{result.xpEarned} XP</h2>
+              <h2 className="mt-2 text-4xl font-semibold tracking-normal">+{result.xpEarned} XP</h2>
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">

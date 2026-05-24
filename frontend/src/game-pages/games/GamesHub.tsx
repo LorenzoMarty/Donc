@@ -65,7 +65,7 @@ export default function GamesHub() {
                 <Dumbbell className="h-4 w-4" aria-hidden="true" />
                 Academia de escrita
               </div>
-              <h1 className="text-[clamp(1.8rem,7vw,2.75rem)] font-semibold leading-tight tracking-normal text-foreground">
+              <h1 className="text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
                 Centro de Treinamento
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">

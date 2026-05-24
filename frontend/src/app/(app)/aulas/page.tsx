@@ -67,7 +67,7 @@ function CoursePanel({ course }: { course: Course }) {
   return (
     <section className="space-y-4">
       <Surface>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(13rem,15rem)] lg:items-center">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(13rem,15rem)] xl:items-center">
           <div className="flex items-start gap-3">
             <span className="mt-1 h-3 w-3 rounded-full" style={{ backgroundColor: course.color }} />
             <div>
@@ -91,7 +91,7 @@ function CoursePanel({ course }: { course: Course }) {
       </Surface>
 
       <Surface>
-        <div className="grid gap-4 lg:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)]">
+        <div className="grid gap-4 2xl:grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)]">
           <div>
             <label htmlFor={selectId} className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Modulo
@@ -151,7 +151,7 @@ function CoursePanel({ course }: { course: Course }) {
                     {lesson.duration_minutes} min
                   </div>
                   <p className="font-semibold">{lesson.title}</p>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{lesson.description}</p>
+                  <p className="text-safe mt-1 text-sm leading-6 text-muted-foreground">{lesson.description}</p>
                   <Progress value={lesson.progress.progress_percent} className="mt-3" />
                 </div>
                 <div className="flex items-center justify-end gap-2 text-sm font-semibold text-primary sm:col-span-2 lg:col-span-1 lg:justify-center">

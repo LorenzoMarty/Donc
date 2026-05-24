@@ -95,7 +95,7 @@ export default function LessonPage() {
                     <Badge variant="outline">{exercise.skill}</Badge>
                     <ClipboardList className="h-4 w-4 text-secondary" aria-hidden="true" />
                   </div>
-                  <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">{exercise.statement}</p>
+                  <p className="text-safe text-sm leading-6 text-muted-foreground">{exercise.statement}</p>
                 </div>
               ))}
             </div>

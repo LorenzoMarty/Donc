@@ -263,7 +263,7 @@ function AchievementCard({ achievement }: { achievement: AchievementProgress }) 
               </Badge>
             )}
           </div>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">
+          <p className="text-safe mt-2 text-sm leading-6 text-muted-foreground">
             {hidden ? "Continue estudando para revelar este marco." : achievement.description}
           </p>
         </div>
