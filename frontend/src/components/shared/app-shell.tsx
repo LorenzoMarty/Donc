@@ -12,7 +12,6 @@ import {
   Gamepad2,
   LayoutDashboard,
   LogOut,
-  Medal,
   Menu,
   ShieldCheck,
   X,
@@ -35,7 +34,6 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/games", label: "Jogos", icon: Gamepad2 },
   { href: "/redacao", label: "Redacao", icon: FilePenLine },
-  { href: "/conquistas", label: "Evolucao", icon: Medal },
   { href: "/redacoes", label: "Historico", icon: BarChart3 },
 ];
 

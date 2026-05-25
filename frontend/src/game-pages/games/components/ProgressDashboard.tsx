@@ -3,15 +3,12 @@
 import { motion } from "framer-motion";
 import { Flame, Medal, Shield, Trophy, Zap } from "lucide-react";
 
-import { getBadgesById } from "@/features/achievements/achievements";
 import { getRankSnapshot } from "@/features/xp/xp";
 import { useGameStore } from "@/stores/game-store";
 
 export function ProgressDashboard({ overallProgress, weeklyProgress }: { overallProgress: number; weeklyProgress: number }) {
   const xp = useGameStore((state) => state.xp);
   const streak = useGameStore((state) => state.streak);
-  const badges = useGameStore((state) => state.badges);
-  const visibleBadges = getBadgesById(badges).slice(0, 3);
   const rank = getRankSnapshot(xp);
   const metrics = [
     { label: "Rank atual", value: rank.current.name, icon: Shield },
@@ -85,28 +82,6 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dominio geral</p>
           <p className="mt-1 text-2xl font-semibold text-foreground">{overallProgress}%</p>
         </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {visibleBadges.length ? (
-          visibleBadges.map((badge) => {
-            const Icon = badge.icon;
-            return (
-              <span
-                key={badge.id}
-                className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-              >
-                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                {badge.name}
-              </span>
-            );
-          })
-        ) : (
-          <span className="game-chip inline-flex items-center gap-1.5 bg-background/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
-            <Medal className="h-3.5 w-3.5" aria-hidden="true" />
-            Badges aparecem apos jogar
-          </span>
-        )}
       </div>
     </motion.section>
   );

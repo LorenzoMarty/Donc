@@ -7,7 +7,6 @@ const links = [
   { href: "/plataforma", label: "Plataforma" },
   { href: "/trilhas", label: "Trilhas" },
   { href: "/redacao", label: "Redação" },
-  { href: "/conquistas", label: "Conquistas" },
   { href: "/pricing", label: "Planos" },
   { href: "/sobre", label: "Sobre" },
 ];

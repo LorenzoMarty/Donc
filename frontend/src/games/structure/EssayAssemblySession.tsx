@@ -21,7 +21,6 @@ import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Clock, GripVertical, Layers3, RotateCcw, Sparkles, Trophy } from "lucide-react";
 
-import { getBadgesById } from "@/features/achievements/achievements";
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -533,8 +532,6 @@ function ResultModal({
   categorySlug: string;
   onRestart: () => void;
 }) {
-  const unlockedBadges = result ? getBadgesById(result.unlockedBadges) : [];
-
   return (
     <AnimatePresence>
       {result && (
@@ -550,7 +547,7 @@ function ResultModal({
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
           >
-            {(result.rankUp || unlockedBadges.length > 0) && <ConfettiBurst />}
+            {result.rankUp && <ConfettiBurst />}
             <div
               className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/75 to-transparent"
               aria-hidden="true"
@@ -563,11 +560,6 @@ function ResultModal({
               <h2 className="mt-2 text-4xl font-semibold tracking-normal">Monte a Redacao</h2>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {result.rankUp && <Badge className="border-primary/25 bg-primary/10 text-primary">Rank up - {result.rankName}</Badge>}
-                {unlockedBadges.map((badge) => (
-                  <Badge key={badge.id} className="border-primary/25 bg-primary/10 text-primary">
-                    {badge.name}
-                  </Badge>
-                ))}
               </div>
             </div>
 

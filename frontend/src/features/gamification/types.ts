@@ -11,8 +11,6 @@ export type GameCategoryId =
 
 export type GameDifficulty = "Essencial" | "Intermediario" | "Avancado";
 
-type BadgeRarity = "comum" | "raro" | "epico" | "lendario";
-
 type GameEngine = "quiz" | "choice" | "sequence";
 
 type GameQuestion = {
@@ -73,14 +71,6 @@ export type GameProgress = {
   lastPlayedAt?: string;
 };
 
-export type BadgeDefinition = {
-  id: string;
-  name: string;
-  description: string;
-  icon: LucideIcon;
-  rarity: BadgeRarity;
-};
-
 export type StreakState = {
   current: number;
   best: number;
@@ -90,7 +80,6 @@ export type StreakState = {
 export type GameCompletion = {
   attempt: GameAttempt;
   xpEarned: number;
-  unlockedBadges: string[];
   xpBefore: number;
   xpAfter: number;
   rankUp: boolean;

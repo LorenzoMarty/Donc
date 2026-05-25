@@ -24,8 +24,8 @@ export default function ProfilePage() {
         description="Consistencia, frequencia e atalhos essenciais para continuar evoluindo."
         action={
           <Button asChild size="lg" className="w-full md:w-auto">
-            <Link href="/conquistas">
-              Ver marcos
+            <Link href="/redacoes">
+              Ver historico
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>

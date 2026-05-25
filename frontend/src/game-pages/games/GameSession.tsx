@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 import { getCategoryBySlug, getGameById } from "@/features/gamification/catalog";
-import { getBadgesById } from "@/features/achievements/achievements";
 import { ConnectivePrecisionSession } from "@/games/connectives/ConnectivePrecisionSession";
 import { EssayAssemblySession } from "@/games/structure/EssayAssemblySession";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
@@ -36,7 +35,6 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const question = game?.questions[step];
   const score = answers.filter(Boolean).length;
   const liveAccuracy = answers.length ? Math.round((score / answers.length) * 100) : 100;
-  const unlockedBadges = useMemo(() => getBadgesById(result?.unlockedBadges ?? []), [result]);
 
   if (!game || !category || game.category !== category.id) {
     return (
@@ -189,22 +187,6 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   Voce recebeu {result?.xpEarned ?? 0} pontos secundarios nesta conclusao.
                 </p>
-                {unlockedBadges.length > 0 && (
-                  <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    {unlockedBadges.map((badge) => {
-                      const Icon = badge.icon;
-                      return (
-                        <span
-                          key={badge.id}
-                          className="game-chip inline-flex items-center gap-1.5 bg-primary/12 px-3 py-1.5 text-sm font-semibold text-secondary"
-                        >
-                          <Icon className="h-4 w-4" aria-hidden="true" />
-                          {badge.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
                   <Button onClick={restart} variant="outline">
                     <RotateCcw className="h-4 w-4" aria-hidden="true" />

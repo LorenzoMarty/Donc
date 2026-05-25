@@ -4,7 +4,6 @@ const protectedRoutes = [
   "/dashboard",
   "/aulas",
   "/games",
-  "/conquistas",
   "/redacao",
   "/redacoes",
   "/perfil",
