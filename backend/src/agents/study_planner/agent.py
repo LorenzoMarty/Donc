@@ -25,8 +25,6 @@ class StudyPlannerAgent:
             rationale="Recomendacao baseada em padroes recorrentes e competencias mais fracas.",
         )
         prompt = f"""
-{STUDY_PLANNER_INSTRUCTIONS}
-
 Gere recomendacoes de aulas, jogos e habilidades.
 Perfil: {profile}
 Historico: {history}
@@ -56,8 +54,6 @@ Historico: {history}
         minutes_per_day = max(10, min(minutes_per_day, 180))
         fallback = self._fallback_plan(days=days, minutes_per_day=minutes_per_day)
         prompt = f"""
-{STUDY_PLANNER_INSTRUCTIONS}
-
 Dias: {days}
 Minutos por dia: {minutes_per_day}
 Perfil: {profile}

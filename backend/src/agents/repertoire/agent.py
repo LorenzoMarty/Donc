@@ -34,8 +34,6 @@ class RepertoireAgent:
     ) -> RepertoireAnalysis:
         fallback = self._fallback(theme=theme, content=content)
         prompt = f"""
-{REPERTOIRE_INSTRUCTIONS}
-
 Tema: {theme}
 Redacao:
 {content}

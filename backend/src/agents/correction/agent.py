@@ -39,8 +39,6 @@ class EssayCorrectionAgent:
             competencies=competencies,
         )
         prompt = f"""
-{ESSAY_CONSOLIDATION_INSTRUCTIONS}
-
 Tema: {theme}
 Contexto: {context}
 

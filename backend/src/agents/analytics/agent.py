@@ -19,8 +19,6 @@ class AnalyticsAgent:
     ) -> AnalyticsResult:
         fallback = self._fallback(profile=profile, history=history)
         prompt = f"""
-{ANALYTICS_INSTRUCTIONS}
-
 Perfil: {profile}
 Historico: {history}
 """
