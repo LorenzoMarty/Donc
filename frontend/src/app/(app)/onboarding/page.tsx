@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Map, PenLine, Target, Trophy } from "lucide-react";
+import { ArrowRight, BarChart3, Map, PenLine, Target } from "lucide-react";
 
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ const steps = [
   { title: "Mapa", description: "Etapas amarelas mostram a proxima pratica recomendada.", icon: Map },
   { title: "Ritmo", description: "Sequencias de acertos reforcam consistencia e revisao.", icon: Target },
   { title: "Escrita", description: "Redação também entra na progressão semanal.", icon: PenLine },
-  { title: "Recompensa", description: "Títulos e conquistas surgem por consistência.", icon: Trophy },
+  { title: "Evolucao", description: "Notas, XP e sequencia mostram sua consistencia.", icon: BarChart3 },
 ];
 
 export default function OnboardingPage() {

@@ -25,18 +25,21 @@ export type TokenResponse = {
 export type Dashboard = {
   progress_general: number;
   essay_average: number;
+  best_essay_score: number;
   streak_days: number;
   xp: number;
   level: number;
   completed_lessons: number;
   correct_exercises_rate: number;
   essays_written: number;
+  mastery_map: { competency: string; label: string; value: number }[];
+  recurrent_errors: string[];
   trend: { label: string; score: number }[];
   recent_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   pending_exercises: { id: number; skill: string; difficulty: string }[];
   recent_exams: { id: number; title: string; score: number }[];
+  suggested_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   goals: { id: number; title: string; current: number; target: number; unit: string; completed: boolean }[];
-  achievements: { id: number; title: string; description: string; icon: string }[];
 };
 
 export type Lesson = {

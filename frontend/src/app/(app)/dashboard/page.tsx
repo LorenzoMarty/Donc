@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, ArrowRight, CalendarDays, FileText, PenLine, Target } from "lucide-react";
+import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, FileText, Flame, PenLine, Send, Target, Trophy } from "lucide-react";
 
-import { CompetencyBarChart, ScoreAreaChart } from "@/components/shared/charts";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -14,19 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { apiFetch, type Dashboard } from "@/services/api";
 
-const competencySnapshot = [
-  { competency: "C1", value: 152 },
-  { competency: "C2", value: 168 },
-  { competency: "C3", value: 142 },
-  { competency: "C4", value: 136 },
-  { competency: "C5", value: 160 },
-];
+type LessonItem = Dashboard["suggested_lessons"][number];
 
-const recurrentErrors = [
-  "Conectivos conclusivos repetidos no desenvolvimento.",
-  "Repertorio citado sem amarracao clara com a tese.",
-  "Proposta de intervencao com meio pouco detalhado.",
-];
+type RecentActivity = {
+  label: string;
+  title: string;
+  detail: string;
+  href: string;
+  icon: LucideIcon;
+};
 
 export default function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null);
@@ -53,20 +48,16 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const weeklyEvolution = useMemo(() => {
-    if (!data?.trend.length) return 0;
-    const first = data.trend[0]?.score ?? 0;
-    const last = data.trend.at(-1)?.score ?? first;
-    return last - first;
-  }, [data]);
+  const nextStep = useMemo(() => (data ? buildNextStep(data) : null), [data]);
+  const recentActivities = useMemo(() => (data ? buildRecentActivities(data) : []), [data]);
 
   if (error) {
     return (
-      <div className="space-y-5 md:space-y-6">
+      <div className="space-y-4">
         <PageHeader
-          eyebrow="Painel academico"
+          eyebrow="Painel"
           title="Nao foi possivel carregar seus dados"
-          description="O backend respondeu, mas os dados do painel ainda nao estao disponiveis. Isso costuma acontecer quando o banco acabou de ser configurado."
+          description="O backend respondeu, mas os dados do painel ainda nao estao disponiveis."
           action={
             <Button size="lg" className="w-full md:w-auto" onClick={() => window.location.reload()}>
               Tentar novamente
@@ -78,9 +69,9 @@ export default function DashboardPage() {
     );
   }
 
-  if (!data) {
+  if (!data || !nextStep) {
     return (
-      <div className="fluid-grid gap-4 [--grid-min:16rem]">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <LoadingCard />
         <LoadingCard />
         <LoadingCard />
@@ -89,210 +80,256 @@ export default function DashboardPage() {
     );
   }
 
-  const nextLesson = data.recent_lessons[0];
-  const nextExercise = data.pending_exercises[0];
-  const consistency = Math.min(100, Math.round((data.streak_days / 7) * 100));
+  const stats = [
+    { label: "Dias em sequencia", value: String(data.streak_days), detail: "ritmo atual", icon: Flame },
+    { label: "Melhor nota", value: data.best_essay_score ? String(data.best_essay_score) : "-", detail: "maior redacao corrigida", icon: Trophy },
+    { label: "Aulas assistidas", value: String(data.completed_lessons), detail: `${data.progress_general}% do percurso`, icon: BookOpen },
+    { label: "Redacoes enviadas", value: String(data.essays_written), detail: `${data.essay_average || 0} de media`, icon: Send },
+  ];
+  const NextStepIcon = nextStep.icon;
 
   return (
-    <div className="space-y-5 md:space-y-6">
+    <div className="space-y-4 md:space-y-5">
       <PageHeader
-        eyebrow="Painel academico"
-        title="Evolucao da sua escrita"
-        description="Acompanhe rotina, notas, competencias e proximas praticas com foco em melhoria real de redacao ENEM."
+        eyebrow="Painel"
+        title="Resumo de evolucao"
+        description="Dominio, rotina e proximas acoes em uma visao compacta."
         action={
           <Button asChild size="lg" className="w-full md:w-auto">
             <Link href="/redacao">
-              Continuar escrita
+              Nova redacao
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </Button>
         }
       />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-        <Surface>
-          <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Seu desempenho</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-normal">Tendencia semanal</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                O foco e estabilizar a nota por competencia e transformar erros recorrentes em pratica objetiva.
-              </p>
-            </div>
-            <Badge variant="outline" className="w-fit">
-              {weeklyEvolution >= 0 ? "+" : ""}
-              {weeklyEvolution} pontos
-            </Badge>
-          </div>
-          <ScoreAreaChart data={data.trend} />
-        </Surface>
-
-        <Surface>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Consistencia</p>
-          <div className="mt-4 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-5xl font-semibold tracking-normal">{data.streak_days}</p>
-              <p className="mt-1 text-sm text-muted-foreground">dias de sequencia</p>
-            </div>
-            <CalendarDays className="h-8 w-8 text-secondary" aria-hidden="true" />
-          </div>
-          <Progress value={consistency} className="mt-5" />
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            <MiniMetric label="Media" value={String(data.essay_average)} />
-            <MiniMetric label="Textos" value={String(data.essays_written)} />
-          </div>
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            XP: {data.xp} pontos secundarios. A progressao principal e medida por escrita e desempenho.
-          </p>
-        </Surface>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <MetricCard key={stat.label} {...stat} />
+        ))}
       </section>
 
-      <section className="grid gap-4 2xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-        <Surface>
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Continue evoluindo</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal">Proximo passo recomendado</h2>
-          </div>
-          <div className="space-y-3">
-            <ActionRow
-              icon={PenLine}
-              title="Continuar redacao em andamento"
-              detail="Retome o texto e finalize um paragrafo antes da proxima correcao."
-              href="/redacao"
-            />
-            <ActionRow
-              icon={FileText}
-              title="Revisar historico de correcoes"
-              detail={`${data.essays_written} textos registrados para comparar evolucao.`}
-              href="/redacoes"
-            />
-            <ActionRow
-              icon={Target}
-              title={nextExercise?.skill ?? "Praticar conectivos"}
-              detail="Exercicio curto baseado nos pontos que mais derrubam coesao."
-              href="/games"
-            />
-          </div>
-        </Surface>
-
-        <Surface>
-          <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Competencias ENEM</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-normal">Mapa de dominio</h2>
-            </div>
-            <Badge variant="secondary">Foco: C4</Badge>
-          </div>
-          <CompetencyBarChart data={competencySnapshot} />
-        </Surface>
-      </section>
-
-      <section className="grid gap-4 2xl:grid-cols-[minmax(0,1.05fr)_minmax(18rem,0.95fr)]">
-        <Surface>
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Pratica inteligente</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal">Sugestoes contextualizadas</h2>
-          </div>
-          <div className="fluid-grid gap-3 [--grid-min:13rem]">
-            <Recommendation
-              title="Coesao textual"
-              description="Treine retomadas e conectivos para reduzir repeticao no desenvolvimento."
-              href="/games"
-            />
-            <Recommendation
-              title="Repertorio produtivo"
-              description="Reescreva uma referencia conectando causa, tese e consequencia."
-              href="/redacao"
-            />
-            <Recommendation
-              title={nextLesson?.title ?? "Aula recomendada"}
-              description={
-                nextLesson
-                  ? `Continue ${nextLesson.module} em ${nextLesson.progress_percent}% de progresso.`
-                  : "Assista uma aula curta antes da proxima escrita."
-              }
-              href={nextLesson ? `/aulas/${nextLesson.id}` : "/aulas"}
-            />
-          </div>
-        </Surface>
-
-        <Surface>
-          <div className="mb-4 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-secondary" aria-hidden="true" />
-            <h2 className="text-xl font-semibold tracking-normal">Erros recorrentes</h2>
-          </div>
-          <div className="space-y-2">
-            {recurrentErrors.map((error) => (
-              <div key={error} className="game-tile bg-background/58 p-3 text-sm leading-6 text-muted-foreground">
-                {error}
-              </div>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(20rem,0.88fr)]">
+        <Surface className="p-4 lg:p-5">
+          <SectionTitle eyebrow="Competencias ENEM" title="Mapa de dominio" />
+          <div className="mt-4 grid gap-3">
+            {data.mastery_map.map((item) => (
+              <DomainRow key={item.competency} competency={item.competency} label={item.label} value={item.value} />
             ))}
           </div>
         </Surface>
+
+        <Surface className="p-4 lg:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <SectionTitle eyebrow="Prioridade" title="Proximo passo recomendado" />
+            <Badge variant="secondary" className="shrink-0">
+              {nextStep.badge}
+            </Badge>
+          </div>
+          <div className="mt-5 rounded-md border border-primary/20 bg-primary/8 p-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+                <NextStepIcon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold tracking-normal">{nextStep.title}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{nextStep.detail}</p>
+              </div>
+            </div>
+            <Button asChild className="mt-4 w-full">
+              <Link href={nextStep.href}>
+                Abrir tarefa
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
+        </Surface>
       </section>
 
-      <Surface>
-        <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Atividade recente</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal">Linha de estudo</h2>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <Surface className="p-4 lg:p-5">
+          <SectionTitle eyebrow="Aulas" title="Sugestao de aulas" />
+          <div className="mt-4 grid gap-2">
+            {(data.suggested_lessons.length ? data.suggested_lessons : fallbackLessons()).slice(0, 3).map((lesson) => (
+              <LessonRow key={lesson.id} lesson={lesson} />
+            ))}
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/redacoes">Abrir workspace</Link>
-          </Button>
-        </div>
-        <div className="fluid-grid gap-3 [--grid-min:13rem]">
-          {(data.recent_lessons.length
-            ? data.recent_lessons.slice(0, 3)
-            : [{ id: 1, title: "Estrutura dissertativa", module: "Redacao", progress_percent: 64 }]
-          ).map((lesson) => (
-            <div key={lesson.id} className="game-tile bg-background/58 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Aula</p>
-              <p className="mt-2 font-semibold">{lesson.title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{lesson.module}</p>
-              <Progress value={lesson.progress_percent} className="mt-3 h-2" />
+        </Surface>
+
+        <Surface className="p-4 lg:p-5">
+          <SectionTitle eyebrow="Registro" title="Atividades recentes" />
+          <div className="mt-4 grid gap-2">
+            {recentActivities.length ? (
+              recentActivities.slice(0, 4).map((activity) => <ActivityRow key={`${activity.label}-${activity.title}`} activity={activity} />)
+            ) : (
+              <EmptyLine text="Nenhuma atividade recente registrada." />
+            )}
+          </div>
+        </Surface>
+      </section>
+
+      <Surface className="p-4 lg:p-5">
+        <div className="flex items-start gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
+            <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <SectionTitle eyebrow="Diagnostico" title="Erros recorrentes" />
+            <div className="mt-4 grid gap-2 md:grid-cols-2">
+              {data.recurrent_errors.slice(0, 4).map((item) => (
+                <div key={item} className="rounded-md border border-border bg-background/58 p-3 text-sm leading-6 text-muted-foreground">
+                  {item}
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </Surface>
     </div>
   );
 }
 
-function MiniMetric({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value, detail, icon: Icon }: { label: string; value: string; detail: string; icon: LucideIcon }) {
   return (
-    <div className="rounded-md border bg-background/60 p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <Surface className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+          <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+        </div>
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
+function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</p>
+      <h2 className="mt-1 text-xl font-semibold tracking-normal">{title}</h2>
     </div>
   );
 }
 
-function ActionRow({ icon: Icon, title, detail, href }: { icon: LucideIcon; title: string; detail: string; href: string }) {
+function DomainRow({ competency, label, value }: { competency: string; label: string; value: number }) {
+  const percent = Math.max(0, Math.min(100, (value / 200) * 100));
   return (
-    <Link href={href} className="game-tile flex items-start gap-3 bg-background/58 p-3 hover:bg-primary/8">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary/12 text-secondary">
+    <div className="grid gap-2 rounded-md border border-border bg-background/58 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{competency}</p>
+          <p className="text-xs text-muted-foreground">{label}</p>
+        </div>
+        <span className="text-sm font-semibold">{value || "-"}</span>
+      </div>
+      <Progress value={percent} className="h-2" />
+    </div>
+  );
+}
+
+function LessonRow({ lesson }: { lesson: LessonItem }) {
+  return (
+    <Link href={`/aulas/${lesson.id}`} className="rounded-md border border-border bg-background/58 p-3 transition-colors hover:bg-primary/8">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-safe text-sm font-semibold">{lesson.title}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{lesson.module}</p>
+        </div>
+        <span className="shrink-0 text-xs font-semibold text-secondary">{lesson.progress_percent}%</span>
+      </div>
+      <Progress value={lesson.progress_percent} className="mt-3 h-1.5" />
+    </Link>
+  );
+}
+
+function ActivityRow({ activity }: { activity: RecentActivity }) {
+  const Icon = activity.icon;
+  return (
+    <Link href={activity.href} className="flex items-start gap-3 rounded-md border border-border bg-background/58 p-3 transition-colors hover:bg-primary/8">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <p className="font-semibold">{title}</p>
-        <p className="mt-1 text-sm leading-5 text-muted-foreground">{detail}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{activity.label}</p>
+        <p className="text-safe mt-1 text-sm font-semibold">{activity.title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{activity.detail}</p>
       </div>
     </Link>
   );
 }
 
-function Recommendation({ title, description, href }: { title: string; description: string; href: string }) {
-  return (
-    <Link href={href} className="game-tile flex min-h-[132px] flex-col justify-between bg-background/58 p-4 hover:bg-primary/8">
-      <div>
-        <p className="font-semibold">{title}</p>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-      </div>
-      <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-secondary">
-        Comecar
-        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      </span>
-    </Link>
-  );
+function EmptyLine({ text }: { text: string }) {
+  return <div className="rounded-md border border-dashed border-border bg-background/35 p-3 text-sm text-muted-foreground">{text}</div>;
+}
+
+function buildNextStep(data: Dashboard) {
+  const weak = data.mastery_map.filter((item) => item.value > 0).sort((a, b) => a.value - b.value)[0];
+  if (!data.essays_written) {
+    return {
+      badge: "redacao",
+      title: "Enviar a primeira redacao",
+      detail: "Comece com um texto completo para liberar diagnostico por competencia e erros recorrentes.",
+      href: "/redacao",
+      icon: PenLine,
+    };
+  }
+  if (weak) {
+    return {
+      badge: weak.competency,
+      title: `Fortalecer ${weak.label.toLowerCase()}`,
+      detail: data.recurrent_errors[0] ?? "Reescreva um trecho curto e compare a evolucao na proxima correcao.",
+      href: weak.competency === "C1" || weak.competency === "C4" ? "/games" : "/redacao",
+      icon: Target,
+    };
+  }
+  return {
+    badge: "revisao",
+    title: "Revisar historico de correcoes",
+    detail: "Compare suas ultimas notas e escolha uma competencia para treinar hoje.",
+    href: "/redacoes",
+    icon: FileText,
+  };
+}
+
+function buildRecentActivities(data: Dashboard): RecentActivity[] {
+  const lessons = data.recent_lessons.map((lesson) => ({
+    label: "Aula",
+    title: lesson.title,
+    detail: `${lesson.module} - ${lesson.progress_percent}% concluido`,
+    href: `/aulas/${lesson.id}`,
+    icon: BookOpen,
+  }));
+  const exams = data.recent_exams.map((exam) => ({
+    label: "Simulado",
+    title: exam.title,
+    detail: `${exam.score} pontos`,
+    href: "/simulados",
+    icon: CheckCircle2,
+  }));
+  const lastScore = data.trend.at(-1)?.score;
+  const essay = lastScore
+    ? [
+        {
+          label: "Redacao",
+          title: "Ultima correcao registrada",
+          detail: `${lastScore} pontos`,
+          href: "/redacoes",
+          icon: FileText,
+        },
+      ]
+    : [];
+  return [...essay, ...lessons, ...exams];
+}
+
+function fallbackLessons(): LessonItem[] {
+  return [
+    { id: 1, title: "Como decodificar o tema", module: "Fundamentos da Redacao", progress_percent: 0 },
+    { id: 2, title: "Tese forte em 3 movimentos", module: "Fundamentos da Redacao", progress_percent: 0 },
+    { id: 3, title: "Competencia 5 sem formula vazia", module: "Competencias do ENEM", progress_percent: 0 },
+  ];
 }

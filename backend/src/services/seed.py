@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from src.config.security import get_password_hash
 from src.models import (
-    Achievement,
     Course,
     Difficulty,
     Essay,
@@ -20,7 +19,6 @@ from src.models import (
     MockExamQuestion,
     Module,
     User,
-    UserAchievement,
     UserRole,
 )
 
@@ -451,7 +449,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         seed_missing_exercises(db)
         seed_missing_themes(db)
         seed_missing_mock_exam(db)
-        seed_missing_achievements(db)
         if include_demo_data:
             seed_missing_demo_essays(db)
         db.commit()
@@ -462,7 +459,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         seed_missing_exercises(db)
         seed_missing_themes(db)
         seed_missing_mock_exam(db)
-        seed_missing_achievements(db)
         db.commit()
         return
 
@@ -587,17 +583,8 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         ]
     )
 
-    achievements = [
-        Achievement(code="first_essay", title="Primeira Redacao", description="Enviou a primeira redacao para correcao.", icon="pen-line", xp_reward=100),
-        Achievement(code="streak_7", title="Sequencia 7 dias", description="Manteve uma rotina de estudo por sete dias.", icon="flame", xp_reward=120),
-        Achievement(code="grammar_focus", title="Precisao Gramatical", description="Concluiu uma trilha de norma-padrao.", icon="badge-check", xp_reward=80),
-    ]
-    db.add_all(achievements)
-    db.flush()
     db.add_all(
         [
-            UserAchievement(user_id=student.id, achievement_id=achievements[0].id),
-            UserAchievement(user_id=student.id, achievement_id=achievements[1].id),
             Goal(user_id=student.id, title="Estudar redacao hoje", target=45, current=30, unit="min", due_date=date.today()),
             Goal(user_id=student.id, title="Resolver questoes de linguagem", target=12, current=7, unit="questoes", due_date=date.today()),
             LessonProgress(user_id=student.id, lesson_id=lessons[0].id, progress_percent=100, last_position_seconds=920, completed=True),
@@ -770,18 +757,6 @@ def seed_missing_mock_exam(db: Session) -> None:
             ),
         ]
     )
-
-
-def seed_missing_achievements(db: Session) -> None:
-    specs = [
-        ("first_essay", "Primeira Redacao", "Enviou a primeira redacao para correcao.", "pen-line", 100),
-        ("streak_7", "Sequencia 7 dias", "Manteve uma rotina de estudo por sete dias.", "flame", 120),
-        ("grammar_focus", "Precisao Gramatical", "Concluiu uma trilha de norma-padrao.", "badge-check", 80),
-    ]
-    existing_codes = set(db.scalars(select(Achievement.code)))
-    for code, title, description, icon, xp_reward in specs:
-        if code not in existing_codes:
-            db.add(Achievement(code=code, title=title, description=description, icon=icon, xp_reward=xp_reward))
 
 
 def seed_missing_demo_essays(db: Session) -> None:

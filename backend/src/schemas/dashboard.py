@@ -34,26 +34,28 @@ class GoalRead(BaseModel):
     completed: bool
 
 
-class AchievementRead(BaseModel):
-    id: int
-    title: str
-    description: str
-    icon: str
+class MasteryPoint(BaseModel):
+    competency: str
+    label: str
+    value: int
 
 
 class DashboardResponse(BaseModel):
     progress_general: int
     essay_average: int
+    best_essay_score: int
     streak_days: int
     xp: int
     level: int
     completed_lessons: int
     correct_exercises_rate: int
     essays_written: int
+    mastery_map: list[MasteryPoint]
+    recurrent_errors: list[str]
     trend: list[TrendPoint]
     recent_lessons: list[RecentLesson]
     pending_exercises: list[PendingExercise]
     recent_exams: list[RecentExam]
+    suggested_lessons: list[RecentLesson]
     goals: list[GoalRead]
-    achievements: list[AchievementRead]
 

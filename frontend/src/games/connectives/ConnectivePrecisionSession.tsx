@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import useSound from "use-sound";
 import { ArrowLeft, Check, Clock, Flame, RotateCcw, Target, Trophy, X, Zap } from "lucide-react";
 
-import { getBadgesById } from "@/features/achievements/achievements";
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -434,8 +433,6 @@ function ResultModal({
   onRestart: () => void;
   categorySlug: string;
 }) {
-  const unlockedBadges = result ? getBadgesById(result.unlockedBadges) : [];
-
   return (
     <AnimatePresence>
       {result && (
@@ -464,15 +461,6 @@ function ResultModal({
                 >
                   Rank up - {result.rankName}
                 </motion.div>
-              )}
-              {unlockedBadges.length > 0 && (
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  {unlockedBadges.map((badge) => (
-                    <Badge key={badge.id} className="border-primary/25 bg-primary/10 text-primary">
-                      {badge.name}
-                    </Badge>
-                  ))}
-                </div>
               )}
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rodada finalizada</p>
               <h2 className="mt-2 text-4xl font-semibold tracking-normal">+{result.xpEarned} XP</h2>

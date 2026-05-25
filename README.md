@@ -9,7 +9,7 @@ frontend/
   src/app/          rotas App Router, layouts, loading/error e proxy API
   src/components/   UI reutilizavel, shell, escrita, secoes e jogos
   src/contexts/     auth e toasts globais
-  src/features/     gamificacao, XP, streak e conquistas
+  src/features/     gamificacao, XP e streak
   src/lib/          ambiente e client HTTP
   src/services/     servicos por dominio
   src/stores/       estado persistido
