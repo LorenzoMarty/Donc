@@ -8,10 +8,8 @@ import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbul
 import { EssayEditor } from "@/components/writing/essay-editor";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { CompetencyMeter, PageHeader, Surface } from "@/components/shared/premium-ui";
-import { ConnectiveLibrary, RepertoireSuggestions } from "@/components/writing/writing-lab";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
 import { cn } from "@/utils";
 
@@ -37,6 +35,7 @@ export default function EssayPage() {
   const essayStatus = essay?.status;
   const selectedThemeId = selectedTheme?.id;
   const wordCount = countWords(content);
+  const paragraphCount = countParagraphs(content);
   const selectedVersion = selectedVersionId ? (essay?.versions.find((version) => version.id === selectedVersionId) ?? null) : null;
   const analysisCorrection = selectedVersion?.correction ?? essay?.correction ?? null;
   const analysisTitle = selectedVersion?.title ?? essay?.title ?? title;
@@ -235,7 +234,7 @@ export default function EssayPage() {
   if (loading) return <LoadingCard />;
 
   if (submitting && essay) {
-    return <CorrectionWaitingScreen title={title} wordCount={wordCount} />;
+    return <CorrectionWaitingScreen title={title} wordCount={wordCount} paragraphCount={paragraphCount} />;
   }
 
   const hasCorrection = Boolean(analysisCorrection);
@@ -298,6 +297,7 @@ export default function EssayPage() {
           title={title}
           content={content}
           wordCount={wordCount}
+          paragraphCount={paragraphCount}
           saving={saving}
           submitting={submitting}
           error={error}
@@ -316,7 +316,7 @@ export default function EssayPage() {
       <PageHeader
         eyebrow="Laboratorio de redacao"
         title="Escreva com foco e revise por competencia."
-        description="Editor limpo e repertorio guiado para desenvolver sua redacao com clareza."
+        description="Editor limpo para desenvolver sua redacao com clareza e acompanhar estrutura, linhas e paragrafos."
         action={
           <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
             <Button onClick={() => createDraft()} disabled={!selectedTheme} size="lg">
@@ -333,66 +333,55 @@ export default function EssayPage() {
         }
       />
 
-      <Tabs defaultValue="editor" className="space-y-4">
-        <TabsList className="mobile-scroll h-auto w-full justify-start overflow-x-auto bg-muted/72 p-1 no-scrollbar">
-          <TabsTrigger value="editor">Editor</TabsTrigger>
-          <TabsTrigger value="repertorio">Repertorio</TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
+        {!essay ? (
+          <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
+        ) : (
+          <div className={cn("grid gap-4", hasCorrection ? "2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "2xl:grid-cols-1")}>
+            <VersionPanel essay={essay} selectedVersionId={selectedVersionId} onRead={readVersion} onRewrite={rewriteFromVersion} />
+            {hasCorrection ? <CorrectionPanel correction={analysisCorrection} error={error} /> : null}
+          </div>
+        )}
 
-        <TabsContent value="editor" className="mt-0 space-y-4">
-          {!essay ? (
-            <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
-          ) : (
-            <div className={cn("grid gap-4", hasCorrection ? "2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "2xl:grid-cols-1")}>
-              <VersionPanel essay={essay} selectedVersionId={selectedVersionId} onRead={readVersion} onRewrite={rewriteFromVersion} />
-              {hasCorrection ? <CorrectionPanel correction={analysisCorrection} error={error} /> : null}
-            </div>
-          )}
+        {error && !hasCorrection ? (
+          <div className="game-tile flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        ) : null}
 
-          {error && !hasCorrection ? (
-            <div className="game-tile flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              {error}
-            </div>
-          ) : null}
-
-          {!essay && !draftStarted ? (
-            <Surface className="grid min-h-[280px] place-items-center text-center">
-              <div>
-                <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
-                  <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
-                </div>
-                <p className="text-xl font-semibold tracking-normal">Escolha um tema e comece a escrever.</p>
-                <p className="mt-2 text-sm text-muted-foreground">O editor abre limpo para voce desenvolver a redacao no seu ritmo.</p>
-                <Button className="mt-5" onClick={() => createDraft()} disabled={!selectedTheme}>
-                  Comecar redacao
-                </Button>
+        {!essay && !draftStarted ? (
+          <Surface className="grid min-h-[280px] place-items-center text-center">
+            <div>
+              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+                <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
               </div>
-            </Surface>
-          ) : (
-            <EssayEditor
-              essay={essay}
-              theme={selectedTheme}
-              title={title}
-              content={content}
-              wordCount={wordCount}
-              saving={saving}
-              submitting={submitting}
-              error={error}
-              focusMode={focusMode}
-              onTitleChange={setTitle}
-              onContentChange={setContent}
-              onFocusModeChange={setFocusMode}
-              onSubmit={submit}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="repertorio" className="mt-0 space-y-4">
-          <RepertoireSuggestions themeTitle={selectedTheme?.title} />
-          <ConnectiveLibrary />
-        </TabsContent>
-      </Tabs>
+              <p className="text-xl font-semibold tracking-normal">Escolha um tema e comece a escrever.</p>
+              <p className="mt-2 text-sm text-muted-foreground">O editor abre limpo para voce desenvolver a redacao no seu ritmo.</p>
+              <Button className="mt-5" onClick={() => createDraft()} disabled={!selectedTheme}>
+                Comecar redacao
+              </Button>
+            </div>
+          </Surface>
+        ) : (
+          <EssayEditor
+            essay={essay}
+            theme={selectedTheme}
+            title={title}
+            content={content}
+            wordCount={wordCount}
+            paragraphCount={paragraphCount}
+            saving={saving}
+            submitting={submitting}
+            error={error}
+            focusMode={focusMode}
+            onTitleChange={setTitle}
+            onContentChange={setContent}
+            onFocusModeChange={setFocusMode}
+            onSubmit={submit}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -494,7 +483,7 @@ function VersionPanel({
   );
 }
 
-function CorrectionWaitingScreen({ title, wordCount }: { title: string; wordCount: number }) {
+function CorrectionWaitingScreen({ title, wordCount, paragraphCount }: { title: string; wordCount: number; paragraphCount: number }) {
   return (
     <div className="grid min-h-[calc(100dvh-10rem)] place-items-center">
       <Surface className="w-full max-w-3xl text-center">
@@ -507,7 +496,7 @@ function CorrectionWaitingScreen({ title, wordCount }: { title: string; wordCoun
           Estamos salvando a versao final, avaliando as competencias e preparando a tela de analise. Ao terminar, voce sera levado
           automaticamente para o resultado.
         </p>
-        <div className="mt-6 grid gap-3 text-left sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
           <div className="game-tile bg-background/58 p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Titulo</p>
             <p className="text-safe mt-1 text-sm font-semibold">{title}</p>
@@ -515,6 +504,10 @@ function CorrectionWaitingScreen({ title, wordCount }: { title: string; wordCoun
           <div className="game-tile bg-background/58 p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Tamanho</p>
             <p className="mt-1 text-sm font-semibold">{wordCount} palavras</p>
+          </div>
+          <div className="game-tile bg-background/58 p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Paragrafos</p>
+            <p className="mt-1 text-sm font-semibold">{paragraphCount}</p>
           </div>
         </div>
       </Surface>
@@ -535,6 +528,8 @@ function EssayReadPanel({
   versionLabel: string;
   correction: Essay["correction"];
 }) {
+  const paragraphCount = countParagraphs(content);
+
   return (
     <Surface>
       <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -545,6 +540,7 @@ function EssayReadPanel({
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">{versionLabel}</Badge>
+          <Badge variant="outline">{paragraphCount} paragrafos</Badge>
           {correction ? <Badge variant="success">{correction.total_score} pontos</Badge> : <Badge variant="outline">Sem correcao</Badge>}
         </div>
       </div>
@@ -628,6 +624,13 @@ function formatDate(value: string) {
 
 function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
+}
+
+function countParagraphs(value: string) {
+  const stripped = value.trim();
+  if (!stripped) return 0;
+  if (/\n\s*\n/.test(stripped)) return stripped.split(/\n\s*\n+/).filter((paragraph) => paragraph.trim()).length;
+  return stripped.split(/\n+/).filter((line) => line.trim()).length;
 }
 
 function latestCorrectedVersion(essay: Essay) {

@@ -7,14 +7,14 @@ import { ArrowRight, Flame, GraduationCap, Medal, Zap } from "lucide-react";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
 import { initials } from "@/utils";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const xp = user?.xp ?? 0;
-  const level = user?.level ?? 1;
-  const xpProgress = xp % 250 ? ((xp % 250) / 250) * 100 : 100;
+  const rank = getRankSnapshot(xp);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -48,7 +48,7 @@ export default function ProfilePage() {
 
         <div className="fluid-grid gap-4 [--grid-min:13rem]">
           <Metric icon={Zap} label="Pontos" value={String(xp)} />
-          <Metric icon={GraduationCap} label="Consistencia" value={String(level)} />
+          <Metric icon={GraduationCap} label="Rank" value={rank.current.name} />
           <Metric icon={Flame} label="Sequencia" value={`${user?.streak_days ?? 0} dias`} />
         </div>
       </section>
@@ -56,12 +56,15 @@ export default function ProfilePage() {
       <Surface>
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proximo nivel</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proximo rank</p>
             <h2 className="mt-1 text-xl font-semibold tracking-normal">Energia intelectual acumulada</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {rank.next ? `${rank.xpToNext} XP ate ${rank.next.name}` : "Rank maximo alcancado"}
+            </p>
           </div>
           <Medal className="h-5 w-5 text-primary" aria-hidden="true" />
         </div>
-        <Progress value={xpProgress} className="h-3" />
+        <Progress value={rank.progress} className="h-3" />
       </Surface>
     </div>
   );

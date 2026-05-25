@@ -1,9 +1,10 @@
 import logging
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.config.settings import settings
@@ -20,6 +21,36 @@ from src.vectorstore import seed_knowledge_base
 logger = logging.getLogger("src.startup")
 
 
+def _ensure_paragraph_count_columns() -> None:
+    inspector = inspect(engine)
+    required = {
+        "essays": "paragraph_count",
+        "essay_versions": "paragraph_count",
+    }
+    with engine.begin() as connection:
+        for table_name, column_name in required.items():
+            columns = {column["name"] for column in inspector.get_columns(table_name)}
+            if column_name not in columns:
+                connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} INTEGER NOT NULL DEFAULT 0"))
+        for table_name in required:
+            rows = connection.execute(text(f"SELECT id, content FROM {table_name} WHERE paragraph_count = 0")).mappings()
+            for row in rows:
+                paragraph_count = _paragraph_count(str(row["content"] or ""))
+                connection.execute(
+                    text(f"UPDATE {table_name} SET paragraph_count = :paragraph_count WHERE id = :id"),
+                    {"paragraph_count": paragraph_count, "id": row["id"]},
+                )
+
+
+def _paragraph_count(content: str) -> int:
+    stripped = content.strip()
+    if not stripped:
+        return 0
+    if re.search(r"\n\s*\n", stripped):
+        return len([paragraph for paragraph in re.split(r"\n\s*\n+", stripped) if paragraph.strip()])
+    return len([line for line in stripped.splitlines() if line.strip()])
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_ai_telemetry()
@@ -28,6 +59,7 @@ async def lifespan(_: FastAPI):
             with engine.begin() as connection:
                 connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         Base.metadata.create_all(bind=engine)
+        _ensure_paragraph_count_columns()
         db = SessionLocal()
         try:
             seed_database(db, include_demo_data=settings.seed_demo_data)

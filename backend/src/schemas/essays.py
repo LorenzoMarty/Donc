@@ -67,6 +67,7 @@ class EssayVersionRead(BaseModel):
     status: str
     word_count: int
     line_count: int
+    paragraph_count: int
     score: int | None
     created_at: datetime
     updated_at: datetime
@@ -83,6 +84,7 @@ class EssayRead(BaseModel):
     status: str
     word_count: int
     line_count: int
+    paragraph_count: int
     score: int | None
     created_at: datetime
     updated_at: datetime

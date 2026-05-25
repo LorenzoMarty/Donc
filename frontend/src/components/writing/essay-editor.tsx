@@ -18,6 +18,7 @@ export function EssayEditor({
   title,
   content,
   wordCount,
+  paragraphCount,
   saving,
   submitting,
   error,
@@ -32,6 +33,7 @@ export function EssayEditor({
   title: string;
   content: string;
   wordCount: number;
+  paragraphCount: number;
   saving: boolean;
   submitting: boolean;
   error?: string;
@@ -121,6 +123,7 @@ export function EssayEditor({
           />
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="outline">{lines} linhas</Badge>
+            <Badge variant={paragraphCount >= 4 ? "success" : "outline"}>{paragraphCount} paragrafos</Badge>
             <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount} palavras</Badge>
             <Badge variant="success">{syncLabel}</Badge>
           </div>
@@ -170,7 +173,7 @@ export function EssayEditor({
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
               className="min-w-0 overflow-hidden"
             >
-              <WritingSidebar lines={lines} structureProgress={structureProgress} />
+              <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} />
               <div className="mt-3">
                 <FriendlyErrorFeedback
                   show={wordCount > 0 && wordCount < 80}

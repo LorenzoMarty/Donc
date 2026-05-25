@@ -13,8 +13,8 @@ router = APIRouter(prefix="/exercises", tags=["exercises"])
 
 
 @router.get("", response_model=ApiResponse[list[ExerciseRead]])
-def list_exercises(_: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[list[ExerciseRead]]:
-    return success_response(ExerciseService(db).list_exercises())
+def list_exercises(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[list[ExerciseRead]]:
+    return success_response(ExerciseService(db).list_exercises(current_user))
 
 
 @router.post("/{exercise_id}/submit", response_model=ApiResponse[ExerciseSubmitResponse])

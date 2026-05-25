@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from src.models import Course, Essay, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentExam, RecentLesson, TrendPoint
+from src.services.rank_service import allowed_difficulties_for_user
 
 
 class DashboardService:
@@ -12,6 +13,7 @@ class DashboardService:
         self.db = db
 
     def get(self, user_id: int) -> DashboardResponse:
+        user = self.db.get(User, user_id)
         total_lessons = self.db.scalar(
             select(func.count(Lesson.id)).join(Lesson.module).join(Module.course).where(Course.slug == "destrave-redacao")
         ) or 0
@@ -69,13 +71,14 @@ class DashboardService:
         suggested_lessons = self._suggest_lessons(completed_lesson_ids=completed_lesson_ids, progress_by_lesson=progress_by_lesson)
 
         answered_ids = {answer.exercise_id for answer in answers}
+        allowed_difficulties = set(allowed_difficulties_for_user(user)) if user else set()
         pending_exercises = [
             PendingExercise(id=exercise.id, skill=exercise.skill, difficulty=exercise.difficulty.value)
             for exercise in self.db.scalars(
                 select(Exercise)
                 .join(Exercise.module)
                 .join(Module.course)
-                .where(~Exercise.id.in_(answered_ids), Course.slug == "destrave-redacao")
+                .where(~Exercise.id.in_(answered_ids), Course.slug == "destrave-redacao", Exercise.difficulty.in_(allowed_difficulties))
                 .limit(5)
             )
         ]
@@ -105,14 +108,9 @@ class DashboardService:
             TrendPoint(label="Semana 3", score=780),
         ]
 
-        user_xp = 0
-        user_level = 1
-        streak = 0
-        user = self.db.get(User, user_id)
-        if user:
-            user_xp = user.xp
-            user_level = user.level
-            streak = user.streak_days
+        user_xp = user.xp if user else 0
+        user_level = user.level if user else 1
+        streak = user.streak_days if user else 0
 
         return DashboardResponse(
             progress_general=progress_general,

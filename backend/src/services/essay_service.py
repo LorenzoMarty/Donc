@@ -33,6 +33,7 @@ class EssayService:
             content=content,
             word_count=self._word_count(content),
             line_count=self._line_count(content),
+            paragraph_count=self._paragraph_count(content),
         )
         self.db.add(essay)
         self.db.commit()
@@ -57,6 +58,7 @@ class EssayService:
         essay.content = content
         essay.word_count = self._word_count(content)
         essay.line_count = self._line_count(content)
+        essay.paragraph_count = self._paragraph_count(content)
         self.db.commit()
         return self.repo.get_essay(essay.id, user_id)  # type: ignore[return-value]
 
@@ -81,6 +83,7 @@ class EssayService:
             content=essay.content,
             word_count=essay.word_count,
             line_count=essay.line_count,
+            paragraph_count=essay.paragraph_count,
             status=EssayStatus.DRAFT,
         )
         self.db.add(draft)
@@ -95,6 +98,7 @@ class EssayService:
             essay.content = latest_version.content
             essay.word_count = latest_version.word_count
             essay.line_count = latest_version.line_count
+            essay.paragraph_count = latest_version.paragraph_count
         essay.status = EssayStatus.DRAFT
         self.db.commit()
         return self.repo.get_essay(essay.id, user_id)  # type: ignore[return-value]
@@ -109,6 +113,7 @@ class EssayService:
         essay.status = EssayStatus.DRAFT
         essay.word_count = version.word_count
         essay.line_count = version.line_count
+        essay.paragraph_count = version.paragraph_count
         self.db.commit()
         return self.repo.get_essay(essay.id, user_id)  # type: ignore[return-value]
 
@@ -146,6 +151,7 @@ class EssayService:
             status=EssayStatus.CORRECTED.value,
             word_count=self._word_count(essay.content),
             line_count=self._line_count(essay.content),
+            paragraph_count=self._paragraph_count(essay.content),
             score=result.total_score,
             submitted_at=submitted_at,
         )
@@ -186,6 +192,7 @@ class EssayService:
         essay.score = result.total_score
         essay.word_count = self._word_count(essay.content)
         essay.line_count = self._line_count(essay.content)
+        essay.paragraph_count = self._paragraph_count(essay.content)
         essay.submitted_at = submitted_at
         if award_points:
             user.xp += 120
@@ -245,6 +252,7 @@ class EssayService:
             status=essay.status.value if isinstance(essay.status, EssayStatus) else str(essay.status),
             word_count=essay.word_count,
             line_count=essay.line_count,
+            paragraph_count=essay.paragraph_count or self._paragraph_count(essay.content),
             score=essay.score,
             created_at=essay.created_at,
             updated_at=essay.updated_at,
@@ -305,6 +313,14 @@ class EssayService:
         physical_lines = len([line for line in content.splitlines() if line.strip()])
         visual_lines = max(1, len(content) // 92)
         return max(physical_lines, visual_lines)
+
+    def _paragraph_count(self, content: str) -> int:
+        stripped = content.strip()
+        if not stripped:
+            return 0
+        if re.search(r"\n\s*\n", stripped):
+            return len([paragraph for paragraph in re.split(r"\n\s*\n+", stripped) if paragraph.strip()])
+        return len([line for line in stripped.splitlines() if line.strip()])
 
     def _version_base_title(self, title: str) -> str:
         return re.sub(r"\s+V\d+$", "", title.strip(), flags=re.IGNORECASE) or "Redacao"

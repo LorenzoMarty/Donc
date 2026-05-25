@@ -2,7 +2,7 @@
 from src.models.essay import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVersion, EssayVersionCorrection
 from src.models.exam import MockExam, MockExamAttempt, MockExamQuestion
 from src.models.gamification import Goal
-from src.models.learning import Course, Difficulty, Exercise, ExerciseAnswer, Lesson, LessonProgress, Module
+from src.models.learning import Course, Difficulty, Exercise, ExerciseAnswer, LearningReward, Lesson, LessonProgress, Module
 from src.models.user import User, UserRole
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     "Exercise",
     "ExerciseAnswer",
     "Goal",
+    "LearningReward",
     "Lesson",
     "LessonProgress",
     "MockExam",
