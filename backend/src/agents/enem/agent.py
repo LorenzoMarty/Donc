@@ -24,8 +24,6 @@ class ENEMCompetencyAgent:
     ) -> ENEMCompetencyAnalysis:
         fallback = self._fallback(theme=theme, content=content, thesis=thesis, grammar=grammar, repertoire=repertoire)
         prompt = f"""
-{ENEM_COMPETENCY_INSTRUCTIONS}
-
 Tema: {theme}
 Analise da tese: {thesis.model_dump_json()}
 Analise gramatical: {grammar.model_dump_json()}

@@ -21,8 +21,6 @@ class ExerciseGeneratorAgent:
     ) -> ExerciseGenerationResult:
         fallback = self._fallback(focus=focus, difficulty=difficulty, count=count)
         prompt = f"""
-{EXERCISE_INSTRUCTIONS}
-
 Foco: {focus}
 Dificuldade: {difficulty}
 Quantidade: {count}

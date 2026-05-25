@@ -21,8 +21,6 @@ class ThesisAgent:
     ) -> ThesisAnalysis:
         fallback = self._fallback(theme=theme, content=content)
         prompt = f"""
-{THESIS_INSTRUCTIONS}
-
 Tema: {theme}
 Redacao:
 {content}

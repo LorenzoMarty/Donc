@@ -17,8 +17,6 @@ class GrammarAgent:
     def analyze(self, *, content: str, user_id: int | None = None, session_id: str | None = None) -> GrammarAnalysis:
         fallback = self._fallback(content=content)
         prompt = f"""
-{GRAMMAR_INSTRUCTIONS}
-
 Redacao:
 {content}
 """
