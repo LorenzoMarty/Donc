@@ -7,14 +7,33 @@ type RankDefinition = {
   name: string;
   minXp: number;
   description: string;
+  exerciseDifficulty: "easy" | "medium" | "hard";
 };
 
 const rankCatalog: RankDefinition[] = [
-  { id: "aprendiz", name: "Aprendiz", minXp: 0, description: "Construindo constancia e base estrutural." },
-  { id: "argumentador", name: "Argumentador", minXp: 350, description: "Transformando ideias em argumentos mais claros." },
-  { id: "estrategista", name: "Estrategista", minXp: 900, description: "Escolhendo repertorio, tese e coesao com intencao." },
-  { id: "orador", name: "Orador", minXp: 1650, description: "Dominando ritmo, precisao e repertorio produtivo." },
-  { id: "mestre", name: "Mestre da Redação", minXp: 2700, description: "Alto dominio da escrita ENEM em pratica recorrente." },
+  { id: "aprendiz", name: "Aprendiz", minXp: 0, description: "Construindo constancia e base estrutural.", exerciseDifficulty: "easy" },
+  {
+    id: "argumentador",
+    name: "Argumentador",
+    minXp: 350,
+    description: "Transformando ideias em argumentos mais claros.",
+    exerciseDifficulty: "medium",
+  },
+  {
+    id: "estrategista",
+    name: "Estrategista",
+    minXp: 900,
+    description: "Escolhendo repertorio, tese e coesao com intencao.",
+    exerciseDifficulty: "hard",
+  },
+  { id: "orador", name: "Orador", minXp: 1650, description: "Dominando ritmo, precisao e repertorio produtivo.", exerciseDifficulty: "hard" },
+  {
+    id: "mestre",
+    name: "Mestre da Redacao",
+    minXp: 2700,
+    description: "Alto dominio da escrita ENEM em pratica recorrente.",
+    exerciseDifficulty: "hard",
+  },
 ];
 
 export function calculateXpReward(game: GameDefinition, isRepeatToday: boolean, accuracy: number) {

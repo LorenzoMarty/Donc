@@ -80,11 +80,19 @@ export default function DashboardPage() {
     );
   }
 
+  const masteryMap = data.mastery_map?.length ? data.mastery_map : fallbackMasteryMap();
+  const recurrentErrors = data.recurrent_errors?.length ? data.recurrent_errors : ["Envie novas redacoes para mapear erros recorrentes."];
+  const suggestedLessons = data.suggested_lessons?.length ? data.suggested_lessons : fallbackLessons();
+  const bestEssayScore = data.best_essay_score ?? data.essay_average ?? 0;
+  const progressGeneral = data.progress_general ?? 0;
+  const completedLessons = data.completed_lessons ?? 0;
+  const essaysWritten = data.essays_written ?? 0;
+  const essayAverage = data.essay_average ?? 0;
   const stats = [
-    { label: "Dias em sequencia", value: String(data.streak_days), detail: "ritmo atual", icon: Flame },
-    { label: "Melhor nota", value: data.best_essay_score ? String(data.best_essay_score) : "-", detail: "maior redacao corrigida", icon: Trophy },
-    { label: "Aulas assistidas", value: String(data.completed_lessons), detail: `${data.progress_general}% do percurso`, icon: BookOpen },
-    { label: "Redacoes enviadas", value: String(data.essays_written), detail: `${data.essay_average || 0} de media`, icon: Send },
+    { label: "Dias em sequencia", value: String(data.streak_days ?? 0), detail: "ritmo atual", icon: Flame },
+    { label: "Melhor nota", value: bestEssayScore ? String(bestEssayScore) : "-", detail: "maior redacao corrigida", icon: Trophy },
+    { label: "Aulas assistidas", value: String(completedLessons), detail: `${progressGeneral}% do percurso`, icon: BookOpen },
+    { label: "Redacoes enviadas", value: String(essaysWritten), detail: `${essayAverage} de media`, icon: Send },
   ];
   const NextStepIcon = nextStep.icon;
 
@@ -114,7 +122,7 @@ export default function DashboardPage() {
         <Surface className="p-4 lg:p-5">
           <SectionTitle eyebrow="Competencias ENEM" title="Mapa de dominio" />
           <div className="mt-4 grid gap-3">
-            {data.mastery_map.map((item) => (
+            {masteryMap.map((item) => (
               <DomainRow key={item.competency} competency={item.competency} label={item.label} value={item.value} />
             ))}
           </div>
@@ -151,7 +159,7 @@ export default function DashboardPage() {
         <Surface className="p-4 lg:p-5">
           <SectionTitle eyebrow="Aulas" title="Sugestao de aulas" />
           <div className="mt-4 grid gap-2">
-            {(data.suggested_lessons.length ? data.suggested_lessons : fallbackLessons()).slice(0, 3).map((lesson) => (
+            {suggestedLessons.slice(0, 3).map((lesson) => (
               <LessonRow key={lesson.id} lesson={lesson} />
             ))}
           </div>
@@ -177,7 +185,7 @@ export default function DashboardPage() {
           <div className="min-w-0 flex-1">
             <SectionTitle eyebrow="Diagnostico" title="Erros recorrentes" />
             <div className="mt-4 grid gap-2 md:grid-cols-2">
-              {data.recurrent_errors.slice(0, 4).map((item) => (
+              {recurrentErrors.slice(0, 4).map((item) => (
                 <div key={item} className="rounded-md border border-border bg-background/58 p-3 text-sm leading-6 text-muted-foreground">
                   {item}
                 </div>
@@ -268,7 +276,9 @@ function EmptyLine({ text }: { text: string }) {
 }
 
 function buildNextStep(data: Dashboard) {
-  const weak = data.mastery_map.filter((item) => item.value > 0).sort((a, b) => a.value - b.value)[0];
+  const masteryMap = data.mastery_map?.length ? data.mastery_map : fallbackMasteryMap();
+  const recurrentErrors = data.recurrent_errors ?? [];
+  const weak = masteryMap.filter((item) => item.value > 0).sort((a, b) => a.value - b.value)[0];
   if (!data.essays_written) {
     return {
       badge: "redacao",
@@ -282,7 +292,7 @@ function buildNextStep(data: Dashboard) {
     return {
       badge: weak.competency,
       title: `Fortalecer ${weak.label.toLowerCase()}`,
-      detail: data.recurrent_errors[0] ?? "Reescreva um trecho curto e compare a evolucao na proxima correcao.",
+      detail: recurrentErrors[0] ?? "Reescreva um trecho curto e compare a evolucao na proxima correcao.",
       href: weak.competency === "C1" || weak.competency === "C4" ? "/games" : "/redacao",
       icon: Target,
     };
@@ -297,21 +307,24 @@ function buildNextStep(data: Dashboard) {
 }
 
 function buildRecentActivities(data: Dashboard): RecentActivity[] {
-  const lessons = data.recent_lessons.map((lesson) => ({
+  const recentLessons = data.recent_lessons ?? [];
+  const recentExams = data.recent_exams ?? [];
+  const trend = data.trend ?? [];
+  const lessons = recentLessons.map((lesson) => ({
     label: "Aula",
     title: lesson.title,
     detail: `${lesson.module} - ${lesson.progress_percent}% concluido`,
     href: `/aulas/${lesson.id}`,
     icon: BookOpen,
   }));
-  const exams = data.recent_exams.map((exam) => ({
+  const exams = recentExams.map((exam) => ({
     label: "Simulado",
     title: exam.title,
     detail: `${exam.score} pontos`,
     href: "/simulados",
     icon: CheckCircle2,
   }));
-  const lastScore = data.trend.at(-1)?.score;
+  const lastScore = trend.at(-1)?.score;
   const essay = lastScore
     ? [
         {
@@ -331,5 +344,15 @@ function fallbackLessons(): LessonItem[] {
     { id: 1, title: "Como decodificar o tema", module: "Fundamentos da Redacao", progress_percent: 0 },
     { id: 2, title: "Tese forte em 3 movimentos", module: "Fundamentos da Redacao", progress_percent: 0 },
     { id: 3, title: "Competencia 5 sem formula vazia", module: "Competencias do ENEM", progress_percent: 0 },
+  ];
+}
+
+function fallbackMasteryMap(): Dashboard["mastery_map"] {
+  return [
+    { competency: "C1", label: "Norma-padrao", value: 0 },
+    { competency: "C2", label: "Tema e genero", value: 0 },
+    { competency: "C3", label: "Argumentacao", value: 0 },
+    { competency: "C4", label: "Coesao", value: 0 },
+    { competency: "C5", label: "Intervencao", value: 0 },
   ];
 }

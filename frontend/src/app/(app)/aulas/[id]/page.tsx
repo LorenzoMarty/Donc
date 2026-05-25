@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, ClipboardList, FileText, NotebookPen } from "lucide-react";
+import { CheckCircle2, ClipboardList, FileText, NotebookPen, Trophy, Zap } from "lucide-react";
 
 import { LessonPlayer } from "@/components/shared/lesson-player";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -11,11 +11,14 @@ import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type Lesson } from "@/services/api";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>() ?? { id: "" };
+  const { refresh } = useAuth();
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [completion, setCompletion] = useState<Lesson["progress"] | null>(null);
 
   useEffect(() => {
     apiFetch<Lesson>(`/lessons/${params.id}`).then(setLesson);
@@ -28,6 +31,10 @@ export default function LessonPage() {
       body: JSON.stringify({ progress_percent: 100, last_position_seconds: lesson.duration_minutes * 60, completed: true }),
     });
     setLesson({ ...lesson, progress });
+    setCompletion(progress);
+    if ((progress.xp_earned ?? 0) > 0) {
+      await refresh();
+    }
   }
 
   if (!lesson) return <LoadingCard />;
@@ -69,10 +76,41 @@ export default function LessonPage() {
         </main>
 
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
+          {completion ? (
+            <Surface>
+              <div className="mb-3 flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-secondary" aria-hidden="true" />
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Recompensa</p>
+              </div>
+              <p className="text-3xl font-semibold tracking-normal">+{completion.xp_earned ?? 0} XP</p>
+              <div className="mt-3 space-y-2">
+                {completion.reward_events?.length ? (
+                  completion.reward_events.map((event) => (
+                    <div key={event} className="rounded-md border border-border bg-background/58 p-2 text-sm text-muted-foreground">
+                      {event}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm leading-6 text-muted-foreground">O XP desta conclusao ja estava registrado.</p>
+                )}
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Rank atual: <span className="font-semibold text-foreground">{completion.rank_name ?? "Aprendiz"}</span>
+              </p>
+            </Surface>
+          ) : null}
+
           <Surface>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Progresso</p>
             <p className="mt-2 text-2xl font-semibold">{lesson.progress.progress_percent}%</p>
             <Progress value={lesson.progress.progress_percent} className="mt-4" />
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background/58 p-3 text-sm">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <Zap className="h-4 w-4 text-secondary" aria-hidden="true" />
+                XP da aula
+              </span>
+              <span className="font-semibold">{lesson.xp_reward ?? 25}xp</span>
+            </div>
             <Button onClick={complete} variant={lesson.progress.completed ? "secondary" : "default"} className="mt-4 w-full">
               {lesson.progress.completed ? (
                 <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
@@ -89,21 +127,31 @@ export default function LessonPage() {
               <h2 className="mt-1 text-xl font-semibold tracking-normal">Pratica de fixacao</h2>
             </div>
             <div className="space-y-3">
-              {lesson.exercises.map((exercise) => (
-                <div key={exercise.id} className="game-tile bg-background/58 p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <Badge variant="outline">{exercise.skill}</Badge>
-                    <ClipboardList className="h-4 w-4 text-secondary" aria-hidden="true" />
+              {lesson.exercises.length ? (
+                lesson.exercises.map((exercise) => (
+                  <div key={exercise.id} className="game-tile bg-background/58 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <Badge variant="outline">{exercise.skill}</Badge>
+                      <Badge variant="secondary">{difficultyLabel(exercise.difficulty)}</Badge>
+                    </div>
+                    <p className="text-safe text-sm leading-6 text-muted-foreground">{exercise.statement}</p>
                   </div>
-                  <p className="text-safe text-sm leading-6 text-muted-foreground">{exercise.statement}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm leading-6 text-muted-foreground">Nenhum exercicio liberado para esta aula no rank atual.</p>
+              )}
             </div>
           </Surface>
         </aside>
       </div>
     </MotionShell>
   );
+}
+
+function difficultyLabel(value: string) {
+  if (value === "hard") return "avancado";
+  if (value === "medium") return "intermediario";
+  return "essencial";
 }
 
 function splitSummary(summary: string) {

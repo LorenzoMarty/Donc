@@ -530,6 +530,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         status=EssayStatus.CORRECTED,
         word_count=154,
         line_count=9,
+        paragraph_count=3,
         score=840,
     )
     db.add(sample_essay)
@@ -875,6 +876,7 @@ def seed_missing_demo_essays(db: Session) -> None:
             status=spec["status"],
             word_count=len(content.split()),
             line_count=max(1, len([line for line in content.splitlines() if line.strip()]), len(content) // 92),
+            paragraph_count=_paragraph_count(content),
             score=spec["score"],
             created_at=created_at,
             updated_at=created_at,
@@ -905,6 +907,15 @@ def seed_missing_demo_essays(db: Session) -> None:
 
     if new_essays:
         db.commit()
+
+
+def _paragraph_count(content: str) -> int:
+    stripped = content.strip()
+    if not stripped:
+        return 0
+    if "\n\n" in stripped:
+        return len([paragraph for paragraph in stripped.split("\n\n") if paragraph.strip()])
+    return len([line for line in stripped.splitlines() if line.strip()])
 
 
 def seed_missing_exercises(db: Session) -> None:

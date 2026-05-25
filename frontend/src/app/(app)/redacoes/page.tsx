@@ -54,7 +54,7 @@ export default function EssayHistoryPage() {
   const filteredEssays = useMemo(() => {
     if (!history) return [];
     const normalizedQuery = query.trim().toLowerCase();
-    return history.essays.filter((essay) => {
+    return (history.essays ?? []).filter((essay) => {
       const matchesQuery =
         !normalizedQuery ||
         essay.title.toLowerCase().includes(normalizedQuery) ||
@@ -67,10 +67,10 @@ export default function EssayHistoryPage() {
 
   const drafts = filteredEssays.filter((essay) => essay.status === "draft");
   const corrected = filteredEssays.filter((essay) => essay.status === "corrected");
-  const latest = history?.essays[0];
+  const latest = history?.essays?.[0];
 
   const competencyData = useMemo(() => {
-    const last = history?.evolution.at(-1);
+    const last = history?.evolution?.at(-1);
     return [
       { competency: "C1", value: last?.c1 ?? 0 },
       { competency: "C2", value: last?.c2 ?? 0 },
@@ -82,7 +82,7 @@ export default function EssayHistoryPage() {
 
   const versionedEssays = useMemo(() => {
     if (!history) return [];
-    return history.essays.filter((essay) => essay.versions.length > 0).slice(0, 5);
+    return (history.essays ?? []).filter((essay) => (essay.versions ?? []).length > 0).slice(0, 5);
   }, [history]);
 
   async function runAction(key: string, action: () => Promise<void>) {
@@ -98,6 +98,11 @@ export default function EssayHistoryPage() {
   }
 
   if (!history) return <LoadingCard />;
+  const essays = history.essays ?? [];
+  const recurrentErrors = history.recurrent_errors ?? [];
+  const evolution = history.evolution ?? [];
+  const averageScore = history.average_score ?? 0;
+  const weakestCompetency = history.weakest_competency ?? "Sem dados";
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -118,13 +123,13 @@ export default function EssayHistoryPage() {
       <div className="fluid-grid gap-4 [--grid-min:15rem]">
         <Surface>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Media geral</p>
-          <p className="mt-2 text-4xl font-semibold tracking-normal">{history.average_score || "--"}</p>
-          <Progress value={history.average_score / 10} className="mt-4" />
+          <p className="mt-2 text-4xl font-semibold tracking-normal">{averageScore || "--"}</p>
+          <Progress value={averageScore / 10} className="mt-4" />
           <p className="mt-3 text-sm leading-6 text-muted-foreground">Indicador academico principal da sua evolucao.</p>
         </Surface>
         <Surface>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Ponto de foco</p>
-          <p className="mt-2 text-2xl font-semibold tracking-normal">{history.weakest_competency}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-normal">{weakestCompetency}</p>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">Use isso para priorizar a proxima revisao.</p>
         </Surface>
         <Surface>
@@ -178,7 +183,7 @@ export default function EssayHistoryPage() {
         )}
       </Surface>
 
-      {history.essays.length === 0 ? (
+      {essays.length === 0 ? (
         <EmptyState title="Nenhuma redacao registrada" description="Comece pelo editor para ativar sua linha de evolucao." />
       ) : (
         <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)]">
@@ -278,7 +283,7 @@ export default function EssayHistoryPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Evolucao</p>
                 <h2 className="mt-1 text-xl font-semibold tracking-normal">Linha de notas</h2>
               </div>
-              <ScoreAreaChart data={history.evolution} />
+              <ScoreAreaChart data={evolution} />
             </Surface>
 
             <Surface>
@@ -303,7 +308,7 @@ export default function EssayHistoryPage() {
                     <div key={essay.id} className="game-tile bg-background/56 p-3">
                       <p className="text-safe text-sm font-semibold">{essay.title}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {[...essay.versions]
+                        {[...(essay.versions ?? [])]
                           .sort((a, b) => a.version_number - b.version_number)
                           .map((version) => (
                             <span
@@ -332,8 +337,8 @@ export default function EssayHistoryPage() {
                 <h2 className="text-lg font-semibold tracking-normal">Erros recorrentes</h2>
               </div>
               <div className="space-y-2">
-                {history.recurrent_errors.length ? (
-                  history.recurrent_errors.map((error) => (
+                {recurrentErrors.length ? (
+                  recurrentErrors.map((error) => (
                     <div key={error} className="game-tile bg-background/56 p-3 text-sm leading-6 text-muted-foreground">
                       {error}
                     </div>
@@ -354,6 +359,9 @@ function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; bus
   const score = essay.score ?? 0;
   const busy = busyAction.endsWith(`-${essay.id}`);
   const href = essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`;
+  const paragraphCount = essay.paragraph_count ?? countParagraphs(essay.content);
+  const lineCount = essay.line_count ?? countLines(essay.content);
+  const versionCount = essay.versions?.length || 1;
 
   return (
     <article className="game-tile bg-background/56 p-4 transition-colors hover:bg-muted/62">
@@ -362,7 +370,7 @@ function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; bus
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={essay.status === "corrected" ? "secondary" : "outline"}>{statusLabel[essay.status]}</Badge>
             <Badge variant="outline">
-              {essay.versions.length || 1} versao{(essay.versions.length || 1) > 1 ? "es" : ""}
+              {versionCount} versao{versionCount > 1 ? "es" : ""}
             </Badge>
             {essay.score ? <Badge variant="success">{essay.score}</Badge> : null}
           </div>
@@ -374,8 +382,9 @@ function EssayWorkspaceCard({ essay, busyAction, onDelete }: { essay: Essay; bus
         </div>
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Metric label="Linhas" value={essay.line_count.toString()} />
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <Metric label="Paragrafos" value={paragraphCount.toString()} />
+        <Metric label="Linhas" value={lineCount.toString()} />
         <Metric label="Atualizado" value={formatDate(essay.updated_at)} />
       </div>
 
@@ -416,4 +425,19 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(value));
+}
+
+function countParagraphs(value: string) {
+  const stripped = value.trim();
+  if (!stripped) return 0;
+  if (/\n\s*\n/.test(stripped)) {
+    return stripped.split(/\n\s*\n+/).filter((paragraph) => paragraph.trim()).length;
+  }
+  return stripped.split(/\n+/).filter((line) => line.trim()).length;
+}
+
+function countLines(value: string) {
+  const stripped = value.trim();
+  if (!stripped) return 0;
+  return stripped.split(/\n/).length;
 }

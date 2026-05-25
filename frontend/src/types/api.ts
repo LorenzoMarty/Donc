@@ -16,6 +16,13 @@ export type User = {
   daily_goal_minutes: number;
 };
 
+export type RankSummary = {
+  name: string;
+  xp: number;
+  next_rank_xp: number | null;
+  exercise_difficulty: string;
+};
+
 export type TokenResponse = {
   access_token: string;
   token_type: string;
@@ -51,7 +58,18 @@ export type Lesson = {
   summary: string;
   duration_minutes: number;
   order: number;
-  progress: { progress_percent: number; last_position_seconds: number; completed: boolean };
+  xp_reward: number;
+  progress: {
+    progress_percent: number;
+    last_position_seconds: number;
+    completed: boolean;
+    xp_earned?: number;
+    reward_events?: string[];
+    total_xp?: number | null;
+    rank_name?: string | null;
+    next_rank_xp?: number | null;
+    exercise_difficulty?: string | null;
+  };
   exercises: { id: number; statement: string; skill: string; difficulty: string }[];
 };
 
@@ -61,7 +79,11 @@ export type Course = {
   slug: string;
   description: string;
   color: string;
-  modules: { id: number; title: string; description: string; order: number; lessons: Lesson[] }[];
+  progress_percent: number;
+  completed: boolean;
+  xp_reward: number;
+  user_rank: RankSummary | null;
+  modules: { id: number; title: string; description: string; order: number; progress_percent: number; completed: boolean; xp_reward: number; lessons: Lesson[] }[];
 };
 
 export type Exercise = {
@@ -104,6 +126,7 @@ export type Essay = {
   status: "draft" | "submitted" | "corrected";
   word_count: number;
   line_count: number;
+  paragraph_count: number;
   score: number | null;
   created_at: string;
   updated_at: string;
@@ -121,6 +144,7 @@ export type EssayVersion = {
   status: "draft" | "submitted" | "corrected";
   word_count: number;
   line_count: number;
+  paragraph_count: number;
   score: number | null;
   created_at: string;
   updated_at: string;

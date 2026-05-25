@@ -153,7 +153,7 @@ export function SmoothProgressPath({ progress }: { progress: number }) {
   );
 }
 
-export function WritingSidebar({ lines, structureProgress }: { lines: number; structureProgress: number }) {
+export function WritingSidebar({ lines, paragraphs, structureProgress }: { lines: number; paragraphs: number; structureProgress: number }) {
   return (
     <motion.aside
       initial={{ opacity: 0, x: 24 }}
@@ -167,6 +167,9 @@ export function WritingSidebar({ lines, structureProgress }: { lines: number; st
           <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
         </div>
         <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
+        <div className="mt-3">
+          <WriterMetric label="Paragrafos" value={`${paragraphs}`} progress={Math.min(100, (paragraphs / 4) * 100)} />
+        </div>
       </div>
       <div className="game-tile bg-primary/10 p-4">
         <p className="mb-3 text-sm font-semibold">Sugestoes rapidas</p>

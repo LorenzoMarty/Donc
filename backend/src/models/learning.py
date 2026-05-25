@@ -105,3 +105,15 @@ class LessonProgress(Base):
     user = relationship("User", back_populates="lesson_progress")
     lesson = relationship("Lesson", back_populates="progress")
 
+
+class LearningReward(Base):
+    __tablename__ = "learning_rewards"
+    __table_args__ = (UniqueConstraint("user_id", "reward_type", "target_id", name="uq_learning_reward_user_target"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    reward_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    target_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    xp: Mapped[int] = mapped_column(Integer, nullable=False)
+    awarded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+

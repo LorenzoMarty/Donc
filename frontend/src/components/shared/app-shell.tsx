@@ -20,6 +20,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
 import { cn, initials } from "@/utils";
 
@@ -42,6 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
 
   const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }] : workspaceNav;
 
@@ -94,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         items={navItems}
         pathname={pathname}
         userName={user?.name ?? "Aluno"}
-        userLevel={user?.level ?? 1}
+        userRankName={rankName}
         onLogout={logout}
         onWheel={scrollContentArea}
       />
@@ -103,7 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         open={drawerOpen}
         pathname={pathname}
         userName={user?.name ?? "Aluno"}
-        userLevel={user?.level ?? 1}
+        userRankName={rankName}
         onClose={() => setDrawerOpen(false)}
         onLogout={logout}
       />
@@ -144,14 +146,14 @@ function DesktopSidebar({
   items,
   pathname,
   userName,
-  userLevel,
+  userRankName,
   onLogout,
   onWheel,
 }: {
   items: WorkspaceNavItem[];
   pathname: string;
   userName: string;
-  userLevel: number;
+  userRankName: string;
   onLogout: () => void;
   onWheel: (event: WheelEvent<HTMLElement>) => void;
 }) {
@@ -181,7 +183,7 @@ function DesktopSidebar({
           </span>
           <span className="hidden min-w-0 leading-tight xl:block">
             <span className="block text-safe">{userName}</span>
-            <span className="block text-xs font-medium text-muted-foreground">Consistencia {userLevel}</span>
+            <span className="block text-xs font-medium text-muted-foreground">Rank {userRankName}</span>
           </span>
         </Link>
         <Button variant="outline" size="icon" className="xl:hidden" aria-label="Sair" onClick={onLogout}>
@@ -201,7 +203,7 @@ function MobileDrawer({
   open,
   pathname,
   userName,
-  userLevel,
+  userRankName,
   onClose,
   onLogout,
 }: {
@@ -209,7 +211,7 @@ function MobileDrawer({
   open: boolean;
   pathname: string;
   userName: string;
-  userLevel: number;
+  userRankName: string;
   onClose: () => void;
   onLogout: () => void;
 }) {
@@ -248,7 +250,7 @@ function MobileDrawer({
                 </span>
                 <span className="min-w-0 leading-tight">
                   <span className="block text-safe font-semibold">{userName}</span>
-                  <span className="block text-sm text-muted-foreground">Consistencia {userLevel}</span>
+                  <span className="block text-sm text-muted-foreground">Rank {userRankName}</span>
                 </span>
               </Link>
               <Button variant="outline" onClick={onLogout}>
