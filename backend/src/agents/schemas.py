@@ -45,6 +45,14 @@ class ENEMCompetencyAnalysis(BaseModel):
     weak_competencies: list[str] = Field(default_factory=list, description="Competencias abaixo de 160, usando chaves c1, c2, c3, c4 e c5.")
 
 
+class InlineAnnotation(BaseModel):
+    paragraph_index: int = Field(ge=0, description="Indice do paragrafo (base 0).")
+    quote: str = Field(min_length=4, description="Trecho exato do texto do aluno.")
+    comment: str = Field(min_length=10, description="Explicacao pedagogica do desconto ou acerto.")
+    competency: str = Field(description="Competencia relacionada: c1, c2, c3, c4 ou c5.")
+    type: Literal["error", "strength"] = Field(description="Tipo: erro ou ponto positivo.")
+
+
 class EssayCorrectionResult(BaseModel):
     total_score: int = Field(ge=0, le=1000, description="Soma exata das cinco competencias.")
     competency_1: int = Field(ge=0, le=200, description="Nota da Competencia I.")
@@ -57,6 +65,7 @@ class EssayCorrectionResult(BaseModel):
     suggestions: list[str] = Field(min_length=1, description="Acoes de reescrita ou treino conectadas aos erros.")
     feedback: str = Field(min_length=20, description="Sintese pedagogica objetiva com proximo foco de melhoria.")
     recurrent_patterns: list[str] = Field(default_factory=list, description="Padroes recorrentes para memoria e plano de estudos.")
+    inline_annotations: list[InlineAnnotation] = Field(default_factory=list, description="Anotacoes inline sobre trechos especificos da redacao.")
 
 
 class GeneratedQuizQuestion(BaseModel):

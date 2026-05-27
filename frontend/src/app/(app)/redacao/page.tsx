@@ -10,7 +10,9 @@ import { LoadingCard } from "@/components/shared/loading-card";
 import { CompetencyMeter, PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TooltipContent, TooltipRoot, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
+import type { InlineAnnotation } from "@/types/api";
 import { cn } from "@/utils";
 
 type EssayViewMode = "editor" | "analysis";
@@ -515,6 +517,38 @@ function CorrectionWaitingScreen({ title, wordCount, paragraphCount }: { title: 
   );
 }
 
+function splitParagraphs(content: string): string[] {
+  const stripped = content.trim();
+  if (!stripped) return [];
+  if (/\n\s*\n/.test(stripped)) return stripped.split(/\n\s*\n+/).filter((p) => p.trim());
+  return stripped.split(/\n+/).filter((l) => l.trim());
+}
+
+type TextSegment = { text: string; annotation?: InlineAnnotation; index: number };
+
+function buildSegments(paragraph: string, annotations: InlineAnnotation[]): TextSegment[] {
+  const ranges: { start: number; end: number; annotation: InlineAnnotation }[] = [];
+  for (const annotation of annotations) {
+    const idx = paragraph.indexOf(annotation.quote);
+    if (idx === -1) continue;
+    const end = idx + annotation.quote.length;
+    const overlaps = ranges.some((r) => !(end <= r.start || idx >= r.end));
+    if (!overlaps) ranges.push({ start: idx, end, annotation });
+  }
+  ranges.sort((a, b) => a.start - b.start);
+
+  const segments: TextSegment[] = [];
+  let cursor = 0;
+  let segIdx = 0;
+  for (const { start, end, annotation } of ranges) {
+    if (start > cursor) segments.push({ text: paragraph.slice(cursor, start), index: segIdx++ });
+    segments.push({ text: paragraph.slice(start, end), annotation, index: segIdx++ });
+    cursor = end;
+  }
+  if (cursor < paragraph.length) segments.push({ text: paragraph.slice(cursor), index: segIdx++ });
+  return segments;
+}
+
 function EssayReadPanel({
   title,
   content,
@@ -529,6 +563,13 @@ function EssayReadPanel({
   correction: Essay["correction"];
 }) {
   const paragraphCount = countParagraphs(content);
+  const paragraphs = splitParagraphs(content);
+  const annotations = correction?.inline_annotations ?? [];
+  const [activeAnnotation, setActiveAnnotation] = useState<InlineAnnotation | null>(null);
+
+  const annotationsByParagraph = (pIndex: number) => annotations.filter((a) => a.paragraph_index === pIndex);
+
+  const competencyLabel: Record<string, string> = { c1: "C1", c2: "C2", c3: "C3", c4: "C4", c5: "C5" };
 
   return (
     <Surface>
@@ -544,9 +585,101 @@ function EssayReadPanel({
           {correction ? <Badge variant="success">{correction.total_score} pontos</Badge> : <Badge variant="outline">Sem correcao</Badge>}
         </div>
       </div>
-      <div className="game-tile max-h-[70dvh] overflow-y-auto bg-background/56 p-4">
-        <div className="whitespace-pre-wrap text-safe text-sm leading-7 text-foreground">{content}</div>
+
+      <div className="game-tile max-h-[60dvh] overflow-y-auto bg-background/56 p-4">
+        {annotations.length > 0 ? (
+          <div className="space-y-4">
+            {paragraphs.map((paragraph, pIndex) => {
+              const pAnnotations = annotationsByParagraph(pIndex);
+              const segments = buildSegments(paragraph, pAnnotations);
+              return (
+                <p key={pIndex} className="text-safe text-sm leading-7 text-foreground">
+                  {segments.map((seg) =>
+                    seg.annotation ? (
+                      <TooltipRoot key={seg.index} delayDuration={200}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => setActiveAnnotation(activeAnnotation?.quote === seg.annotation?.quote ? null : (seg.annotation ?? null))}
+                            className={cn(
+                              "rounded px-0.5 transition-colors",
+                              seg.annotation.type === "error"
+                                ? "bg-destructive/20 hover:bg-destructive/35"
+                                : "bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:hover:bg-emerald-800/40",
+                            )}
+                          >
+                            {seg.text}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[260px]">
+                          <p className="font-semibold">{competencyLabel[seg.annotation.competency] ?? seg.annotation.competency} · {seg.annotation.type === "error" ? "Desconto" : "Acerto"}</p>
+                          <p className="mt-0.5 text-muted-foreground">{seg.annotation.comment}</p>
+                        </TooltipContent>
+                      </TooltipRoot>
+                    ) : (
+                      <span key={seg.index}>{seg.text}</span>
+                    ),
+                  )}
+                </p>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap text-safe text-sm leading-7 text-foreground">{content}</div>
+        )}
       </div>
+
+      {activeAnnotation && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
+          className={cn(
+            "mt-3 game-tile p-3",
+            activeAnnotation.type === "error" ? "bg-destructive/10" : "bg-emerald-50 dark:bg-emerald-950/30",
+          )}
+        >
+          <div className="mb-1 flex items-center gap-2">
+            <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"} className="text-xs">
+              {activeAnnotation.type === "error" ? "Desconto" : "Acerto"}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {competencyLabel[activeAnnotation.competency] ?? activeAnnotation.competency}
+            </Badge>
+          </div>
+          <p className="text-xs leading-5 font-semibold text-muted-foreground italic">"{activeAnnotation.quote}"</p>
+          <p className="mt-1 text-sm leading-6">{activeAnnotation.comment}</p>
+        </motion.div>
+      )}
+
+      {annotations.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Marcacoes ({annotations.length})</p>
+          {annotations.map((annotation, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActiveAnnotation(activeAnnotation?.quote === annotation.quote ? null : annotation)}
+              className={cn(
+                "game-tile w-full p-3 text-left transition-colors",
+                annotation.type === "error" ? "bg-destructive/8 hover:bg-destructive/15" : "bg-emerald-50/80 hover:bg-emerald-100/80 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40",
+                activeAnnotation?.quote === annotation.quote && "ring-1 ring-primary",
+              )}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <Badge variant={annotation.type === "error" ? "destructive" : "success"} className="text-xs">
+                  {annotation.type === "error" ? "Desconto" : "Acerto"}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {competencyLabel[annotation.competency] ?? annotation.competency}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground italic">"{annotation.quote.slice(0, 60)}{annotation.quote.length > 60 ? "…" : ""}"</p>
+              <p className="mt-1 text-xs leading-5">{annotation.comment}</p>
+            </button>
+          ))}
+        </div>
+      )}
     </Surface>
   );
 }

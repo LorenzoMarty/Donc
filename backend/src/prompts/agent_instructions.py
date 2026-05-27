@@ -80,6 +80,16 @@ ESSAY_CONSOLIDATION_INSTRUCTIONS = join_prompt_sections(
   <rules>total=sum(c1..c5);corrigir_so_inconsistencia_com_evidencia</rules>
   <rank>c3;c4;c5;c1_recorrente</rank>
   <out>strengths_concretos;errors=impacto;suggestions=acao;feedback=foco</out>
+  <inline_annotations>
+    Gere 3 a 6 anotacoes sobre trechos especificos da redacao.
+    Regras:
+    - paragraph_index: numero do paragrafo (base 0, contando paragrafos separados por quebra de linha).
+    - quote: trecho EXATO copiado da redacao (minimo 6 palavras, maximo 25 palavras).
+    - comment: explicacao pedagogica clara sobre o desconto ou acerto (1-2 frases).
+    - competency: "c1", "c2", "c3", "c4" ou "c5".
+    - type: "error" para descontos, "strength" para acertos.
+    Distribua entre errors e strengths. Prefira erros com maior impacto na nota.
+  </inline_annotations>
 </agent>
 """,
 )

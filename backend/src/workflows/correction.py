@@ -3,6 +3,7 @@
 import hashlib
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import TypeVar
 
 from sqlalchemy.orm import Session
@@ -11,7 +12,7 @@ from src.agents.correction import EssayCorrectionAgent
 from src.agents.enem import ENEMCompetencyAgent
 from src.agents.grammar import GrammarAgent
 from src.agents.repertoire import RepertoireAgent
-from src.agents.schemas import EssayCorrectionResult
+from src.agents.schemas import EssayCorrectionResult, GrammarAnalysis, RepertoireAnalysis, ThesisAnalysis
 from src.agents.thesis import ThesisAgent
 from src.memory import update_learning_profile
 from src.models import AIInteractionLog
@@ -47,27 +48,25 @@ class CorrectionOrchestratorWorkflow:
         safe_content = guarded_student_text(content, max_chars=20000)
         session_id = f"essay:{essay_id}" if essay_id is not None else None
 
-        thesis = self._step(
-            "ThesisAgent",
-            lambda: self.thesis_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id),
-            user_id=user_id,
-            job_id=job_id,
-            prompt=safe_content,
-        )
-        grammar = self._step(
-            "GrammarAgent",
-            lambda: self.grammar_agent.analyze(content=safe_content, user_id=user_id, session_id=session_id),
-            user_id=user_id,
-            job_id=job_id,
-            prompt=safe_content,
-        )
-        repertoire = self._step(
-            "RepertoireAgent",
-            lambda: self.repertoire_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id),
-            user_id=user_id,
-            job_id=job_id,
-            prompt=safe_content,
-        )
+        # ThesisAgent, GrammarAgent e RepertoireAgent são independentes — rodam em paralelo.
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            t_fut = pool.submit(self._timed_call, lambda: self.thesis_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id))
+            g_fut = pool.submit(self._timed_call, lambda: self.grammar_agent.analyze(content=safe_content, user_id=user_id, session_id=session_id))
+            r_fut = pool.submit(self._timed_call, lambda: self.repertoire_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id))
+            wait([t_fut, g_fut, r_fut])
+
+        thesis, t_ms, t_status, t_err = t_fut.result()
+        grammar, g_ms, g_status, g_err = g_fut.result()
+        repertoire, r_ms, r_status, r_err = r_fut.result()
+
+        # Log paralelos do thread principal (SQLAlchemy Session não é thread-safe).
+        for name, ms, status, err, tokens in [
+            ("ThesisAgent", t_ms, t_status, t_err, self.thesis_agent.runner.last_token_count),
+            ("GrammarAgent", g_ms, g_status, g_err, self.grammar_agent.runner.last_token_count),
+            ("RepertoireAgent", r_ms, r_status, r_err, self.repertoire_agent.runner.last_token_count),
+        ]:
+            self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, token_count=tokens)
+
         competencies = self._step(
             "ENEMCompetencyAgent",
             lambda: self.enem_agent.evaluate(
@@ -79,6 +78,7 @@ class CorrectionOrchestratorWorkflow:
                 user_id=user_id,
                 session_id=session_id,
             ),
+            token_getter=lambda: self.enem_agent.runner.last_token_count,
             user_id=user_id,
             job_id=job_id,
             prompt=safe_content,
@@ -96,6 +96,7 @@ class CorrectionOrchestratorWorkflow:
                 user_id=user_id,
                 session_id=session_id,
             ),
+            token_getter=lambda: self.correction_agent.runner.last_token_count,
             user_id=user_id,
             job_id=job_id,
             prompt=safe_content,
@@ -103,6 +104,20 @@ class CorrectionOrchestratorWorkflow:
         if self.db is not None and user_id is not None:
             update_learning_profile(self.db, user_id=user_id, correction=correction)
         return correction
+
+    def _timed_call(self, run: Callable[[], T]) -> tuple[T, int, str, str | None]:
+        start = time.perf_counter()
+        status = "success"
+        error: str | None = None
+        try:
+            result = run()
+        except Exception as exc:
+            status = "error"
+            error = str(exc)
+            raise
+        finally:
+            latency_ms = int((time.perf_counter() - start) * 1000)
+        return result, latency_ms, status, error  # type: ignore[return-value]
 
     def _step(
         self,
@@ -112,6 +127,7 @@ class CorrectionOrchestratorWorkflow:
         user_id: int | None,
         job_id: str | None,
         prompt: str,
+        token_getter: Callable[[], int] | None = None,
     ) -> T:
         start = time.perf_counter()
         status = "success"
@@ -124,7 +140,8 @@ class CorrectionOrchestratorWorkflow:
             raise
         finally:
             latency_ms = int((time.perf_counter() - start) * 1000)
-            self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error)
+            tokens = token_getter() if token_getter is not None else 0
+            self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error, token_count=tokens)
 
     def _log(
         self,
@@ -136,6 +153,7 @@ class CorrectionOrchestratorWorkflow:
         job_id: str | None,
         prompt: str,
         error: str | None,
+        token_count: int = 0,
     ) -> None:
         if self.db is None:
             return
@@ -147,7 +165,7 @@ class CorrectionOrchestratorWorkflow:
                 agent=agent,
                 status=status,
                 latency_ms=latency_ms,
-                token_count=0,
+                token_count=token_count,
                 cost_estimate=0,
                 prompt_hash=hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
                 error=error,

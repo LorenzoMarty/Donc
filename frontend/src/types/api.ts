@@ -5,6 +5,20 @@ export type ApiEnvelope<T> = {
   error?: string;
 };
 
+export type SupportingText = {
+  title: string;
+  content: string;
+  type: "motivador" | "perspectiva";
+};
+
+export type InlineAnnotation = {
+  paragraph_index: number;
+  quote: string;
+  comment: string;
+  competency: string;
+  type: "error" | "strength";
+};
+
 export type User = {
   id: number;
   name: string;
@@ -101,6 +115,7 @@ export type EssayTheme = {
   title: string;
   context: string;
   source: string;
+  supporting_texts?: SupportingText[];
 };
 
 export type EssayCorrection = {
@@ -116,6 +131,7 @@ export type EssayCorrection = {
   suggestions: string[];
   feedback: string;
   recurrent_patterns: string[];
+  inline_annotations?: InlineAnnotation[];
   created_at: string;
 };
 

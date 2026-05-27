@@ -158,6 +158,7 @@ class EssayService:
         self.db.add(version)
         essay.versions.append(version)
         self.db.flush()
+        annotations_payload = [a.model_dump() for a in result.inline_annotations] if result.inline_annotations else None
         self.db.add(
             EssayVersionCorrection(
                 version_id=version.id,
@@ -172,6 +173,7 @@ class EssayService:
                 suggestions=result.suggestions,
                 feedback=result.feedback,
                 recurrent_patterns=result.recurrent_patterns,
+                inline_annotations=annotations_payload,
                 created_at=submitted_at,
             )
         )
@@ -187,6 +189,7 @@ class EssayService:
         correction.suggestions = result.suggestions
         correction.feedback = result.feedback
         correction.recurrent_patterns = result.recurrent_patterns
+        correction.inline_annotations = annotations_payload
         correction.created_at = submitted_at
         essay.status = EssayStatus.CORRECTED
         essay.score = result.total_score
@@ -275,6 +278,7 @@ class EssayService:
                     suggestions=essay.correction.suggestions,
                     feedback=essay.correction.feedback,
                     recurrent_patterns=essay.correction.recurrent_patterns,
+                    inline_annotations=essay.correction.inline_annotations,
                     created_at=essay.correction.created_at,
                 )
             )

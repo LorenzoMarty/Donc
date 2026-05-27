@@ -21,6 +21,7 @@ class EssayTheme(Base):
     title: Mapped[str] = mapped_column(String(220), nullable=False)
     context: Mapped[str] = mapped_column(Text, nullable=False)
     source: Mapped[str] = mapped_column(String(160), default="Banco ENEM")
+    supporting_texts: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, default=None)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -92,6 +93,7 @@ class EssayVersionCorrection(Base):
     suggestions: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     feedback: Mapped[str] = mapped_column(Text, nullable=False)
     recurrent_patterns: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    inline_annotations: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     version = relationship("EssayVersion", back_populates="correction")
@@ -113,6 +115,7 @@ class EssayCorrection(Base):
     suggestions: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     feedback: Mapped[str] = mapped_column(Text, nullable=False)
     recurrent_patterns: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    inline_annotations: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     essay = relationship("Essay", back_populates="correction")

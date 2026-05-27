@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7
     openai_api_key: str | None = None
-    openai_model: str = "gpt-5.5"
+    openai_model: str = "gpt-4o"
+    openai_fallback_model: str = "gpt-4o-mini"
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
     enable_pgvector: bool = False
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_host: str | None = None
     ai_rate_limit_per_minute: int = 20
-    seed_demo_data: bool = True
+    seed_demo_data: bool = False
     frontend_origin: str = "http://localhost:3000"
     environment: str = "development"
 
