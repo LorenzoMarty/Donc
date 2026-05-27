@@ -25,6 +25,7 @@ class User(Base):
     level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     streak_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")

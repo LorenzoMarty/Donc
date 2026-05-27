@@ -1,4 +1,5 @@
-﻿from typing import Annotated
+﻿from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -34,6 +35,14 @@ def get_current_user(
     user = UserRepository(db).get_by_id(user_id)
     if not user:
         raise AppError("Usuario nao encontrado.", status_code=401, code="user_not_found")
+
+    now = datetime.now(timezone.utc)
+    user.last_seen_at = now
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+
     return user
 
 
