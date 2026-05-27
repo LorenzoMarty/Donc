@@ -84,6 +84,18 @@ class ExerciseGenerationResult(BaseModel):
     adaptation_reason: str
 
 
+class GameQuestion(BaseModel):
+    prompt: str = Field(min_length=15, max_length=600, description="Enunciado da questao, pode incluir lacuna _ ou contexto.")
+    options: list[str] = Field(min_length=4, max_length=4, description="Exatamente 4 opcoes de resposta, sem prefixo de letra.")
+    answer_index: int = Field(ge=0, le=3, description="Indice (0-3) da opcao correta.")
+    explanation: str = Field(min_length=20, max_length=400, description="Explicacao pedagogica da resposta correta.")
+
+
+class GameGenerationResult(BaseModel):
+    name: str = Field(min_length=5, max_length=120, description="Titulo curto e atraente para o jogo.")
+    questions: list[GameQuestion] = Field(min_length=3, max_length=10, description="Lista de questoes do jogo.")
+
+
 class AnalyticsResult(BaseModel):
     summary: str
     estimated_level: str

@@ -11,6 +11,7 @@ import { CompetencyMeter, PageHeader, Surface } from "@/components/shared/premiu
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TooltipContent, TooltipRoot, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTrackEvent } from "@/hooks/use-track-event";
 import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
 import type { InlineAnnotation } from "@/types/api";
 import { cn } from "@/utils";
@@ -33,6 +34,7 @@ export default function EssayPage() {
   const [loading, setLoading] = useState(true);
   const saveRequestRef = useRef(0);
   const submittingRef = useRef(false);
+  const trackEvent = useTrackEvent();
   const essayId = essay?.id;
   const essayStatus = essay?.status;
   const selectedThemeId = selectedTheme?.id;
@@ -189,6 +191,7 @@ export default function EssayPage() {
       });
       setEssay(saved);
       const corrected = await apiFetch<Essay>(`/essays/${saved.id}/submit`, { method: "POST" });
+      trackEvent({ event_type: "essay_submitted", entity_id: String(saved.id), entity_type: "essay", meta: { word_count: wordCount } });
       const latestVersion = latestCorrectedVersion(corrected);
       setEssay(corrected);
       setSelectedVersionId(latestVersion?.id ?? null);

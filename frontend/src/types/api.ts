@@ -194,3 +194,74 @@ export type AdminMetrics = {
   average_score: number;
   active_themes: number;
 };
+
+export type AdminUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  xp: number;
+  level: number;
+  essays: number;
+  last_seen_at: string | null;
+  total_tokens: number;
+  event_count: number;
+};
+
+export type AgentStats = {
+  agent: string;
+  workflow: string;
+  total_calls: number;
+  success_calls: number;
+  error_calls: number;
+  total_tokens: number;
+  avg_latency_ms: number;
+  cost_usd_cents: number;
+};
+
+export type DailyUsage = {
+  date: string;
+  total_tokens: number;
+  total_calls: number;
+  error_calls: number;
+  cost_usd_cents: number;
+};
+
+export type AITelemetry = {
+  period_days: number;
+  total_tokens: number;
+  total_calls: number;
+  error_calls: number;
+  cost_usd_cents: number;
+  agents: AgentStats[];
+  daily: DailyUsage[];
+  top_users: { user_id: number; label: string; total_tokens: number; cost_usd_cents: number }[];
+};
+
+export type UserActivity = {
+  period_days: number;
+  total_events: number;
+  by_type: { event_type: string; count: number }[];
+  online_now: number;
+};
+
+export type GameQuestion = {
+  prompt: string;
+  options: string[];
+  answer_index: number;
+  explanation: string;
+};
+
+export type AIGeneratedGame = {
+  id: number;
+  name: string;
+  category: string;
+  skill: string;
+  difficulty: string;
+  xp_reward: number;
+  questions: GameQuestion[];
+  status: "pending" | "approved" | "rejected";
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};

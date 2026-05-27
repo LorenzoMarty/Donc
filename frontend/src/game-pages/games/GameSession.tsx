@@ -13,6 +13,7 @@ import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
+import { useTrackEvent } from "@/hooks/use-track-event";
 import { cn } from "@/utils";
 
 export default function GameSession({ categorySlug, gameId }: { categorySlug: string; gameId: string }) {
@@ -20,6 +21,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const category = getCategoryBySlug(categorySlug);
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
+  const trackEvent = useTrackEvent();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<boolean[]>([]);
@@ -31,6 +33,11 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
     const id = window.setInterval(() => setSeconds((value) => value + 1), 1000);
     return () => window.clearInterval(id);
   }, [result]);
+
+  useEffect(() => {
+    if (game) trackEvent({ event_type: "game_started", entity_id: game.id, entity_type: "game" });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.id]);
 
   const question = game?.questions[step];
   const score = answers.filter(Boolean).length;
@@ -68,7 +75,9 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
         return;
       }
       setAnswers(nextAnswers);
-      setResult(completeGame(game, nextAnswers.filter(Boolean).length, game.questions.length, seconds));
+      const completion = completeGame(game, nextAnswers.filter(Boolean).length, game.questions.length, seconds);
+      setResult(completion);
+      trackEvent({ event_type: "game_completed", entity_id: game.id, entity_type: "game", duration_ms: seconds * 1000, meta: { accuracy: completion.attempt.accuracy, xp_earned: completion.xpEarned } });
     }, 620);
   }
 
