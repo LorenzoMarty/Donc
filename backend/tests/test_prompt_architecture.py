@@ -13,8 +13,13 @@ from src.prompts.agent_instructions import (
 
 
 def test_prompt_budgets_stay_compact():
+    # competency agent has scoring rubric — allowed up to 1800 chars.
     assert PROMPT_BUDGETS["competency"] < 1800
-    assert max(size for name, size in PROMPT_BUDGETS.items() if name != "competency") < 900
+    # consolidation agent outputs inline annotations in addition to scores — allowed up to 1800 chars.
+    assert PROMPT_BUDGETS["consolidation"] < 1800
+    # all other specialists stay compact.
+    other = {k: v for k, v in PROMPT_BUDGETS.items() if k not in ("competency", "consolidation")}
+    assert max(other.values()) < 900
 
 
 def test_only_scoring_agent_receives_zero_rules_and_full_scoring():

@@ -1,10 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Lightbulb, Target, Trophy } from "lucide-react";
+import { BookOpen, CheckCircle2, Eye, Lightbulb, Target, Trophy } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
+import type { EssayTheme } from "@/types/api";
 import { cn } from "@/utils";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -153,7 +155,20 @@ export function SmoothProgressPath({ progress }: { progress: number }) {
   );
 }
 
-export function WritingSidebar({ lines, paragraphs, structureProgress }: { lines: number; paragraphs: number; structureProgress: number }) {
+export function WritingSidebar({
+  lines,
+  paragraphs,
+  structureProgress,
+  theme,
+}: {
+  lines: number;
+  paragraphs: number;
+  structureProgress: number;
+  theme?: EssayTheme | null;
+}) {
+  const [tab, setTab] = useState<"guia" | "motivadores">("guia");
+  const hasMotivadores = Boolean(theme?.supporting_texts?.length);
+
   return (
     <motion.aside
       initial={{ opacity: 0, x: 24 }}
@@ -161,27 +176,126 @@ export function WritingSidebar({ lines, paragraphs, structureProgress }: { lines
       transition={{ duration: 0.42, ease: easeOut }}
       className="space-y-3"
     >
-      <div className="game-tile bg-background/82 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold">Painel de escrita</p>
-          <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
-        </div>
-        <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
-        <div className="mt-3">
-          <WriterMetric label="Paragrafos" value={`${paragraphs}`} progress={Math.min(100, (paragraphs / 4) * 100)} />
-        </div>
+      <div className="game-tile flex gap-1 bg-background/82 p-1">
+        <button
+          type="button"
+          onClick={() => setTab("guia")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-xs font-semibold transition-colors",
+            tab === "guia" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Target className="h-3.5 w-3.5" aria-hidden="true" />
+          Guia
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("motivadores")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-2 text-xs font-semibold transition-colors",
+            tab === "motivadores" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+          Motivadores
+        </button>
       </div>
-      <div className="game-tile bg-primary/10 p-4">
-        <p className="mb-3 text-sm font-semibold">Sugestoes rapidas</p>
-        <SmartSuggestions
-          suggestions={[
-            "Use um repertorio conectado a tese, nao solto.",
-            "Feche o desenvolvimento com consequencia clara.",
-            "Na intervencao, garanta agente, acao, meio e finalidade.",
-          ]}
-        />
-      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {tab === "guia" ? (
+          <motion.div
+            key="guia"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: easeOut }}
+            className="space-y-3"
+          >
+            <div className="game-tile bg-background/82 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-semibold">Painel de escrita</p>
+                <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
+              </div>
+              <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
+              <div className="mt-3">
+                <WriterMetric label="Paragrafos" value={`${paragraphs}`} progress={Math.min(100, (paragraphs / 4) * 100)} />
+              </div>
+            </div>
+            <div className="game-tile bg-primary/10 p-4">
+              <p className="mb-3 text-sm font-semibold">Sugestoes rapidas</p>
+              <SmartSuggestions
+                suggestions={[
+                  "Use um repertorio conectado a tese, nao solto.",
+                  "Feche o desenvolvimento com consequencia clara.",
+                  "Na intervencao, garanta agente, acao, meio e finalidade.",
+                ]}
+              />
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="motivadores"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: easeOut }}
+          >
+            <MotivatingTextsPanel theme={theme} hasContent={hasMotivadores} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.aside>
+  );
+}
+
+function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null; hasContent: boolean }) {
+  const [expanded, setExpanded] = useState<number | null>(0);
+
+  if (!hasContent || !theme?.supporting_texts?.length) {
+    return (
+      <div className="game-tile bg-background/82 p-4 text-center">
+        <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground" aria-hidden="true" />
+        <p className="text-sm font-semibold">Sem textos motivadores</p>
+        <p className="mt-1 text-xs text-muted-foreground">Este tema ainda nao possui textos de apoio cadastrados.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {theme.supporting_texts.map((text, index) => (
+        <div key={index} className={cn("game-tile overflow-hidden", text.type === "perspectiva" ? "bg-secondary/10" : "bg-background/82")}>
+          <button
+            type="button"
+            onClick={() => setExpanded(expanded === index ? null : index)}
+            className="flex w-full items-center justify-between gap-2 p-3 text-left"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {text.type === "perspectiva" ? (
+                <Eye className="h-3.5 w-3.5 shrink-0 text-secondary" aria-hidden="true" />
+              ) : (
+                <Lightbulb className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+              )}
+              <span className="text-xs font-semibold leading-snug">{text.title}</span>
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">{expanded === index ? "−" : "+"}</span>
+          </button>
+          <AnimatePresence initial={false}>
+            {expanded === index && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.22, ease: easeOut }}
+                className="overflow-hidden"
+              >
+                <p className="px-3 pb-3 text-xs leading-5 text-muted-foreground">{text.content}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
   );
 }
 

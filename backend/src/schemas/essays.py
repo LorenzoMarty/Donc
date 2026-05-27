@@ -1,6 +1,20 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class SupportingTextRead(BaseModel):
+    title: str
+    content: str
+    type: str
+
+
+class InlineAnnotationRead(BaseModel):
+    paragraph_index: int
+    quote: str
+    comment: str
+    competency: str
+    type: str
 
 
 class EssayThemeRead(BaseModel):
@@ -8,6 +22,12 @@ class EssayThemeRead(BaseModel):
     title: str
     context: str
     source: str
+    supporting_texts: list[SupportingTextRead] = Field(default_factory=list)
+
+    @field_validator("supporting_texts", mode="before")
+    @classmethod
+    def coerce_none(cls, v: object) -> object:
+        return v or []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -36,7 +56,13 @@ class EssayCorrectionRead(BaseModel):
     suggestions: list[str]
     feedback: str
     recurrent_patterns: list[str]
+    inline_annotations: list[InlineAnnotationRead] = Field(default_factory=list)
     created_at: datetime
+
+    @field_validator("inline_annotations", mode="before")
+    @classmethod
+    def coerce_none(cls, v: object) -> object:
+        return v or []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,7 +80,13 @@ class EssayVersionCorrectionRead(BaseModel):
     suggestions: list[str]
     feedback: str
     recurrent_patterns: list[str]
+    inline_annotations: list[InlineAnnotationRead] = Field(default_factory=list)
     created_at: datetime
+
+    @field_validator("inline_annotations", mode="before")
+    @classmethod
+    def coerce_none(cls, v: object) -> object:
+        return v or []
 
     model_config = ConfigDict(from_attributes=True)
 

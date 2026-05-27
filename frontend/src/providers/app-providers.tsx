@@ -1,10 +1,11 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { AuthContext, type AuthContextValue } from "@/contexts/auth-context";
-import { ToastProvider } from "@/contexts/toast-context";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { authApi, type User } from "@/services/api";
 
 function setSession(token: string) {
@@ -76,9 +77,10 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <ToastProvider>
+      <TooltipProvider>
         <AuthProvider>{children}</AuthProvider>
-      </ToastProvider>
+      </TooltipProvider>
+      <Toaster richColors position="top-right" />
     </ThemeProvider>
   );
 }

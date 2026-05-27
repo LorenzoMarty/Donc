@@ -700,26 +700,64 @@ def ensure_course_catalog(db: Session) -> tuple[Course, list[Module], list[Lesso
 
 def seed_missing_themes(db: Session) -> None:
     theme_specs = [
-        (
-            "Desafios para a democratizacao do acesso a educacao digital no Brasil",
-            "Considere desigualdade de acesso a internet, infraestrutura escolar, formacao docente e cidadania digital.",
-            "Donc ENEM",
-        ),
-        (
-            "Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
-            "Reflita sobre genero, economia, politicas publicas, reconhecimento social e direitos trabalhistas.",
-            "Donc ENEM",
-        ),
-        (
-            "A importancia da leitura critica na formacao dos jovens brasileiros",
-            "Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
-            "Donc ENEM",
-        ),
+        {
+            "title": "Desafios para a democratizacao do acesso a educacao digital no Brasil",
+            "context": "Considere desigualdade de acesso a internet, infraestrutura escolar, formacao docente e cidadania digital.",
+            "source": "Donc ENEM",
+            "supporting_texts": [
+                {
+                    "title": "Texto motivador I — Exclusao digital no Brasil",
+                    "content": "Segundo o IBGE, em 2022, cerca de 22% dos domicilios brasileiros ainda nao tinham acesso a internet, concentrados majoritariamente nas regioes Norte e Nordeste e em comunidades rurais. Especialistas alertam que a exclusao digital aprofunda desigualdades educacionais ja existentes, prejudicando especialmente criancas em idade escolar que dependem de conexao para acessar conteudos pedagogicos.",
+                    "type": "motivador",
+                },
+                {
+                    "title": "Perspectiva do avaliador",
+                    "content": "O avaliador espera que o texto identifique causas estruturais (infraestrutura precaria, renda, formacao docente insuficiente), mobilize repertorio sociocultural pertinente (legislacao, dados, autores) e apresente proposta de intervencao com agente, acao, meio, finalidade e detalhamento. Evite apenas descrever o problema — argumente sobre suas raizes. A Competencia 5 exige solucao concreta e respeitosa aos direitos humanos.",
+                    "type": "perspectiva",
+                },
+            ],
+        },
+        {
+            "title": "Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
+            "context": "Reflita sobre genero, economia, politicas publicas, reconhecimento social e direitos trabalhistas.",
+            "source": "Donc ENEM",
+            "supporting_texts": [
+                {
+                    "title": "Texto motivador I — Trabalho invisivel e economia",
+                    "content": "O economista Guy Standing classifica o trabalho de cuidado — realizado majoritariamente por mulheres — como trabalho precario invisivel ao sistema economico formal. No Brasil, pesquisas do IPEA indicam que mulheres dedicam, em media, o dobro do tempo dos homens a atividades domesticas e de cuidado nao remuneradas, o que impacta diretamente sua participacao no mercado de trabalho e na vida publica.",
+                    "type": "motivador",
+                },
+                {
+                    "title": "Perspectiva do avaliador",
+                    "content": "Espera-se que o texto articule dimensoes de genero, economia e politica publica. O ponto de vista deve superar o senso comum e mobilizar dados ou pensadores para sustentar argumentos. A proposta de intervencao deve indicar clareza juridica ou de politica social — nao apenas 'conscientizar'. Teses sobre 'igualdade de genero' sem recorte especifico tendem a perder pontos em C2 e C3.",
+                    "type": "perspectiva",
+                },
+            ],
+        },
+        {
+            "title": "A importancia da leitura critica na formacao dos jovens brasileiros",
+            "context": "Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
+            "source": "Donc ENEM",
+            "supporting_texts": [
+                {
+                    "title": "Texto motivador I — Jovens e desinformacao",
+                    "content": "Um relatorio do Reuters Institute (2023) indica que 62% dos jovens entre 18 e 24 anos acessam noticias principalmente por redes sociais, ambiente em que algoritmos priorizam engajamento em detrimento de veracidade. Especialistas alertam que a ausencia de letramento midiatico critico alimenta a circulacao de desinformacao e dificulta a formacao de cidadaos capazes de tomar decisoes autonomas.",
+                    "type": "motivador",
+                },
+                {
+                    "title": "Perspectiva do avaliador",
+                    "content": "O avaliador valoriza textos que relacionem escola, familia e tecnologia como agentes formativos, sem cair em solucoes simplistas como 'proibir celular'. A tese deve apontar uma causa especifica para o problema — nao apenas 'falta de incentivo'. A proposta de intervencao deve detalhar como promover leitura critica de forma concreta, com agente e meio claros.",
+                    "type": "perspectiva",
+                },
+            ],
+        },
     ]
-    existing_titles = set(db.scalars(select(EssayTheme.title)))
-    for title, context, source in theme_specs:
-        if title not in existing_titles:
-            db.add(EssayTheme(title=title, context=context, source=source))
+    for spec in theme_specs:
+        existing = db.scalar(select(EssayTheme).where(EssayTheme.title == spec["title"]))
+        if not existing:
+            db.add(EssayTheme(**spec))
+        elif not existing.supporting_texts:
+            existing.supporting_texts = spec["supporting_texts"]
 
 
 def seed_missing_mock_exam(db: Session) -> None:

@@ -173,7 +173,7 @@ export function EssayEditor({
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
               className="min-w-0 overflow-hidden"
             >
-              <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} />
+              <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} theme={activeTheme} />
               <div className="mt-3">
                 <FriendlyErrorFeedback
                   show={wordCount > 0 && wordCount < 80}

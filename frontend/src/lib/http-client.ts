@@ -43,14 +43,34 @@ function buildHeaders(options: RequestInit) {
   return headers;
 }
 
+const ERROR_CODE_MESSAGES: Record<string, string> = {
+  not_authenticated: "Faça login para continuar.",
+  invalid_token: "Sessão expirada. Faça login novamente.",
+  user_not_found: "Usuário não encontrado.",
+  admin_required: "Acesso restrito a administradores.",
+  essay_not_found: "Redação não encontrada.",
+  theme_not_found: "Tema de redação não encontrado.",
+  essay_locked: "Esta redação já foi corrigida e não pode ser editada.",
+  essay_too_short: "A redação precisa ter pelo menos 80 palavras.",
+  edit_required: "Edite o texto antes de corrigir novamente.",
+  empty_draft: "Rascunhos vazios não são salvos.",
+  ai_job_not_found: "Correção não encontrada.",
+  rate_limit_exceeded: "Muitas requisições. Aguarde um momento.",
+};
+
 function errorFromPayload(payload: unknown, status: number) {
   if (isApiEnvelope<unknown>(payload) && payload.success === false) {
-    return new ApiClientError(payload.message || "Erro inesperado.", status, payload.error ?? "api_error", payload);
+    const code = payload.error ?? "api_error";
+    const message = ERROR_CODE_MESSAGES[code] ?? payload.message ?? "Erro inesperado.";
+    return new ApiClientError(message, status, code, payload);
   }
 
   if (typeof payload === "object" && payload !== null) {
     const data = payload as { detail?: string; message?: string; code?: string; error?: string };
-    return new ApiClientError(data.message ?? data.detail ?? "Erro inesperado.", status, data.error ?? data.code ?? "api_error", payload);
+    const code = data.error ?? data.code ?? "api_error";
+    const rawMessage = data.message ?? data.detail ?? "Erro inesperado.";
+    const message = ERROR_CODE_MESSAGES[code] ?? rawMessage;
+    return new ApiClientError(message, status, code, payload);
   }
 
   return new ApiClientError("Erro inesperado.", status, "api_error", payload);

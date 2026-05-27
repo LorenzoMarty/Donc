@@ -6,6 +6,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type { GameAttempt, GameCompletion, GameDefinition, GameProgress, StreakState } from "@/features/gamification/types";
 import { calculateXpReward, getRankForXp } from "@/features/xp/xp";
 import { todayKey, updateStreak } from "@/features/streak/streak";
+import { apiFetch } from "@/lib/http-client";
 
 type GameStore = {
   xp: number;
@@ -14,6 +15,8 @@ type GameStore = {
   progress: Record<string, GameProgress>;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
   getGameProgress: (gameId: string) => GameProgress | undefined;
+  exportProgress: () => void;
+  importProgress: (json: string) => boolean;
 };
 
 const initialStreak: StreakState = {
@@ -29,6 +32,30 @@ export const useGameStore = create<GameStore>()(
       attempts: [],
       progress: {},
       getGameProgress: (gameId) => get().progress[gameId],
+      exportProgress: () => {
+        const { xp, streak, attempts, progress } = get();
+        const blob = new Blob([JSON.stringify({ xp, streak, attempts, progress, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `donc-progresso-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      importProgress: (json) => {
+        try {
+          const parsed = JSON.parse(json) as { xp?: number; streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress> };
+          set({
+            xp: typeof parsed.xp === "number" ? parsed.xp : get().xp,
+            streak: parsed.streak ?? get().streak,
+            attempts: Array.isArray(parsed.attempts) ? parsed.attempts : get().attempts,
+            progress: parsed.progress && typeof parsed.progress === "object" ? parsed.progress : get().progress,
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      },
       completeGame: (game, score, total, durationSeconds) => {
         const state = get();
         const dateKey = todayKey();
@@ -72,6 +99,12 @@ export const useGameStore = create<GameStore>()(
           attempts: nextAttempts,
           progress: nextProgress,
         });
+
+        // Sync XP to backend fire-and-forget — local store is source of truth for UI.
+        apiFetch("/games/complete", {
+          method: "POST",
+          body: JSON.stringify({ game_id: game.id, xp_earned: xpEarned }),
+        }).catch(() => undefined);
 
         return {
           attempt,

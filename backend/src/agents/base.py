@@ -12,6 +12,9 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class AgnoAgentRunner:
+    def __init__(self) -> None:
+        self.last_token_count: int = 0
+
     def run_structured(
         self,
         *,
@@ -24,6 +27,7 @@ class AgnoAgentRunner:
         user_id: int | None = None,
         session_id: str | None = None,
     ) -> T:
+        self.last_token_count = 0
         if not settings.openai_api_key:
             return fallback
 
@@ -38,6 +42,7 @@ class AgnoAgentRunner:
                 id=settings.openai_model,
                 api_key=settings.openai_api_key,
                 timeout=settings.ai_sync_timeout_seconds,
+                fallback_models=[settings.openai_fallback_model] if settings.openai_fallback_model else None,
             )
             agent_kwargs: dict[str, Any] = {
                 "model": model,
@@ -64,6 +69,11 @@ class AgnoAgentRunner:
                 user_id=str(user_id) if user_id is not None else None,
                 session_id=session_id,
             )
+            metrics = getattr(run_output, "metrics", None)
+            if isinstance(metrics, dict):
+                self.last_token_count = int(metrics.get("total_tokens", metrics.get("output_tokens", 0)) or 0)
+            else:
+                self.last_token_count = 0
             return self._coerce_output(getattr(run_output, "content", run_output), output_schema, fallback)
         except Exception:
             return fallback
