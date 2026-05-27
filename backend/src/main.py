@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.config.settings import settings
@@ -19,6 +20,14 @@ from src.vectorstore import seed_knowledge_base
 logger = logging.getLogger("src.startup")
 
 
+def _ensure_last_seen_at_column() -> None:
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_at TIMESTAMP"))
+    except Exception:
+        pass  # column already exists or DB not yet created
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_ai_telemetry()
@@ -27,6 +36,7 @@ async def lifespan(_: FastAPI):
             with engine.begin() as connection:
                 connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         Base.metadata.create_all(bind=engine)
+        _ensure_last_seen_at_column()
         db = SessionLocal()
         try:
             seed_database(db, include_demo_data=settings.seed_demo_data)

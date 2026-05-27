@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -36,9 +37,11 @@ def get_current_user(
     if not user:
         raise AppError("Usuario nao encontrado.", status_code=401, code="user_not_found")
 
-    now = datetime.now(timezone.utc)
-    user.last_seen_at = now
     try:
+        db.execute(
+            text("UPDATE users SET last_seen_at = :now WHERE id = :id"),
+            {"now": datetime.now(timezone.utc), "id": user.id},
+        )
         db.commit()
     except Exception:
         db.rollback()
