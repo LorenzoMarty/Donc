@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.config.settings import settings
@@ -20,12 +20,27 @@ from src.vectorstore import seed_knowledge_base
 logger = logging.getLogger("src.startup")
 
 
-def _ensure_last_seen_at_column() -> None:
-    try:
-        with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE users ADD COLUMN last_seen_at TIMESTAMP"))
-    except Exception:
-        pass  # column already exists or DB not yet created
+def _ensure_column(table_name: str, column_name: str, ddl: str) -> None:
+    with engine.begin() as conn:
+        inspector = inspect(conn)
+        if table_name not in inspector.get_table_names():
+            return
+        existing_columns = {column["name"] for column in inspector.get_columns(table_name)}
+        if column_name not in existing_columns:
+            conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {ddl}"))
+
+
+def _ensure_runtime_columns() -> None:
+    column_guards = [
+        ("users", "last_seen_at", "last_seen_at TIMESTAMP"),
+        ("essays", "paragraph_count", "paragraph_count INTEGER NOT NULL DEFAULT 0"),
+        ("essay_versions", "paragraph_count", "paragraph_count INTEGER NOT NULL DEFAULT 0"),
+        ("essay_themes", "supporting_texts", "supporting_texts JSON"),
+        ("essay_corrections", "inline_annotations", "inline_annotations JSON"),
+        ("essay_version_corrections", "inline_annotations", "inline_annotations JSON"),
+    ]
+    for table_name, column_name, ddl in column_guards:
+        _ensure_column(table_name, column_name, ddl)
 
 
 @asynccontextmanager
@@ -36,7 +51,7 @@ async def lifespan(_: FastAPI):
             with engine.begin() as connection:
                 connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         Base.metadata.create_all(bind=engine)
-        _ensure_last_seen_at_column()
+        _ensure_runtime_columns()
         db = SessionLocal()
         try:
             seed_database(db, include_demo_data=settings.seed_demo_data)
