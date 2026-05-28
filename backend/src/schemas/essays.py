@@ -144,3 +144,15 @@ class EssayHistoryResponse(BaseModel):
     weakest_competency: str
     recurrent_errors: list[str]
     evolution: list[EssayEvolutionPoint]
+
+
+class EssaySubmitResponse(BaseModel):
+    job_id: str
+    essay_id: int
+
+
+class JobStatusRead(BaseModel):
+    job_id: str
+    status: str
+    essay: EssayRead | None = None
+    error: str | None = None

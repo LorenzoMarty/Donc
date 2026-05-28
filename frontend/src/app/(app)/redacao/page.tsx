@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbulb, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, Brain, CheckCircle2, FilePenLine, Files, History, Lightbulb, Sparkles } from "lucide-react";
 
 import { EssayEditor } from "@/components/writing/essay-editor";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { CompetencyMeter, PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { TooltipContent, TooltipRoot, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTrackEvent } from "@/hooks/use-track-event";
-import { apiFetch, type Essay, type EssayTheme, type EssayVersion } from "@/services/api";
+import { useCorrectionStatus } from "@/hooks/useCorrectionStatus";
+import { apiFetch, type Essay, type EssaySubmitResponse, type EssayTheme, type EssayVersion } from "@/services/api";
 import type { InlineAnnotation } from "@/types/api";
 import { cn } from "@/utils";
 
@@ -190,24 +192,40 @@ export default function EssayPage() {
         body: JSON.stringify({ title, content }),
       });
       setEssay(saved);
-      const corrected = await apiFetch<Essay>(`/essays/${saved.id}/submit`, { method: "POST" });
+      await apiFetch<EssaySubmitResponse>(`/essays/${saved.id}/submit`, { method: "POST" });
       trackEvent({ event_type: "essay_submitted", entity_id: String(saved.id), entity_type: "essay", meta: { word_count: wordCount } });
-      const latestVersion = latestCorrectedVersion(corrected);
-      setEssay(corrected);
-      setSelectedVersionId(latestVersion?.id ?? null);
-      setTitle((latestVersion ?? corrected).title);
-      setContent((latestVersion ?? corrected).content);
-      setMode("analysis");
-      replaceEssayUrl(corrected.id, latestVersion?.id, "analysis");
+      // submitting stays true — CorrectionWaitingScreen polls via useCorrectionStatus
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel corrigir.");
+      setError(err instanceof Error ? err.message : "Nao foi possivel iniciar a correcao.");
       setMode("editor");
-    } finally {
       submittingRef.current = false;
       saveRequestRef.current += 1;
       setSubmitting(false);
       setSaving(false);
     }
+  }
+
+  function handleCorrectionCompleted(corrected: Essay) {
+    const latestVersion = latestCorrectedVersion(corrected);
+    setEssay(corrected);
+    setSelectedVersionId(latestVersion?.id ?? null);
+    setTitle((latestVersion ?? corrected).title);
+    setContent((latestVersion ?? corrected).content);
+    setMode("analysis");
+    replaceEssayUrl(corrected.id, latestVersion?.id, "analysis");
+    submittingRef.current = false;
+    saveRequestRef.current += 1;
+    setSubmitting(false);
+    setSaving(false);
+  }
+
+  function handleCorrectionFailed(errorMsg: string) {
+    setError(errorMsg);
+    setMode("editor");
+    submittingRef.current = false;
+    saveRequestRef.current += 1;
+    setSubmitting(false);
+    setSaving(false);
   }
 
   function readVersion(version: EssayVersion) {
@@ -239,7 +257,16 @@ export default function EssayPage() {
   if (loading) return <LoadingCard />;
 
   if (submitting && essay) {
-    return <CorrectionWaitingScreen title={title} wordCount={wordCount} paragraphCount={paragraphCount} />;
+    return (
+      <CorrectionWaitingScreen
+        essayId={essay.id}
+        title={title}
+        wordCount={wordCount}
+        paragraphCount={paragraphCount}
+        onCompleted={handleCorrectionCompleted}
+        onFailed={handleCorrectionFailed}
+      />
+    );
   }
 
   const hasCorrection = Boolean(analysisCorrection);
@@ -488,19 +515,87 @@ function VersionPanel({
   );
 }
 
-function CorrectionWaitingScreen({ title, wordCount, paragraphCount }: { title: string; wordCount: number; paragraphCount: number }) {
+function CorrectionWaitingScreen({
+  essayId,
+  title,
+  wordCount,
+  paragraphCount,
+  onCompleted,
+  onFailed,
+}: {
+  essayId: number;
+  title: string;
+  wordCount: number;
+  paragraphCount: number;
+  onCompleted: (essay: Essay) => void;
+  onFailed: (error: string) => void;
+}) {
+  const { phase, agentLabel, agentIndex, progressPercent, essay, error } = useCorrectionStatus(essayId);
+
+  useEffect(() => {
+    if (phase === "completed" && essay) onCompleted(essay);
+  }, [phase, essay, onCompleted]);
+
+  useEffect(() => {
+    if (phase === "failed") onFailed(error ?? "A correcao falhou. Tente novamente.");
+  }, [phase, error, onFailed]);
+
+  const sparklePositions = [
+    { top: "12%", left: "8%", delay: 0 },
+    { top: "20%", right: "10%", delay: 0.4 },
+    { top: "68%", left: "5%", delay: 0.8 },
+    { top: "75%", right: "7%", delay: 1.2 },
+  ];
+
   return (
-    <div className="grid min-h-[calc(100dvh-10rem)] place-items-center">
+    <div className="relative grid min-h-[calc(100dvh-10rem)] place-items-center overflow-hidden">
+      {sparklePositions.map((pos, i) => (
+        <motion.div
+          key={i}
+          style={{ position: "absolute", ...pos }}
+          animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+          transition={{ repeat: Infinity, duration: 2.5, delay: pos.delay }}
+        >
+          <Sparkles className="h-5 w-5 text-primary/50" aria-hidden="true" />
+        </motion.div>
+      ))}
+
       <Surface className="w-full max-w-3xl text-center">
-        <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary/12 text-primary">
-          <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+        <div className="relative mx-auto mb-5 grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary/12 text-primary">
+          <Brain className="h-8 w-8" aria-hidden="true" />
+          <motion.div
+            className="absolute inset-0 rounded-md border-2 border-primary/40"
+            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ repeat: Infinity, duration: 1.8 }}
+          />
         </div>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correcao em andamento</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-normal md:text-3xl">Analisando sua redacao</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Estamos salvando a versao final, avaliando as competencias e preparando a tela de analise. Ao terminar, voce sera levado
-          automaticamente para o resultado.
-        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-normal md:text-3xl">IA analisando sua redacao</h1>
+        <motion.p
+          key={agentLabel}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mx-auto mt-3 max-w-lg text-sm font-semibold text-primary"
+        >
+          {agentLabel}
+        </motion.p>
+
+        <div className="mx-auto mt-5 max-w-sm">
+          <div className="mb-2 flex justify-between text-xs font-semibold text-muted-foreground">
+            <span>Progresso</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2" />
+          <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground/70">
+            {["Tese", "C1", "C3", "ENEM", "Nota"].map((step, i) => (
+              <span key={step} className={cn("transition-colors", agentIndex > i ? "text-primary font-semibold" : "")}>
+                {step}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
           <div className="game-tile bg-background/58 p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Titulo</p>
@@ -573,6 +668,13 @@ function EssayReadPanel({
   const annotationsByParagraph = (pIndex: number) => annotations.filter((a) => a.paragraph_index === pIndex);
 
   const competencyLabel: Record<string, string> = { c1: "C1", c2: "C2", c3: "C3", c4: "C4", c5: "C5" };
+  const competencyName: Record<string, string> = {
+    c1: "Norma-padrão",
+    c2: "Tema e gênero",
+    c3: "Argumentação",
+    c4: "Coesão",
+    c5: "Intervenção social",
+  };
 
   return (
     <Surface>
@@ -642,12 +744,14 @@ function EssayReadPanel({
             activeAnnotation.type === "error" ? "bg-destructive/10" : "bg-emerald-50 dark:bg-emerald-950/30",
           )}
         >
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"} className="text-xs">
               {activeAnnotation.type === "error" ? "Desconto" : "Acerto"}
             </Badge>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs font-semibold">
               {competencyLabel[activeAnnotation.competency] ?? activeAnnotation.competency}
+              {" · "}
+              {competencyName[activeAnnotation.competency] ?? ""}
             </Badge>
           </div>
           <p className="text-xs leading-5 font-semibold text-muted-foreground italic">&quot;{activeAnnotation.quote}&quot;</p>

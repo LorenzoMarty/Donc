@@ -176,6 +176,18 @@ export type EssayHistory = {
   evolution: { label: string; score: number; c1: number; c2: number; c3: number; c4: number; c5: number }[];
 };
 
+export type EssaySubmitResponse = {
+  job_id: string;
+  essay_id: number;
+};
+
+export type JobStatus = {
+  job_id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  essay?: Essay;
+  error?: string;
+};
+
 export type MockExam = {
   id: number;
   title: string;

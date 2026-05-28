@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
+import { Merriweather } from "next/font/google";
 
 import { Providers } from "@/providers/app-providers";
 import "./globals.css";
+
+const merriweather = Merriweather({
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+  variable: "--font-merriweather",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
@@ -19,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning className={merriweather.variable}>
       <body>
         <Providers>{children}</Providers>
       </body>

@@ -2,7 +2,7 @@
 from src.models.essay import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVersion, EssayVersionCorrection
 from src.models.events import AIGeneratedGame, UserEvent
 from src.models.exam import MockExam, MockExamAttempt, MockExamQuestion
-from src.models.gamification import Goal
+from src.models.gamification import Goal, UserGameProgress
 from src.models.learning import Course, Difficulty, Exercise, ExerciseAnswer, LearningReward, Lesson, LessonProgress, Module
 from src.models.user import User, UserRole
 
@@ -23,6 +23,7 @@ __all__ = [
     "Exercise",
     "ExerciseAnswer",
     "Goal",
+    "UserGameProgress",
     "LearningReward",
     "Lesson",
     "LessonProgress",
