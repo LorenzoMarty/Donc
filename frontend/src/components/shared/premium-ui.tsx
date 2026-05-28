@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { BookOpenCheck } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/utils";
@@ -23,28 +22,19 @@ export function PageHeader({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
-      className="game-surface relative min-w-0 overflow-hidden bg-card p-4 xs:p-5 lg:p-6"
+      className="game-surface min-w-0 bg-card p-4 lg:p-5"
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/55 to-transparent" aria-hidden="true" />
-      <div className="relative flex flex-col justify-between gap-4 lg:flex-row lg:items-start lg:gap-5">
+      <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start lg:gap-4">
         <div className="min-w-0">
-          <div className="game-chip mb-4 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+          <div className="game-chip mb-2.5 inline-flex items-center bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
             {eyebrow}
           </div>
-          <div className="flex items-start gap-3">
-            <div className="hidden h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary sm:grid">
-              <BookOpenCheck className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold leading-tight tracking-normal sm:text-3xl lg:text-[2.15rem]">
-                {title}
-              </h1>
-              {description && (
-                <p className="mt-3 max-w-[82ch] text-sm font-medium leading-6 text-muted-foreground md:text-base">{description}</p>
-              )}
-            </div>
-          </div>
+          <h1 className="text-xl font-semibold leading-tight tracking-normal sm:text-2xl lg:text-3xl">
+            {title}
+          </h1>
+          {description && (
+            <p className="mt-2 max-w-[82ch] text-sm font-medium leading-6 text-muted-foreground">{description}</p>
+          )}
         </div>
         {action && <div className="w-full min-w-0 shrink-0 lg:w-auto">{action}</div>}
       </div>
@@ -59,11 +49,10 @@ export function Surface({ children, className, delay = 0 }: { children: ReactNod
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -1 }}
       transition={{ duration: 0.24, delay, ease: "easeOut" }}
       className={cn(
         "min-w-0",
-        solidPrimary ? "game-surface bg-primary p-4 text-primary-foreground xs:p-5 lg:p-6" : "game-surface bg-card p-3 xs:p-4 lg:p-5",
+        solidPrimary ? "game-surface bg-primary p-3 text-primary-foreground lg:p-4" : "game-surface bg-card p-3 lg:p-4",
         className,
       )}
     >

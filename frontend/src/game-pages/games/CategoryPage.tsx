@@ -6,7 +6,6 @@ import { ArrowLeft, Search } from "lucide-react";
 
 import { getCategoryBySlug, getGamesByCategory } from "@/features/gamification/catalog";
 import { GameCardGrid } from "@/game-pages/games/components/GameCard";
-import { defaultGameFilters, GameFilters, type GameFilterState } from "@/game-pages/games/components/GameFilters";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,17 +13,14 @@ import { Input } from "@/components/ui/input";
 export default function CategoryPage({ categorySlug }: { categorySlug: string }) {
   const category = getCategoryBySlug(categorySlug);
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<GameFilterState>(defaultGameFilters);
 
   const games = useMemo(() => {
     if (!category) return [];
     const normalizedQuery = query.trim().toLowerCase();
-    return getGamesByCategory(category.id).filter((game) => {
-      const matchesQuery = !normalizedQuery || `${game.name} ${game.description} ${game.skill}`.toLowerCase().includes(normalizedQuery);
-      const matchesDifficulty = filters.difficulty === "Todos" || game.difficulty === filters.difficulty;
-      return matchesQuery && matchesDifficulty;
-    });
-  }, [category, filters, query]);
+    return getGamesByCategory(category.id).filter((game) =>
+      !normalizedQuery || `${game.name} ${game.description} ${game.skill}`.toLowerCase().includes(normalizedQuery),
+    );
+  }, [category, query]);
 
   if (!category) {
     return (
@@ -40,7 +36,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
   const Icon = category.icon;
 
   return (
-    <div className="space-y-5 md:space-y-6">
+    <div className="space-y-3">
       <PageHeader
         eyebrow="Categoria"
         title={category.name}
@@ -78,9 +74,6 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
               className="pl-9"
             />
           </div>
-        </div>
-        <div className="mt-5">
-          <GameFilters value={filters} onChange={setFilters} />
         </div>
       </Surface>
 

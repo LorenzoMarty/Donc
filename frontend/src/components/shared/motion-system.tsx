@@ -305,17 +305,15 @@ export function ENEMWritingSheet({
   autoFocus,
   onChange,
   placeholder,
-  focusMode,
 }: {
   value: string;
   disabled?: boolean;
   autoFocus?: boolean;
   onChange: (value: string) => void;
   placeholder?: string;
-  focusMode?: boolean;
 }) {
   return (
-    <EssayPaper focusMode={focusMode}>
+    <EssayPaper>
       <textarea
         value={value}
         disabled={disabled}
@@ -350,16 +348,13 @@ function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
   );
 }
 
-function EssayPaper({ children, focusMode }: { children: ReactNode; focusMode?: boolean }) {
+function EssayPaper({ children }: { children: ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.985, y: 12 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.42, ease: easeOut }}
-      className={cn(
-        "relative mx-auto aspect-[210/297] w-full overflow-hidden border border-primary/35 bg-[#fffdf7] text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]",
-        focusMode ? "max-h-[calc(100dvh-2rem)]" : "max-w-[794px]",
-      )}
+      className="relative mx-auto aspect-[210/297] w-full max-w-[794px] overflow-hidden border border-primary/35 bg-[#fffdf7] text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]"
       style={{
         backgroundImage:
           "linear-gradient(to bottom, transparent 31px, rgba(48,38,18,.14) 32px), radial-gradient(circle at 30% 10%, rgba(244,197,66,.08), transparent 32%)",

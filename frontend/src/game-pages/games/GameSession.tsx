@@ -149,6 +149,14 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                         onClick={() => answer(index)}
                         whileHover={selected === null ? { y: -3, scale: 1.01 } : undefined}
                         whileTap={selected === null ? { scale: 0.98 } : undefined}
+                        animate={
+                          isWrong
+                            ? { x: [-5, 5, -4, 4, -2, 2, 0] }
+                            : isCorrect
+                              ? { scale: [1, 1.05, 0.97, 1] }
+                              : { x: 0, scale: 1 }
+                        }
+                        transition={{ duration: 0.38, ease: "easeOut" }}
                         className={cn(
                           "game-tile min-h-24 bg-background/64 p-4 text-left transition-colors",
                           isCorrect && "border-primary/70 bg-primary/18",
