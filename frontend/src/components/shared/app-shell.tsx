@@ -13,6 +13,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   ShieldCheck,
   X,
   type LucideIcon,
@@ -38,14 +40,37 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/redacoes", label: "Historico", icon: BarChart3 },
 ];
 
+const SIDEBAR_WIDTH_EXPANDED = 288;
+const SIDEBAR_WIDTH_COLLAPSED = 80;
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
 
-  const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }] : workspaceNav;
+  const navItems =
+    user?.role === "admin"
+      ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }]
+      : workspaceNav;
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
+    } catch {}
+  }, []);
+
+  function toggleSidebar() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("sidebar-collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  }
 
   function scrollContentArea(event: WheelEvent<HTMLElement>) {
     scrollAreaRef.current?.scrollBy({
@@ -56,19 +81,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    if (!drawerOpen) {
-      return;
-    }
-
+    if (!drawerOpen) return;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setDrawerOpen(false);
-      }
+      if (event.key === "Escape") setDrawerOpen(false);
     };
-
     window.addEventListener("keydown", closeOnEscape);
     return () => {
       document.body.style.overflow = originalOverflow;
@@ -97,6 +115,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         pathname={pathname}
         userName={user?.name ?? "Aluno"}
         userRankName={rankName}
+        collapsed={collapsed}
+        onToggle={toggleSidebar}
         onLogout={logout}
         onWheel={scrollContentArea}
       />
@@ -110,7 +130,16 @@ export function AppShell({ children }: { children: ReactNode }) {
         onLogout={logout}
       />
 
-      <div ref={scrollAreaRef} className="h-full overflow-y-auto overscroll-contain md:pl-20 xl:pl-72">
+      <motion.div
+        ref={scrollAreaRef}
+        className="h-full overflow-y-auto overscroll-contain"
+        animate={{ paddingLeft: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
+        transition={{ duration: 0.22, ease: "easeInOut" }}
+        style={{ paddingLeft: SIDEBAR_WIDTH_COLLAPSED }}
+      >
+        <div className="md:hidden">
+          {/* mobile: reset padding applied by motion on small screens */}
+        </div>
         <main className="mx-auto min-h-[calc(100dvh-10rem)] w-full max-w-[1600px] px-3 pb-4 pt-[calc(4.5rem+env(safe-area-inset-top))] xs:px-4 md:px-5 md:pt-5 lg:px-6 lg:py-6 2xl:px-8">
           {children}
         </main>
@@ -124,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
         </footer>
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -147,6 +176,8 @@ function DesktopSidebar({
   pathname,
   userName,
   userRankName,
+  collapsed,
+  onToggle,
   onLogout,
   onWheel,
 }: {
@@ -154,47 +185,71 @@ function DesktopSidebar({
   pathname: string;
   userName: string;
   userRankName: string;
+  collapsed: boolean;
+  onToggle: () => void;
   onLogout: () => void;
   onWheel: (event: WheelEvent<HTMLElement>) => void;
 }) {
   return (
-    <aside
-      className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col border-r border-border bg-background/88 px-3 py-4 backdrop-blur-xl md:flex xl:w-72 xl:px-4"
+    <motion.aside
+      className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-background/88 py-4 backdrop-blur-xl md:flex"
+      animate={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
+      transition={{ duration: 0.22, ease: "easeInOut" }}
+      style={{ width: SIDEBAR_WIDTH_COLLAPSED }}
       onWheel={onWheel}
     >
-      <div className="mb-5">
-        <BrandLink />
+      <div className="mb-5 flex items-center justify-between gap-2 overflow-hidden px-3">
+        <BrandLink collapsed={collapsed} />
+        <button
+          onClick={onToggle}
+          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1.5" aria-label="Navegacao principal">
+      <nav className="flex flex-1 flex-col gap-1.5 overflow-hidden px-3" aria-label="Navegacao principal">
         {items.map((item) => (
-          <ShellNavLink key={item.href} item={item} pathname={pathname} />
+          <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
         ))}
       </nav>
 
-      <div className="mt-5 grid gap-2">
+      <div className="mt-5 grid gap-2 overflow-hidden px-3">
         <Link
           href="/perfil"
-          className="game-tile flex min-h-12 items-center justify-center gap-3 bg-card/72 px-2 py-2 text-sm font-semibold transition-colors xl:justify-start xl:px-3"
+          className="game-tile flex min-h-12 items-center justify-center gap-3 bg-card/72 px-2 py-2 text-sm font-semibold transition-colors"
           aria-label={`Perfil de ${userName}`}
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-primary/30 bg-primary text-sm font-semibold text-primary-foreground">
             {initials(userName)}
           </span>
-          <span className="hidden min-w-0 leading-tight xl:block">
+          <motion.span
+            className="min-w-0 leading-tight"
+            animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
+            transition={{ duration: 0.18 }}
+            style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+          >
             <span className="block text-safe">{userName}</span>
             <span className="block text-xs font-medium text-muted-foreground">Rank {userRankName}</span>
-          </span>
+          </motion.span>
         </Link>
-        <Button variant="outline" size="icon" className="xl:hidden" aria-label="Sair" onClick={onLogout}>
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-        </Button>
-        <Button variant="outline" className="hidden xl:inline-flex" onClick={onLogout}>
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-          Sair
-        </Button>
+        {collapsed ? (
+          <Button variant="outline" size="icon" aria-label="Sair" onClick={onLogout}>
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={onLogout}>
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            Sair
+          </Button>
+        )}
       </div>
-    </aside>
+    </motion.aside>
   );
 }
 
@@ -268,16 +323,19 @@ function MobileDrawer({
 function ShellNavLink({
   item,
   pathname,
+  collapsed = false,
   expanded = false,
   onNavigate,
 }: {
   item: WorkspaceNavItem;
   pathname: string;
+  collapsed?: boolean;
   expanded?: boolean;
   onNavigate?: () => void;
 }) {
   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
   const Icon = item.icon;
+  const showLabel = expanded || !collapsed;
 
   return (
     <Link
@@ -285,30 +343,43 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "game-tile flex min-h-12 items-center justify-center gap-3 bg-card/45 px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground xl:justify-start",
-        expanded && "justify-start",
+        "game-tile flex min-h-12 items-center gap-3 bg-card/45 px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground",
+        showLabel ? "justify-start" : "justify-center",
         active && "border-primary/45 bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground",
       )}
     >
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-      <span className={cn("hidden min-w-0 text-safe xl:block", expanded && "block")}>{item.label}</span>
+      <motion.span
+        className="min-w-0 text-safe"
+        animate={{ opacity: showLabel ? 1 : 0, width: showLabel ? "auto" : 0 }}
+        transition={{ duration: 0.18 }}
+        style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+      >
+        {item.label}
+      </motion.span>
     </Link>
   );
 }
 
-function BrandLink({ compact = false }: { compact?: boolean }) {
+function BrandLink({ compact = false, collapsed = false }: { compact?: boolean; collapsed?: boolean }) {
+  const showText = !compact && !collapsed;
   return (
-    <Link href="/dashboard" className={cn("flex min-w-0 items-center gap-3", !compact && "md:justify-center xl:justify-start")}>
+    <Link href="/dashboard" className={cn("flex min-w-0 items-center gap-3", !compact && !collapsed && "md:justify-start")}>
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/35 bg-primary text-sm font-semibold text-primary-foreground">
         D
       </span>
-      <span className={cn("min-w-0 leading-tight", !compact && "hidden xl:block")}>
+      <motion.span
+        className="min-w-0 leading-tight"
+        animate={{ opacity: showText ? 1 : 0, width: showText ? "auto" : 0 }}
+        transition={{ duration: 0.18 }}
+        style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+      >
         <span className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
           Donc ENEM
         </span>
         <span className="block text-lg font-semibold tracking-normal">Area ENEM</span>
-      </span>
+      </motion.span>
     </Link>
   );
 }

@@ -650,7 +650,7 @@ function EssayReadPanel({
               {competencyLabel[activeAnnotation.competency] ?? activeAnnotation.competency}
             </Badge>
           </div>
-          <p className="text-xs leading-5 font-semibold text-muted-foreground italic">"{activeAnnotation.quote}"</p>
+          <p className="text-xs leading-5 font-semibold text-muted-foreground italic">&quot;{activeAnnotation.quote}&quot;</p>
           <p className="mt-1 text-sm leading-6">{activeAnnotation.comment}</p>
         </motion.div>
       )}
@@ -677,7 +677,7 @@ function EssayReadPanel({
                   {competencyLabel[annotation.competency] ?? annotation.competency}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground italic">"{annotation.quote.slice(0, 60)}{annotation.quote.length > 60 ? "…" : ""}"</p>
+              <p className="text-xs text-muted-foreground italic">&quot;{annotation.quote.slice(0, 60)}{annotation.quote.length > 60 ? "…" : ""}&quot;</p>
               <p className="mt-1 text-xs leading-5">{annotation.comment}</p>
             </button>
           ))}
