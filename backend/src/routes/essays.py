@@ -3,9 +3,19 @@ from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.dependencies import get_current_user
-from src.models import User
+from src.models import AIJob, User
+from src.queues.jobs import AIJobService, enqueue_correct_essay
+from src.queues.tasks import run_correct_essay_job
 from src.schemas.common import ApiResponse, MessageResponse, success_response
-from src.schemas.essays import EssayAutosaveRequest, EssayCreateRequest, EssayHistoryResponse, EssayRead, EssayThemeRead
+from src.schemas.essays import (
+    EssayAutosaveRequest,
+    EssayCreateRequest,
+    EssayHistoryResponse,
+    EssayRead,
+    EssaySubmitResponse,
+    EssayThemeRead,
+    JobStatusRead,
+)
 from src.services.essay_service import EssayService
 
 
@@ -48,9 +58,45 @@ def autosave(
     )
 
 
-@router.post("/{essay_id}/submit", response_model=ApiResponse[EssayRead])
-def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssayRead]:
-    return success_response(EssayService(db).submit_for_correction(essay_id=essay_id, user=current_user), "Redacao corrigida.")
+@router.post("/{essay_id}/submit", response_model=ApiResponse[EssaySubmitResponse])
+def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
+    essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
+    job = AIJobService(db).create(
+        user_id=current_user.id,
+        kind="essay_correction",
+        request_payload={"essay_id": essay_id},
+    )
+    enqueued = enqueue_correct_essay(job.id)
+    if not enqueued:
+        run_correct_essay_job(job.id)
+    return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Correcao iniciada.")
+
+
+@router.get("/{essay_id}/job", response_model=ApiResponse[JobStatusRead])
+def essay_job_status(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[JobStatusRead]:
+    job = (
+        db.query(AIJob)
+        .filter(
+            AIJob.user_id == current_user.id,
+            AIJob.kind == "essay_correction",
+        )
+        .order_by(AIJob.created_at.desc())
+        .first()
+    )
+    if not job:
+        from src.middlewares.errors import AppError
+        raise AppError("Nenhum job encontrado para essa redacao.", status_code=404, code="ai_job_not_found")
+    essay_read: EssayRead | None = None
+    if job.status == "completed" and job.result_payload:
+        essay_read = EssayRead.model_validate(job.result_payload)
+    return success_response(
+        JobStatusRead(
+            job_id=job.id,
+            status=job.status,
+            essay=essay_read,
+            error=job.error,
+        )
+    )
 
 
 @router.post("/{essay_id}/duplicate", response_model=ApiResponse[EssayRead])

@@ -320,7 +320,7 @@ export function ENEMWritingSheet({
         autoFocus={autoFocus}
         onChange={(event) => onChange(event.target.value)}
         spellCheck
-        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-[15px] leading-[32px] text-[#1f1a12] caret-primary outline-none selection:bg-primary/28 placeholder:text-[#6d6251]/60 sm:text-base"
+        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-base leading-8 text-[#1f1a12] caret-primary outline-none selection:bg-primary/28 placeholder:text-[#888]/60 [font-family:var(--font-merriweather,Georgia,serif)]"
         placeholder={placeholder}
       />
     </EssayPaper>

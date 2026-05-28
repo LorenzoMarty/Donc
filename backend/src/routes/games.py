@@ -1,10 +1,12 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.dependencies import get_current_user
-from src.models import User
+from src.models import User, UserGameProgress
 from src.schemas.common import ApiResponse, success_response
 
 
@@ -20,6 +22,25 @@ class GameCompleteResponse(BaseModel):
     xp_earned: int
     total_xp: int
     level: int
+
+
+class GameProgressUpsertRequest(BaseModel):
+    plays: int = Field(ge=0)
+    best_score: int = Field(ge=0)
+    best_accuracy: int = Field(ge=0, le=100)
+    progress: int = Field(ge=0, le=100)
+
+
+class GameProgressRead(BaseModel):
+    game_id: str
+    plays: int
+    best_score: int
+    best_accuracy: int
+    progress: int
+    last_played_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
 
 
 @router.post("/complete", response_model=ApiResponse[GameCompleteResponse])
@@ -38,3 +59,45 @@ def complete_game(
             level=current_user.level,
         )
     )
+
+
+@router.get("/progress", response_model=ApiResponse[list[GameProgressRead]])
+def list_game_progress(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[GameProgressRead]]:
+    rows = db.query(UserGameProgress).filter(UserGameProgress.user_id == current_user.id).all()
+    return success_response([GameProgressRead.model_validate(r) for r in rows])
+
+
+@router.put("/progress/{game_id}", response_model=ApiResponse[GameProgressRead])
+def upsert_game_progress(
+    game_id: str,
+    payload: GameProgressUpsertRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[GameProgressRead]:
+    row = db.query(UserGameProgress).filter(
+        UserGameProgress.user_id == current_user.id,
+        UserGameProgress.game_id == game_id,
+    ).first()
+    if row:
+        row.plays = max(row.plays, payload.plays)
+        row.best_score = max(row.best_score, payload.best_score)
+        row.best_accuracy = max(row.best_accuracy, payload.best_accuracy)
+        row.progress = max(row.progress, payload.progress)
+        row.last_played_at = datetime.now(UTC)
+    else:
+        row = UserGameProgress(
+            user_id=current_user.id,
+            game_id=game_id,
+            plays=payload.plays,
+            best_score=payload.best_score,
+            best_accuracy=payload.best_accuracy,
+            progress=payload.progress,
+            last_played_at=datetime.now(UTC),
+        )
+        db.add(row)
+    db.commit()
+    db.refresh(row)
+    return success_response(GameProgressRead.model_validate(row))

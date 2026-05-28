@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
+import { useGameStore } from "@/stores/game-store";
 import { cn, initials } from "@/utils";
 
 type WorkspaceNavItem = {
@@ -50,6 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
+  const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
 
   const navItems =
     user?.role === "admin"
@@ -61,6 +63,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
     } catch {}
   }, []);
+
+  useEffect(() => {
+    if (user) hydrateFromBackend();
+  }, [user, hydrateFromBackend]);
 
   function toggleSidebar() {
     setCollapsed((prev) => {

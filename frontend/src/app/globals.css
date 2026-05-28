@@ -3,54 +3,55 @@
 @tailwind utilities;
 
 :root {
-  --background: 42 48% 97%;
-  --foreground: 220 18% 12%;
-  --card: 42 56% 99%;
-  --card-foreground: 220 18% 12%;
+  --background: 0 0% 96%;
+  --foreground: 0 0% 20%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 18% 12%;
-  --primary: 45 92% 56%;
-  --primary-foreground: 220 18% 12%;
-  --secondary: 38 45% 34%;
-  --secondary-foreground: 42 56% 98%;
-  --muted: 42 28% 91%;
-  --muted-foreground: 220 9% 39%;
+  --popover-foreground: 0 0% 20%;
+  --primary: 45 100% 50%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 38 40% 30%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 92%;
+  --muted-foreground: 0 0% 44%;
   --accent: 149 36% 36%;
   --accent-foreground: 0 0% 100%;
   --destructive: 2 72% 58%;
   --destructive-foreground: 0 0% 100%;
-  --border: 42 22% 84%;
-  --input: 42 22% 84%;
-  --ring: 45 92% 56%;
-  --radius: 8px;
-  --shadow-soft: 0 14px 34px rgba(48, 38, 18, 0.08);
-  --shadow-elevated: 0 22px 54px rgba(48, 38, 18, 0.12);
-  --shadow-control: 0 10px 24px rgba(48, 38, 18, 0.1);
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 45 100% 50%;
+  --radius: 12px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-control: 0 6px 18px rgba(0, 0, 0, 0.08);
   --app-container: 1600px;
   --app-gutter: clamp(0.875rem, 2.4vw, 1.75rem);
   --app-page-gap: clamp(0.875rem, 2vw, 1.35rem);
+  --font-essay: 'Merriweather', Georgia, serif;
 }
 
 .dark {
-  --background: 42 48% 97%;
-  --foreground: 220 18% 12%;
-  --card: 42 56% 99%;
-  --card-foreground: 220 18% 12%;
+  --background: 0 0% 96%;
+  --foreground: 0 0% 20%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 18% 12%;
-  --primary: 45 92% 56%;
-  --primary-foreground: 220 18% 12%;
-  --secondary: 38 45% 34%;
-  --secondary-foreground: 42 56% 98%;
-  --muted: 42 28% 91%;
-  --muted-foreground: 220 9% 39%;
+  --popover-foreground: 0 0% 20%;
+  --primary: 45 100% 50%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 38 40% 30%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 92%;
+  --muted-foreground: 0 0% 44%;
   --accent: 149 36% 36%;
   --accent-foreground: 0 0% 100%;
   --destructive: 2 72% 58%;
   --destructive-foreground: 0 0% 100%;
-  --border: 42 22% 84%;
-  --input: 42 22% 84%;
-  --ring: 45 92% 56%;
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 45 100% 50%;
 }
 
 * {
@@ -69,9 +70,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   overscroll-behavior-y: none;
-  background: radial-gradient(circle at 16% -10%, hsl(var(--primary) / 0.2), transparent 34%),
-    radial-gradient(circle at 92% 8%, hsl(42 55% 91% / 0.75), transparent 32%),
-    linear-gradient(180deg, hsl(42 56% 99%) 0%, hsl(var(--background)) 54%, hsl(42 45% 95%) 100%);
+  background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family:
     Inter,

@@ -13,8 +13,10 @@ type GameStore = {
   streak: StreakState;
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
+  hydrated: boolean;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
   getGameProgress: (gameId: string) => GameProgress | undefined;
+  hydrateFromBackend: () => Promise<void>;
   exportProgress: () => void;
   importProgress: (json: string) => boolean;
 };
@@ -31,7 +33,29 @@ export const useGameStore = create<GameStore>()(
       streak: initialStreak,
       attempts: [],
       progress: {},
+      hydrated: false,
       getGameProgress: (gameId) => get().progress[gameId],
+      hydrateFromBackend: async () => {
+        try {
+          const rows = await apiFetch<{ game_id: string; plays: number; best_score: number; best_accuracy: number; progress: number; last_played_at: string | null }[]>("/games/progress");
+          const merged: Record<string, GameProgress> = { ...get().progress };
+          for (const row of rows) {
+            const local = merged[row.game_id];
+            merged[row.game_id] = {
+              gameId: row.game_id,
+              plays: Math.max(local?.plays ?? 0, row.plays),
+              bestScore: Math.max(local?.bestScore ?? 0, row.best_score),
+              bestAccuracy: Math.max(local?.bestAccuracy ?? 0, row.best_accuracy),
+              progress: Math.max(local?.progress ?? 0, row.progress),
+              completedToday: local?.completedToday ?? false,
+              lastPlayedAt: row.last_played_at ?? local?.lastPlayedAt ?? "",
+            };
+          }
+          set({ progress: merged, hydrated: true });
+        } catch {
+          set({ hydrated: true });
+        }
+      },
       exportProgress: () => {
         const { xp, streak, attempts, progress } = get();
         const blob = new Blob([JSON.stringify({ xp, streak, attempts, progress, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
@@ -100,10 +124,19 @@ export const useGameStore = create<GameStore>()(
           progress: nextProgress,
         });
 
-        // Sync XP to backend fire-and-forget — local store is source of truth for UI.
+        // Sync to backend fire-and-forget — local store is source of truth for UI.
         apiFetch("/games/complete", {
           method: "POST",
           body: JSON.stringify({ game_id: game.id, xp_earned: xpEarned }),
+        }).catch(() => undefined);
+        apiFetch(`/games/progress/${game.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            plays: nextProgress[game.id].plays,
+            best_score: nextProgress[game.id].bestScore,
+            best_accuracy: nextProgress[game.id].bestAccuracy,
+            progress: nextProgress[game.id].progress,
+          }),
         }).catch(() => undefined);
 
         return {

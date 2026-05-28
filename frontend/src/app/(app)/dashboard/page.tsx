@@ -4,6 +4,19 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BookOpen, CheckCircle2, FileText, Flame, PenLine, Send, Target, Trophy } from "lucide-react";
+import {
+  Legend,
+  Line,
+  LineChart,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -121,39 +134,62 @@ export default function DashboardPage() {
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(20rem,0.88fr)]">
         <Surface>
           <SectionTitle eyebrow="Competencias ENEM" title="Mapa de dominio" />
-          <div className="mt-4 grid gap-3">
+          <CompetencyRadar masteryMap={masteryMap} />
+          <div className="mt-4 grid gap-2">
             {masteryMap.map((item) => (
               <DomainRow key={item.competency} competency={item.competency} label={item.label} value={item.value} />
             ))}
           </div>
         </Surface>
 
-        <Surface>
-          <div className="flex items-start justify-between gap-3">
-            <SectionTitle eyebrow="Prioridade" title="Proximo passo recomendado" />
-            <Badge variant="secondary" className="shrink-0">
-              {nextStep.badge}
-            </Badge>
-          </div>
-          <div className="mt-5 rounded-md border border-primary/20 bg-primary/8 p-4">
-            <div className="flex items-start gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
-                <NextStepIcon className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-lg font-semibold tracking-normal">{nextStep.title}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{nextStep.detail}</p>
-              </div>
+        <div className="flex flex-col gap-4">
+          <Surface>
+            <div className="flex items-start justify-between gap-3">
+              <SectionTitle eyebrow="Prioridade" title="Proximo passo recomendado" />
+              <Badge variant="secondary" className="shrink-0">
+                {nextStep.badge}
+              </Badge>
             </div>
-            <Button asChild className="mt-4 w-full">
-              <Link href={nextStep.href}>
-                Abrir tarefa
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-        </Surface>
+            <div className="mt-5 rounded-md border border-primary/20 bg-primary/8 p-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+                  <NextStepIcon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold tracking-normal">{nextStep.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{nextStep.detail}</p>
+                </div>
+              </div>
+              <Button asChild className="mt-4 w-full">
+                <Link href={nextStep.href}>
+                  Abrir tarefa
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
+          </Surface>
+
+          {data.goals?.length ? (
+            <Surface>
+              <SectionTitle eyebrow="Meta semanal" title={data.goals[0].title} />
+              <div className="mt-4">
+                <div className="mb-2 flex justify-between text-xs font-semibold text-muted-foreground">
+                  <span>{data.goals[0].current} / {data.goals[0].target} {data.goals[0].unit}</span>
+                  <span>{Math.round((data.goals[0].current / Math.max(data.goals[0].target, 1)) * 100)}%</span>
+                </div>
+                <Progress value={(data.goals[0].current / Math.max(data.goals[0].target, 1)) * 100} className="h-3" />
+              </div>
+            </Surface>
+          ) : null}
+        </div>
       </section>
+
+      {data.trend && data.trend.length >= 2 && (
+        <Surface>
+          <SectionTitle eyebrow="Historico" title="Evolucao de notas" />
+          <ScoreEvolutionChart trend={data.trend} />
+        </Surface>
+      )}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <Surface>
@@ -187,6 +223,74 @@ export default function DashboardPage() {
           ))}
         </div>
       </Surface>
+    </div>
+  );
+}
+
+function CompetencyRadar({ masteryMap }: { masteryMap: Dashboard["mastery_map"] }) {
+  const data = masteryMap.map((item) => ({
+    competency: item.competency,
+    value: item.value,
+    fullMark: 200,
+  }));
+  return (
+    <div className="mt-4 h-64 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={data} margin={{ top: 0, right: 20, bottom: 0, left: 20 }}>
+          <PolarGrid stroke="hsl(0 0% 88%)" />
+          <PolarAngleAxis
+            dataKey="competency"
+            tick={{ fill: "hsl(0 0% 44%)", fontSize: 12, fontWeight: 600 }}
+          />
+          <Radar
+            name="Dominio"
+            dataKey="value"
+            stroke="#FFC300"
+            fill="#FFC300"
+            fillOpacity={0.18}
+            strokeWidth={2}
+          />
+          <Tooltip
+            formatter={(value: number) => [`${value} / 200`, "Domínio"]}
+            contentStyle={{ borderRadius: "12px", border: "1px solid hsl(0 0% 88%)", fontSize: 12 }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function ScoreEvolutionChart({ trend }: { trend: { label: string; score: number }[] }) {
+  return (
+    <div className="mt-4 h-48 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={trend} margin={{ top: 4, right: 8, bottom: 4, left: -20 }}>
+          <XAxis
+            dataKey="label"
+            tick={{ fill: "hsl(0 0% 44%)", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            domain={[0, 1000]}
+            tick={{ fill: "hsl(0 0% 44%)", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip
+            formatter={(value: number) => [value, "Nota"]}
+            contentStyle={{ borderRadius: "12px", border: "1px solid hsl(0 0% 88%)", fontSize: 12 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="score"
+            stroke="#FFC300"
+            strokeWidth={2.5}
+            dot={{ fill: "#FFC300", r: 4, strokeWidth: 0 }}
+            activeDot={{ r: 6, fill: "#FFC300" }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
