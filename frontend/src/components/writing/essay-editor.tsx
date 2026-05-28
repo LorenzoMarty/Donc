@@ -2,12 +2,11 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Save, Send, SpellCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { ENEMWritingSheet, FriendlyErrorFeedback, RewardAnimation, WritingSidebar } from "@/components/shared/motion-system";
 import type { Essay, EssayTheme } from "@/services/api";
 import { cn } from "@/utils";
@@ -83,23 +82,20 @@ export function EssayEditor({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed inset-0 z-[70] grid place-items-center overflow-auto bg-background px-2 py-4 sm:px-4 sm:py-6"
+        className="fixed inset-0 z-[70] overflow-auto bg-background py-6"
       >
         <button type="button" className="sr-only" onClick={() => onFocusModeChange(false)}>
           Sair do modo foco
         </button>
-        <div className="w-full max-w-5xl space-y-3">
+        <div className="mx-auto space-y-4 px-4" style={{ width: "794px" }}>
           {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
-          <div style={{ width: "min(94vw, calc((100dvh - 2rem) * 210 / 297), 794px)", marginInline: "auto" }}>
-            <ENEMWritingSheet
-              value={content}
-              disabled={locked}
-              autoFocus
-              focusMode
-              onChange={onContentChange}
-              placeholder="Comece sua redação ENEM aqui..."
-            />
-          </div>
+          <ENEMWritingSheet
+            value={content}
+            disabled={locked}
+            autoFocus
+            onChange={onContentChange}
+            placeholder="Comece sua redação ENEM aqui..."
+          />
         </div>
       </motion.section>
     );
@@ -130,12 +126,7 @@ export function EssayEditor({
           {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:flex xl:flex-wrap xl:items-center">
-          <div className="game-tile col-span-2 flex min-h-11 items-center gap-2 bg-background/72 px-3 py-2 text-sm xs:col-span-1">
-            <SpellCheck className="h-4 w-4 text-secondary" aria-hidden="true" />
-            <span className="font-bold">Ortografia</span>
-            <Switch checked aria-label="Corretor ortográfico" />
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setSidebarOpen((value) => !value)}>
             {sidebarOpen ? (
               <PanelRightClose className="h-4 w-4" aria-hidden="true" />
@@ -147,10 +138,6 @@ export function EssayEditor({
           <Button variant="outline" onClick={() => onFocusModeChange(true)}>
             <Maximize2 className="h-4 w-4" aria-hidden="true" />
             Foco
-          </Button>
-          <Button variant="outline" disabled>
-            <Save className="h-4 w-4" aria-hidden="true" />
-            Auto
           </Button>
           <Button onClick={onSubmit} disabled={!canSubmit}>
             <Send className="h-4 w-4" aria-hidden="true" />

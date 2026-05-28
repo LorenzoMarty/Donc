@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, ArrowRight, BookOpen, CheckCircle2, FileText, Flame, PenLine, Send, Target, Trophy } from "lucide-react";
+import { ArrowRight, BookOpen, CheckCircle2, FileText, Flame, PenLine, Send, Target, Trophy } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -97,7 +97,7 @@ export default function DashboardPage() {
   const NextStepIcon = nextStep.icon;
 
   return (
-    <div className="space-y-4 md:space-y-5">
+    <div className="space-y-3">
       <PageHeader
         eyebrow="Painel"
         title="Resumo de evolucao"
@@ -119,7 +119,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(20rem,0.88fr)]">
-        <Surface className="p-4 lg:p-5">
+        <Surface>
           <SectionTitle eyebrow="Competencias ENEM" title="Mapa de dominio" />
           <div className="mt-4 grid gap-3">
             {masteryMap.map((item) => (
@@ -128,7 +128,7 @@ export default function DashboardPage() {
           </div>
         </Surface>
 
-        <Surface className="p-4 lg:p-5">
+        <Surface>
           <div className="flex items-start justify-between gap-3">
             <SectionTitle eyebrow="Prioridade" title="Proximo passo recomendado" />
             <Badge variant="secondary" className="shrink-0">
@@ -156,7 +156,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <Surface className="p-4 lg:p-5">
+        <Surface>
           <SectionTitle eyebrow="Aulas" title="Sugestao de aulas" />
           <div className="mt-4 grid gap-2">
             {suggestedLessons.slice(0, 3).map((lesson) => (
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           </div>
         </Surface>
 
-        <Surface className="p-4 lg:p-5">
+        <Surface>
           <SectionTitle eyebrow="Registro" title="Atividades recentes" />
           <div className="mt-4 grid gap-2">
             {recentActivities.length ? (
@@ -177,21 +177,14 @@ export default function DashboardPage() {
         </Surface>
       </section>
 
-      <Surface className="p-4 lg:p-5">
-        <div className="flex items-start gap-3">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
-            <AlertCircle className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <SectionTitle eyebrow="Diagnostico" title="Erros recorrentes" />
-            <div className="mt-4 grid gap-2 md:grid-cols-2">
-              {recurrentErrors.slice(0, 4).map((item) => (
-                <div key={item} className="rounded-md border border-border bg-background/58 p-3 text-sm leading-6 text-muted-foreground">
-                  {item}
-                </div>
-              ))}
+      <Surface>
+        <SectionTitle eyebrow="Diagnostico" title="Erros recorrentes" />
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
+          {recurrentErrors.slice(0, 4).map((item) => (
+            <div key={item} className="rounded-md border border-border bg-background/58 p-3 text-sm leading-6 text-muted-foreground">
+              {item}
             </div>
-          </div>
+          ))}
         </div>
       </Surface>
     </div>
@@ -200,15 +193,15 @@ export default function DashboardPage() {
 
 function MetricCard({ label, value, detail, icon: Icon }: { label: string; value: string; detail: string; icon: LucideIcon }) {
   return (
-    <Surface className="p-4">
+    <Surface>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-normal">{value}</p>
           <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
         </div>
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
-          <Icon className="h-5 w-5" aria-hidden="true" />
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
+          <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
       </div>
     </Surface>

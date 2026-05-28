@@ -145,7 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
 
         <footer className="mx-auto w-full max-w-[1600px] px-3 pb-5 pt-2 xs:px-4 md:px-5 lg:px-6 lg:pb-6 2xl:px-8">
-          <div className="game-surface flex flex-col justify-between gap-3 bg-card p-4 text-sm text-muted-foreground sm:flex-row sm:items-center">
+          <div className="game-surface flex flex-col justify-between gap-3 bg-card p-3 text-sm text-muted-foreground sm:flex-row sm:items-center">
             <p className="min-w-0 leading-6">Donc ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
             <Link href="/pricing" className="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground">
               Ver planos
