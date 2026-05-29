@@ -56,10 +56,7 @@ export default function GamesHub() {
           className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)] lg:items-stretch"
         >
           <div className="game-surface relative overflow-hidden bg-card p-5 md:p-7">
-            <div
-              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
-              aria-hidden="true"
-            />
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-primary/45" aria-hidden="true" />
             <div className="relative max-w-3xl">
               <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                 <Dumbbell className="h-4 w-4" aria-hidden="true" />

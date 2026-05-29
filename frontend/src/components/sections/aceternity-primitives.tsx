@@ -21,7 +21,6 @@ export function Reveal({ children, className, delay = 0 }: { children: React.Rea
 export function AceternityGrid({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <section className={cn("game-surface relative overflow-hidden bg-card", className)}>
-      <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(31,37,50,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(31,37,50,.06)_1px,transparent_1px)] [background-size:36px_36px]" />
       <div className="relative">{children}</div>
     </section>
   );

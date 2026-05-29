@@ -42,10 +42,7 @@ function GameCard({ game, progress, variant = "default", index = 0, className }:
         className,
       )}
     >
-      <div
-        className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        aria-hidden="true"
-      />
+      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-primary/45 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
       <div
         className="pointer-events-none absolute right-0 top-0 h-40 w-40 translate-x-1/3 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl transition-opacity duration-300 group-hover:opacity-100"
         aria-hidden="true"
@@ -137,16 +134,8 @@ function GameThumbnail({ game, icon, accent, compact }: { game: GameDefinition; 
         compact ? "aspect-[16/8]" : "aspect-[16/9]",
       )}
     >
-      <div
-        className="absolute inset-0 opacity-80"
-        style={{
-          background:
-            `radial-gradient(circle at 18% 18%, ${accent} 0, transparent 28%), ` +
-            "radial-gradient(circle at 82% 18%, rgba(255,255,255,.72), transparent 24%), " +
-            "linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.32) 48%, rgba(58,134,255,.10))",
-        }}
-      />
-      <div className="absolute inset-0 opacity-[0.24] [background-image:linear-gradient(rgba(20,30,55,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(20,30,55,.15)_1px,transparent_1px)] [background-size:22px_22px]" />
+      <div className="absolute inset-0 bg-primary/10 opacity-80" style={{ backgroundColor: accent }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-card/70" aria-hidden="true" />
       <div className="absolute -bottom-10 left-6 h-28 w-28 rotate-45 rounded-2xl border border-primary/20 bg-primary/10" />
       <div className="absolute bottom-4 right-4 h-16 w-24 -skew-x-12 rounded-md border border-border bg-card/70" />
 
@@ -186,11 +175,9 @@ function AnimatedProgress({ value }: { value: number }) {
         whileInView={{ width: `${safeValue}%` }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-        className="relative h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
+        className="relative h-full rounded-full bg-primary"
         style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
-      >
-        <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,.55),transparent)] opacity-60" />
-      </motion.div>
+      />
     </div>
   );
 }

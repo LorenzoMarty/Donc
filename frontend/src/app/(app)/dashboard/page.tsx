@@ -244,8 +244,8 @@ function CompetencyRadar({ masteryMap }: { masteryMap: Dashboard["mastery_map"] 
           <Radar
             name="Dominio"
             dataKey="value"
-            stroke="#3A86FF"
-            fill="#3A86FF"
+            stroke="#FFC300"
+            fill="#FFC300"
             fillOpacity={0.18}
             strokeWidth={2}
           />
@@ -283,10 +283,10 @@ function ScoreEvolutionChart({ trend }: { trend: { label: string; score: number 
           <Line
             type="monotone"
             dataKey="score"
-            stroke="#3A86FF"
+            stroke="#FFC300"
             strokeWidth={2.5}
-            dot={{ fill: "#3A86FF", r: 4, strokeWidth: 0 }}
-            activeDot={{ r: 6, fill: "#3A86FF" }}
+            dot={{ fill: "#FFC300", r: 4, strokeWidth: 0 }}
+            activeDot={{ r: 6, fill: "#FFC300" }}
           />
         </LineChart>
       </ResponsiveContainer>

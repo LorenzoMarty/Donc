@@ -44,10 +44,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
       transition={{ duration: 0.42, ease: "easeOut" }}
       className="game-surface relative overflow-hidden bg-card p-4 md:p-5"
     >
-      <div
-        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
-        aria-hidden="true"
-      />
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
       <div className="fluid-grid gap-3 [--grid-min:11rem]">
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
@@ -89,11 +86,9 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
               initial={{ width: 0 }}
               animate={{ width: `${rank.progress}%` }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-              className="relative h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
+              className="relative h-full rounded-full bg-primary"
               style={{ filter: "drop-shadow(0 0 12px hsl(var(--primary) / 0.28))" }}
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,.55),transparent)] opacity-60" />
-            </motion.div>
+            />
           </div>
         </div>
 

@@ -354,12 +354,7 @@ function EssayPaper({ children }: { children: ReactNode }) {
       initial={{ opacity: 0, scale: 0.985, y: 12 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.42, ease: easeOut }}
-      className="relative mx-auto aspect-[210/297] w-full max-w-[794px] overflow-hidden rounded-md border border-border bg-card text-[#333333] shadow-[0_20px_60px_rgba(20,30,55,.10)]"
-      style={{
-        backgroundImage:
-          "linear-gradient(to bottom, transparent 31px, rgba(51,51,51,.10) 32px)",
-        backgroundSize: "100% 32px, 100% 100%",
-      }}
+      className="relative mx-auto aspect-[210/297] w-full max-w-[720px] overflow-hidden rounded-md border border-border bg-card text-[#333333] shadow-[0_20px_60px_rgba(20,30,55,.10)]"
     >
       <div className="pointer-events-none absolute inset-y-[7%] left-[7%] w-px bg-primary/30" />
       <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-semibold text-muted-foreground/70">
