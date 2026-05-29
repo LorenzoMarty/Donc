@@ -47,7 +47,7 @@ export function BrandLink({
     <Link href={href} className={cn("flex min-w-0 items-center", className)}>
       <DoncLogoMark
         size={compact ? "sm" : "md"}
-        className={cn(collapsed && "w-10")}
+        className={cn(collapsed && "h-12 w-14")}
       />
       <motion.span
         className="sr-only"

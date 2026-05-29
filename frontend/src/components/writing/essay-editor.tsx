@@ -1,8 +1,8 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Maximize2, PanelRightClose, PanelRightOpen, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, Maximize2, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,13 +42,12 @@ export function EssayEditor({
   onFocusModeChange: (value: boolean) => void;
   onSubmit: () => void;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
   const wasSavingRef = useRef(false);
   const lines = Math.max(1, content.split("\n").length, Math.ceil(content.length / 92));
   const locked = essay?.status === "corrected";
   const canSubmit = Boolean(essay) && !locked && !saving && !submitting && wordCount >= 80;
-  const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Sincronizado" : "Rascunho local";
+  const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
 
@@ -106,100 +105,102 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-visible"
+      className="flex h-[calc(100dvh-8.5rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4rem)]"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
-      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 mb-6 flex flex-col gap-4 border-b border-border bg-background/95 pb-4 backdrop-blur md:top-0">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0 flex-1">
-            <Input
-              value={title}
+
+      <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <Input
+            value={title}
+            disabled={locked}
+            onChange={(event) => onTitleChange(event.target.value)}
+            className="h-auto max-w-4xl border-0 bg-transparent px-0 py-0 text-lg font-semibold shadow-none focus-visible:ring-0 lg:text-xl"
+          />
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-medium text-accent">
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              {syncLabel}
+            </span>
+            <span>
+              <strong className="text-foreground">{wordCount.toLocaleString("pt-BR")}</strong> palavras
+            </span>
+            <span>{paragraphCount} parágrafos</span>
+            <span>{lines} linhas</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => onFocusModeChange(true)}>
+            <Maximize2 className="h-4 w-4" aria-hidden="true" />
+            Foco
+          </Button>
+          <Button onClick={onSubmit} disabled={!canSubmit}>
+            <Send className="h-4 w-4" aria-hidden="true" />
+            {submitting ? "Corrigindo..." : "Corrigir"}
+          </Button>
+        </div>
+      </header>
+
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)]">
+        <article className="mobile-scroll min-h-0 overflow-y-auto bg-card px-5 py-8 md:px-10 lg:px-12">
+          <div className="mx-auto max-w-[860px]">
+            <textarea
+              value={content}
               disabled={locked}
-              onChange={(event) => onTitleChange(event.target.value)}
-              className="h-auto max-w-3xl border-0 bg-transparent px-0 py-0 text-xl font-semibold shadow-none focus-visible:ring-0 md:text-2xl"
+              onChange={(event) => onContentChange(event.target.value)}
+              spellCheck
+              placeholder="Comece sua redação aqui..."
+              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent text-[1.28rem] leading-[2.05] text-[#1f2937] caret-primary outline-none placeholder:text-muted-foreground/60 [font-family:var(--font-merriweather,Georgia,serif)]"
             />
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Badge variant="outline">{lines} linhas</Badge>
-              <Badge variant={paragraphCount >= 4 ? "success" : "outline"}>{paragraphCount} paragrafos</Badge>
-              <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount} palavras</Badge>
-              <Badge variant="success">{syncLabel}</Badge>
+          </div>
+        </article>
+
+        <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border bg-background lg:border-l lg:border-t-0">
+          <div className="sticky top-0 z-10 border-b border-border bg-background px-5 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio de escrita</p>
+                <h2 className="mt-1 text-xl font-semibold">Guia e textos motivadores</h2>
+              </div>
+              <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount >= 80 ? "Pronta" : "Rascunho"}</Badge>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={() => setSidebarOpen((value) => !value)}>
-              {sidebarOpen ? (
-                <PanelRightClose className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
-              )}
-              Feedback
-            </Button>
-            <Button variant="outline" onClick={() => onFocusModeChange(true)}>
-              <Maximize2 className="h-4 w-4" aria-hidden="true" />
-              Foco
-            </Button>
-            <Button onClick={onSubmit} disabled={!canSubmit}>
-              <Send className="h-4 w-4" aria-hidden="true" />
-              {submitting ? "Corrigindo..." : "Corrigir"}
-            </Button>
-          </div>
-        </div>
-
-        {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
-      </div>
-
-      <div className={cn("grid gap-6", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(19rem,23rem)]" : "xl:grid-cols-1")}>
-        <div className="min-w-0">
-          <ENEMWritingSheet value={content} disabled={locked} onChange={onContentChange} placeholder="Comece sua redação ENEM aqui..." />
-        </div>
-
-        <AnimatePresence initial={false}>
-          {sidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: 28, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: "auto" }}
-              exit={{ opacity: 0, x: 28, width: 0 }}
-              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-              className="min-w-0 overflow-hidden"
-            >
-              <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} theme={activeTheme} />
-              <div className="mt-3">
-                <FriendlyErrorFeedback
-                  show={wordCount > 0 && wordCount < 80}
-                  message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
-                />
+          <div className="space-y-4 p-5">
+            {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
+            <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} theme={activeTheme} />
+            <FriendlyErrorFeedback
+              show={wordCount > 0 && wordCount < 80}
+              message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
+            />
+            {locked ? (
+              <div className="rounded-md border border-primary/20 bg-primary/10 p-3 text-sm font-semibold text-primary">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  Versão corrigida e bloqueada.
+                </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ) : null}
+            {error ? (
+              <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {error}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </aside>
       </div>
-
-      {locked && (
-        <div className="mt-4 rounded-md border border-primary/20 bg-primary/10 p-3 text-sm font-semibold text-primary">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            Versão corrigida e bloqueada.
-          </div>
-        </div>
-      )}
-
-      {error ? (
-        <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {error}
-          </div>
-        </div>
-      ) : null}
     </motion.section>
   );
 }
 
 function ThemeReference({ theme, compact = false }: { theme: EssayTheme; compact?: boolean }) {
   return (
-    <section className={cn("mt-3 rounded-md border border-primary/30 bg-primary/10 text-foreground", compact ? "p-3" : "p-4")}>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Tema da redacao</p>
+    <section className={cn("rounded-md border border-primary/30 bg-primary/10 text-foreground", compact ? "p-3" : "p-4")}>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Tema da redação</p>
       <h2 className={cn("mt-1 font-semibold leading-snug tracking-normal", compact ? "text-base" : "text-lg md:text-xl")}>{theme.title}</h2>
       <p className={cn("mt-2 whitespace-pre-wrap leading-6 text-muted-foreground", compact ? "text-xs" : "text-sm")}>{theme.context}</p>
     </section>
