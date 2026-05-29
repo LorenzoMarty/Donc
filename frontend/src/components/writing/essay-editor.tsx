@@ -105,7 +105,7 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex h-[calc(100dvh-8.5rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4rem)]"
+      className="flex h-[calc(100dvh-8.75rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
@@ -151,7 +151,7 @@ export function EssayEditor({
               onChange={(event) => onContentChange(event.target.value)}
               spellCheck
               placeholder="Comece sua redação aqui..."
-              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent text-[1.28rem] leading-[2.05] text-[#1f2937] caret-primary outline-none placeholder:text-muted-foreground/60 [font-family:var(--font-merriweather,Georgia,serif)]"
+              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent text-[1.28rem] leading-[2.05] text-foreground caret-primary outline-none placeholder:text-muted-foreground/60 [font-family:var(--font-merriweather,Georgia,serif)]"
             />
           </div>
         </article>

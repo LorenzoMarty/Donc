@@ -699,7 +699,7 @@ function EssayAnalysisWorkspace({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-8.5rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4rem)]">
+    <div className="flex h-[calc(100dvh-8.75rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]">
       <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBackToVersions} aria-label="Voltar para versoes">
@@ -778,7 +778,7 @@ function EssayDocumentPanel({
           {title}
         </h2>
 
-        <div className="mt-8 space-y-8 text-[1.28rem] leading-[2.05] text-[#1f2937] [font-family:var(--font-merriweather,Georgia,serif)]">
+        <div className="mt-8 space-y-8 text-[1.28rem] leading-[2.05] text-foreground [font-family:var(--font-merriweather,Georgia,serif)]">
           {paragraphs.length ? (
             paragraphs.map((paragraph, pIndex) => {
               const paragraphAnnotations = annotationsByParagraph(pIndex);
@@ -1014,10 +1014,10 @@ type Suggestion = {
 function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestion; active: boolean; onClick: () => void }) {
   const impactTone =
     suggestion.impact === "Alto impacto"
-      ? "bg-primary/20 text-primary-foreground"
+      ? "bg-primary/12 text-primary"
       : suggestion.impact === "Médio impacto"
-        ? "bg-yellow-100 text-yellow-800"
-        : "bg-emerald-100 text-emerald-700";
+        ? "bg-secondary text-foreground"
+        : "bg-accent/12 text-accent";
 
   return (
     <button

@@ -43,7 +43,7 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/games", label: "Atividades", icon: Gamepad2 },
 ];
 
-const SIDEBAR_WIDTH_EXPANDED = 280;
+const SIDEBAR_WIDTH_EXPANDED = 304;
 const SIDEBAR_WIDTH_COLLAPSED = 88;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -149,7 +149,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="md:hidden">
           {/* mobile: reset padding applied by motion on small screens */}
         </div>
-        <main className="mx-auto min-h-dvh w-full max-w-[1680px] px-3 pb-4 pt-[calc(4.5rem+env(safe-area-inset-top))] xs:px-4 md:px-6 md:pt-6 lg:px-8 lg:py-8">
+        <main className="mx-auto min-h-dvh w-full max-w-[1760px] px-4 pb-5 pt-[calc(4.75rem+env(safe-area-inset-top))] md:px-7 md:pt-7 lg:px-9 lg:py-9 2xl:px-10 2xl:py-10">
           {children}
         </main>
       </motion.div>

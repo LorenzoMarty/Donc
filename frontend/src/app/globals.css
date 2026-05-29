@@ -9,11 +9,11 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 46 100% 50%;
-  --primary-foreground: 0 0% 12%;
-  --secondary: 222 46% 11%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 220 20% 94%;
+  --primary: 215 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 20%;
+  --muted: 220 18% 95%;
   --muted-foreground: 226 12% 43%;
   --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
@@ -21,14 +21,14 @@
   --destructive-foreground: 0 0% 100%;
   --border: 224 24% 90%;
   --input: 224 24% 90%;
-  --ring: 46 100% 50%;
+  --ring: 215 100% 61%;
   --radius: 8px;
   --shadow-soft: 0 8px 30px rgba(20, 30, 55, 0.06);
   --shadow-elevated: 0 18px 46px rgba(20, 30, 55, 0.10);
-  --shadow-control: 0 10px 26px rgba(255, 195, 0, 0.18);
-  --app-container: 1600px;
-  --app-gutter: clamp(0.875rem, 2.4vw, 1.75rem);
-  --app-page-gap: clamp(0.875rem, 2vw, 1.35rem);
+  --shadow-control: 0 10px 26px rgba(58, 134, 255, 0.14);
+  --app-container: 1760px;
+  --app-gutter: clamp(1rem, 2.7vw, 2.25rem);
+  --app-page-gap: clamp(1rem, 2.1vw, 1.65rem);
   --font-essay: 'Merriweather', Georgia, serif;
 }
 
@@ -39,11 +39,11 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 46 100% 50%;
-  --primary-foreground: 0 0% 12%;
-  --secondary: 222 46% 11%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 220 20% 94%;
+  --primary: 215 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 20%;
+  --muted: 220 18% 95%;
   --muted-foreground: 226 12% 43%;
   --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
@@ -51,7 +51,7 @@
   --destructive-foreground: 0 0% 100%;
   --border: 224 24% 90%;
   --input: 224 24% 90%;
-  --ring: 46 100% 50%;
+  --ring: 215 100% 61%;
 }
 
 * {
@@ -259,7 +259,7 @@ li {
   .focus-ring-soft {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 26px rgba(255, 195, 0, 0.18);
+      0 12px 26px rgba(58, 134, 255, 0.16);
   }
 
   .website-shell {
@@ -328,7 +328,7 @@ li {
   [class*="shadow-glow"] {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 28px rgba(255, 195, 0, 0.18) !important;
+      0 12px 28px rgba(58, 134, 255, 0.16) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {
