@@ -41,7 +41,7 @@ const features = [
     title: "Redação ENEM",
     text: "Editor A4, repertório guiado, análise por competência e correção com IA.",
     icon: FilePenLine,
-    tone: "bg-secondary text-secondary-foreground",
+    tone: "bg-primary/10 text-primary",
   },
   {
     title: "Trilhas guiadas",
@@ -319,7 +319,7 @@ function CampaignCard({ step, index }: { step: { label: string; title: string; s
 function EssaySheetPreview() {
   return (
     <div className="mx-auto w-full max-w-[280px]">
-      <div className="aspect-[210/297] border border-primary/35 bg-[#fffdf7] p-5 text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]">
+      <div className="aspect-[210/297] rounded-md border border-border bg-card p-5 text-[#333333] shadow-[0_18px_40px_rgba(20,30,55,.14)]">
         <div className="mb-4 h-3 w-2/3 rounded-full bg-primary/40" />
         <div className="space-y-2">
           <div className="h-2 rounded-full bg-muted" />

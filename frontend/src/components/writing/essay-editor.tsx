@@ -106,47 +106,50 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="game-surface relative overflow-visible bg-card"
+      className="relative overflow-visible"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
-      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 flex flex-col gap-3 border-b border-border bg-card/95 p-3 shadow-sm backdrop-blur xs:p-4 md:top-0">
-        <div className="min-w-0 flex-1">
-          <Input
-            value={title}
-            disabled={locked}
-            onChange={(event) => onTitleChange(event.target.value)}
-            className="h-auto border-0 bg-transparent px-0 py-0 text-xl font-semibold shadow-none focus-visible:ring-0 md:text-2xl"
-          />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="outline">{lines} linhas</Badge>
-            <Badge variant={paragraphCount >= 4 ? "success" : "outline"}>{paragraphCount} paragrafos</Badge>
-            <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount} palavras</Badge>
-            <Badge variant="success">{syncLabel}</Badge>
+      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-20 mb-6 flex flex-col gap-4 border-b border-border bg-background/95 pb-4 backdrop-blur md:top-0">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0 flex-1">
+            <Input
+              value={title}
+              disabled={locked}
+              onChange={(event) => onTitleChange(event.target.value)}
+              className="h-auto max-w-3xl border-0 bg-transparent px-0 py-0 text-xl font-semibold shadow-none focus-visible:ring-0 md:text-2xl"
+            />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge variant="outline">{lines} linhas</Badge>
+              <Badge variant={paragraphCount >= 4 ? "success" : "outline"}>{paragraphCount} paragrafos</Badge>
+              <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount} palavras</Badge>
+              <Badge variant="success">{syncLabel}</Badge>
+            </div>
           </div>
-          {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => setSidebarOpen((value) => !value)}>
+              {sidebarOpen ? (
+                <PanelRightClose className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
+              )}
+              Feedback
+            </Button>
+            <Button variant="outline" onClick={() => onFocusModeChange(true)}>
+              <Maximize2 className="h-4 w-4" aria-hidden="true" />
+              Foco
+            </Button>
+            <Button onClick={onSubmit} disabled={!canSubmit}>
+              <Send className="h-4 w-4" aria-hidden="true" />
+              {submitting ? "Corrigindo..." : "Corrigir"}
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setSidebarOpen((value) => !value)}>
-            {sidebarOpen ? (
-              <PanelRightClose className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
-            )}
-            Guia
-          </Button>
-          <Button variant="outline" onClick={() => onFocusModeChange(true)}>
-            <Maximize2 className="h-4 w-4" aria-hidden="true" />
-            Foco
-          </Button>
-          <Button onClick={onSubmit} disabled={!canSubmit}>
-            <Send className="h-4 w-4" aria-hidden="true" />
-            {submitting ? "Corrigindo..." : "Corrigir"}
-          </Button>
-        </div>
+        {activeTheme ? <ThemeReference theme={activeTheme} /> : null}
       </div>
 
-      <div className={cn("grid gap-3 bg-background/72 p-2 xs:p-3 md:p-4", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(16rem,18rem)]" : "xl:grid-cols-1")}>
+      <div className={cn("grid gap-6", sidebarOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(19rem,23rem)]" : "xl:grid-cols-1")}>
         <div className="min-w-0">
           <ENEMWritingSheet value={content} disabled={locked} onChange={onContentChange} placeholder="Comece sua redação ENEM aqui..." />
         </div>
@@ -173,7 +176,7 @@ export function EssayEditor({
       </div>
 
       {locked && (
-        <div className="border-t border-border bg-primary/10 p-3 text-sm font-semibold text-primary">
+        <div className="mt-4 rounded-md border border-primary/20 bg-primary/10 p-3 text-sm font-semibold text-primary">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
             Versão corrigida e bloqueada.
@@ -182,7 +185,7 @@ export function EssayEditor({
       )}
 
       {error ? (
-        <div className="border-t border-border bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+        <div className="mt-4 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             {error}

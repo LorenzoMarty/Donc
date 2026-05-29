@@ -19,7 +19,7 @@ export default function PlatformPage() {
         <AceternityGrid className="rounded-[2rem] p-4 xs:p-6 md:p-10">
           <div className="grid gap-10 md:grid-cols-[0.95fr_1.05fr] md:items-center">
             <Reveal>
-              <div className="game-chip mb-4 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
+              <div className="game-chip mb-4 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                 <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
                 Plataforma
               </div>

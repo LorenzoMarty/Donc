@@ -28,7 +28,7 @@ export default function RecoverPage() {
       <MotionShell className="w-full max-w-md">
         <Card className="p-6">
           <div className="mb-6 flex items-center gap-3">
-            <div className="rounded-lg bg-secondary/18 p-3 text-secondary">
+            <div className="rounded-lg bg-primary/10 p-3 text-primary">
               <MailCheck className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>

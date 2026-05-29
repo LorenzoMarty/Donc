@@ -37,7 +37,7 @@ function HudMetric({ icon: Icon, label, value }: { icon: LucideIcon; label: stri
   return (
     <div className="min-w-0 rounded-md border border-border bg-background/62 px-2.5 py-2 xs:px-3">
       <p className="flex items-center gap-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        <Icon className="h-3.5 w-3.5 text-secondary" aria-hidden="true" />
+        <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
         {label}
       </p>
       <p className="text-safe mt-1 text-base font-semibold">{value}</p>

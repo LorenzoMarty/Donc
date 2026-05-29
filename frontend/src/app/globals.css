@@ -3,29 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 96%;
+  --background: 0 0% 96.1%;
   --foreground: 0 0% 20%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 45 100% 50%;
-  --primary-foreground: 0 0% 10%;
-  --secondary: 38 40% 30%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 92%;
-  --muted-foreground: 0 0% 44%;
-  --accent: 149 36% 36%;
+  --primary: 215 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 46% 11%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 220 20% 94%;
+  --muted-foreground: 226 12% 43%;
+  --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 2 72% 58%;
+  --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 88%;
-  --input: 0 0% 88%;
-  --ring: 45 100% 50%;
-  --radius: 12px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.06);
-  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.10);
-  --shadow-control: 0 6px 18px rgba(0, 0, 0, 0.08);
+  --border: 224 24% 90%;
+  --input: 224 24% 90%;
+  --ring: 215 100% 61%;
+  --radius: 8px;
+  --shadow-soft: 0 8px 30px rgba(20, 30, 55, 0.06);
+  --shadow-elevated: 0 18px 46px rgba(20, 30, 55, 0.10);
+  --shadow-control: 0 10px 26px rgba(58, 134, 255, 0.14);
   --app-container: 1600px;
   --app-gutter: clamp(0.875rem, 2.4vw, 1.75rem);
   --app-page-gap: clamp(0.875rem, 2vw, 1.35rem);
@@ -33,25 +33,25 @@
 }
 
 .dark {
-  --background: 0 0% 96%;
+  --background: 0 0% 96.1%;
   --foreground: 0 0% 20%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 45 100% 50%;
-  --primary-foreground: 0 0% 10%;
-  --secondary: 38 40% 30%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 92%;
-  --muted-foreground: 0 0% 44%;
-  --accent: 149 36% 36%;
+  --primary: 215 100% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 222 46% 11%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 220 20% 94%;
+  --muted-foreground: 226 12% 43%;
+  --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 2 72% 58%;
+  --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 88%;
-  --input: 0 0% 88%;
-  --ring: 45 100% 50%;
+  --border: 224 24% 90%;
+  --input: 224 24% 90%;
+  --ring: 215 100% 61%;
 }
 
 * {
@@ -73,6 +73,7 @@ body {
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family:
+    var(--font-inter),
     Inter,
     ui-sans-serif,
     system-ui,
@@ -198,12 +199,11 @@ li {
   .glass-surface,
   .game-surface {
     min-width: 0;
-    background: linear-gradient(180deg, hsl(var(--card) / 0.94), hsl(42 50% 98% / 0.88)),
-      linear-gradient(135deg, hsl(var(--primary) / 0.07), transparent 54%);
+    background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
     box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(12px);
   }
 
   .game-tile {
@@ -211,8 +211,8 @@ li {
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
     box-shadow:
-      0 1px 0 hsl(0 0% 100% / 0.82) inset,
-      0 8px 18px rgba(48, 38, 18, 0.055);
+      0 1px 0 hsl(0 0% 100% / 0.9) inset,
+      0 8px 22px rgba(20, 30, 55, 0.045);
     transition:
       transform 160ms ease,
       box-shadow 160ms ease,
@@ -229,14 +229,14 @@ li {
   @media (hover: hover) and (pointer: fine) {
     .game-tile:hover {
       transform: translateY(-1px);
-      border-color: hsl(var(--primary) / 0.32);
+      border-color: hsl(var(--primary) / 0.34);
       box-shadow: var(--shadow-control);
     }
   }
 
   .game-tile:active {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(48, 38, 18, 0.05);
+    box-shadow: 0 1px 2px rgba(20, 30, 55, 0.05);
   }
 
   .game-chip {
@@ -254,13 +254,14 @@ li {
   .focus-ring-soft {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 26px rgba(48, 38, 18, 0.1);
+      0 12px 26px rgba(58, 134, 255, 0.14);
   }
 
   .website-shell {
-    background: radial-gradient(circle at 18% 0%, hsl(var(--primary) / 0.16), transparent 30%),
-      radial-gradient(circle at 96% 10%, hsl(42 42% 88% / 0.55), transparent 28%),
-      linear-gradient(180deg, hsl(42 56% 99% / 0.98), hsl(var(--background) / 1));
+    background:
+      linear-gradient(90deg, hsl(var(--border) / 0.46) 1px, transparent 1px),
+      linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
+    background-size: 1px 100%, 100% 100%;
   }
 
   .accent-panel {
@@ -325,7 +326,7 @@ li {
   [class*="shadow-glow"] {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 28px rgba(48, 38, 18, 0.1) !important;
+      0 12px 28px rgba(58, 134, 255, 0.14) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {

@@ -61,7 +61,7 @@ export default function GamesHub() {
               aria-hidden="true"
             />
             <div className="relative max-w-3xl">
-              <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-secondary">
+              <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                 <Dumbbell className="h-4 w-4" aria-hidden="true" />
                 Academia de escrita
               </div>
@@ -133,7 +133,7 @@ export default function GamesHub() {
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Escolha o treino mais útil para sua escrita agora.</p>
             </div>
             <div className="game-chip inline-flex w-fit items-center gap-2 bg-background/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-secondary" aria-hidden="true" />
+              <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               {categories.length} areas
             </div>
           </div>
