@@ -43,8 +43,8 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/games", label: "Atividades", icon: Gamepad2 },
 ];
 
-const SIDEBAR_WIDTH_EXPANDED = 304;
-const SIDEBAR_WIDTH_COLLAPSED = 80;
+const SIDEBAR_WIDTH_EXPANDED = 280;
+const SIDEBAR_WIDTH_COLLAPSED = 72;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();

@@ -195,10 +195,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                     feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
                   )}
                 >
-                  <div
-                    className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
-                    aria-hidden="true"
-                  />
+                  <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
                   <div className="mb-5 flex flex-wrap items-center gap-2">
                     <Badge className="border-primary/20 bg-primary/10 text-primary">Coesao textual</Badge>
                     <Badge variant="outline">Velocidade {difficultyStage + 1}</Badge>
@@ -349,7 +346,7 @@ function ConnectiveHud({
           <motion.div
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.35, ease: "easeOut" }}
-            className="h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
+            className="h-full rounded-full bg-primary"
             style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
           />
         </div>

@@ -28,10 +28,7 @@ export function CategoryCard({ category, index }: { category: GameCategory; inde
           style={{ background: category.secondaryColor }}
           aria-hidden="true"
         />
-        <div
-          className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-primary/55 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-          aria-hidden="true"
-        />
+        <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-primary/45 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
 
         <div className="relative flex items-start justify-between gap-4">
           <div className="grid h-14 w-14 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">

@@ -248,10 +248,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
               feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
             )}
           >
-            <div
-              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent"
-              aria-hidden="true"
-            />
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{level.title}</p>
               <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
@@ -474,7 +471,7 @@ function AssemblyHud({ validation, seconds, level }: { validation: ValidationRes
         <motion.div
           animate={{ width: `${validation.accuracy}%` }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
+          className="h-full rounded-full bg-primary"
           style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
         />
       </div>
@@ -548,10 +545,7 @@ function ResultModal({
             className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
           >
             {result.rankUp && <ConfettiBurst />}
-            <div
-              className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/75 to-transparent"
-              aria-hidden="true"
-            />
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-primary/45" aria-hidden="true" />
             <div className="text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
                 <Trophy className="h-8 w-8" aria-hidden="true" />

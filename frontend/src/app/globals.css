@@ -9,8 +9,8 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 215 100% 61%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 46 100% 50%;
+  --primary-foreground: 0 0% 12%;
   --secondary: 222 46% 11%;
   --secondary-foreground: 0 0% 100%;
   --muted: 220 20% 94%;
@@ -21,11 +21,11 @@
   --destructive-foreground: 0 0% 100%;
   --border: 224 24% 90%;
   --input: 224 24% 90%;
-  --ring: 215 100% 61%;
+  --ring: 46 100% 50%;
   --radius: 8px;
   --shadow-soft: 0 8px 30px rgba(20, 30, 55, 0.06);
   --shadow-elevated: 0 18px 46px rgba(20, 30, 55, 0.10);
-  --shadow-control: 0 10px 26px rgba(58, 134, 255, 0.14);
+  --shadow-control: 0 10px 26px rgba(255, 195, 0, 0.18);
   --app-container: 1600px;
   --app-gutter: clamp(0.875rem, 2.4vw, 1.75rem);
   --app-page-gap: clamp(0.875rem, 2vw, 1.35rem);
@@ -39,8 +39,8 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 215 100% 61%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 46 100% 50%;
+  --primary-foreground: 0 0% 12%;
   --secondary: 222 46% 11%;
   --secondary-foreground: 0 0% 100%;
   --muted: 220 20% 94%;
@@ -51,7 +51,7 @@
   --destructive-foreground: 0 0% 100%;
   --border: 224 24% 90%;
   --input: 224 24% 90%;
-  --ring: 215 100% 61%;
+  --ring: 46 100% 50%;
 }
 
 * {
@@ -62,6 +62,7 @@ html {
   min-width: 320px;
   overflow-x: hidden;
   scroll-behavior: smooth;
+  font-size: 93.75%;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
 }
@@ -136,6 +137,12 @@ li {
   }
 }
 
+@media (max-width: 767px) {
+  html {
+    font-size: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -191,9 +198,7 @@ li {
   }
 
   .soft-grid {
-    background-image: linear-gradient(hsl(var(--foreground) / 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background: hsl(var(--background));
   }
 
   .glass-surface,
@@ -254,14 +259,11 @@ li {
   .focus-ring-soft {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 26px rgba(58, 134, 255, 0.14);
+      0 12px 26px rgba(255, 195, 0, 0.18);
   }
 
   .website-shell {
-    background:
-      linear-gradient(90deg, hsl(var(--border) / 0.46) 1px, transparent 1px),
-      linear-gradient(180deg, hsl(var(--card)), hsl(var(--background)));
-    background-size: 1px 100%, 100% 100%;
+    background: hsl(var(--background));
   }
 
   .accent-panel {
@@ -326,7 +328,7 @@ li {
   [class*="shadow-glow"] {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 28px rgba(58, 134, 255, 0.14) !important;
+      0 12px 28px rgba(255, 195, 0, 0.18) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {
