@@ -44,7 +44,7 @@ const workspaceNav: WorkspaceNavItem[] = [
 ];
 
 const SIDEBAR_WIDTH_EXPANDED = 280;
-const SIDEBAR_WIDTH_COLLAPSED = 72;
+const SIDEBAR_WIDTH_COLLAPSED = 88;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
@@ -191,32 +191,40 @@ function DesktopSidebar({
 }) {
   return (
     <motion.aside
-      className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card py-6 md:flex"
+      className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card md:flex", collapsed ? "py-5" : "py-6")}
       animate={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       transition={{ duration: 0.22, ease: "easeInOut" }}
       style={{ width: SIDEBAR_WIDTH_COLLAPSED }}
       onWheel={onWheel}
     >
-      <div className="mb-7 flex items-center justify-between gap-2 overflow-hidden px-5">
-        <BrandLink collapsed={collapsed} href="/dashboard" />
+      <div
+        className={cn(
+          "mb-7 flex overflow-hidden",
+          collapsed ? "flex-col items-center gap-3 px-3" : "items-center justify-between gap-2 px-5",
+        )}
+      >
+        <BrandLink collapsed={collapsed} href="/dashboard" className={collapsed ? "w-full justify-center" : undefined} />
         <button
           onClick={onToggle}
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-primary/8 hover:text-primary"
+          className={cn(
+            "grid shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-primary/8 hover:text-primary",
+            collapsed ? "h-10 w-10 border border-border bg-card shadow-sm" : "h-8 w-8",
+          )}
         >
           {collapsed ? (
-            <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+            <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
           ) : (
-            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+            <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
           )}
         </button>
       </div>
 
-      <div className="mb-8 overflow-hidden px-5">
+      <div className={cn("mb-8 overflow-hidden", collapsed ? "px-4" : "px-5")}>
         {collapsed ? (
-          <Button asChild size="icon" aria-label="Nova redação">
+          <Button asChild size="icon" aria-label="Nova redação" className="h-12 w-full">
             <Link href="/redacao">
-              <Plus className="h-5 w-5" aria-hidden="true" />
+              <Plus className="h-6 w-6" aria-hidden="true" />
             </Link>
           </Button>
         ) : (
@@ -229,7 +237,7 @@ function DesktopSidebar({
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-2 overflow-hidden px-5" aria-label="Navegacao principal">
+      <nav className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-3 px-4" : "gap-2 px-5")} aria-label="Navegacao principal">
         {items.map((item) => (
           <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
         ))}
@@ -248,10 +256,13 @@ function DesktopSidebar({
         </div>
       ) : null}
 
-      <div className="mt-2 grid gap-2 overflow-hidden px-5">
+      <div className={cn("mt-2 grid gap-2 overflow-hidden", collapsed ? "px-4" : "px-5")}>
         <Link
           href="/perfil"
-          className="game-tile flex min-h-12 items-center justify-center gap-3 bg-card px-2 py-2 text-sm font-semibold transition-colors"
+          className={cn(
+            "game-tile flex min-h-12 items-center justify-center gap-3 bg-card px-2 py-2 text-sm font-semibold transition-colors",
+            collapsed && "h-12 w-full",
+          )}
           aria-label={`Perfil de ${userName}`}
         >
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-sm font-semibold text-primary">
@@ -268,8 +279,8 @@ function DesktopSidebar({
           </motion.span>
         </Link>
         {collapsed ? (
-          <Button variant="outline" size="icon" aria-label="Sair" onClick={onLogout}>
-            <LogOut className="h-4 w-4" aria-hidden="true" />
+          <Button variant="outline" size="icon" aria-label="Sair" onClick={onLogout} className="h-12 w-full">
+            <LogOut className="h-5 w-5" aria-hidden="true" />
           </Button>
         ) : (
           <Button variant="outline" onClick={onLogout}>
@@ -372,12 +383,13 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "flex min-h-12 items-center gap-3 rounded-md border border-transparent px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
+        "flex items-center gap-3 rounded-md border border-transparent text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
+        collapsed ? "h-12 justify-center px-0" : "min-h-12 px-3",
         showLabel ? "justify-start" : "justify-center",
         active && "bg-primary/8 text-primary hover:text-primary",
       )}
     >
-      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+      <Icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-5 w-5")} aria-hidden="true" />
       <motion.span
         className="min-w-0 text-safe"
         animate={{ opacity: showLabel ? 1 : 0, width: showLabel ? "auto" : 0 }}

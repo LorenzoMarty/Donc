@@ -314,24 +314,22 @@ export default function EssayPage() {
 
   if (isWriting) {
     return (
-      <div className="min-h-[calc(100dvh-7rem)]">
-        <EssayEditor
-          essay={essay}
-          theme={selectedTheme}
-          title={title}
-          content={content}
-          wordCount={wordCount}
-          paragraphCount={paragraphCount}
-          saving={saving}
-          submitting={submitting}
-          error={error}
-          focusMode={focusMode}
-          onTitleChange={setTitle}
-          onContentChange={setContent}
-          onFocusModeChange={setFocusMode}
-          onSubmit={submit}
-        />
-      </div>
+      <EssayEditor
+        essay={essay}
+        theme={selectedTheme}
+        title={title}
+        content={content}
+        wordCount={wordCount}
+        paragraphCount={paragraphCount}
+        saving={saving}
+        submitting={submitting}
+        error={error}
+        focusMode={focusMode}
+        onTitleChange={setTitle}
+        onContentChange={setContent}
+        onFocusModeChange={setFocusMode}
+        onSubmit={submit}
+      />
     );
   }
 
@@ -701,7 +699,7 @@ function EssayAnalysisWorkspace({
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-card">
+    <div className="flex h-[calc(100dvh-8.5rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4rem)]">
       <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBackToVersions} aria-label="Voltar para versoes">
@@ -732,7 +730,7 @@ function EssayAnalysisWorkspace({
         </div>
       </header>
 
-      <div className="grid min-h-[calc(100dvh-12rem)] lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)]">
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)]">
         <EssayDocumentPanel
           title={title}
           content={content}
@@ -774,7 +772,7 @@ function EssayDocumentPanel({
   const annotationsByParagraph = (pIndex: number) => annotations.filter((a) => a.paragraph_index === pIndex);
 
   return (
-    <article className="mobile-scroll max-h-[calc(100dvh-12rem)] overflow-y-auto bg-card px-5 py-8 md:px-10 lg:px-12">
+    <article className="mobile-scroll min-h-0 overflow-y-auto bg-card px-5 py-8 md:px-10 lg:px-12">
       <div className="mx-auto max-w-[860px]">
         <h2 className="text-safe text-4xl font-bold leading-tight tracking-normal text-foreground md:text-5xl [font-family:var(--font-merriweather,Georgia,serif)]">
           {title}
@@ -862,7 +860,7 @@ function AIFeedbackPanel({
   const score = correction?.total_score ?? 0;
 
   return (
-    <aside className="mobile-scroll max-h-[calc(100dvh-12rem)] overflow-y-auto border-t border-border bg-background lg:border-l lg:border-t-0">
+    <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border bg-background lg:border-l lg:border-t-0">
       <div className="sticky top-0 z-10 border-b border-border bg-background px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
