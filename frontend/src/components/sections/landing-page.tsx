@@ -179,10 +179,10 @@ export function LandingPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratorio de redacao</p>
                 <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                  Escrever fica mais leve quando o foco parece uma folha real.
+                  Escrever fica mais leve em uma tela limpa e direta.
                 </h2>
                 <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">
-                  A redacao tem modo foco em A4, banco de conectivos, repertorios por tema e praticas curtas para treinar coesao antes da
+                  A redacao tem editor compacto, banco de conectivos, repertorios por tema e praticas curtas para treinar coesao antes da
                   correcao.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">

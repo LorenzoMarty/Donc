@@ -47,7 +47,6 @@ export default function EssayPage() {
   const [submitting, setSubmitting] = useState(false);
   const [mode, setMode] = useState<EssayViewMode>("editor");
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
-  const [focusMode, setFocusMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const saveRequestRef = useRef(0);
@@ -324,10 +323,8 @@ export default function EssayPage() {
         saving={saving}
         submitting={submitting}
         error={error}
-        focusMode={focusMode}
         onTitleChange={setTitle}
         onContentChange={setContent}
-        onFocusModeChange={setFocusMode}
         onSubmit={submit}
       />
     );
@@ -337,8 +334,8 @@ export default function EssayPage() {
     <div className="space-y-5 md:space-y-6">
       <PageHeader
         eyebrow="Laboratorio de redacao"
-        title="Escreva com foco e revise por competencia."
-        description="Editor limpo para desenvolver sua redacao com clareza e acompanhar estrutura, linhas e paragrafos."
+        title="Escreva e revise por competencia."
+        description="Editor compacto para desenvolver sua redacao com clareza e acompanhar estrutura, linhas e paragrafos."
         action={
           <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
             <Button onClick={() => createDraft()} disabled={!selectedTheme} size="lg">
@@ -396,10 +393,8 @@ export default function EssayPage() {
             saving={saving}
             submitting={submitting}
             error={error}
-            focusMode={focusMode}
             onTitleChange={setTitle}
             onContentChange={setContent}
-            onFocusModeChange={setFocusMode}
             onSubmit={submit}
           />
         )}

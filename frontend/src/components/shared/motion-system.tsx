@@ -174,9 +174,9 @@ export function WritingSidebar({
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.42, ease: easeOut }}
-      className="space-y-3"
+      className="space-y-2"
     >
-      <div className="game-tile flex gap-1 bg-background/82 p-1">
+      <div className="flex gap-1 rounded-md bg-muted/55 p-1">
         <button
           type="button"
           onClick={() => setTab("guia")}
@@ -209,9 +209,9 @@ export function WritingSidebar({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: easeOut }}
-            className="space-y-3"
+            className="space-y-2"
           >
-            <div className="game-tile bg-background/82 p-4">
+            <div className="rounded-md bg-card/70 p-3">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold">Painel de escrita</p>
                 <Target className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -221,7 +221,7 @@ export function WritingSidebar({
                 <WriterMetric label="Paragrafos" value={`${paragraphs}`} progress={Math.min(100, (paragraphs / 4) * 100)} />
               </div>
             </div>
-            <div className="game-tile bg-primary/10 p-4">
+            <div className="rounded-md bg-primary/8 p-3">
               <p className="mb-3 text-sm font-semibold">Sugestoes rapidas</p>
               <SmartSuggestions
                 suggestions={[
@@ -253,7 +253,7 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
 
   if (!hasContent || !theme?.supporting_texts?.length) {
     return (
-      <div className="game-tile bg-background/82 p-4 text-center">
+      <div className="rounded-md bg-card/70 p-4 text-center">
         <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground" aria-hidden="true" />
         <p className="text-sm font-semibold">Sem textos motivadores</p>
         <p className="mt-1 text-xs text-muted-foreground">Este tema ainda nao possui textos de apoio cadastrados.</p>
@@ -264,7 +264,7 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
   return (
     <div className="space-y-2">
       {theme.supporting_texts.map((text, index) => (
-        <div key={index} className={cn("game-tile overflow-hidden", text.type === "perspectiva" ? "bg-primary/8" : "bg-background/82")}>
+        <div key={index} className={cn("overflow-hidden rounded-md", text.type === "perspectiva" ? "bg-primary/8" : "bg-card/70")}>
           <button
             type="button"
             onClick={() => setExpanded(expanded === index ? null : index)}
@@ -338,7 +338,7 @@ function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.04, ease: easeOut }}
           whileTap={{ scale: 0.97 }}
-          className="game-tile w-full bg-background/72 p-3 text-left text-xs font-bold leading-5 hover:bg-primary/12"
+          className="w-full rounded-md bg-background/70 p-3 text-left text-xs font-bold leading-5 transition-colors hover:bg-primary/12"
         >
           <Lightbulb className="mb-2 h-4 w-4 text-primary" aria-hidden="true" />
           {suggestion}
