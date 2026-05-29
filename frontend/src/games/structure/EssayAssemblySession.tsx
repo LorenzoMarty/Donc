@@ -474,7 +474,7 @@ function AssemblyHud({ validation, seconds, level }: { validation: ValidationRes
         <motion.div
           animate={{ width: `${validation.accuracy}%` }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="h-full rounded-full bg-gradient-to-r from-primary via-yellow-200 to-primary"
+          className="h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
           style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
         />
       </div>
@@ -490,7 +490,7 @@ function HudMetric({ icon, label, value }: { icon: React.ReactNode; label: strin
   return (
     <div className="game-tile bg-background/58 px-3 py-2">
       <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="text-secondary">{icon}</span>
+        <span className="text-primary">{icon}</span>
         {label}
       </p>
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
@@ -502,7 +502,7 @@ function SidePanel({ title, icon, children }: { title: string; icon: React.React
   return (
     <section className="game-surface bg-card p-4">
       <div className="mb-4 flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">{icon}</div>
+        <div className="grid h-8 w-8 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">{icon}</div>
         <h2 className="text-lg font-semibold tracking-normal text-foreground">{title}</h2>
       </div>
       {children}
@@ -597,7 +597,7 @@ function ConfettiBurst() {
           transition={{ delay: piece.delay, duration: 1.15, ease: "easeOut" }}
           className={cn(
             "absolute top-0 h-2 w-1 rounded-full",
-            index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-yellow-100" : "bg-zinc-100",
+            index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-primary/10" : "bg-zinc-100",
           )}
           style={{ left: `${piece.left}%` }}
         />

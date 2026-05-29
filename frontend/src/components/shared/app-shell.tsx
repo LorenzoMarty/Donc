@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   BookOpen,
-  ChevronRight,
   FilePenLine,
   Gamepad2,
   LayoutDashboard,
@@ -15,11 +14,14 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   ShieldCheck,
+  Sparkles,
   X,
   type LucideIcon,
 } from "lucide-react";
 
+import { BrandLink } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getRankSnapshot } from "@/features/xp/xp";
@@ -34,21 +36,28 @@ type WorkspaceNavItem = {
 };
 
 const workspaceNav: WorkspaceNavItem[] = [
-  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
-  { href: "/aulas", label: "Aulas", icon: BookOpen },
-  { href: "/games", label: "Jogos", icon: Gamepad2 },
-  { href: "/redacao", label: "Redacao", icon: FilePenLine },
-  { href: "/redacoes", label: "Historico", icon: BarChart3 },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/redacao", label: "Redação", icon: FilePenLine },
+  { href: "/redacoes", label: "Histórico", icon: BarChart3 },
+  { href: "/aulas", label: "Learning Hub", icon: BookOpen },
+  { href: "/games", label: "Atividades", icon: Gamepad2 },
 ];
 
-const SIDEBAR_WIDTH_EXPANDED = 288;
+const SIDEBAR_WIDTH_EXPANDED = 304;
 const SIDEBAR_WIDTH_COLLAPSED = 80;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("sidebar-collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
@@ -57,12 +66,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     user?.role === "admin"
       ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }]
       : workspaceNav;
-
-  useEffect(() => {
-    try {
-      setCollapsed(localStorage.getItem("sidebar-collapsed") === "true");
-    } catch {}
-  }, []);
 
   useEffect(() => {
     if (user) hydrateFromBackend();
@@ -114,7 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="website-shell h-dvh overflow-hidden bg-background text-foreground">
+    <div className="h-dvh overflow-hidden bg-background text-foreground">
       <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
       <DesktopSidebar
         items={navItems}
@@ -146,19 +149,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="md:hidden">
           {/* mobile: reset padding applied by motion on small screens */}
         </div>
-        <main className="mx-auto min-h-[calc(100dvh-10rem)] w-full max-w-[1600px] px-3 pb-4 pt-[calc(4.5rem+env(safe-area-inset-top))] xs:px-4 md:px-5 md:pt-5 lg:px-6 lg:py-6 2xl:px-8">
+        <main className="mx-auto min-h-dvh w-full max-w-[1680px] px-3 pb-4 pt-[calc(4.5rem+env(safe-area-inset-top))] xs:px-4 md:px-6 md:pt-6 lg:px-8 lg:py-8">
           {children}
         </main>
-
-        <footer className="mx-auto w-full max-w-[1600px] px-3 pb-5 pt-2 xs:px-4 md:px-5 lg:px-6 lg:pb-6 2xl:px-8">
-          <div className="game-surface flex flex-col justify-between gap-3 bg-card p-3 text-sm text-muted-foreground sm:flex-row sm:items-center">
-            <p className="min-w-0 leading-6">Donc ENEM transforma Portugues e Redacao em progresso intelectual mensuravel.</p>
-            <Link href="/pricing" className="inline-flex min-h-11 items-center gap-2 font-semibold text-foreground">
-              Ver planos
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-        </footer>
       </motion.div>
     </div>
   );
@@ -166,9 +159,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/88 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-card/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
       <div className="flex min-h-16 items-center justify-between gap-3 px-3 xs:px-4">
-        <BrandLink compact />
+        <BrandLink compact href="/dashboard" />
         <Button variant="outline" size="icon" aria-label="Abrir menu" onClick={onMenuClick}>
           <Menu className="h-5 w-5" aria-hidden="true" />
         </Button>
@@ -198,18 +191,18 @@ function DesktopSidebar({
 }) {
   return (
     <motion.aside
-      className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-background/88 py-4 backdrop-blur-xl md:flex"
+      className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card py-6 md:flex"
       animate={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       transition={{ duration: 0.22, ease: "easeInOut" }}
       style={{ width: SIDEBAR_WIDTH_COLLAPSED }}
       onWheel={onWheel}
     >
-      <div className="mb-5 flex items-center justify-between gap-2 overflow-hidden px-3">
-        <BrandLink collapsed={collapsed} />
+      <div className="mb-7 flex items-center justify-between gap-2 overflow-hidden px-5">
+        <BrandLink collapsed={collapsed} href="/dashboard" />
         <button
           onClick={onToggle}
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-primary/8 hover:text-primary"
         >
           {collapsed ? (
             <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
@@ -219,19 +212,49 @@ function DesktopSidebar({
         </button>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1.5 overflow-hidden px-3" aria-label="Navegacao principal">
+      <div className="mb-8 overflow-hidden px-5">
+        {collapsed ? (
+          <Button asChild size="icon" aria-label="Nova redação">
+            <Link href="/redacao">
+              <Plus className="h-5 w-5" aria-hidden="true" />
+            </Link>
+          </Button>
+        ) : (
+          <Button asChild className="w-full justify-start">
+            <Link href="/redacao">
+              <Plus className="h-5 w-5" aria-hidden="true" />
+              Nova redação
+            </Link>
+          </Button>
+        )}
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-2 overflow-hidden px-5" aria-label="Navegacao principal">
         {items.map((item) => (
           <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
         ))}
       </nav>
 
-      <div className="mt-5 grid gap-2 overflow-hidden px-3">
+      {!collapsed ? (
+        <div className="mx-5 mb-4 rounded-md border border-primary/15 bg-primary/5 p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            Aproveite melhor o Donc
+          </div>
+          <p className="text-sm leading-6 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
+          <Button asChild variant="outline" className="mt-4 w-full justify-between">
+            <Link href="/onboarding">Ver tour</Link>
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="mt-2 grid gap-2 overflow-hidden px-5">
         <Link
           href="/perfil"
-          className="game-tile flex min-h-12 items-center justify-center gap-3 bg-card/72 px-2 py-2 text-sm font-semibold transition-colors"
+          className="game-tile flex min-h-12 items-center justify-center gap-3 bg-card px-2 py-2 text-sm font-semibold transition-colors"
           aria-label={`Perfil de ${userName}`}
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-primary/30 bg-primary text-sm font-semibold text-primary-foreground">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-sm font-semibold text-primary">
             {initials(userName)}
           </span>
           <motion.span
@@ -306,7 +329,7 @@ function MobileDrawer({
 
             <div className="mt-auto grid gap-3 pt-8">
               <Link href="/perfil" className="game-surface flex items-center gap-3 bg-card p-3" onClick={onClose}>
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-sm border border-primary/30 bg-primary font-semibold text-primary-foreground">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 font-semibold text-primary">
                   {initials(userName)}
                 </span>
                 <span className="min-w-0 leading-tight">
@@ -349,9 +372,9 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "game-tile flex min-h-12 items-center gap-3 bg-card/45 px-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground",
+        "flex min-h-12 items-center gap-3 rounded-md border border-transparent px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
         showLabel ? "justify-start" : "justify-center",
-        active && "border-primary/45 bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground",
+        active && "bg-primary/8 text-primary hover:text-primary",
       )}
     >
       <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -362,29 +385,6 @@ function ShellNavLink({
         style={{ overflow: "hidden", whiteSpace: "nowrap" }}
       >
         {item.label}
-      </motion.span>
-    </Link>
-  );
-}
-
-function BrandLink({ compact = false, collapsed = false }: { compact?: boolean; collapsed?: boolean }) {
-  const showText = !compact && !collapsed;
-  return (
-    <Link href="/dashboard" className={cn("flex min-w-0 items-center gap-3", !compact && !collapsed && "md:justify-start")}>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/35 bg-primary text-sm font-semibold text-primary-foreground">
-        D
-      </span>
-      <motion.span
-        className="min-w-0 leading-tight"
-        animate={{ opacity: showText ? 1 : 0, width: showText ? "auto" : 0 }}
-        transition={{ duration: 0.18 }}
-        style={{ overflow: "hidden", whiteSpace: "nowrap" }}
-      >
-        <span className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-          Donc ENEM
-        </span>
-        <span className="block text-lg font-semibold tracking-normal">Area ENEM</span>
       </motion.span>
     </Link>
   );

@@ -434,7 +434,7 @@ function ThemePicker({
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Banco de temas</p>
           <h2 className="mt-1 text-xl font-semibold tracking-normal">Escolha o tema</h2>
         </div>
-        <Sparkles className="h-5 w-5 text-secondary" aria-hidden="true" />
+        <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
       <div className="grid gap-3">
         {themes.map((theme) => (
@@ -476,7 +476,7 @@ function VersionPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Versoes salvas</p>
           <h2 className="mt-1 text-xl font-semibold tracking-normal">Escolha onde continuar</h2>
         </div>
-        <History className="h-5 w-5 text-secondary" aria-hidden="true" />
+        <History className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
 
       {versions.length ? (
@@ -801,7 +801,7 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correcao</p>
           <h2 className="mt-1 text-xl font-semibold tracking-normal">Análise da correção</h2>
         </div>
-        <Brain className="h-5 w-5 text-secondary" aria-hidden="true" />
+        <Brain className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
       {essay?.correction ? (
         <div className="space-y-4">
@@ -829,7 +829,7 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
           </div>
           <div className="game-tile bg-background/56 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Lightbulb className="h-4 w-4 text-secondary" aria-hidden="true" />
+              <Lightbulb className="h-4 w-4 text-primary" aria-hidden="true" />
               Insight principal
             </div>
             <p className="text-sm leading-6 text-muted-foreground">{essay.correction.feedback}</p>

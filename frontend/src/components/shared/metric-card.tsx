@@ -24,7 +24,7 @@ export function MetricCard({
             <p className="text-sm text-muted-foreground">{title}</p>
             <p className="text-safe mt-2 text-3xl font-semibold tracking-normal">{value}</p>
           </div>
-          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
+          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/20 bg-primary/10 text-primary">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
         </div>

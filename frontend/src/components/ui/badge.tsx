@@ -6,8 +6,8 @@ import { cn } from "@/utils";
 const badgeVariants = cva("inline-flex items-center rounded-full border border-border px-2.5 py-1 text-xs font-semibold", {
   variants: {
     variant: {
-      default: "bg-primary/12 text-secondary",
-      secondary: "bg-secondary/12 text-secondary",
+      default: "bg-primary/10 text-primary",
+      secondary: "bg-primary/10 text-primary",
       outline: "bg-card/72 text-foreground",
       success: "bg-accent/14 text-accent",
       destructive: "bg-destructive/12 text-destructive",

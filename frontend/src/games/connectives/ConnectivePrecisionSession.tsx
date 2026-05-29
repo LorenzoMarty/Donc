@@ -163,7 +163,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
           </div>
-          <div className="game-tile bg-primary/10 px-4 py-3 text-sm font-medium text-secondary">
+          <div className="game-tile bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
             Erre 3 vezes ou encerre a rodada para registrar o resultado.
           </div>
         </header>
@@ -349,7 +349,7 @@ function ConnectiveHud({
           <motion.div
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.35, ease: "easeOut" }}
-            className="h-full rounded-full bg-gradient-to-r from-primary via-yellow-200 to-primary"
+            className="h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
             style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
           />
         </div>
@@ -374,7 +374,7 @@ function HudMetric({
   return (
     <div className="game-tile relative bg-background/58 px-3 py-2">
       <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="text-secondary">{icon}</span>
+        <span className="text-primary">{icon}</span>
         {label}
       </p>
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
@@ -399,7 +399,7 @@ function SidePanel({ title, icon, children }: { title: string; icon: React.React
   return (
     <section className="game-surface bg-card p-4">
       <div className="mb-4 flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">{icon}</div>
+        <div className="grid h-8 w-8 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">{icon}</div>
         <h2 className="text-lg font-semibold tracking-normal text-foreground">{title}</h2>
       </div>
       {children}

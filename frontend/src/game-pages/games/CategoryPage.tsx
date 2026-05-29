@@ -54,7 +54,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
       <Surface>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
+            <div className="grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
               <Icon className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>

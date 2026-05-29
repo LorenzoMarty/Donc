@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BookOpen, CheckCircle2, FileText, Flame, PenLine, Send, Target, Trophy } from "lucide-react";
 import {
-  Legend,
   Line,
   LineChart,
   PolarAngleAxis,
@@ -245,8 +244,8 @@ function CompetencyRadar({ masteryMap }: { masteryMap: Dashboard["mastery_map"] 
           <Radar
             name="Dominio"
             dataKey="value"
-            stroke="#FFC300"
-            fill="#FFC300"
+            stroke="#3A86FF"
+            fill="#3A86FF"
             fillOpacity={0.18}
             strokeWidth={2}
           />
@@ -284,10 +283,10 @@ function ScoreEvolutionChart({ trend }: { trend: { label: string; score: number 
           <Line
             type="monotone"
             dataKey="score"
-            stroke="#FFC300"
+            stroke="#3A86FF"
             strokeWidth={2.5}
-            dot={{ fill: "#FFC300", r: 4, strokeWidth: 0 }}
-            activeDot={{ r: 6, fill: "#FFC300" }}
+            dot={{ fill: "#3A86FF", r: 4, strokeWidth: 0 }}
+            activeDot={{ r: 6, fill: "#3A86FF" }}
           />
         </LineChart>
       </ResponsiveContainer>
@@ -304,7 +303,7 @@ function MetricCard({ label, value, detail, icon: Icon }: { label: string; value
           <p className="mt-2 text-2xl font-semibold tracking-normal">{value}</p>
           <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
         </div>
-        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
       </div>
@@ -345,7 +344,7 @@ function LessonRow({ lesson }: { lesson: LessonItem }) {
           <p className="text-safe text-sm font-semibold">{lesson.title}</p>
           <p className="mt-1 text-xs text-muted-foreground">{lesson.module}</p>
         </div>
-        <span className="shrink-0 text-xs font-semibold text-secondary">{lesson.progress_percent}%</span>
+        <span className="shrink-0 text-xs font-semibold text-primary">{lesson.progress_percent}%</span>
       </div>
       <Progress value={lesson.progress_percent} className="mt-3 h-1.5" />
     </Link>
@@ -356,7 +355,7 @@ function ActivityRow({ activity }: { activity: RecentActivity }) {
   const Icon = activity.icon;
   return (
     <Link href={activity.href} className="flex items-start gap-3 rounded-md border border-border bg-background/58 p-3 transition-colors hover:bg-primary/8">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-secondary">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-primary">
         <Icon className="h-4 w-4" aria-hidden="true" />
       </div>
       <div className="min-w-0">

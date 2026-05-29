@@ -64,7 +64,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
                   <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{metric.label}</p>
                   <p className="mt-2 text-lg font-semibold tracking-normal text-foreground">{metric.value}</p>
                 </div>
-                <div className="grid h-9 w-9 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">
+                <div className="grid h-9 w-9 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </div>
               </div>
@@ -82,14 +82,14 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
                 {rank.next ? `${rank.xpToNext} XP ate ${rank.next.name}.` : "Rank maximo alcancado."}
               </p>
             </div>
-            <span className="game-chip bg-primary/12 px-3 py-1 text-xs font-semibold text-secondary">{rank.progress}%</span>
+            <span className="game-chip bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{rank.progress}%</span>
           </div>
           <div className="relative h-3 overflow-hidden rounded-full border border-border bg-muted/70 shadow-inner">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${rank.progress}%` }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-              className="relative h-full rounded-full bg-gradient-to-r from-primary via-yellow-200 to-primary"
+              className="relative h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
               style={{ filter: "drop-shadow(0 0 12px hsl(var(--primary) / 0.28))" }}
             >
               <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,.55),transparent)] opacity-60" />

@@ -50,7 +50,7 @@ export default function LessonPage() {
           <Surface>
             <div className="mx-auto max-w-[76ch]">
               <div className="mb-5 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-secondary" aria-hidden="true" />
+                <FileText className="h-4 w-4 text-primary" aria-hidden="true" />
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Resumo da aula</p>
               </div>
               <div className="space-y-4 text-[15px] leading-8 text-muted-foreground sm:text-base">
@@ -64,7 +64,7 @@ export default function LessonPage() {
           <Surface>
             <div className="mx-auto max-w-[76ch]">
               <div className="mb-4 flex items-center gap-2">
-                <NotebookPen className="h-4 w-4 text-secondary" aria-hidden="true" />
+                <NotebookPen className="h-4 w-4 text-primary" aria-hidden="true" />
                 <h2 className="text-xl font-semibold tracking-normal">Anotacoes</h2>
               </div>
               <textarea
@@ -79,7 +79,7 @@ export default function LessonPage() {
           {completion ? (
             <Surface>
               <div className="mb-3 flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-secondary" aria-hidden="true" />
+                <Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Recompensa</p>
               </div>
               <p className="text-3xl font-semibold tracking-normal">+{completion.xp_earned ?? 0} XP</p>
@@ -106,7 +106,7 @@ export default function LessonPage() {
             <Progress value={lesson.progress.progress_percent} className="mt-4" />
             <div className="mt-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background/58 p-3 text-sm">
               <span className="flex items-center gap-2 text-muted-foreground">
-                <Zap className="h-4 w-4 text-secondary" aria-hidden="true" />
+                <Zap className="h-4 w-4 text-primary" aria-hidden="true" />
                 XP da aula
               </span>
               <span className="font-semibold">{lesson.xp_reward ?? 25}xp</span>

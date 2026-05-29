@@ -102,7 +102,7 @@ export function RepertoireSuggestions({ themeTitle }: { themeTitle?: string }) {
           >
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 className="font-semibold">{group.category}</h3>
-              <BookOpen className="h-4 w-4 text-secondary" aria-hidden="true" />
+              <BookOpen className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
             <div className="space-y-3">
               {group.items.map((item) => (

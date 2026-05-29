@@ -54,10 +54,12 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   useEffect(() => {
     if (!essayId) return;
 
-    setPhase("queued");
-    setAgentIndex(0);
-    setEssay(null);
-    setError(null);
+    const resetId = window.setTimeout(() => {
+      setPhase("queued");
+      setAgentIndex(0);
+      setEssay(null);
+      setError(null);
+    }, 0);
 
     async function poll() {
       try {
@@ -85,7 +87,10 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
     poll();
     pollRef.current = setInterval(poll, 2000);
 
-    return () => stopAll();
+    return () => {
+      window.clearTimeout(resetId);
+      stopAll();
+    };
   }, [essayId, startAgentTick, stopAll]);
 
   const label = phase === "idle" ? "" : AGENT_LABELS[agentIndex] ?? AGENT_LABELS[0];

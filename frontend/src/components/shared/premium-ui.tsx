@@ -22,11 +22,11 @@ export function PageHeader({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
-      className="game-surface min-w-0 bg-card p-4 lg:p-5"
+      className="min-w-0 border-b border-border bg-transparent pb-4"
     >
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start lg:gap-4">
         <div className="min-w-0">
-          <div className="game-chip mb-2.5 inline-flex items-center bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-secondary">
+          <div className="game-chip mb-2.5 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
             {eyebrow}
           </div>
           <h1 className="text-xl font-semibold leading-tight tracking-normal sm:text-2xl lg:text-3xl">
@@ -52,7 +52,7 @@ export function Surface({ children, className, delay = 0 }: { children: ReactNod
       transition={{ duration: 0.24, delay, ease: "easeOut" }}
       className={cn(
         "min-w-0",
-        solidPrimary ? "game-surface bg-primary p-3 text-primary-foreground lg:p-4" : "game-surface bg-card p-3 lg:p-4",
+        solidPrimary ? "game-surface bg-primary p-4 text-primary-foreground lg:p-5" : "game-surface bg-card p-4 lg:p-5",
         className,
       )}
     >

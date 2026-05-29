@@ -88,7 +88,7 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
             />
             <Trophy className="relative mx-auto h-7 w-7 text-primary" aria-hidden="true" />
             <p className="relative mt-2 text-lg font-semibold">{title}</p>
-            <p className="relative text-sm font-semibold text-secondary">progresso +{xp}</p>
+            <p className="relative text-sm font-semibold text-primary">progresso +{xp}</p>
           </motion.div>
         </motion.div>
       )}
@@ -143,8 +143,8 @@ export function SmoothProgressPath({ progress }: { progress: number }) {
           cx={x}
           cy={index % 2 ? 62 : 105}
           r="18"
-          fill={index * 25 <= clamped ? "hsl(var(--accent))" : "hsl(var(--card))"}
-          stroke="hsl(var(--foreground))"
+        fill={index * 25 <= clamped ? "hsl(var(--primary))" : "hsl(var(--card))"}
+        stroke="hsl(var(--border))"
           strokeWidth="5"
           initial={{ scale: 0.8 }}
           animate={{ scale: index * 25 <= clamped ? [1, 1.08, 1] : 1 }}
@@ -214,7 +214,7 @@ export function WritingSidebar({
             <div className="game-tile bg-background/82 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold">Painel de escrita</p>
-                <Target className="h-4 w-4 text-secondary" aria-hidden="true" />
+                <Target className="h-4 w-4 text-primary" aria-hidden="true" />
               </div>
               <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
               <div className="mt-3">
@@ -264,7 +264,7 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
   return (
     <div className="space-y-2">
       {theme.supporting_texts.map((text, index) => (
-        <div key={index} className={cn("game-tile overflow-hidden", text.type === "perspectiva" ? "bg-secondary/10" : "bg-background/82")}>
+        <div key={index} className={cn("game-tile overflow-hidden", text.type === "perspectiva" ? "bg-primary/8" : "bg-background/82")}>
           <button
             type="button"
             onClick={() => setExpanded(expanded === index ? null : index)}
@@ -272,7 +272,7 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
           >
             <div className="flex items-center gap-2 min-w-0">
               {text.type === "perspectiva" ? (
-                <Eye className="h-3.5 w-3.5 shrink-0 text-secondary" aria-hidden="true" />
+                <Eye className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
               ) : (
                 <Lightbulb className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
               )}
@@ -320,7 +320,7 @@ export function ENEMWritingSheet({
         autoFocus={autoFocus}
         onChange={(event) => onChange(event.target.value)}
         spellCheck
-        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-base leading-8 text-[#1f1a12] caret-primary outline-none selection:bg-primary/28 placeholder:text-[#888]/60 [font-family:var(--font-merriweather,Georgia,serif)]"
+        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-base leading-8 text-[#333333] caret-primary outline-none selection:bg-primary/22 placeholder:text-muted-foreground/65 [font-family:var(--font-merriweather,Georgia,serif)]"
         placeholder={placeholder}
       />
     </EssayPaper>
@@ -354,15 +354,15 @@ function EssayPaper({ children }: { children: ReactNode }) {
       initial={{ opacity: 0, scale: 0.985, y: 12 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.42, ease: easeOut }}
-      className="relative mx-auto aspect-[210/297] w-full max-w-[794px] overflow-hidden border border-primary/35 bg-[#fffdf7] text-[#1f1a12] shadow-[0_18px_40px_rgba(0,0,0,.18)]"
+      className="relative mx-auto aspect-[210/297] w-full max-w-[794px] overflow-hidden rounded-md border border-border bg-card text-[#333333] shadow-[0_20px_60px_rgba(20,30,55,.10)]"
       style={{
         backgroundImage:
-          "linear-gradient(to bottom, transparent 31px, rgba(48,38,18,.14) 32px), radial-gradient(circle at 30% 10%, rgba(244,197,66,.08), transparent 32%)",
+          "linear-gradient(to bottom, transparent 31px, rgba(51,51,51,.10) 32px)",
         backgroundSize: "100% 32px, 100% 100%",
       }}
     >
-      <div className="pointer-events-none absolute inset-y-[7%] left-[7%] w-px bg-primary/35" />
-      <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-semibold text-[#7c705e]/70">
+      <div className="pointer-events-none absolute inset-y-[7%] left-[7%] w-px bg-primary/30" />
+      <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-semibold text-muted-foreground/70">
         {Array.from({ length: 30 }, (_, index) => (
           <span key={index}>{String(index + 1).padStart(2, "0")}</span>
         ))}

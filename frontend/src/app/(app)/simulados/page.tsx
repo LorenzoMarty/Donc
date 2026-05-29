@@ -61,7 +61,7 @@ export default function ExamsPage() {
         action={
           active ? (
             <div className="game-chip flex w-full items-center justify-center gap-2 bg-card/82 px-4 py-3 text-sm font-semibold md:w-auto">
-              <Clock className="h-4 w-4 text-secondary" aria-hidden="true" />
+              <Clock className="h-4 w-4 text-primary" aria-hidden="true" />
               {elapsed}
             </div>
           ) : null
@@ -137,8 +137,8 @@ export default function ExamsPage() {
             <div className="space-y-4">
               {result ? (
                 <>
-                  <div className="game-tile bg-secondary/10 p-4 text-center">
-                    <Trophy className="mx-auto mb-2 h-6 w-6 text-secondary" aria-hidden="true" />
+                  <div className="game-tile bg-primary/10 p-4 text-center">
+                    <Trophy className="mx-auto mb-2 h-6 w-6 text-primary" aria-hidden="true" />
                     <p className="text-4xl font-bold tracking-normal">{result.score}%</p>
                     <p className="text-sm text-muted-foreground">{result.correct_answers} acertos</p>
                   </div>

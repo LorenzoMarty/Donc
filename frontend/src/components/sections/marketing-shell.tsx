@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
+import { BrandLink } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 
 const links = [
@@ -16,15 +17,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     <div className="website-shell min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border bg-background/82 backdrop-blur-xl">
         <div className="mx-auto flex min-h-[72px] w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:flex-nowrap">
-          <Link href="/" className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-md border border-primary/35 bg-primary text-sm font-semibold text-primary-foreground">
-              D
-            </div>
-            <div className="min-w-0">
-              <p className="text-lg font-semibold leading-none tracking-normal">Donc ENEM</p>
-              <p className="text-xs font-medium text-muted-foreground">Português e Redação</p>
-            </div>
-          </Link>
+          <BrandLink href="/" />
           <nav className="mobile-scroll order-3 flex w-full items-center gap-1 overflow-x-auto rounded-md border border-border bg-card/72 p-1 no-scrollbar lg:order-none lg:w-auto">
             {links.map((link) => (
               <Link
@@ -55,7 +48,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
       <footer className="mt-16 border-t border-border bg-card/52 text-foreground">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-[1.1fr_0.9fr] md:px-6">
           <div>
-            <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold text-secondary">
+            <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
               EdTech moderna para ENEM
             </div>
@@ -63,14 +56,14 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className="font-semibold transition-colors hover:text-secondary">
+              <Link key={link.href} href={link.href} className="font-semibold transition-colors hover:text-primary">
                 {link.label}
               </Link>
             ))}
-            <Link href="/login" className="font-semibold transition-colors hover:text-secondary">
+            <Link href="/login" className="font-semibold transition-colors hover:text-primary">
               Entrar
             </Link>
-            <Link href="/dashboard" className="font-semibold transition-colors hover:text-secondary">
+            <Link href="/dashboard" className="font-semibold transition-colors hover:text-primary">
               Painel
             </Link>
           </div>

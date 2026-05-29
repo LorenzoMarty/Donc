@@ -33,7 +33,7 @@ function GameCard({ game, progress, variant = "default", index = 0, className }:
       whileHover={{
         y: -6,
         scale: 1.015,
-        boxShadow: "0 22px 54px rgba(48,38,18,.13), 0 0 0 1px hsl(var(--primary) / .36)",
+        boxShadow: "0 22px 54px rgba(20,30,55,.12), 0 0 0 1px hsl(var(--primary) / .36)",
       }}
       whileTap={{ scale: 0.985 }}
       className={cn(
@@ -54,7 +54,7 @@ function GameCard({ game, progress, variant = "default", index = 0, className }:
       <GameThumbnail
         game={game}
         icon={<Icon className="h-6 w-6" aria-hidden="true" />}
-        accent={category?.secondaryColor ?? "hsl(46 96% 50%)"}
+        accent={category?.secondaryColor ?? "hsl(var(--primary))"}
         compact={variant === "compact"}
       />
 
@@ -143,16 +143,16 @@ function GameThumbnail({ game, icon, accent, compact }: { game: GameDefinition; 
           background:
             `radial-gradient(circle at 18% 18%, ${accent} 0, transparent 28%), ` +
             "radial-gradient(circle at 82% 18%, rgba(255,255,255,.72), transparent 24%), " +
-            "linear-gradient(135deg, rgba(255,255,255,.78), rgba(255,255,255,.28) 48%, rgba(244,197,66,.10))",
+            "linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.32) 48%, rgba(58,134,255,.10))",
         }}
       />
-      <div className="absolute inset-0 opacity-[0.30] [background-image:linear-gradient(rgba(48,38,18,.24)_1px,transparent_1px),linear-gradient(90deg,rgba(48,38,18,.20)_1px,transparent_1px)] [background-size:22px_22px]" />
+      <div className="absolute inset-0 opacity-[0.24] [background-image:linear-gradient(rgba(20,30,55,.18)_1px,transparent_1px),linear-gradient(90deg,rgba(20,30,55,.15)_1px,transparent_1px)] [background-size:22px_22px]" />
       <div className="absolute -bottom-10 left-6 h-28 w-28 rotate-45 rounded-2xl border border-primary/20 bg-primary/10" />
       <div className="absolute bottom-4 right-4 h-16 w-24 -skew-x-12 rounded-md border border-border bg-card/70" />
 
       <div className="relative flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/25 bg-primary/12 text-secondary">{icon}</div>
+          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">{icon}</div>
           <span className="game-chip inline-flex items-center gap-1 bg-card/80 px-2.5 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
             treino
@@ -186,7 +186,7 @@ function AnimatedProgress({ value }: { value: number }) {
         whileInView={{ width: `${safeValue}%` }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-        className="relative h-full rounded-full bg-gradient-to-r from-primary via-yellow-200 to-primary"
+        className="relative h-full rounded-full bg-gradient-to-r from-primary via-primary/50 to-primary"
         style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,.55),transparent)] opacity-60" />

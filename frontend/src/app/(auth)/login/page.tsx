@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { ArrowRight, GraduationCap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
+import { BrandLink } from "@/components/shared/brand-mark";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,14 +36,9 @@ export default function LoginPage() {
     <main className="grid min-h-screen bg-background lg:grid-cols-[1fr_0.9fr]">
       <section className="soft-grid flex items-center justify-center px-4 py-8 xs:px-6 xs:py-10">
         <MotionShell className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <GraduationCap className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-muted-foreground">Donc ENEM</p>
-              <h1 className="text-2xl font-semibold tracking-normal">Entrar na plataforma</h1>
-            </div>
+          <div className="mb-8 space-y-3">
+            <BrandLink href="/" />
+            <h1 className="text-2xl font-semibold tracking-normal">Entrar na plataforma</h1>
           </div>
 
           <Card className="p-4 xs:p-6">
