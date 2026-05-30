@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Send } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export function EssayEditor({
   saving,
   submitting,
   error,
+  onBack,
   onTitleChange,
   onContentChange,
   onSubmit,
@@ -34,6 +35,7 @@ export function EssayEditor({
   saving: boolean;
   submitting: boolean;
   error?: string;
+  onBack?: () => void;
   onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
   onSubmit: () => void;
@@ -47,6 +49,7 @@ export function EssayEditor({
   const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
+  const headerTitle = activeTheme?.title ?? title;
 
   useEffect(() => {
     const shouldShowSaved = wasSavingRef.current && !saving && Boolean(essay) && essay?.status !== "corrected";
@@ -66,19 +69,22 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex h-[calc(100dvh-5.5rem)] min-h-[560px] flex-col overflow-hidden rounded-md border border-border/70 bg-white shadow-sm md:h-dvh md:rounded-none md:border-0 md:shadow-none"
+      className="grid h-[calc(100dvh-5.5rem)] min-h-[560px] overflow-hidden rounded-md border border-border/70 bg-white shadow-sm md:h-dvh md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] md:rounded-none md:border-0 md:shadow-none"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
-      <header className="flex min-h-14 flex-col gap-2 border-b border-border/70 bg-white px-5 py-2.5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
-          <Input
-            value={title}
-            disabled={locked}
-            onChange={(event) => onTitleChange(event.target.value)}
-            className="h-auto max-w-4xl border-0 bg-transparent px-0 py-0 text-base font-semibold shadow-none focus-visible:ring-0"
-          />
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground">
+      <div className="flex min-h-0 flex-col bg-white">
+        <header className="flex min-h-14 flex-col gap-2 border-b border-border/70 bg-white px-5 py-2.5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start gap-3">
+            {onBack ? (
+              <Button type="button" variant="ghost" size="icon" onClick={onBack} aria-label="Voltar" className="mt-0.5 h-9 w-9 shrink-0">
+                <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            ) : null}
+            <h1 className="text-safe min-w-0 text-xl font-semibold leading-tight tracking-normal lg:text-2xl">{headerTitle}</h1>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium text-accent">
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
               {syncLabel}
@@ -89,6 +95,7 @@ export function EssayEditor({
             <span>{paragraphCount} parágrafos</span>
             <span>{lines} linhas</span>
           </div>
+          <Input value={title} disabled={locked} onChange={(event) => onTitleChange(event.target.value)} className="sr-only" aria-label="Titulo da redacao" tabIndex={-1} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -97,11 +104,10 @@ export function EssayEditor({
             {submitting ? "Corrigindo..." : "Corrigir"}
           </Button>
         </div>
-      </header>
+        </header>
 
-      <div className="grid min-h-0 flex-1 bg-white lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]">
-        <article className="mobile-scroll min-h-0 overflow-y-auto px-5 py-8 md:px-9 lg:py-10">
-          <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 md:grid-cols-[2.4rem_minmax(0,1fr)]">
+        <article className="mobile-scroll min-h-0 overflow-y-auto bg-slate-50/60 px-5 py-8 md:px-9 lg:py-10">
+          <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-2xl border border-border/80 bg-white px-5 py-6 shadow-sm md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
             <div
               aria-hidden="true"
               className="select-none pt-1 text-right font-mono text-[0.82rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.88rem]"
@@ -122,8 +128,9 @@ export function EssayEditor({
             />
           </div>
         </article>
+      </div>
 
-        <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border/55 bg-white p-4 lg:border-l lg:border-t-0">
+      <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border/55 bg-white p-4 md:border-l md:border-t-0">
           <div className="mb-2 flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio</p>
@@ -156,8 +163,7 @@ export function EssayEditor({
               </div>
             ) : null}
           </div>
-        </aside>
-      </div>
+      </aside>
     </motion.section>
   );
 }

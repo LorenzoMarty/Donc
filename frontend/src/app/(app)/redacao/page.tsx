@@ -228,6 +228,12 @@ export default function EssayPage() {
     setSaving(false);
   }
 
+  function backToStart() {
+    setMode("editor");
+    setDraftStarted(false);
+    replaceEssayUrl(essay?.id);
+  }
+
   if (loading) return <LoadingCard />;
 
   if (submitting && essay) {
@@ -270,6 +276,7 @@ export default function EssayPage() {
         saving={saving}
         submitting={submitting}
         error={error}
+        onBack={backToStart}
         onTitleChange={setTitle}
         onContentChange={setContent}
         onSubmit={submit}
@@ -323,6 +330,7 @@ export default function EssayPage() {
             saving={saving}
             submitting={submitting}
             error={error}
+            onBack={backToStart}
             onTitleChange={setTitle}
             onContentChange={setContent}
             onSubmit={submit}
