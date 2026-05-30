@@ -74,7 +74,7 @@ export function EssayEditor({
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
       <div className="flex min-h-0 flex-col bg-white">
-        <header className="grid min-h-12 gap-2 border-b border-border/70 bg-white px-4 py-2 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
+        <header className="grid min-h-[4.75rem] gap-3 border-b border-border/70 bg-white px-4 py-3 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2.5">
             {onBack ? (
@@ -84,7 +84,7 @@ export function EssayEditor({
             ) : null}
             <h1 className="text-safe min-w-0 text-xl font-semibold leading-tight tracking-normal lg:text-2xl">{headerTitle}</h1>
           </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium text-accent">
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
               {syncLabel}
@@ -98,7 +98,7 @@ export function EssayEditor({
           <Input value={title} disabled={locked} onChange={(event) => onTitleChange(event.target.value)} className="sr-only" aria-label="Titulo da redacao" tabIndex={-1} />
         </div>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end self-center">
           <Button size="sm" onClick={onSubmit} disabled={!canSubmit} className="h-9">
             <Send className="h-4 w-4" aria-hidden="true" />
             {submitting ? "Corrigindo..." : "Corrigir"}
