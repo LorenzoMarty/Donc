@@ -43,8 +43,8 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/games", label: "Atividades", icon: Gamepad2 },
 ];
 
-const SIDEBAR_WIDTH_EXPANDED = 304;
-const SIDEBAR_WIDTH_COLLAPSED = 88;
+const SIDEBAR_WIDTH_EXPANDED = 224;
+const SIDEBAR_WIDTH_COLLAPSED = 72;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
@@ -117,7 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-dvh overflow-hidden bg-background text-foreground">
+    <div className="h-dvh overflow-hidden bg-white text-foreground">
       <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
       <DesktopSidebar
         items={navItems}
@@ -191,7 +191,7 @@ function DesktopSidebar({
 }) {
   return (
     <motion.aside
-      className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card md:flex", collapsed ? "py-5" : "py-6")}
+      className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white md:flex", collapsed ? "py-4" : "py-5")}
       animate={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       transition={{ duration: 0.22, ease: "easeInOut" }}
       style={{ width: SIDEBAR_WIDTH_COLLAPSED }}
@@ -199,8 +199,8 @@ function DesktopSidebar({
     >
       <div
         className={cn(
-          "mb-7 flex overflow-hidden",
-          collapsed ? "flex-col items-center gap-3 px-3" : "items-center justify-between gap-2 px-5",
+          "mb-5 flex overflow-hidden",
+          collapsed ? "flex-col items-center gap-3 px-3" : "items-center justify-between gap-2 px-4",
         )}
       >
         <BrandLink collapsed={collapsed} href="/dashboard" className={collapsed ? "w-full justify-center" : undefined} />
@@ -208,8 +208,8 @@ function DesktopSidebar({
           onClick={onToggle}
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
           className={cn(
-            "grid shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-primary/8 hover:text-primary",
-            collapsed ? "h-10 w-10 border border-border bg-card shadow-sm" : "h-8 w-8",
+            "grid shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-primary/7 hover:text-primary",
+            collapsed ? "h-9 w-9 border border-border/80 bg-white" : "h-8 w-8",
           )}
         >
           {collapsed ? (
@@ -220,15 +220,15 @@ function DesktopSidebar({
         </button>
       </div>
 
-      <div className={cn("mb-8 overflow-hidden", collapsed ? "px-4" : "px-5")}>
+      <div className={cn("mb-6 overflow-hidden", collapsed ? "px-3" : "px-4")}>
         {collapsed ? (
-          <Button asChild size="icon" aria-label="Nova redação" className="h-12 w-full">
+          <Button asChild size="icon" aria-label="Nova redação" className="h-10 w-full">
             <Link href="/redacao">
               <Plus className="h-6 w-6" aria-hidden="true" />
             </Link>
           </Button>
         ) : (
-          <Button asChild className="w-full justify-start">
+          <Button asChild className="h-10 w-full justify-start">
             <Link href="/redacao">
               <Plus className="h-5 w-5" aria-hidden="true" />
               Nova redação
@@ -237,31 +237,31 @@ function DesktopSidebar({
         )}
       </div>
 
-      <nav className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-3 px-4" : "gap-2 px-5")} aria-label="Navegacao principal">
+      <nav className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-1.5 px-4")} aria-label="Navegacao principal">
         {items.map((item) => (
           <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
         ))}
       </nav>
 
       {!collapsed ? (
-        <div className="mx-5 mb-4 rounded-md border border-primary/15 bg-primary/5 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
+        <div className="mx-4 mb-3 rounded-md border border-primary/15 bg-primary/5 p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-primary">
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             Aproveite melhor o Donc
           </div>
-          <p className="text-sm leading-6 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
-          <Button asChild variant="outline" className="mt-4 w-full justify-between">
+          <p className="text-xs leading-5 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
+          <Button asChild variant="outline" size="sm" className="mt-3 w-full justify-between">
             <Link href="/onboarding">Ver tour</Link>
           </Button>
         </div>
       ) : null}
 
-      <div className={cn("mt-2 grid gap-2 overflow-hidden", collapsed ? "px-4" : "px-5")}>
+      <div className={cn("mt-2 grid gap-2 overflow-hidden", collapsed ? "px-3" : "px-4")}>
         <Link
           href="/perfil"
           className={cn(
-            "game-tile flex min-h-12 items-center justify-center gap-3 bg-card px-2 py-2 text-sm font-semibold transition-colors",
-            collapsed && "h-12 w-full",
+            "flex min-h-11 items-center justify-center gap-3 rounded-md border border-border/80 bg-white px-2 py-2 text-sm font-semibold transition-colors hover:bg-muted/60",
+            collapsed && "h-10 w-full",
           )}
           aria-label={`Perfil de ${userName}`}
         >
@@ -279,11 +279,11 @@ function DesktopSidebar({
           </motion.span>
         </Link>
         {collapsed ? (
-          <Button variant="outline" size="icon" aria-label="Sair" onClick={onLogout} className="h-12 w-full">
+          <Button variant="outline" size="icon" aria-label="Sair" onClick={onLogout} className="h-10 w-full">
             <LogOut className="h-5 w-5" aria-hidden="true" />
           </Button>
         ) : (
-          <Button variant="outline" onClick={onLogout}>
+          <Button variant="outline" size="sm" onClick={onLogout}>
             <LogOut className="h-4 w-4" aria-hidden="true" />
             Sair
           </Button>
@@ -384,9 +384,9 @@ function ShellNavLink({
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-md border border-transparent text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
-        collapsed ? "h-12 justify-center px-0" : "min-h-12 px-3",
+        collapsed ? "h-10 justify-center px-0" : "min-h-10 px-3",
         showLabel ? "justify-start" : "justify-center",
-        active && "bg-primary/8 text-primary hover:text-primary",
+        active && "bg-primary/8 text-primary hover:bg-primary/10 hover:text-primary",
       )}
     >
       <Icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-5 w-5")} aria-hidden="true" />

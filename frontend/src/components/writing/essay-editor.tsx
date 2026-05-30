@@ -70,17 +70,17 @@ export function EssayEditor({
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
-      <header className="flex flex-col gap-3 border-b border-border/55 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <header className="flex min-h-14 flex-col gap-2 border-b border-border/70 bg-white px-5 py-2.5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <Input
             value={title}
             disabled={locked}
             onChange={(event) => onTitleChange(event.target.value)}
-            className="h-auto max-w-4xl border-0 bg-transparent px-0 py-0 text-lg font-semibold shadow-none focus-visible:ring-0 lg:text-xl"
+            className="h-auto max-w-4xl border-0 bg-transparent px-0 py-0 text-base font-semibold shadow-none focus-visible:ring-0"
           />
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium text-accent">
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
               {syncLabel}
             </span>
             <span>
@@ -92,7 +92,7 @@ export function EssayEditor({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={onSubmit} disabled={!canSubmit}>
+          <Button size="sm" onClick={onSubmit} disabled={!canSubmit}>
             <Send className="h-4 w-4" aria-hidden="true" />
             {submitting ? "Corrigindo..." : "Corrigir"}
           </Button>
@@ -100,8 +100,8 @@ export function EssayEditor({
       </header>
 
       <div className="grid min-h-0 flex-1 bg-white lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]">
-        <article className="mobile-scroll min-h-0 overflow-y-auto px-5 py-5 md:px-7">
-          <div className="mx-auto grid max-w-[900px] grid-cols-[2rem_minmax(0,1fr)] gap-3 md:grid-cols-[2.4rem_minmax(0,1fr)]">
+        <article className="mobile-scroll min-h-0 overflow-y-auto px-5 py-8 md:px-9 lg:py-10">
+          <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 md:grid-cols-[2.4rem_minmax(0,1fr)]">
             <div
               aria-hidden="true"
               className="select-none pt-1 text-right font-mono text-[0.76rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.82rem]"
