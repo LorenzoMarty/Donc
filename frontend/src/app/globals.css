@@ -3,29 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 96.1%;
-  --foreground: 0 0% 20%;
+  --background: 0 0% 100%;
+  --foreground: 224 28% 16%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
   --primary: 215 100% 61%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 20%;
-  --muted: 220 18% 95%;
-  --muted-foreground: 226 12% 43%;
+  --secondary: 220 40% 98%;
+  --secondary-foreground: 224 28% 16%;
+  --muted: 220 44% 97%;
+  --muted-foreground: 226 16% 46%;
   --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
   --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 224 24% 90%;
-  --input: 224 24% 90%;
+  --border: 224 30% 92%;
+  --input: 224 30% 92%;
   --ring: 215 100% 61%;
   --radius: 8px;
-  --shadow-soft: 0 8px 30px rgba(20, 30, 55, 0.06);
-  --shadow-elevated: 0 18px 46px rgba(20, 30, 55, 0.10);
-  --shadow-control: 0 10px 26px rgba(58, 134, 255, 0.14);
+  --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04);
+  --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
+  --shadow-control: 0 10px 24px rgba(0, 82, 255, 0.16);
   --app-container: 1760px;
   --app-gutter: clamp(1rem, 2.7vw, 2.25rem);
   --app-page-gap: clamp(1rem, 2.1vw, 1.65rem);
@@ -33,24 +33,24 @@
 }
 
 .dark {
-  --background: 0 0% 96.1%;
-  --foreground: 0 0% 20%;
+  --background: 0 0% 100%;
+  --foreground: 224 28% 16%;
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
   --primary: 215 100% 61%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 20%;
-  --muted: 220 18% 95%;
-  --muted-foreground: 226 12% 43%;
+  --secondary: 220 40% 98%;
+  --secondary-foreground: 224 28% 16%;
+  --muted: 220 44% 97%;
+  --muted-foreground: 226 16% 46%;
   --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
   --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 224 24% 90%;
-  --input: 224 24% 90%;
+  --border: 224 30% 92%;
+  --input: 224 30% 92%;
   --ring: 215 100% 61%;
 }
 
@@ -208,7 +208,7 @@ li {
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
     box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(12px);
+    backdrop-filter: none;
   }
 
   .game-tile {
@@ -216,8 +216,8 @@ li {
     border: 1px solid hsl(var(--border));
     border-radius: var(--radius);
     box-shadow:
-      0 1px 0 hsl(0 0% 100% / 0.9) inset,
-      0 8px 22px rgba(20, 30, 55, 0.045);
+      0 1px 0 hsl(0 0% 100% / 0.85) inset,
+      0 1px 2px rgba(20, 30, 55, 0.035);
     transition:
       transform 160ms ease,
       box-shadow 160ms ease,
