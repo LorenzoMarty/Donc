@@ -91,6 +91,7 @@ export default function DashboardPage() {
 
   const average = data.essay_average || data.best_essay_score || 0;
   const essaysWritten = data.essays_written ?? 0;
+  const completedLessons = data.completed_lessons ?? 0;
   const studyMinutes = Math.max(23, Math.round((data.goals?.[0]?.current ?? 30) * 0.75));
   const streak = data.streak_days ?? 0;
   const lastScore = data.trend?.at(-1)?.score ?? data.best_essay_score ?? data.essay_average ?? 0;
@@ -159,7 +160,7 @@ export default function DashboardPage() {
         <StatCard icon={Sparkles} label="Nota media" value={average ? String(average) : "824"} suffix="/1000" detail="+38 pts em 30 dias" positive />
         <StatCard icon={FileText} label="Redacoes enviadas" value={String(essaysWritten || 14)} detail="3 este mes" />
         <StatCard icon={Clock3} label="Tempo de estudo" value={String(studyMinutes)} suffix="h" detail="+4h vs semana passada" positive />
-        <StatCard icon={Video} label="Proxima aula" value="Hoje, 19h" detail="com Prof. Marina" />
+        <StatCard icon={Video} label="Aulas assistidas" value={String(completedLessons)} detail={`${data.progress_general ?? 0}% do percurso`} />
       </section>
 
       <section className="mt-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
