@@ -25,8 +25,8 @@ const config = {
   },
   info: {
     icon: Info,
-    bg: "bg-blue-50 border-blue-200 text-blue-800",
-    iconColor: "text-blue-600",
+    bg: "bg-primary/10 border-primary/30 text-foreground",
+    iconColor: "text-primary",
   },
 } as const;
 
