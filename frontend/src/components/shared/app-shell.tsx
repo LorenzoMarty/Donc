@@ -36,10 +36,10 @@ type WorkspaceNavItem = {
 };
 
 const workspaceNav: WorkspaceNavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/redacao", label: "Redação", icon: FilePenLine },
   { href: "/redacoes", label: "Histórico", icon: BarChart3 },
-  { href: "/aulas", label: "Learning Hub", icon: BookOpen },
+  { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/games", label: "Atividades", icon: Gamepad2 },
 ];
 
@@ -228,7 +228,7 @@ function DesktopSidebar({
             </Link>
           </Button>
         ) : (
-          <Button asChild className="h-10 w-full justify-start">
+          <Button asChild className="h-10 w-full justify-start text-base">
             <Link href="/redacao">
               <Plus className="h-5 w-5" aria-hidden="true" />
               Nova redação
@@ -245,49 +245,61 @@ function DesktopSidebar({
 
       {!collapsed ? (
         <div className="mx-4 mb-3 rounded-md border border-primary/15 bg-primary/5 p-3">
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-primary">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             Aproveite melhor o Donc
           </div>
-          <p className="text-xs leading-5 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
+          <p className="text-sm leading-5 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
           <Button asChild variant="outline" size="sm" className="mt-3 w-full justify-between">
             <Link href="/onboarding">Ver tour</Link>
           </Button>
         </div>
       ) : null}
 
-      <div className={cn("mt-2 grid gap-2 overflow-hidden", collapsed ? "px-3" : "px-4")}>
-        <Link
-          href="/perfil"
+      <div className={cn("mt-2 overflow-hidden", collapsed ? "grid gap-2 px-3" : "px-4")}>
+        {!collapsed ? (
+          <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border/80 bg-white px-2 py-2 text-base font-semibold transition-colors">
+            <button
+              type="button"
+              onClick={onLogout}
+              className="inline-flex shrink-0 items-center gap-2 rounded-sm text-foreground transition-colors hover:text-primary"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              Sair
+            </button>
+            <Link href="/perfil" className="flex min-w-0 items-center justify-end gap-2 text-right transition-colors hover:text-primary" aria-label={`Perfil de ${userName}`}>
+              <span className="min-w-0 leading-tight">
+                <span className="block truncate text-base">{userName}</span>
+                <span className="block truncate text-sm font-medium text-muted-foreground">Rank {userRankName}</span>
+              </span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
+                {initials(userName)}
+              </span>
+            </Link>
+          </div>
+        ) : null}
+        <button
+          type="button"
+          aria-label="Sair"
+          onClick={onLogout}
           className={cn(
-            "flex min-h-11 items-center justify-center gap-3 rounded-md border border-border/80 bg-white px-2 py-2 text-sm font-semibold transition-colors hover:bg-muted/60",
-            collapsed && "h-10 w-full",
+            "min-h-11 rounded-md border border-border/80 bg-white text-sm font-semibold transition-colors hover:bg-muted/60 hover:text-primary",
+            collapsed ? "flex h-10 w-full items-center justify-center" : "hidden",
           )}
-          aria-label={`Perfil de ${userName}`}
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-sm font-semibold text-primary">
-            {initials(userName)}
-          </span>
-          <motion.span
-            className="min-w-0 leading-tight"
-            animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
-            transition={{ duration: 0.18 }}
-            style={{ overflow: "hidden", whiteSpace: "nowrap" }}
-          >
-            <span className="block text-safe">{userName}</span>
-            <span className="block text-xs font-medium text-muted-foreground">Rank {userRankName}</span>
-          </motion.span>
-        </Link>
+          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+        </button>
         {collapsed ? (
-          <Button variant="outline" size="icon" aria-label="Sair" onClick={onLogout} className="h-10 w-full">
-            <LogOut className="h-5 w-5" aria-hidden="true" />
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" onClick={onLogout}>
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Sair
-          </Button>
-        )}
+          <Link
+            href="/perfil"
+            className="grid h-10 w-full place-items-center rounded-md border border-border/80 bg-white transition-colors hover:bg-muted/60"
+            aria-label={`Perfil de ${userName}`}
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
+              {initials(userName)}
+            </span>
+          </Link>
+        ) : null}
       </div>
     </motion.aside>
   );
@@ -383,7 +395,7 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 rounded-md border border-transparent text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
+        "flex items-center gap-3 rounded-md border border-transparent text-base font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
         collapsed ? "h-10 justify-center px-0" : "min-h-10 px-3",
         showLabel ? "justify-start" : "justify-center",
         active && "bg-primary/8 text-primary hover:bg-primary/10 hover:text-primary",
