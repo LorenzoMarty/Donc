@@ -22,18 +22,18 @@ export function PageHeader({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
-      className="min-w-0 border-b border-border bg-transparent pb-5"
+      className="min-w-0 border-b border-border/80 bg-transparent pb-3"
     >
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start lg:gap-5">
+      <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start lg:gap-4">
         <div className="min-w-0">
-          <div className="game-chip mb-2.5 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+          <div className="game-chip mb-1.5 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
             {eyebrow}
           </div>
-          <h1 className="text-xl font-semibold leading-tight tracking-normal sm:text-2xl lg:text-3xl">
+          <h1 className="text-xl font-semibold leading-tight tracking-normal sm:text-2xl">
             {title}
           </h1>
           {description && (
-            <p className="mt-2 max-w-[82ch] text-sm font-medium leading-6 text-muted-foreground">{description}</p>
+            <p className="mt-1.5 max-w-[82ch] text-sm font-medium leading-5 text-muted-foreground">{description}</p>
           )}
         </div>
         {action && <div className="w-full min-w-0 shrink-0 lg:w-auto">{action}</div>}
