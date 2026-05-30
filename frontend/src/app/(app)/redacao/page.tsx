@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -10,8 +9,6 @@ import {
   Check,
   CheckCircle2,
   Download,
-  FilePenLine,
-  Files,
   Link2,
   MoreHorizontal,
   Share2,
@@ -281,28 +278,14 @@ export default function EssayPage() {
   }
 
   return (
-    <div className="space-y-5 md:space-y-6">
+    <div className="p-4 md:p-5 lg:p-6">
       <PageHeader
         eyebrow="Laboratorio de redacao"
         title="Escreva e revise por competencia."
         description="Editor compacto para desenvolver sua redacao com clareza e acompanhar estrutura, linhas e paragrafos."
-        action={
-          <div className="grid w-full gap-2 sm:grid-cols-2 md:w-auto">
-            <Button onClick={() => createDraft()} disabled={!selectedTheme} size="lg">
-              <FilePenLine className="h-4 w-4" aria-hidden="true" />
-              Nova redacao
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/redacoes">
-                <Files className="h-4 w-4" aria-hidden="true" />
-                Historico
-              </Link>
-            </Button>
-          </div>
-        }
       />
 
-      <div className="space-y-4">
+      <div className="grid gap-3 pt-3">
         {!essay ? (
           <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
         ) : (
@@ -317,14 +300,14 @@ export default function EssayPage() {
         ) : null}
 
         {!essay && !draftStarted ? (
-          <Surface className="grid min-h-[280px] place-items-center text-center">
-            <div>
-              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+          <Surface className="grid min-h-[180px] place-items-center text-center">
+            <div className="max-w-xl px-3 py-2">
+              <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
                 <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
               </div>
               <p className="text-xl font-semibold tracking-normal">Escolha um tema e comece a escrever.</p>
-              <p className="mt-2 text-sm text-muted-foreground">O editor abre limpo para voce desenvolver a redacao no seu ritmo.</p>
-              <Button className="mt-5" onClick={() => createDraft()} disabled={!selectedTheme}>
+              <p className="mt-1.5 text-sm text-muted-foreground">O editor abre limpo para voce desenvolver a redacao no seu ritmo.</p>
+              <Button className="mt-4" onClick={() => createDraft()} disabled={!selectedTheme}>
                 Comecar redacao
               </Button>
             </div>
@@ -360,27 +343,27 @@ function ThemePicker({
   onSelect: (theme: EssayTheme) => void;
 }) {
   return (
-    <Surface>
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <Surface className="p-4 lg:p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Banco de temas</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-normal">Escolha o tema</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-normal">Escolha o tema</h2>
         </div>
         <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
-      <div className="grid gap-3">
+      <div className="grid gap-2">
         {themes.map((theme) => (
           <button
             type="button"
             key={theme.id}
             onClick={() => onSelect(theme)}
             className={cn(
-              "game-tile group w-full bg-background/54 p-3 text-left transition-all hover:bg-muted/62",
+              "group w-full rounded-md border border-border/80 bg-white p-3 text-left transition-all hover:bg-primary/5",
               selectedTheme?.id === theme.id && "bg-primary/20",
             )}
           >
             <p className="text-sm font-semibold">{theme.title}</p>
-            <p className="text-safe mt-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
+            <p className="text-safe mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
           </button>
         ))}
       </div>
