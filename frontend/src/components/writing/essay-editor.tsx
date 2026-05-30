@@ -66,11 +66,11 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex h-[calc(100dvh-8rem)] min-h-[560px] flex-col overflow-hidden rounded-md border border-border/70 bg-card shadow-sm lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]"
+      className="flex h-[calc(100dvh-8rem)] min-h-[560px] flex-col overflow-hidden rounded-md border border-border/70 bg-white shadow-sm lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
-      <header className="flex flex-col gap-3 bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+      <header className="flex flex-col gap-3 border-b border-border/55 bg-white px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <Input
             value={title}
@@ -99,15 +99,15 @@ export function EssayEditor({
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-3 px-4 pb-3 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)]">
-        <article className="mobile-scroll min-h-0 overflow-y-auto px-2 py-4 md:px-4">
+      <div className="grid min-h-0 flex-1 bg-white lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]">
+        <article className="mobile-scroll min-h-0 overflow-y-auto px-5 py-5 md:px-7">
           <div className="mx-auto grid max-w-[900px] grid-cols-[2rem_minmax(0,1fr)] gap-3 md:grid-cols-[2.4rem_minmax(0,1fr)]">
             <div
               aria-hidden="true"
-              className="select-none pt-1 text-right font-mono text-[0.78rem] leading-[2.62rem] text-muted-foreground/45 md:text-xs"
+              className="select-none pt-1 text-right font-mono text-[0.76rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.82rem]"
             >
               {lineNumbers.map((lineNumber) => (
-                <div key={lineNumber} className="h-[2.62rem]">
+                <div key={lineNumber} className="h-[var(--essay-line-height)]">
                   {lineNumber}
                 </div>
               ))}
@@ -118,21 +118,21 @@ export function EssayEditor({
               onChange={(event) => onContentChange(event.target.value)}
               spellCheck
               placeholder="Comece sua redação aqui..."
-              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.28rem] leading-[2.05] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [font-family:var(--font-merriweather,Georgia,serif)]"
+              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.38rem] leading-[var(--essay-line-height)] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
             />
           </div>
         </article>
 
-        <aside className="mobile-scroll min-h-0 overflow-y-auto p-2 lg:p-3">
-          <div className="mb-3 flex items-center justify-between gap-3">
+        <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border/55 bg-white p-4 lg:border-l lg:border-t-0">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio</p>
-              <h2 className="mt-1 text-base font-semibold">Guia e textos</h2>
+              <h2 className="mt-0.5 text-sm font-semibold">Guia e textos</h2>
             </div>
             <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount >= 80 ? "Pronta" : "Rascunho"}</Badge>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
             <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} theme={activeTheme} />
             <FriendlyErrorFeedback
@@ -163,16 +163,16 @@ export function EssayEditor({
 }
 
 function estimateEditorLines(content: string) {
-  const rows = content.split("\n").reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 86)), 0);
+  const rows = content.split("\n").reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 80)), 0);
   return Math.max(1, rows);
 }
 
 function ThemeReference({ theme, compact = false }: { theme: EssayTheme; compact?: boolean }) {
   return (
-    <section className={cn("rounded-md bg-primary/8 text-foreground", compact ? "p-3" : "p-4")}>
+    <section className={cn("border-b border-border/55 text-foreground", compact ? "pb-2.5" : "p-4")}>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Tema da redação</p>
-      <h2 className={cn("mt-1 font-semibold leading-snug tracking-normal", compact ? "text-base" : "text-lg md:text-xl")}>{theme.title}</h2>
-      <p className={cn("mt-2 whitespace-pre-wrap leading-6 text-muted-foreground", compact ? "text-xs" : "text-sm")}>{theme.context}</p>
+      <h2 className={cn("mt-1 font-semibold leading-snug tracking-normal", compact ? "text-sm" : "text-lg md:text-xl")}>{theme.title}</h2>
+      <p className={cn("mt-1.5 whitespace-pre-wrap text-muted-foreground", compact ? "text-xs leading-5" : "text-sm leading-6")}>{theme.context}</p>
     </section>
   );
 }
