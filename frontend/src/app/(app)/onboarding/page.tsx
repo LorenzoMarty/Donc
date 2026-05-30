@@ -45,8 +45,8 @@ const TOUR_SLIDES = [
     title: "Painel de Evolução",
     description: "Acompanhe notas, sequências, competências e veja exatamente onde melhorar.",
     href: "/dashboard",
-    color: "text-blue-600",
-    bg: "bg-blue-50 border-blue-200",
+    color: "text-primary",
+    bg: "bg-primary/10 border-primary/30",
   },
 ];
 
@@ -172,7 +172,7 @@ function StepDots({ total, current }: { total: number; current: number }) {
       {Array.from({ length: total }).map((_, i) => (
         <motion.div
           key={i}
-          animate={{ width: i === current ? 24 : 8, backgroundColor: i === current ? "#3A86FF" : "hsl(224 24% 90%)" }}
+          animate={{ width: i === current ? 24 : 8, backgroundColor: i === current ? "#65be02" : "hsl(224 24% 90%)" }}
           transition={{ duration: 0.3 }}
           className="h-2 rounded-full"
         />

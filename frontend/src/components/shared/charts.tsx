@@ -11,7 +11,7 @@ export function ScoreAreaChart({ data }: { data: { label: string; score: number 
           <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
           <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} domain={[0, 1000]} />
           <Tooltip contentStyle={{ borderRadius: 8, borderColor: "hsl(var(--border))", background: "hsl(var(--card))" }} />
-          <Area type="monotone" dataKey="score" stroke="#3A86FF" strokeWidth={3} fill="#3A86FF" fillOpacity={0.12} />
+          <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={3} fill="hsl(var(--primary))" fillOpacity={0.12} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -27,7 +27,7 @@ export function CompetencyBarChart({ data }: { data: { competency: string; value
           <XAxis dataKey="competency" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
           <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} domain={[0, 200]} />
           <Tooltip contentStyle={{ borderRadius: 8, borderColor: "hsl(var(--border))", background: "hsl(var(--card))" }} />
-          <Bar dataKey="value" fill="#3A86FF" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="value" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

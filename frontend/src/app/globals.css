@@ -9,8 +9,8 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 215 100% 61%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 88.4 97.9% 37.6%;
+  --primary-foreground: 224 28% 16%;
   --secondary: 220 40% 98%;
   --secondary-foreground: 224 28% 16%;
   --muted: 220 44% 97%;
@@ -21,11 +21,11 @@
   --destructive-foreground: 0 0% 100%;
   --border: 224 30% 92%;
   --input: 224 30% 92%;
-  --ring: 215 100% 61%;
+  --ring: 88.4 97.9% 37.6%;
   --radius: 8px;
   --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04);
   --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
-  --shadow-control: 0 10px 24px rgba(0, 82, 255, 0.16);
+  --shadow-control: 0 10px 24px rgba(101, 190, 2, 0.16);
   --app-container: 1760px;
   --app-gutter: clamp(1rem, 2.7vw, 2.25rem);
   --app-page-gap: clamp(1rem, 2.1vw, 1.65rem);
@@ -39,8 +39,8 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 215 100% 61%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 88.4 97.9% 37.6%;
+  --primary-foreground: 224 28% 16%;
   --secondary: 220 40% 98%;
   --secondary-foreground: 224 28% 16%;
   --muted: 220 44% 97%;
@@ -51,7 +51,7 @@
   --destructive-foreground: 0 0% 100%;
   --border: 224 30% 92%;
   --input: 224 30% 92%;
-  --ring: 215 100% 61%;
+  --ring: 88.4 97.9% 37.6%;
 }
 
 * {
@@ -259,7 +259,7 @@ li {
   .focus-ring-soft {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 26px rgba(58, 134, 255, 0.16);
+      0 12px 26px rgba(101, 190, 2, 0.16);
   }
 
   .website-shell {
@@ -328,7 +328,7 @@ li {
   [class*="shadow-glow"] {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 28px rgba(58, 134, 255, 0.16) !important;
+      0 12px 28px rgba(101, 190, 2, 0.16) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {
