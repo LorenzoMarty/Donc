@@ -74,17 +74,17 @@ export function EssayEditor({
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
       <div className="flex min-h-0 flex-col bg-white">
-        <header className="flex min-h-14 flex-col gap-2 border-b border-border/70 bg-white px-5 py-2.5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-start gap-3">
+        <header className="grid min-h-12 gap-2 border-b border-border/70 bg-white px-4 py-2 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2.5">
             {onBack ? (
-              <Button type="button" variant="ghost" size="icon" onClick={onBack} aria-label="Voltar" className="mt-0.5 h-9 w-9 shrink-0">
+              <Button type="button" variant="ghost" size="icon" onClick={onBack} aria-label="Voltar" className="h-8 w-8 shrink-0">
                 <ArrowLeft className="h-5 w-5" aria-hidden="true" />
               </Button>
             ) : null}
             <h1 className="text-safe min-w-0 text-xl font-semibold leading-tight tracking-normal lg:text-2xl">{headerTitle}</h1>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium text-accent">
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
               {syncLabel}
@@ -98,8 +98,8 @@ export function EssayEditor({
           <Input value={title} disabled={locked} onChange={(event) => onTitleChange(event.target.value)} className="sr-only" aria-label="Titulo da redacao" tabIndex={-1} />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={onSubmit} disabled={!canSubmit}>
+        <div className="flex items-center justify-end">
+          <Button size="sm" onClick={onSubmit} disabled={!canSubmit} className="h-9">
             <Send className="h-4 w-4" aria-hidden="true" />
             {submitting ? "Corrigindo..." : "Corrigir"}
           </Button>
