@@ -11,9 +11,9 @@ export function DoncLogoMark({ className, size = "md" }: { className?: string; s
     <span
       className={cn(
         "relative inline-block shrink-0 overflow-hidden",
-        size === "sm" && "h-9 w-24",
-        size === "md" && "h-11 w-28",
-        size === "lg" && "h-12 w-32",
+        size === "sm" && "h-8 w-20",
+        size === "md" && "h-10 w-24",
+        size === "lg" && "h-11 w-28",
         className,
       )}
       aria-hidden="true"
@@ -22,8 +22,8 @@ export function DoncLogoMark({ className, size = "md" }: { className?: string; s
         src="/DONC.svg"
         alt=""
         fill
-        sizes={size === "lg" ? "128px" : size === "sm" ? "96px" : "112px"}
-        className="scale-[3.7] object-contain"
+        sizes={size === "lg" ? "112px" : size === "sm" ? "80px" : "96px"}
+        className="object-contain object-left"
         priority
       />
     </span>
@@ -47,7 +47,7 @@ export function BrandLink({
     <Link href={href} className={cn("flex min-w-0 items-center", className)}>
       <DoncLogoMark
         size={compact ? "sm" : "md"}
-        className={cn(collapsed && "h-12 w-14")}
+        className={cn(collapsed && "h-10 w-12")}
       />
       <motion.span
         className="sr-only"
