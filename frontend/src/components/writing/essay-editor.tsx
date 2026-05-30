@@ -84,7 +84,7 @@ export function EssayEditor({
             ) : null}
             <h1 className="text-safe min-w-0 text-xl font-semibold leading-tight tracking-normal lg:text-2xl">{headerTitle}</h1>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium text-accent">
               <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
               {syncLabel}
