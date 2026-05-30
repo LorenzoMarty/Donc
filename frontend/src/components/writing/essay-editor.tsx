@@ -104,7 +104,7 @@ export function EssayEditor({
           <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 md:grid-cols-[2.4rem_minmax(0,1fr)]">
             <div
               aria-hidden="true"
-              className="select-none pt-1 text-right font-mono text-[0.76rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.82rem]"
+              className="select-none pt-1 text-right font-mono text-[0.82rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.88rem]"
             >
               {lineNumbers.map((lineNumber) => (
                 <div key={lineNumber} className="h-[var(--essay-line-height)]">
@@ -118,7 +118,7 @@ export function EssayEditor({
               onChange={(event) => onContentChange(event.target.value)}
               spellCheck
               placeholder="Comece sua redação aqui..."
-              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.38rem] leading-[var(--essay-line-height)] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
+              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
             />
           </div>
         </article>

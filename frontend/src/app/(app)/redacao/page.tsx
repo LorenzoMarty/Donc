@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
-  ArrowLeft,
   BarChart3,
   Brain,
   Check,
@@ -13,7 +12,6 @@ import {
   Download,
   FilePenLine,
   Files,
-  History,
   Link2,
   MoreHorizontal,
   Share2,
@@ -30,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { useCorrectionStatus } from "@/hooks/useCorrectionStatus";
-import { apiFetch, type Essay, type EssaySubmitResponse, type EssayTheme, type EssayVersion } from "@/services/api";
+import { apiFetch, type Essay, type EssaySubmitResponse, type EssayTheme } from "@/services/api";
 import type { InlineAnnotation } from "@/types/api";
 import { cn } from "@/utils";
 
@@ -46,7 +44,6 @@ export default function EssayPage() {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mode, setMode] = useState<EssayViewMode>("editor");
-  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const saveRequestRef = useRef(0);
@@ -57,12 +54,10 @@ export default function EssayPage() {
   const selectedThemeId = selectedTheme?.id;
   const wordCount = countWords(content);
   const paragraphCount = countParagraphs(content);
-  const selectedVersion = selectedVersionId ? (essay?.versions.find((version) => version.id === selectedVersionId) ?? null) : null;
-  const analysisCorrection = selectedVersion?.correction ?? essay?.correction ?? null;
-  const analysisTitle = selectedVersion?.title ?? essay?.title ?? title;
-  const analysisContent = selectedVersion?.content ?? essay?.content ?? content;
+  const analysisCorrection = essay?.correction ?? null;
+  const analysisTitle = essay?.title ?? title;
+  const analysisContent = essay?.content ?? content;
   const analysisTheme = essay?.theme ?? selectedTheme;
-  const analysisVersionLabel = selectedVersion ? `Versao ${selectedVersion.version_number}` : essay?.status === "corrected" ? "Versao atual" : "Rascunho";
 
   useEffect(() => {
     let mounted = true;
@@ -78,16 +73,12 @@ export default function EssayPage() {
         if (essayId) {
           const openedEssay = await apiFetch<Essay>(`/essays/${essayId}`);
           if (!mounted) return;
-          const versionId = Number(params.get("versionId"));
-          const version = Number.isFinite(versionId) ? (openedEssay.versions.find((item) => item.id === versionId) ?? null) : null;
-          const source = version ?? openedEssay;
           setEssay(openedEssay);
-          setSelectedVersionId(version?.id ?? null);
-          setTitle(source.title);
-          setContent(source.content);
+          setTitle(openedEssay.title);
+          setContent(openedEssay.content);
           setSelectedTheme(openedEssay.theme);
           setDraftStarted(true);
-          setMode(params.get("view") === "analise" || openedEssay.status === "corrected" || Boolean(version?.correction) ? "analysis" : "editor");
+          setMode(params.get("view") === "analise" || openedEssay.status === "corrected" ? "analysis" : "editor");
           return;
         }
 
@@ -182,7 +173,6 @@ export default function EssayPage() {
     setSelectedTheme(theme);
     setEssay(null);
     setMode("editor");
-    setSelectedVersionId(null);
     setDraftStarted(true);
     setTitle(`Redacao - ${theme.title.slice(0, 70)}`);
     setContent("");
@@ -221,13 +211,11 @@ export default function EssayPage() {
   }
 
   function handleCorrectionCompleted(corrected: Essay) {
-    const latestVersion = latestCorrectedVersion(corrected);
     setEssay(corrected);
-    setSelectedVersionId(latestVersion?.id ?? null);
-    setTitle((latestVersion ?? corrected).title);
-    setContent((latestVersion ?? corrected).content);
+    setTitle(corrected.title);
+    setContent(corrected.content);
     setMode("analysis");
-    replaceEssayUrl(corrected.id, latestVersion?.id, "analysis");
+    replaceEssayUrl(corrected.id, "analysis");
     submittingRef.current = false;
     saveRequestRef.current += 1;
     setSubmitting(false);
@@ -241,32 +229,6 @@ export default function EssayPage() {
     saveRequestRef.current += 1;
     setSubmitting(false);
     setSaving(false);
-  }
-
-  function readVersion(version: EssayVersion) {
-    setError("");
-    setMode("analysis");
-    setSelectedVersionId(version.id);
-    setTitle(version.title);
-    setContent(version.content);
-    if (essay) replaceEssayUrl(essay.id, version.id, "analysis");
-  }
-
-  async function rewriteFromVersion(version: EssayVersion) {
-    if (!essay) return;
-    setError("");
-    try {
-      const draft = await apiFetch<Essay>(`/essays/${essay.id}/versions/${version.id}/rewrite`, { method: "POST" });
-      setEssay(draft);
-      setMode("editor");
-      setSelectedVersionId(null);
-      setTitle(draft.title);
-      setContent(draft.content);
-      setDraftStarted(true);
-      replaceEssayUrl(draft.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel iniciar a reescrita.");
-    }
   }
 
   if (loading) return <LoadingCard />;
@@ -290,23 +252,11 @@ export default function EssayPage() {
   if (mode === "analysis" && essay) {
     return (
       <EssayAnalysisWorkspace
-        essay={essay}
         title={analysisTitle}
         content={analysisContent}
         theme={analysisTheme}
-        versionLabel={analysisVersionLabel}
         correction={analysisCorrection}
         error={error}
-        selectedVersionId={selectedVersionId}
-        onBackToVersions={() => {
-          setMode("editor");
-          setSelectedVersionId(null);
-          setTitle(essay.title);
-          setContent(essay.content);
-          replaceEssayUrl(essay.id);
-        }}
-        onReadVersion={readVersion}
-        onRewriteVersion={rewriteFromVersion}
       />
     );
   }
@@ -356,10 +306,7 @@ export default function EssayPage() {
         {!essay ? (
           <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
         ) : (
-          <div className={cn("grid gap-4", hasCorrection ? "2xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]" : "2xl:grid-cols-1")}>
-            <VersionPanel essay={essay} selectedVersionId={selectedVersionId} onRead={readVersion} onRewrite={rewriteFromVersion} />
-            {hasCorrection ? <CorrectionPanel correction={analysisCorrection} error={error} /> : null}
-          </div>
+          hasCorrection ? <CorrectionPanel correction={analysisCorrection} error={error} /> : null
         )}
 
         {error && !hasCorrection ? (
@@ -437,65 +384,6 @@ function ThemePicker({
           </button>
         ))}
       </div>
-    </Surface>
-  );
-}
-
-function VersionPanel({
-  essay,
-  selectedVersionId,
-  onRead,
-  onRewrite,
-}: {
-  essay: Essay;
-  selectedVersionId: number | null;
-  onRead: (version: EssayVersion) => void;
-  onRewrite: (version: EssayVersion) => void;
-}) {
-  const versions = essay.versions.length ? [...essay.versions].sort((a, b) => b.version_number - a.version_number) : [];
-
-  return (
-    <Surface>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Versoes salvas</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-normal">Escolha onde continuar</h2>
-        </div>
-        <History className="h-5 w-5 text-primary" aria-hidden="true" />
-      </div>
-
-      {versions.length ? (
-        <div className="space-y-3">
-          {versions.map((version) => (
-            <div key={version.id} className="game-tile bg-background/56 p-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={selectedVersionId === version.id ? "secondary" : "outline"}>Versao {version.version_number}</Badge>
-                    {version.score ? <Badge variant="success">{version.score}</Badge> : <Badge variant="secondary">Em escrita</Badge>}
-                  </div>
-                  <p className="text-safe mt-2 text-sm font-semibold">{version.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{formatDate(version.updated_at)}</p>
-                </div>
-                <div className="grid w-full gap-2 xs:w-auto xs:grid-cols-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => onRead(version)}>
-                    Ler
-                  </Button>
-                  <Button type="button" size="sm" onClick={() => onRewrite(version)}>
-                    <FilePenLine className="h-4 w-4" aria-hidden="true" />
-                    Reescrever
-                  </Button>
-                </div>
-              </div>
-              {version.correction?.feedback ? (
-                <p className="text-safe mt-3 text-sm leading-6 text-muted-foreground">{version.correction.feedback}</p>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm leading-6 text-muted-foreground">As correcoes desta redacao ficarao salvas aqui a cada nova reescrita.</p>
-      )}
     </Surface>
   );
 }
@@ -633,29 +521,17 @@ function buildSegments(paragraph: string, annotations: InlineAnnotation[]): Text
 }
 
 function EssayAnalysisWorkspace({
-  essay,
   title,
   content,
   theme,
-  versionLabel,
   correction,
   error,
-  selectedVersionId,
-  onBackToVersions,
-  onReadVersion,
-  onRewriteVersion,
 }: {
-  essay: Essay;
   title: string;
   content: string;
   theme: EssayTheme | null;
-  versionLabel: string;
   correction: Essay["correction"];
   error: string;
-  selectedVersionId: number | null;
-  onBackToVersions: () => void;
-  onReadVersion: (version: EssayVersion) => void;
-  onRewriteVersion: (version: EssayVersion) => void;
 }) {
   const [activeAnnotation, setActiveAnnotation] = useState<InlineAnnotation | null>(null);
   const [activeTab, setActiveTab] = useState<"geral" | "estrutura" | "clareza" | "estilo" | "fontes">("geral");
@@ -676,7 +552,6 @@ function EssayAnalysisWorkspace({
       title,
       "",
       theme ? `Tema: ${theme.title}` : "",
-      `Versao: ${versionLabel}`,
       correction ? `Nota: ${correction.total_score}` : "",
       "",
       content,
@@ -697,9 +572,6 @@ function EssayAnalysisWorkspace({
     <div className="flex h-[calc(100dvh-8.75rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]">
       <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBackToVersions} aria-label="Voltar para versoes">
-            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-          </Button>
           <div className="min-w-0">
             <h1 className="text-safe text-lg font-semibold leading-tight text-foreground lg:text-xl">{title}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -708,7 +580,6 @@ function EssayAnalysisWorkspace({
                 Salvo
               </span>
               <span><strong className="text-foreground">{words.toLocaleString("pt-BR")}</strong> palavras</span>
-              <span>{versionLabel}</span>
             </div>
           </div>
         </div>
@@ -740,10 +611,6 @@ function EssayAnalysisWorkspace({
           onTabChange={setActiveTab}
           activeAnnotation={activeAnnotation}
           onSelectAnnotation={setActiveAnnotation}
-          selectedVersionId={selectedVersionId}
-          essay={essay}
-          onReadVersion={onReadVersion}
-          onRewriteVersion={onRewriteVersion}
         />
       </div>
     </div>
@@ -834,10 +701,6 @@ function AIFeedbackPanel({
   onTabChange,
   activeAnnotation,
   onSelectAnnotation,
-  selectedVersionId,
-  essay,
-  onReadVersion,
-  onRewriteVersion,
 }: {
   correction: Essay["correction"];
   error: string;
@@ -845,10 +708,6 @@ function AIFeedbackPanel({
   onTabChange: (tab: AnalysisTab) => void;
   activeAnnotation: InlineAnnotation | null;
   onSelectAnnotation: (annotation: InlineAnnotation | null) => void;
-  selectedVersionId: number | null;
-  essay: Essay;
-  onReadVersion: (version: EssayVersion) => void;
-  onRewriteVersion: (version: EssayVersion) => void;
 }) {
   const annotations = correction?.inline_annotations ?? [];
   const suggestions = buildSuggestionCards(correction, annotations, activeTab);
@@ -949,29 +808,6 @@ function AIFeedbackPanel({
             </div>
           ) : null}
         </section>
-
-        {essay.versions.length > 0 ? (
-          <section className="rounded-md border border-border bg-card p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold">
-              <History className="h-4 w-4 text-primary" aria-hidden="true" />
-              Versões
-            </div>
-            <div className="space-y-2">
-              {[...essay.versions].sort((a, b) => b.version_number - a.version_number).map((version) => (
-                <div key={version.id} className={cn("rounded-md border border-border p-3", selectedVersionId === version.id && "border-primary bg-primary/10")}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold">Versão {version.version_number}</p>
-                    {version.score ? <Badge variant="success">{version.score}</Badge> : <Badge variant="outline">Rascunho</Badge>}
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => onReadVersion(version)}>Abrir</Button>
-                    {version.correction ? <Button size="sm" onClick={() => onRewriteVersion(version)}>Reescrever</Button> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         {error ? (
           <div className="game-tile flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
@@ -1178,10 +1014,6 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
   );
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(value));
-}
-
 function countWords(value: string) {
   return value.trim() ? value.trim().split(/\s+/).length : 0;
 }
@@ -1193,15 +1025,7 @@ function countParagraphs(value: string) {
   return stripped.split(/\n+/).filter((line) => line.trim()).length;
 }
 
-function latestCorrectedVersion(essay: Essay) {
-  return (
-    [...essay.versions]
-      .filter((version) => version.correction)
-      .sort((a, b) => b.version_number - a.version_number)[0] ?? null
-  );
-}
-
-function replaceEssayUrl(essayId?: number, versionId?: number, mode?: EssayViewMode) {
+function replaceEssayUrl(essayId?: number, mode?: EssayViewMode) {
   if (typeof window === "undefined") return;
   if (!essayId) {
     window.history.replaceState(null, "", "/redacao");
@@ -1210,6 +1034,5 @@ function replaceEssayUrl(essayId?: number, versionId?: number, mode?: EssayViewM
 
   const params = new URLSearchParams({ essayId: String(essayId) });
   if (mode === "analysis") params.set("view", "analise");
-  if (versionId) params.set("versionId", String(versionId));
   window.history.replaceState(null, "", `/redacao?${params.toString()}`);
 }
