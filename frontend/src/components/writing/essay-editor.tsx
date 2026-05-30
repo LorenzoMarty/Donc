@@ -66,7 +66,7 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex h-[calc(100dvh-8rem)] min-h-[560px] flex-col overflow-hidden rounded-md border border-border/70 bg-white shadow-sm lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]"
+      className="flex h-[calc(100dvh-5.5rem)] min-h-[560px] flex-col overflow-hidden rounded-md border border-border/70 bg-white shadow-sm md:h-dvh md:rounded-none md:border-0 md:shadow-none"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
