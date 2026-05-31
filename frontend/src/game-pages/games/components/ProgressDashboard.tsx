@@ -1,34 +1,16 @@
 "use client";
 
-import { useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Flame, Medal, Shield, Trophy, Upload, Zap } from "lucide-react";
-import { toast } from "sonner";
+import { Flame, Medal, Shield, Trophy, Zap } from "lucide-react";
 
 import { getRankSnapshot } from "@/features/xp/xp";
 import { useGameStore } from "@/stores/game-store";
-import { Button } from "@/components/ui/button";
 
 export function ProgressDashboard({ overallProgress, weeklyProgress }: { overallProgress: number; weeklyProgress: number }) {
   const xp = useGameStore((state) => state.xp);
   const streak = useGameStore((state) => state.streak);
-  const exportProgress = useGameStore((state) => state.exportProgress);
-  const importProgress = useGameStore((state) => state.importProgress);
   const rank = getRankSnapshot(xp);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const ok = importProgress(ev.target?.result as string);
-      if (ok) toast.success("Progresso importado com sucesso.");
-      else toast.error("Arquivo inválido. Use um backup exportado por este app.");
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
   const metrics = [
     { label: "Rank atual", value: rank.current.name, icon: Shield },
     { label: "XP total", value: `${xp} pts`, icon: Zap },
@@ -42,10 +24,10 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.42, ease: "easeOut" }}
-      className="game-surface relative overflow-hidden bg-card p-4 md:p-5"
+      className="game-surface relative overflow-hidden bg-card p-4 md:p-5 lg:p-6"
     >
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
-      <div className="fluid-grid gap-3 [--grid-min:11rem]">
+      <div className="fluid-grid gap-3 md:gap-4 [--grid-min:11rem]">
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
           return (
@@ -70,7 +52,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
         })}
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+      <div className="mt-5 grid gap-4 md:mt-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <div className="mb-2 flex items-center justify-between gap-4">
             <div>
@@ -96,18 +78,6 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dominio geral</p>
           <p className="mt-1 text-2xl font-semibold text-foreground">{overallProgress}%</p>
         </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={exportProgress}>
-          <Download className="h-3.5 w-3.5" aria-hidden="true" />
-          Exportar progresso
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-          Importar backup
-        </Button>
-        <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
       </div>
     </motion.section>
   );
