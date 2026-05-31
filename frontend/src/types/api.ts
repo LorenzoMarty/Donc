@@ -59,6 +59,7 @@ export type Dashboard = {
   recent_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   pending_exercises: { id: number; skill: string; difficulty: string }[];
   recent_exams: { id: number; title: string; score: number }[];
+  recent_essays: { id: number; title: string; theme_title: string; status: Essay["status"]; word_count: number; score: number | null; updated_at: string }[];
   suggested_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   goals: { id: number; title: string; current: number; target: number; unit: string; completed: boolean }[];
 };

@@ -19,7 +19,7 @@ export function DoncLogoMark({ className, size = "md" }: { className?: string; s
       aria-hidden="true"
     >
       <Image
-        src="/DONC.svg"
+        src="/DONC.png"
         alt=""
         fill
         sizes={size === "lg" ? "112px" : size === "sm" ? "80px" : "96px"}

@@ -80,12 +80,13 @@ def job_payload(job: AIJob) -> dict:
 
 def enqueue_correct_essay(job_id: str) -> bool:
     try:
+        import redis
         from src.queues.tasks import correct_essay_task
 
         if correct_essay_task is None:
             return False
+        redis.from_url(settings.redis_url, socket_connect_timeout=0.2, socket_timeout=0.2).ping()
         correct_essay_task.delay(job_id)
         return True
     except Exception:
         return False
-

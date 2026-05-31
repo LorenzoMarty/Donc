@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type WheelEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -139,20 +138,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         onLogout={logout}
       />
 
-      <motion.div
+      <div
         ref={scrollAreaRef}
-        className="h-full overflow-y-auto overscroll-contain"
-        animate={{ paddingLeft: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
-        transition={{ duration: 0.22, ease: "easeInOut" }}
-        style={{ paddingLeft: SIDEBAR_WIDTH_COLLAPSED }}
+        className="h-full overflow-y-auto overscroll-contain transition-[padding-left] duration-200 ease-in-out md:pl-[var(--sidebar-width)]"
+        style={{ "--sidebar-width": `${collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px` } as CSSProperties}
       >
-        <div className="md:hidden">
-          {/* mobile: reset padding applied by motion on small screens */}
-        </div>
         <main className="min-h-dvh w-full px-3 pb-3 pt-[calc(4.75rem+env(safe-area-inset-top))] md:p-0">
           {children}
         </main>
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -190,11 +184,9 @@ function DesktopSidebar({
   onWheel: (event: WheelEvent<HTMLElement>) => void;
 }) {
   return (
-    <motion.aside
-      className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white md:flex", collapsed ? "py-4" : "py-5")}
-      animate={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
-      transition={{ duration: 0.22, ease: "easeInOut" }}
-      style={{ width: SIDEBAR_WIDTH_COLLAPSED }}
+    <aside
+      className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white transition-[width,padding] duration-200 ease-in-out md:flex", collapsed ? "py-4" : "py-5")}
+      style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       onWheel={onWheel}
     >
       <div
@@ -259,6 +251,15 @@ function DesktopSidebar({
       <div className={cn("mt-2 overflow-hidden", collapsed ? "grid gap-2 px-3" : "px-4")}>
         {!collapsed ? (
           <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border/80 bg-white px-2 py-2 text-base font-semibold transition-colors">
+            <Link href="/perfil" className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary" aria-label={`Perfil de ${userName}`}>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
+                {initials(userName)}
+              </span>
+              <span className="min-w-0 leading-tight">
+                <span className="block truncate text-base">{userName}</span>
+                <span className="block truncate text-sm font-medium text-muted-foreground">Rank {userRankName}</span>
+              </span>
+            </Link>
             <button
               type="button"
               onClick={onLogout}
@@ -267,15 +268,6 @@ function DesktopSidebar({
               <LogOut className="h-4 w-4" aria-hidden="true" />
               Sair
             </button>
-            <Link href="/perfil" className="flex min-w-0 items-center justify-end gap-2 text-right transition-colors hover:text-primary" aria-label={`Perfil de ${userName}`}>
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate text-base">{userName}</span>
-                <span className="block truncate text-sm font-medium text-muted-foreground">Rank {userRankName}</span>
-              </span>
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
-                {initials(userName)}
-              </span>
-            </Link>
           </div>
         ) : null}
         <button
@@ -301,7 +293,7 @@ function DesktopSidebar({
           </Link>
         ) : null}
       </div>
-    </motion.aside>
+    </aside>
   );
 }
 
@@ -323,19 +315,15 @@ function MobileDrawer({
   onLogout: () => void;
 }) {
   return (
-    <AnimatePresence>
+    <>
       {open ? (
-        <motion.div className="fixed inset-0 z-[60] md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <div className="fixed inset-0 z-[60] md:hidden">
           <button className="absolute inset-0 bg-foreground/28 backdrop-blur-sm" aria-label="Fechar menu" onClick={onClose} />
-          <motion.aside
+          <aside
             role="dialog"
             aria-modal="true"
             aria-label="Menu de navegacao"
             className="safe-bottom mobile-scroll absolute inset-y-0 left-0 flex w-[min(86vw,22.5rem)] flex-col overflow-y-auto border-r border-border bg-background p-4 shadow-2xl"
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <BrandLink />
@@ -365,10 +353,10 @@ function MobileDrawer({
                 Sair
               </Button>
             </div>
-          </motion.aside>
-        </motion.div>
+          </aside>
+        </div>
       ) : null}
-    </AnimatePresence>
+    </>
   );
 }
 
@@ -402,14 +390,9 @@ function ShellNavLink({
       )}
     >
       <Icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-5 w-5")} aria-hidden="true" />
-      <motion.span
-        className="min-w-0 text-safe"
-        animate={{ opacity: showLabel ? 1 : 0, width: showLabel ? "auto" : 0 }}
-        transition={{ duration: 0.18 }}
-        style={{ overflow: "hidden", whiteSpace: "nowrap" }}
-      >
+      <span className={cn("min-w-0 overflow-hidden whitespace-nowrap text-safe transition-opacity duration-150", showLabel ? "opacity-100" : "w-0 opacity-0")}>
         {item.label}
-      </motion.span>
+      </span>
     </Link>
   );
 }
