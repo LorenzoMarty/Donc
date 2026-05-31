@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, BookOpen, Check, Clock3, FileText, Filter, PenLine, Sparkles, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { apiFetch, type Dashboard, type Essay } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
 import { cn } from "@/utils";
-
-type EssayTab = "all" | "corrected" | "submitted" | "draft";
 
 type EssayRow = {
   id: number;
@@ -46,13 +44,6 @@ type TaskRow = {
   href: string;
 };
 
-const essayTabs: { id: EssayTab; label: string }[] = [
-  { id: "all", label: "Todas" },
-  { id: "corrected", label: "Corrigidas" },
-  { id: "submitted", label: "Em analise" },
-  { id: "draft", label: "Rascunhos" },
-];
-
 const statusLabel: Record<Essay["status"], string> = {
   draft: "Rascunho",
   submitted: "IA analisando",
@@ -63,8 +54,6 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<EssayTab>("all");
-  const [recentOnly, setRecentOnly] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -87,7 +76,6 @@ export default function DashboardPage() {
   }, []);
 
   const essays = useMemo(() => buildEssayRows(data), [data]);
-  const filteredEssays = useMemo(() => filterEssayRows(essays, activeTab, recentOnly), [activeTab, essays, recentOnly]);
   const lessons = useMemo(() => buildLessonRows(data), [data]);
   const competencies = useMemo(() => buildCompetencyRows(data), [data]);
   const tasks = useMemo(() => buildTaskRows(data), [data]);
@@ -140,12 +128,6 @@ export default function DashboardPage() {
                 {latestDraft ? "Continuar redacao" : "Comecar redacao"}
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-12 rounded-xl px-5 text-base">
-              <Link href="/redacao">
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                Pedir tema novo
-              </Link>
-            </Button>
           </div>
         </div>
 
@@ -190,37 +172,13 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-bold tracking-normal">Suas redacoes</h2>
           <p className="mt-1 text-base text-slate-500">Acompanhe correcoes, rascunhos e o historico do mes</p>
         </div>
-        <Link href="/redacoes" className="text-base font-semibold text-slate-700 hover:text-primary">
-          Ver biblioteca <span aria-hidden="true">{"->"}</span>
-        </Link>
       </section>
 
       <section className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,1fr)]">
         <div className="overflow-hidden rounded-[22px] border border-border bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-white p-4">
-            <div className="flex rounded-xl bg-slate-100 p-1 text-base font-semibold text-slate-500" role="tablist" aria-label="Filtrar redacoes">
-              {essayTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn("rounded-lg px-4 py-2 transition-colors", activeTab === tab.id ? "bg-white text-slate-950 shadow-sm" : "hover:text-slate-950")}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <Button type="button" variant={recentOnly ? "default" : "outline"} className="h-10 rounded-xl px-4 text-base" onClick={() => setRecentOnly((current) => !current)} aria-pressed={recentOnly}>
-              <Filter className="h-4 w-4" aria-hidden="true" />
-              {recentOnly ? "Recentes" : "Filtros"}
-            </Button>
-          </div>
-
-          {filteredEssays.length ? (
+          {essays.length ? (
             <div>
-              {filteredEssays.map((essay) => (
+              {essays.map((essay) => (
                 <Link key={essay.id} href={essay.href} className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 border-b border-border px-6 py-5 last:border-b-0 hover:bg-primary/5 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto]">
                   <ScoreBadge score={essay.score} />
                   <div className="min-w-0">
@@ -237,8 +195,8 @@ export default function DashboardPage() {
           ) : (
             <div className="grid min-h-64 place-items-center px-6 py-10 text-center">
               <div>
-                <p className="text-lg font-bold">Nenhuma redacao neste filtro.</p>
-                <p className="mt-2 text-base text-slate-500">Comece uma redacao ou ajuste o filtro selecionado.</p>
+                <p className="text-lg font-bold">Nenhuma redacao ainda.</p>
+                <p className="mt-2 text-base text-slate-500">Comece uma redacao para acompanhar seu historico no painel.</p>
                 <Button asChild className="mt-5">
                   <Link href="/redacao">
                     <PenLine className="h-4 w-4" aria-hidden="true" />
@@ -443,15 +401,6 @@ function buildEssayRows(data: Dashboard | null): EssayRow[] {
       updatedAt: essay.updated_at,
       href: essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`,
     }));
-}
-
-function filterEssayRows(rows: EssayRow[], activeTab: EssayTab, recentOnly: boolean) {
-  const limit = Date.now() - 1000 * 60 * 60 * 24 * 30;
-  return rows.filter((essay) => {
-    const matchesTab = activeTab === "all" || essay.status === activeTab;
-    const matchesRecency = !recentOnly || new Date(essay.updatedAt).getTime() >= limit;
-    return matchesTab && matchesRecency;
-  });
 }
 
 function buildCompetencyRows(data: Dashboard | null): CompetencyRow[] {
