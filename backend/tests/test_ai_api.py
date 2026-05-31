@@ -47,10 +47,15 @@ def test_submit_returns_enveloped_contract(client):
     response = client.post(f"/api/v1/essays/{essay_id}/submit")
     assert response.status_code == 200
     data = api_data(response)
-    assert data["status"] == "corrected"
-    assert data["correction"]["total_score"] > 0
-    assert len(data["versions"]) >= 1
-    assert data["versions"][-1]["correction"]["total_score"] == data["correction"]["total_score"]
+    assert data["essay_id"] == essay_id
+    assert data["job_id"]
+
+    job_response = client.get(f"/api/v1/essays/{essay_id}/job")
+    assert job_response.status_code == 200
+    job = api_data(job_response)
+    assert job["status"] == "completed"
+    assert job["essay"]["status"] == "corrected"
+    assert job["essay"]["correction"]["total_score"] > 0
 
 
 def test_ai_correct_sync_persists_correction(client):

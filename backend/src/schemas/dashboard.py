@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -23,6 +25,16 @@ class RecentExam(BaseModel):
     id: int
     title: str
     score: int
+
+
+class RecentEssay(BaseModel):
+    id: int
+    title: str
+    theme_title: str
+    status: str
+    word_count: int
+    score: int | None
+    updated_at: datetime
 
 
 class GoalRead(BaseModel):
@@ -56,6 +68,7 @@ class DashboardResponse(BaseModel):
     recent_lessons: list[RecentLesson]
     pending_exercises: list[PendingExercise]
     recent_exams: list[RecentExam]
+    recent_essays: list[RecentEssay]
     suggested_lessons: list[RecentLesson]
     goals: list[GoalRead]
 

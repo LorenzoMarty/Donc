@@ -1,10 +1,10 @@
 from collections import Counter
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, load_only, selectinload
 
-from src.models import Course, Essay, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
-from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentExam, RecentLesson, TrendPoint
+from src.models import Course, Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
+from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentExam, RecentLesson, TrendPoint
 from src.services.rank_service import allowed_difficulties_for_user
 
 
@@ -29,7 +29,11 @@ class DashboardService:
         essays = list(
             self.db.scalars(
                 select(Essay)
-                .options(selectinload(Essay.correction), selectinload(Essay.theme))
+                .options(
+                    load_only(Essay.id, Essay.title, Essay.status, Essay.word_count, Essay.score, Essay.created_at, Essay.updated_at),
+                    selectinload(Essay.correction),
+                    selectinload(Essay.theme),
+                )
                 .where(Essay.user_id == user_id)
                 .order_by(Essay.created_at)
             )
@@ -93,6 +97,19 @@ class DashboardService:
             )
         )
         recent_exams = [RecentExam(id=attempt.exam_id, title=attempt.exam.title, score=attempt.score) for attempt in attempts]
+        recent_essays = [
+            RecentEssay(
+                id=essay.id,
+                title=essay.title,
+                theme_title=essay.theme.title,
+                status=essay.status.value if hasattr(essay.status, "value") else str(essay.status),
+                word_count=essay.word_count,
+                score=essay.score,
+                updated_at=essay.updated_at,
+            )
+            for essay in sorted(essays, key=lambda item: item.updated_at, reverse=True)
+            if essay.status != EssayStatus.DRAFT or essay.word_count > 0
+        ][:5]
 
         goals = [
             GoalRead(id=goal.id, title=goal.title, current=goal.current, target=goal.target, unit=goal.unit, completed=goal.completed)
@@ -128,6 +145,7 @@ class DashboardService:
             recent_lessons=recent_lessons,
             pending_exercises=pending_exercises,
             recent_exams=recent_exams,
+            recent_essays=recent_essays,
             suggested_lessons=suggested_lessons,
             goals=goals,
         )

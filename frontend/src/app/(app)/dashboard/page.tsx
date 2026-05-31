@@ -8,7 +8,7 @@ import { ArrowRight, BookOpen, Check, Clock3, FileText, Filter, PenLine, Sparkle
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { Button } from "@/components/ui/button";
-import { apiFetch, type Dashboard, type Essay, type EssayHistory } from "@/services/api";
+import { apiFetch, type Dashboard, type Essay } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
 import { cn } from "@/utils";
 
@@ -62,7 +62,6 @@ const statusLabel: Record<Essay["status"], string> = {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Dashboard | null>(null);
-  const [history, setHistory] = useState<EssayHistory | null>(null);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<EssayTab>("all");
   const [recentOnly, setRecentOnly] = useState(false);
@@ -72,13 +71,9 @@ export default function DashboardPage() {
 
     async function loadDashboard() {
       try {
-        const [dashboardPayload, historyPayload] = await Promise.all([
-          apiFetch<Dashboard>("/dashboard"),
-          apiFetch<EssayHistory>("/essays/history").catch(() => null),
-        ]);
+        const dashboardPayload = await apiFetch<Dashboard>("/dashboard");
         if (ignore) return;
         setData(dashboardPayload);
-        setHistory(historyPayload);
         setError("");
       } catch (err) {
         if (!ignore) setError(err instanceof Error ? err.message : "Nao foi possivel carregar o painel.");
@@ -91,7 +86,7 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const essays = useMemo(() => buildEssayRows(history), [history]);
+  const essays = useMemo(() => buildEssayRows(data), [data]);
   const filteredEssays = useMemo(() => filterEssayRows(essays, activeTab, recentOnly), [activeTab, essays, recentOnly]);
   const lessons = useMemo(() => buildLessonRows(data), [data]);
   const competencies = useMemo(() => buildCompetencyRows(data), [data]);
@@ -435,15 +430,15 @@ function StatusPill({ status }: { status: Essay["status"] }) {
   );
 }
 
-function buildEssayRows(history: EssayHistory | null): EssayRow[] {
-  return [...(history?.essays ?? [])]
+function buildEssayRows(data: Dashboard | null): EssayRow[] {
+  return [...(data?.recent_essays ?? [])]
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
     .slice(0, 5)
     .map((essay) => ({
       id: essay.id,
       score: essay.score,
       title: essay.title,
-      meta: `${essay.theme.title} - ${essay.word_count} palavras - ${formatRelativeDate(essay.updated_at)}`,
+      meta: `${essay.theme_title} - ${essay.word_count} palavras - ${formatRelativeDate(essay.updated_at)}`,
       status: essay.status,
       updatedAt: essay.updated_at,
       href: essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`,
