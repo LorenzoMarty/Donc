@@ -285,7 +285,7 @@ export default function EssayPage() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-6">
+    <div>
       <PageHeader
         eyebrow="Laboratorio de redacao"
         title="Escreva e revise por competencia."
@@ -295,9 +295,9 @@ export default function EssayPage() {
       <div className="grid gap-3 pt-3">
         {!essay ? (
           <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
-        ) : (
-          hasCorrection ? <CorrectionPanel correction={analysisCorrection} error={error} /> : null
-        )}
+        ) : hasCorrection ? (
+          <CorrectionPanel correction={analysisCorrection} error={error} />
+        ) : null}
 
         {error && !hasCorrection ? (
           <div className="game-tile flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
@@ -560,34 +560,36 @@ function EssayAnalysisWorkspace({
   }
 
   return (
-    <div className="flex h-[calc(100dvh-8.75rem)] min-h-[620px] flex-col overflow-hidden rounded-md border border-border bg-card lg:h-[calc(100dvh-4.5rem)] 2xl:h-[calc(100dvh-5rem)]">
-      <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="min-w-0">
-            <h1 className="text-safe text-lg font-semibold leading-tight text-foreground lg:text-xl">{title}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 font-medium text-accent">
-                <Check className="h-4 w-4" aria-hidden="true" />
-                Salvo
-              </span>
-              <span><strong className="text-foreground">{words.toLocaleString("pt-BR")}</strong> palavras</span>
+    <div className="grid h-[calc(100dvh-8.75rem)] min-h-[620px] overflow-hidden rounded-md border border-border bg-card md:h-dvh md:rounded-none md:border-0 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)]">
+      <div className="flex min-h-0 flex-col">
+        <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="min-w-0">
+              <h1 className="text-safe text-lg font-semibold leading-tight text-foreground lg:text-xl">{title}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 font-medium text-accent">
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                  Salvo
+                </span>
+                <span>
+                  <strong className="text-foreground">{words.toLocaleString("pt-BR")}</strong> palavras
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={shareEssay}>
-            <Share2 className="h-4 w-4" aria-hidden="true" />
-            Compartilhar
-          </Button>
-          <Button onClick={exportEssay}>
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Exportar
-          </Button>
-        </div>
-      </header>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={shareEssay}>
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+              Compartilhar
+            </Button>
+            <Button onClick={exportEssay}>
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Exportar
+            </Button>
+          </div>
+        </header>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)]">
         <EssayDocumentPanel
           title={title}
           content={content}
@@ -604,6 +606,14 @@ function EssayAnalysisWorkspace({
           onSelectAnnotation={setActiveAnnotation}
         />
       </div>
+      <AIFeedbackPanel
+        correction={correction}
+        error={error}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        activeAnnotation={activeAnnotation}
+        onSelectAnnotation={setActiveAnnotation}
+      />
     </div>
   );
 }
@@ -625,7 +635,7 @@ function EssayDocumentPanel({
   const annotationsByParagraph = (pIndex: number) => annotations.filter((a) => a.paragraph_index === pIndex);
 
   return (
-    <article className="mobile-scroll min-h-0 overflow-y-auto bg-card px-5 py-8 md:px-10 lg:px-12">
+    <article className="mobile-scroll min-h-0 flex-1 overflow-y-auto bg-card px-5 py-8 md:px-10 lg:px-12">
       <div className="mx-auto max-w-[860px]">
         <h2 className="text-safe text-4xl font-bold leading-tight tracking-normal text-foreground md:text-5xl [font-family:var(--font-merriweather,Georgia,serif)]">
           {title}
@@ -643,7 +653,9 @@ function EssayDocumentPanel({
                       <button
                         key={seg.index}
                         type="button"
-                        onClick={() => onSelectAnnotation(activeAnnotation?.quote === seg.annotation?.quote ? null : (seg.annotation ?? null))}
+                        onClick={() =>
+                          onSelectAnnotation(activeAnnotation?.quote === seg.annotation?.quote ? null : (seg.annotation ?? null))
+                        }
                         className={cn(
                           "rounded-sm px-0.5 text-left underline decoration-2 underline-offset-[6px] transition-colors",
                           annotationTone(seg.annotation).mark,
@@ -743,18 +755,24 @@ function AIFeedbackPanel({
           <div className="grid gap-5 border-b border-border pb-5 sm:grid-cols-[7rem_1fr] sm:items-center">
             <ScoreRing score={score} />
             <div>
-              <h3 className="text-lg font-semibold">{score >= 800 ? "Ótimo trabalho!" : score >= 600 ? "Bom caminho." : "Vamos lapidar."}</h3>
+              <h3 className="text-lg font-semibold">
+                {score >= 800 ? "Ótimo trabalho!" : score >= 600 ? "Bom caminho." : "Vamos lapidar."}
+              </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{correction.feedback}</p>
             </div>
           </div>
         ) : (
-          <div className="game-tile bg-card p-4 text-sm text-muted-foreground">Envie a redação para receber comentários por competência.</div>
+          <div className="game-tile bg-card p-4 text-sm text-muted-foreground">
+            Envie a redação para receber comentários por competência.
+          </div>
         )}
 
         {activeAnnotation ? (
           <div className={cn("rounded-md border p-4", annotationTone(activeAnnotation).panel)}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"}>{activeAnnotation.type === "error" ? "Ajuste" : "Força"}</Badge>
+              <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"}>
+                {activeAnnotation.type === "error" ? "Ajuste" : "Força"}
+              </Badge>
               <Badge variant="outline">{competencyLabel(activeAnnotation.competency)}</Badge>
             </div>
             <p className="text-sm font-semibold italic text-muted-foreground">&quot;{activeAnnotation.quote}&quot;</p>
@@ -771,7 +789,12 @@ function AIFeedbackPanel({
           </div>
           <div className="space-y-3">
             {suggestions.map((suggestion) => (
-              <SuggestionCard key={`${suggestion.index}-${suggestion.title}`} suggestion={suggestion} active={activeAnnotation?.quote === suggestion.annotation?.quote} onClick={() => onSelectAnnotation(suggestion.annotation ?? null)} />
+              <SuggestionCard
+                key={`${suggestion.index}-${suggestion.title}`}
+                suggestion={suggestion}
+                active={activeAnnotation?.quote === suggestion.annotation?.quote}
+                onClick={() => onSelectAnnotation(suggestion.annotation ?? null)}
+              />
             ))}
           </div>
         </section>
@@ -845,16 +868,26 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
     <button
       type="button"
       onClick={onClick}
-      className={cn("w-full rounded-md border border-border bg-card p-4 text-left transition-colors hover:border-primary/45", active && "border-primary bg-primary/10")}
+      className={cn(
+        "w-full rounded-md border border-border bg-card p-4 text-left transition-colors hover:border-primary/45",
+        active && "border-primary bg-primary/10",
+      )}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-semibold", annotationTone(suggestion.annotation).number)}>
+          <span
+            className={cn(
+              "grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-semibold",
+              annotationTone(suggestion.annotation).number,
+            )}
+          >
             {suggestion.index}
           </span>
           <div>
             <p className="font-semibold">{suggestion.title}</p>
-            {suggestion.annotation ? <p className="mt-1 text-xs font-semibold text-muted-foreground">{competencyLabel(suggestion.annotation.competency)}</p> : null}
+            {suggestion.annotation ? (
+              <p className="mt-1 text-xs font-semibold text-muted-foreground">{competencyLabel(suggestion.annotation.competency)}</p>
+            ) : null}
           </div>
         </div>
         <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold", impactTone)}>{suggestion.impact}</span>
@@ -862,7 +895,11 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
       <p className="text-sm leading-6 text-foreground/85">{suggestion.text}</p>
       <div className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-primary">
         <span className="inline-flex items-center gap-2">
-          {suggestion.action.includes("citação") ? <Link2 className="h-4 w-4" aria-hidden="true" /> : <WandSparkles className="h-4 w-4" aria-hidden="true" />}
+          {suggestion.action.includes("citação") ? (
+            <Link2 className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <WandSparkles className="h-4 w-4" aria-hidden="true" />
+          )}
           {suggestion.action}
         </span>
         <MoreHorizontal className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -947,13 +984,15 @@ function competencyLabel(value: string) {
 }
 
 function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 70) || "redacao";
+  return (
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 70) || "redacao"
+  );
 }
 
 function CorrectionPanel({ correction, error }: { correction: Essay["correction"]; error: string }) {

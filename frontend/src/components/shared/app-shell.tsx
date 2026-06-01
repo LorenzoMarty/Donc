@@ -61,10 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
 
-  const navItems =
-    user?.role === "admin"
-      ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }]
-      : workspaceNav;
+  const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }] : workspaceNav;
 
   useEffect(() => {
     if (user) hydrateFromBackend();
@@ -143,7 +140,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="h-full overflow-y-auto overscroll-contain transition-[padding-left] duration-200 ease-in-out md:pl-[var(--sidebar-width)]"
         style={{ "--sidebar-width": `${collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px` } as CSSProperties}
       >
-        <main className="min-h-dvh w-full px-3 pb-3 pt-[calc(4.75rem+env(safe-area-inset-top))] md:p-0">
+        <main className="min-h-dvh w-full bg-white px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
           {children}
         </main>
       </div>
@@ -185,7 +182,10 @@ function DesktopSidebar({
 }) {
   return (
     <aside
-      className={cn("fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white transition-[width,padding] duration-200 ease-in-out md:flex", collapsed ? "py-4" : "py-5")}
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white transition-[width,padding] duration-200 ease-in-out md:flex",
+        collapsed ? "py-4" : "py-5",
+      )}
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       onWheel={onWheel}
     >
@@ -204,11 +204,7 @@ function DesktopSidebar({
             collapsed ? "h-9 w-9 border border-border/80 bg-white" : "h-8 w-8",
           )}
         >
-          {collapsed ? (
-            <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
-          ) : (
-            <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
-          )}
+          {collapsed ? <PanelLeftOpen className="h-5 w-5" aria-hidden="true" /> : <PanelLeftClose className="h-5 w-5" aria-hidden="true" />}
         </button>
       </div>
 
@@ -229,7 +225,10 @@ function DesktopSidebar({
         )}
       </div>
 
-      <nav className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-1.5 px-4")} aria-label="Navegacao principal">
+      <nav
+        className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-1.5 px-4")}
+        aria-label="Navegacao principal"
+      >
         {items.map((item) => (
           <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
         ))}
@@ -251,7 +250,11 @@ function DesktopSidebar({
       <div className={cn("mt-2 overflow-hidden", collapsed ? "grid gap-2 px-3" : "px-4")}>
         {!collapsed ? (
           <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border/80 bg-white px-2 py-2 text-base font-semibold transition-colors">
-            <Link href="/perfil" className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary" aria-label={`Perfil de ${userName}`}>
+            <Link
+              href="/perfil"
+              className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary"
+              aria-label={`Perfil de ${userName}`}
+            >
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
                 {initials(userName)}
               </span>
@@ -390,7 +393,12 @@ function ShellNavLink({
       )}
     >
       <Icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-5 w-5")} aria-hidden="true" />
-      <span className={cn("min-w-0 overflow-hidden whitespace-nowrap text-safe transition-opacity duration-150", showLabel ? "opacity-100" : "w-0 opacity-0")}>
+      <span
+        className={cn(
+          "min-w-0 overflow-hidden whitespace-nowrap text-safe transition-opacity duration-150",
+          showLabel ? "opacity-100" : "w-0 opacity-0",
+        )}
+      >
         {item.label}
       </span>
     </Link>

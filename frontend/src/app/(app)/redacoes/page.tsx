@@ -41,7 +41,10 @@ export default function EssayHistoryPage() {
     loadHistory();
   }, [loadHistory]);
 
-  const essays = useMemo(() => [...(history?.essays ?? [])].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()), [history]);
+  const essays = useMemo(
+    () => [...(history?.essays ?? [])].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
+    [history],
+  );
 
   const filteredEssays = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -70,7 +73,7 @@ export default function EssayHistoryPage() {
   if (!history) return <LoadingCard />;
 
   return (
-    <main className="min-h-dvh bg-white px-4 py-4 text-foreground md:px-6 md:py-5 xl:px-8">
+    <div className="text-foreground">
       <header className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Historico</p>
@@ -89,8 +92,16 @@ export default function EssayHistoryPage() {
 
       <section className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por titulo ou tema" className="pl-9" />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar por titulo ou tema"
+            className="pl-9"
+          />
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -101,7 +112,9 @@ export default function EssayHistoryPage() {
               onClick={() => setFilter(item.id)}
               className={cn(
                 "min-h-9 rounded-md border px-3 text-sm font-semibold transition-colors",
-                filter === item.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                filter === item.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-white text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
             >
               {item.label}
@@ -137,7 +150,8 @@ export default function EssayHistoryPage() {
                   busy={busyAction === `delete-${essay.id}`}
                   onDelete={() =>
                     runAction(`delete-${essay.id}`, async () => {
-                      if (!window.confirm(essay.status === "draft" ? "Excluir este rascunho?" : "Excluir esta redacao e sua correcao?")) return;
+                      if (!window.confirm(essay.status === "draft" ? "Excluir este rascunho?" : "Excluir esta redacao e sua correcao?"))
+                        return;
                       await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
                       await loadHistory();
                     })
@@ -148,7 +162,7 @@ export default function EssayHistoryPage() {
           )}
         </section>
       )}
-    </main>
+    </div>
   );
 }
 

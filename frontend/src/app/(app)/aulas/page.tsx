@@ -32,7 +32,7 @@ export default function LessonsPage() {
 
   if (loading) {
     return (
-      <div className="fluid-grid gap-3 p-4 [--grid-min:16rem] md:p-5 lg:p-6">
+      <div className="fluid-grid gap-3 [--grid-min:16rem]">
         <LoadingCard />
         <LoadingCard />
       </div>
@@ -40,7 +40,7 @@ export default function LessonsPage() {
   }
 
   return (
-    <MotionShell className="space-y-3 p-4 md:p-5 lg:p-6">
+    <MotionShell className="space-y-3">
       <PageHeader
         eyebrow="Cursos"
         title="Trilha de aulas"
@@ -62,9 +62,7 @@ function CoursePanel({ course }: { course: Course }) {
   const completedLessons = lessons.filter((lesson) => lesson.progress.completed).length;
   const courseProgress = course.progress_percent ?? progressFromLessons(lessons);
   const rank = course.user_rank;
-  const [openModules, setOpenModules] = useState<Record<number, boolean>>(() =>
-    modules[0] ? { [modules[0].id]: true } : {},
-  );
+  const [openModules, setOpenModules] = useState<Record<number, boolean>>(() => (modules[0] ? { [modules[0].id]: true } : {}));
 
   function toggleModule(moduleId: number) {
     setOpenModules((current) => ({ ...current, [moduleId]: !current[moduleId] }));
@@ -145,7 +143,10 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
           <Progress value={moduleProgress} className="h-1.5" />
           <span className="w-10 text-right text-sm font-semibold">{moduleProgress}%</span>
         </div>
-        <ChevronDown className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden="true" />
+        <ChevronDown
+          className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          aria-hidden="true"
+        />
       </button>
 
       {open ? (
@@ -185,7 +186,10 @@ function LessonRow({ lesson, moduleOrder }: { lesson: Lesson; moduleOrder: numbe
         <span className="text-xs text-muted-foreground">{lesson.duration_minutes} min</span>
       </span>
       <span className="game-chip shrink-0 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{lesson.xp_reward ?? 25}xp</span>
-      <BookOpen className="hidden h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary sm:block" aria-hidden="true" />
+      <BookOpen
+        className="hidden h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary sm:block"
+        aria-hidden="true"
+      />
     </Link>
   );
 }
