@@ -47,7 +47,7 @@ export default function GamesHub() {
   }
 
   return (
-    <div className="space-y-5 p-4 md:space-y-6 md:p-5 lg:p-6">
+    <div className="space-y-5 md:space-y-6">
       <motion.header
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -153,7 +153,7 @@ export default function GamesHub() {
 
 function GamesHubSkeleton() {
   return (
-    <div className="space-y-5 p-4 md:p-5 lg:p-6">
+    <div className="space-y-5">
       <div className="space-y-5 md:space-y-6">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22.5rem)]">
           <div className="game-surface bg-card p-5 md:p-7">

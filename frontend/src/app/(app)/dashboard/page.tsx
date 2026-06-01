@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div>
         <EmptyState title="Dados indisponiveis" description={error} />
       </div>
     );
@@ -92,7 +92,7 @@ export default function DashboardPage() {
 
   if (!data) {
     return (
-      <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <LoadingCard />
         <LoadingCard />
         <LoadingCard />
@@ -114,7 +114,7 @@ export default function DashboardPage() {
   const heroCopy = buildHeroCopy({ bestScore, latestDraft: Boolean(latestDraft), progress: data.progress_general });
 
   return (
-    <main className="min-h-dvh bg-white p-5 text-[#0f172a] md:p-7 xl:p-8">
+    <div className="text-[#0f172a]">
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,1fr)]">
         <div className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-primary/10 p-8 md:p-10">
           <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/38" />
@@ -161,10 +161,36 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Sparkles} label="Nota media" value={average ? String(average) : "--"} suffix="/1000" detail={bestScore ? `melhor nota ${bestScore}` : "envie uma redacao"} href="/redacoes" />
-        <StatCard icon={FileText} label="Redacoes enviadas" value={String(essaysWritten)} detail={`${essays.length} na biblioteca`} href="/redacoes" />
-        <StatCard icon={Clock3} label="Tempo de estudo" value={studyValue} suffix={studySuffix} detail={studyGoal ? `${studyGoal.target} ${studyGoal.unit} de meta` : "acompanhe sua rotina"} href="/aulas" />
-        <StatCard icon={Video} label="Aulas assistidas" value={String(completedLessons)} detail={`${data.progress_general ?? 0}% do percurso`} href="/aulas" />
+        <StatCard
+          icon={Sparkles}
+          label="Nota media"
+          value={average ? String(average) : "--"}
+          suffix="/1000"
+          detail={bestScore ? `melhor nota ${bestScore}` : "envie uma redacao"}
+          href="/redacoes"
+        />
+        <StatCard
+          icon={FileText}
+          label="Redacoes enviadas"
+          value={String(essaysWritten)}
+          detail={`${essays.length} na biblioteca`}
+          href="/redacoes"
+        />
+        <StatCard
+          icon={Clock3}
+          label="Tempo de estudo"
+          value={studyValue}
+          suffix={studySuffix}
+          detail={studyGoal ? `${studyGoal.target} ${studyGoal.unit} de meta` : "acompanhe sua rotina"}
+          href="/aulas"
+        />
+        <StatCard
+          icon={Video}
+          label="Aulas assistidas"
+          value={String(completedLessons)}
+          detail={`${data.progress_general ?? 0}% do percurso`}
+          href="/aulas"
+        />
       </section>
 
       <section className="mt-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -179,7 +205,11 @@ export default function DashboardPage() {
           {essays.length ? (
             <div>
               {essays.map((essay) => (
-                <Link key={essay.id} href={essay.href} className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 border-b border-border px-6 py-5 last:border-b-0 hover:bg-primary/5 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto]">
+                <Link
+                  key={essay.id}
+                  href={essay.href}
+                  className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 border-b border-border px-6 py-5 last:border-b-0 hover:bg-primary/5 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto]"
+                >
                   <ScoreBadge score={essay.score} />
                   <div className="min-w-0">
                     <p className="truncate text-lg font-bold">{essay.title}</p>
@@ -214,7 +244,7 @@ export default function DashboardPage() {
           <WeeklyTasksCard tasks={tasks} />
         </div>
       </section>
-    </main>
+    </div>
   );
 }
 
@@ -231,7 +261,10 @@ function LessonsCard({ lessons }: { lessons: LessonRow[] }) {
       {lessons.length ? (
         <div className="mt-6 grid gap-4">
           {lessons.map((lesson) => (
-            <div key={lesson.id} className="grid grid-cols-[3.8rem_minmax(0,1fr)] items-start gap-4 border-b border-dashed border-border pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[3.8rem_minmax(0,1fr)_auto]">
+            <div
+              key={lesson.id}
+              className="grid grid-cols-[3.8rem_minmax(0,1fr)] items-start gap-4 border-b border-dashed border-border pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[3.8rem_minmax(0,1fr)_auto]"
+            >
               <div className="grid h-14 place-items-center rounded-xl border border-border bg-white text-center text-primary">
                 <span className="block text-xl font-bold leading-none">{String(lesson.index).padStart(2, "0")}</span>
                 <span className="mt-1 block text-xs font-semibold uppercase">AULA</span>
@@ -309,7 +342,11 @@ function WeeklyTasksCard({ tasks }: { tasks: TaskRow[] }) {
       </div>
       <div className="mt-4 grid gap-3">
         {tasks.map((task) => (
-          <Link key={task.title} href={task.href} className="grid grid-cols-[1.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-3 transition-colors hover:border-primary/25 hover:bg-primary/5">
+          <Link
+            key={task.title}
+            href={task.href}
+            className="grid grid-cols-[1.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-3 transition-colors hover:border-primary/25 hover:bg-primary/5"
+          >
             <span
               className={cn(
                 "grid h-6 w-6 place-items-center rounded-lg border",
@@ -320,7 +357,9 @@ function WeeklyTasksCard({ tasks }: { tasks: TaskRow[] }) {
               {task.done ? <Check className="h-4 w-4" /> : null}
             </span>
             <span className={cn("truncate text-base font-semibold", task.done && "text-slate-500 line-through")}>{task.title}</span>
-            <span className={cn("text-sm font-medium", task.done ? "text-slate-500" : task.due === "hoje" ? "text-primary" : "text-slate-500")}>
+            <span
+              className={cn("text-sm font-medium", task.done ? "text-slate-500" : task.due === "hoje" ? "text-primary" : "text-slate-500")}
+            >
               {task.due}
             </span>
           </Link>
@@ -346,7 +385,10 @@ function StatCard({
   href: string;
 }) {
   return (
-    <Link href={href} className="rounded-[22px] border border-border bg-white p-6 transition-colors hover:border-primary/25 hover:bg-primary/5">
+    <Link
+      href={href}
+      className="rounded-[22px] border border-border bg-white p-6 transition-colors hover:border-primary/25 hover:bg-primary/5"
+    >
       <div className="flex items-center gap-2 text-base font-semibold text-slate-500">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
@@ -470,7 +512,7 @@ function buildTaskRows(data: Dashboard | null): TaskRow[] {
 }
 
 function buildLessonRows(data: Dashboard | null): LessonRow[] {
-  const source = data?.recent_lessons?.length ? data.recent_lessons : data?.suggested_lessons ?? [];
+  const source = data?.recent_lessons?.length ? data.recent_lessons : (data?.suggested_lessons ?? []);
   return source.slice(0, 3).map((lesson, index) => ({
     id: lesson.id,
     index: index + 1,

@@ -69,7 +69,9 @@ export default function OnboardingPage() {
     if (step === 0) {
       autoRef.current = setTimeout(() => advance(), 2200);
     }
-    return () => { if (autoRef.current) clearTimeout(autoRef.current); };
+    return () => {
+      if (autoRef.current) clearTimeout(autoRef.current);
+    };
   }, [step]);
 
   function advance() {
@@ -84,15 +86,12 @@ export default function OnboardingPage() {
   }
 
   function finish() {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ goal, level, completedAt: new Date().toISOString() }),
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ goal, level, completedAt: new Date().toISOString() }));
     router.push("/dashboard");
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-6rem)] flex-col items-center justify-center px-4 py-8">
+    <div className="flex min-h-[calc(100dvh-8rem)] flex-col items-center justify-center">
       <div className="w-full max-w-lg">
         <StepDots total={5} current={step} />
 
@@ -132,12 +131,7 @@ export default function OnboardingPage() {
           )}
           {step === 3 && (
             <StepShell key="tour" direction={direction}>
-              <TourStep
-                slide={tourSlide}
-                onSlide={setTourSlide}
-                onNext={advance}
-                onBack={back}
-              />
+              <TourStep slide={tourSlide} onSlide={setTourSlide} onNext={advance} onBack={back} />
             </StepShell>
           )}
           {step === 4 && (
@@ -208,12 +202,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       >
         Vamos configurar sua experiência em 3 passos rápidos.
       </motion.p>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-8"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8">
         <Button onClick={onNext} size="lg" className="w-full">
           Começar configuração
           <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -333,10 +322,7 @@ function TourStep({
             key={i}
             type="button"
             onClick={() => onSlide(i)}
-            className={cn(
-              "h-2 rounded-full transition-all duration-200",
-              i === slide ? "w-6 bg-primary" : "w-2 bg-border",
-            )}
+            className={cn("h-2 rounded-full transition-all duration-200", i === slide ? "w-6 bg-primary" : "w-2 bg-border")}
             aria-label={`Slide ${i + 1}`}
           />
         ))}
