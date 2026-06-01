@@ -42,57 +42,70 @@ export default function AdminPage() {
 
   if (error) {
     return (
-      <div className="rounded-lg border p-8">
-        <Badge variant="outline">Admin</Badge>
-        <h1 className="mt-3 text-2xl font-bold">Acesso restrito</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+      <div className="min-h-dvh bg-white px-4 py-4 text-foreground md:px-6 md:py-5 xl:px-8">
+        <div className="rounded-lg border p-6 md:p-8">
+          <Badge variant="outline">Admin</Badge>
+          <h1 className="mt-3 text-2xl font-bold">Acesso restrito</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+        </div>
       </div>
     );
   }
 
-  if (!metrics || !telemetry || !activity) return <LoadingCard />;
+  if (!metrics || !telemetry || !activity) {
+    return (
+      <div className="min-h-dvh bg-white px-4 py-4 text-foreground md:px-6 md:py-5 xl:px-8">
+        <LoadingCard />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Badge variant="secondary">Painel administrativo</Badge>
-        <h1 className="mt-3 text-3xl font-bold tracking-normal md:text-4xl">Operação e dados</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Métricas, telemetria de IA, usuários e geração de conteúdo.
-        </p>
+    <div className="min-h-dvh bg-white px-4 py-4 text-foreground md:px-6 md:py-5 xl:px-8">
+      <div className="space-y-6">
+        <div>
+          <Badge variant="secondary">Painel administrativo</Badge>
+          <h1 className="mt-3 text-3xl font-bold tracking-normal md:text-4xl">Operação e dados</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Métricas, telemetria de IA, usuários e geração de conteúdo.
+          </p>
+        </div>
+
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="ai">Telemetria IA</TabsTrigger>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
+            <TabsTrigger value="games">Jogos IA</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-4">
+            <AdminOverviewTab metrics={metrics} activity={activity} />
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-4">
+            <AITelemetryTab
+              telemetry={telemetry}
+              onPeriodChange={async (days) => {
+                const t = await apiFetch<AITelemetry>(`/admin/ai-telemetry?days=${days}`);
+                setTelemetry(t);
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-4">
+            <UsersTab users={users} />
+          </TabsContent>
+
+          <TabsContent value="games" className="mt-4">
+            <AIGamesTab
+              games={games}
+              onGenerated={(game) => setGames((prev) => [game, ...prev])}
+              onReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="h-auto flex-wrap">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="ai">Telemetria IA</TabsTrigger>
-          <TabsTrigger value="users">Usuários</TabsTrigger>
-          <TabsTrigger value="games">Jogos IA</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-4">
-          <AdminOverviewTab metrics={metrics} activity={activity} />
-        </TabsContent>
-
-        <TabsContent value="ai" className="mt-4">
-          <AITelemetryTab telemetry={telemetry} onPeriodChange={async (days) => {
-            const t = await apiFetch<AITelemetry>(`/admin/ai-telemetry?days=${days}`);
-            setTelemetry(t);
-          }} />
-        </TabsContent>
-
-        <TabsContent value="users" className="mt-4">
-          <UsersTab users={users} />
-        </TabsContent>
-
-        <TabsContent value="games" className="mt-4">
-          <AIGamesTab
-            games={games}
-            onGenerated={(game) => setGames((prev) => [game, ...prev])}
-            onReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
-          />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
