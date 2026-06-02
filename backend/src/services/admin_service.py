@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from src.agents.game_generator import GameGeneratorAgent
+from src.config.settings import settings
 from src.middlewares.errors import AppError
 from src.models import AIInteractionLog, Course, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, Module, User
 from src.models.events import AIGeneratedGame, UserEvent
@@ -26,15 +27,16 @@ from src.schemas.admin import (
     GameQuestionRead,
     UserActivityResponse,
 )
-
-# gpt-4o blended cost: ~$5 per 1M tokens → 0.5 cents per 1K tokens → 0.0005 cents per token
-_COST_CENTS_PER_TOKEN = 0.0005
+from src.services.ai_telemetry import record_ai_interaction
 
 
 class AdminService:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.users = UserRepository(db)
+
+    def _token_cost_cents(self, tokens: int) -> int:
+        return int((tokens / 1000) * settings.ai_cost_cents_per_1k_tokens)
 
     # ── Existing ──────────────────────────────────────────────────────────────
 
@@ -249,7 +251,7 @@ class AdminService:
         total_tokens = sum(log.token_count for log in logs)
         total_calls = len(logs)
         error_calls = sum(1 for log in logs if log.status == "error")
-        cost_usd_cents = int(total_tokens * _COST_CENTS_PER_TOKEN)
+        cost_usd_cents = self._token_cost_cents(total_tokens)
 
         # per-agent aggregation
         agent_map: dict[str, dict] = {}
@@ -274,7 +276,7 @@ class AdminService:
                 error_calls=v["errors"],
                 total_tokens=v["tokens"],
                 avg_latency_ms=int(v["latency_total"] / v["calls"]) if v["calls"] else 0,
-                cost_usd_cents=int(v["tokens"] * _COST_CENTS_PER_TOKEN),
+                cost_usd_cents=self._token_cost_cents(v["tokens"]),
             )
             for v in sorted(agent_map.values(), key=lambda x: x["tokens"], reverse=True)
         ]
@@ -296,7 +298,7 @@ class AdminService:
                 total_tokens=v["tokens"],
                 total_calls=v["calls"],
                 error_calls=v["errors"],
-                cost_usd_cents=int(v["tokens"] * _COST_CENTS_PER_TOKEN),
+                cost_usd_cents=self._token_cost_cents(v["tokens"]),
             )
             for day, v in sorted(day_map.items())
         ]
@@ -316,7 +318,7 @@ class AdminService:
             user_names = {row.id: f"{row.name} ({row.email})" for row in name_rows}
 
         top_users = [
-            {"user_id": row.user_id, "label": user_names.get(row.user_id, f"User {row.user_id}"), "total_tokens": int(row.total or 0), "cost_usd_cents": int((row.total or 0) * _COST_CENTS_PER_TOKEN)}
+            {"user_id": row.user_id, "label": user_names.get(row.user_id, f"User {row.user_id}"), "total_tokens": int(row.total or 0), "cost_usd_cents": self._token_cost_cents(int(row.total or 0))}
             for row in top_rows
         ]
 
@@ -404,6 +406,14 @@ class AdminService:
             status="pending",
         )
         self.db.add(game)
+        record_ai_interaction(
+            self.db,
+            workflow="admin_game_generation",
+            agent="GameGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"skill": skill, "category": category, "difficulty": difficulty, "count": count},
+        )
         self.db.commit()
         self.db.refresh(game)
         return self._game_to_read(game)

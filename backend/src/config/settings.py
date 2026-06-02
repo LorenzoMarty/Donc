@@ -1,7 +1,10 @@
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+DEFAULT_JWT_SECRET = "change-this-secret-before-production"
 
 
 class Settings(BaseSettings):
@@ -9,7 +12,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+psycopg://enem:enem@localhost:5432/enem_redacao"
     database_connect_timeout_seconds: int = 5
-    jwt_secret_key: str = "change-this-secret-before-production"
+    jwt_secret_key: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7
     openai_api_key: str | None = None
@@ -24,6 +27,7 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_host: str | None = None
+    ai_cost_cents_per_1k_tokens: float = 0.5
     ai_rate_limit_per_minute: int = 20
     seed_demo_data: bool = False
     frontend_origin: str = "http://localhost:3000"
@@ -40,11 +44,39 @@ class Settings(BaseSettings):
             return "postgresql+psycopg://" + value.removeprefix("postgresql://")
         return value
 
+    @field_validator("openai_api_key", "openai_fallback_model", "langfuse_public_key", "langfuse_secret_key", "langfuse_host", mode="before")
+    @classmethod
+    def empty_optional_string_to_none(cls, value: str | None) -> str | None:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @model_validator(mode="after")
+    def validate_production_settings(self) -> "Settings":
+        if self.environment.lower() != "production":
+            return self
+        if self.jwt_secret_key == DEFAULT_JWT_SECRET or len(self.jwt_secret_key) < 32:
+            raise ValueError("JWT_SECRET_KEY precisa ser unico e ter pelo menos 32 caracteres em producao.")
+        if self.seed_demo_data:
+            raise ValueError("SEED_DEMO_DATA deve ser false em producao.")
+        if not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY e obrigatoria em producao para recursos de IA.")
+        if self.database_url.startswith("sqlite"):
+            raise ValueError("DATABASE_URL nao pode usar SQLite em producao.")
+        if any("localhost" in origin or "127.0.0.1" in origin for origin in self._configured_cors_origins()):
+            raise ValueError("FRONTEND_ORIGIN nao pode apontar para localhost em producao.")
+        return self
+
     @property
     def cors_origins(self) -> list[str]:
-        configured = [origin.strip() for origin in self.frontend_origin.split(",") if origin.strip()]
+        configured = self._configured_cors_origins()
+        if self.environment.lower() == "production":
+            return configured
         defaults = ["http://localhost:3000", "http://127.0.0.1:3000"]
         return list(dict.fromkeys([*configured, *defaults]))
+
+    def _configured_cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.frontend_origin.split(",") if origin.strip()]
 
 
 @lru_cache

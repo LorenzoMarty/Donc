@@ -183,14 +183,15 @@ export default function EssayPage() {
     setGeneratingTheme(true);
     setError("");
     try {
-      const theme = await apiFetch<EssayTheme>("/essays/themes/generate", {
+      const generatedThemes = await apiFetch<EssayTheme[]>("/essays/themes/generate", {
         method: "POST",
         body: JSON.stringify({}),
       });
-      setThemes((current) => [theme, ...current.filter((item) => item.id !== theme.id)]);
-      setSelectedTheme(theme);
+      const generatedIds = new Set(generatedThemes.map((theme) => theme.id));
+      setThemes((current) => [...generatedThemes, ...current.filter((item) => !generatedIds.has(item.id))]);
+      setSelectedTheme(generatedThemes[0] ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel gerar um tema com IA.");
+      setError(err instanceof Error ? err.message : "Nao foi possivel gerar temas com IA.");
     } finally {
       setGeneratingTheme(false);
     }
@@ -381,7 +382,7 @@ function ThemePicker({
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
           <Sparkles className="h-4 w-4" aria-hidden="true" />
-          {generating ? "Gerando..." : "Gerar tema com IA"}
+          {generating ? "Gerando..." : "Gerar 4 temas com IA"}
         </Button>
       </div>
       <div className="grid gap-3 md:grid-cols-2">

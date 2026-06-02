@@ -30,6 +30,7 @@ from src.schemas.ai import (
 )
 from src.agents.schemas import AnalyticsResult, ExerciseGenerationResult, RecommendationResult, StudyPlanResult
 from src.schemas.essays import EssayRead
+from src.services.ai_telemetry import record_ai_interaction
 from src.services.essay_service import EssayService
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
 from src.utils.rate_limit import check_ai_rate_limit
@@ -67,14 +68,25 @@ def generate_exercise(
     focus = sanitize_ai_text(payload.focus or _default_focus(db, current_user.id), max_chars=160)
     _reject_prompt_injection(focus)
     profile = get_learning_profile_payload(db, current_user.id)
-    return success_response(ExerciseGeneratorAgent().generate(
+    agent = ExerciseGeneratorAgent()
+    result = agent.generate(
         focus=focus,
         difficulty=payload.difficulty,
         count=payload.count,
         profile=profile,
         user_id=current_user.id,
         session_id=f"user:{current_user.id}:exercise",
-    ))
+    )
+    record_ai_interaction(
+        db,
+        workflow="exercise_generation",
+        agent="ExerciseGeneratorAgent",
+        user_id=current_user.id,
+        runner=agent.runner,
+        meta={"focus": focus, "difficulty": payload.difficulty, "count": payload.count},
+        commit=True,
+    )
+    return success_response(result)
 
 
 @router.post("/analyze", response_model=ApiResponse[AnalyticsResult])
@@ -86,7 +98,18 @@ def analyze_student(
     check_ai_rate_limit(current_user.id)
     profile = get_learning_profile_payload(db, current_user.id)
     history = _history_payload(db, current_user) if payload.include_history else {}
-    return success_response(AnalyticsAgent().analyze(profile=profile, history=history, user_id=current_user.id, session_id=f"user:{current_user.id}:analytics"))
+    agent = AnalyticsAgent()
+    result = agent.analyze(profile=profile, history=history, user_id=current_user.id, session_id=f"user:{current_user.id}:analytics")
+    record_ai_interaction(
+        db,
+        workflow="student_analytics",
+        agent="AnalyticsAgent",
+        user_id=current_user.id,
+        runner=agent.runner,
+        meta={"include_history": payload.include_history},
+        commit=True,
+    )
+    return success_response(result)
 
 
 @router.post("/recommend", response_model=ApiResponse[RecommendationResult])
@@ -102,7 +125,18 @@ def recommend(
     history = _history_payload(db, current_user)
     if context:
         profile = {**profile, "request_context": context}
-    return success_response(StudyPlannerAgent().recommend(profile=profile, history=history, user_id=current_user.id, session_id=f"user:{current_user.id}:recommend"))
+    agent = StudyPlannerAgent()
+    result = agent.recommend(profile=profile, history=history, user_id=current_user.id, session_id=f"user:{current_user.id}:recommend")
+    record_ai_interaction(
+        db,
+        workflow="study_recommendation",
+        agent="StudyPlannerAgent",
+        user_id=current_user.id,
+        runner=agent.runner,
+        meta={"has_context": bool(context)},
+        commit=True,
+    )
+    return success_response(result)
 
 
 @router.post("/study-plan", response_model=ApiResponse[StudyPlanResult])
@@ -115,14 +149,25 @@ def study_plan(
     profile = get_learning_profile_payload(db, current_user.id)
     history = _history_payload(db, current_user)
     profile = {**profile, "intensity": payload.intensity}
-    return success_response(StudyPlannerAgent().plan(
+    agent = StudyPlannerAgent()
+    result = agent.plan(
         profile=profile,
         history=history,
         days=payload.days,
         minutes_per_day=payload.minutes_per_day,
         user_id=current_user.id,
         session_id=f"user:{current_user.id}:study-plan",
-    ))
+    )
+    record_ai_interaction(
+        db,
+        workflow="study_plan_generation",
+        agent="StudyPlannerAgent",
+        user_id=current_user.id,
+        runner=agent.runner,
+        meta={"days": payload.days, "minutes_per_day": payload.minutes_per_day, "intensity": payload.intensity},
+        commit=True,
+    )
+    return success_response(result)
 
 
 @router.get("/jobs/{job_id}", response_model=ApiResponse[AIJobResponse])

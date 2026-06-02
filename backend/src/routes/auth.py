@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.dependencies import get_current_user
+from src.middlewares.errors import AppError
 from src.models import User
 from src.schemas.auth import LoginRequest, PasswordRecoveryRequest, RegisterRequest, TokenResponse, UserRead
 from src.schemas.common import ApiResponse, MessageResponse, success_response
@@ -38,7 +39,8 @@ def logout() -> ApiResponse[MessageResponse]:
 
 @router.post("/password-recovery", response_model=ApiResponse[MessageResponse])
 def password_recovery(_: PasswordRecoveryRequest) -> ApiResponse[MessageResponse]:
-    return success_response(
-        MessageResponse(message="Se o e-mail existir, enviaremos instrucoes de recuperacao."),
-        "Solicitacao recebida.",
+    raise AppError(
+        "Recuperacao de senha por e-mail ainda nao esta configurada.",
+        status_code=501,
+        code="password_recovery_not_configured",
     )
