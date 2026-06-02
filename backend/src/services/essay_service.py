@@ -9,6 +9,7 @@ from src.middlewares.errors import AppError
 from src.models import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVersion, EssayVersionCorrection, User
 from src.repositories.essays import EssayRepository
 from src.schemas.essays import EssayEvolutionPoint, EssayHistoryResponse
+from src.services.ai_telemetry import record_ai_interaction
 from src.services.ai_service import EssayAIService
 
 
@@ -22,22 +23,40 @@ class EssayService:
         return self.repo.list_themes()
 
     def generate_theme(self, *, user_id: int, focus: str | None = None) -> EssayTheme:
-        result = ThemeGeneratorAgent().generate(
+        return self.generate_themes(user_id=user_id, focus=focus)[0]
+
+    def generate_themes(self, *, user_id: int, focus: str | None = None) -> list[EssayTheme]:
+        existing_titles = [theme.title for theme in self.repo.list_themes()]
+        agent = ThemeGeneratorAgent()
+        result = agent.generate_batch(
             focus=focus,
+            existing_titles=existing_titles,
             user_id=user_id,
             session_id=f"user:{user_id}:theme-generator",
         )
-        theme = EssayTheme(
-            title=result.title,
-            context=result.context,
-            source="IA Donc ENEM",
-            supporting_texts=[item.model_dump() for item in result.supporting_texts],
-            is_active=True,
+        themes = [
+            EssayTheme(
+                title=item.title,
+                context=item.context,
+                source="IA Donc ENEM",
+                supporting_texts=[supporting_text.model_dump() for supporting_text in item.supporting_texts],
+                is_active=True,
+            )
+            for item in result.themes
+        ]
+        self.db.add_all(themes)
+        record_ai_interaction(
+            self.db,
+            workflow="essay_theme_generation",
+            agent="ThemeGeneratorAgent",
+            user_id=user_id,
+            runner=agent.runner,
+            meta={"focus": focus, "generated_count": len(themes)},
         )
-        self.db.add(theme)
         self.db.commit()
-        self.db.refresh(theme)
-        return theme
+        for theme in themes:
+            self.db.refresh(theme)
+        return themes
 
     def create(self, *, user_id: int, theme_id: int, title: str, content: str = "") -> Essay:
         theme = self.repo.get_theme(theme_id)

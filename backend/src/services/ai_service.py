@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.agents.correction import FallbackCorrectionProvider
 from src.agents.schemas import EssayCorrectionResult
+from src.services.ai_telemetry import record_ai_interaction
 from src.workflows import CorrectionOrchestratorWorkflow
 
 
@@ -34,6 +35,18 @@ class EssayAIService:
                 essay_id=essay_id,
                 job_id=job_id,
             )
-        except Exception:
-            return self.fallback.correct(theme=theme, content=content)
-
+        except Exception as exc:
+            result = self.fallback.correct(theme=theme, content=content)
+            if self.db is not None:
+                record_ai_interaction(
+                    self.db,
+                    workflow="essay_correction",
+                    agent="FallbackCorrectionProvider",
+                    user_id=user_id,
+                    job_id=job_id,
+                    prompt=content,
+                    status="error",
+                    error=str(exc),
+                    meta={"essay_id": essay_id, "used_fallback": True},
+                )
+            return result

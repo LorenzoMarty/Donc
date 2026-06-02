@@ -55,3 +55,11 @@ def test_me_returns_user_shape(client):
     data = api_data(response)
     assert "email" in data
     assert "name" in data
+
+
+def test_password_recovery_is_explicitly_unavailable_without_email_provider(client):
+    response = client.post("/api/v1/auth/password-recovery", json={"email": "aluno@demo.com"})
+
+    assert response.status_code == 501
+    assert response.json()["success"] is False
+    assert response.json()["error"] == "password_recovery_not_configured"

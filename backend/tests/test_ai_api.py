@@ -3,9 +3,10 @@
 import pytest
 from sqlalchemy import func, select
 
+from src.agents.theme_generator.agent import ThemeGeneratorAgent
 from src.agents.schemas import EssayCorrectionResult
 from src.database.session import SessionLocal
-from src.models import AIKnowledgeDocument
+from src.models import AIInteractionLog, AIKnowledgeDocument
 from src.services.ai_service import EssayAIService
 from src.utils import rate_limit
 from src.vectorstore import seed_knowledge_base
@@ -144,17 +145,46 @@ def test_prompt_injection_is_rejected(client):
 def test_generate_essay_theme_persists_theme(client):
     response = client.post("/api/v1/essays/themes/generate", json={"focus": "educacao e tecnologia"})
     assert response.status_code == 201
-    theme = api_data(response)
-    assert theme["id"]
-    assert theme["title"]
-    assert theme["context"]
-    assert theme["source"] == "IA Donc ENEM"
-    assert len(theme["supporting_texts"]) >= 2
+    generated_themes = api_data(response)
+    assert len(generated_themes) == 4
+    assert len({theme["title"].lower() for theme in generated_themes}) == 4
+    for theme in generated_themes:
+        assert theme["id"]
+        assert theme["title"]
+        assert theme["context"]
+        assert theme["source"] == "IA Donc ENEM"
+        assert len(theme["supporting_texts"]) >= 2
 
     themes_response = client.get("/api/v1/essays/themes")
     assert themes_response.status_code == 200
     themes = api_data(themes_response)
-    assert theme["id"] in {item["id"] for item in themes}
+    theme_ids = {item["id"] for item in themes}
+    assert {theme["id"] for theme in generated_themes}.issubset(theme_ids)
+
+    db = SessionLocal()
+    try:
+        log = db.scalar(select(AIInteractionLog).where(AIInteractionLog.workflow == "essay_theme_generation"))
+    finally:
+        db.close()
+    assert log is not None
+    assert log.agent == "ThemeGeneratorAgent"
+    assert log.prompt_hash
+    assert log.meta["generated_count"] == 4
+
+
+def test_theme_fallback_never_repeats_existing_titles():
+    agent = ThemeGeneratorAgent()
+    initial = agent._fallback_batch(focus="educacao", existing_titles=[])
+    existing_titles = [theme.title for theme in initial.themes]
+
+    result = agent._fallback_batch(focus="educacao", existing_titles=existing_titles)
+    titles = [theme.title for theme in result.themes]
+
+    assert len(titles) == 4
+    assert len({agent._normalize_title(title) for title in titles}) == 4
+    assert not {agent._normalize_title(title) for title in titles}.intersection(
+        {agent._normalize_title(title) for title in existing_titles}
+    )
 
 
 def test_generate_essay_theme_rejects_prompt_injection(client):

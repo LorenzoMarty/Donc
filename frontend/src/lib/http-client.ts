@@ -56,6 +56,7 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   empty_draft: "Rascunhos vazios não são salvos.",
   ai_job_not_found: "Correção não encontrada.",
   rate_limit_exceeded: "Muitas requisições. Aguarde um momento.",
+  password_recovery_not_configured: "Recuperação por e-mail ainda não está configurada.",
 };
 
 function errorFromPayload(payload: unknown, status: number) {
