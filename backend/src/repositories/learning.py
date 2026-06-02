@@ -11,7 +11,6 @@ class LearningRepository:
     def list_courses(self) -> list[Course]:
         stmt = (
             select(Course)
-            .where(Course.slug == "destrave-redacao")
             .options(selectinload(Course.modules).selectinload(Module.lessons), selectinload(Course.modules).selectinload(Module.exercises))
             .order_by(Course.id)
         )

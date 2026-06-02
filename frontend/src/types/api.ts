@@ -61,7 +61,7 @@ export type Dashboard = {
   recent_exams: { id: number; title: string; score: number }[];
   recent_essays: { id: number; title: string; theme_title: string; status: Essay["status"]; word_count: number; score: number | null; updated_at: string }[];
   suggested_lessons: { id: number; title: string; module: string; progress_percent: number }[];
-  goals: { id: number; title: string; current: number; target: number; unit: string; completed: boolean }[];
+  goals: { id: number; title: string; current: number; target: number; unit: string; completed: boolean; due_date?: string | null }[];
 };
 
 export type Lesson = {
@@ -215,10 +215,40 @@ export type AdminUser = {
   role: string;
   xp: number;
   level: number;
+  streak_days: number;
+  daily_goal_minutes: number;
   essays: number;
   last_seen_at: string | null;
   total_tokens: number;
   event_count: number;
+};
+
+export type AdminLesson = {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  video_url: string;
+  summary: string;
+  duration_minutes: number;
+  order: number;
+};
+
+export type AdminModule = {
+  id: number;
+  title: string;
+  description: string;
+  order: number;
+  lessons: AdminLesson[];
+};
+
+export type AdminCourse = {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  color: string;
+  modules: AdminModule[];
 };
 
 export type AgentStats = {

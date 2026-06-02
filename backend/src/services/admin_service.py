@@ -2,15 +2,21 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+import re
+
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from src.agents.game_generator import GameGeneratorAgent
-from src.models import AIInteractionLog, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, User
+from src.middlewares.errors import AppError
+from src.models import AIInteractionLog, Course, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, Module, User
 from src.models.events import AIGeneratedGame, UserEvent
 from src.repositories.users import UserRepository
 from src.schemas.admin import (
     AdminMetricsResponse,
+    AdminCourseRead,
+    AdminLessonRead,
+    AdminModuleRead,
     AdminUserRead,
     AgentStats,
     AIGeneratedGameRead,
@@ -71,6 +77,8 @@ class AdminService:
                 role=user.role.value,
                 xp=user.xp,
                 level=user.level,
+                streak_days=user.streak_days,
+                daily_goal_minutes=user.daily_goal_minutes,
                 essays=len(user.essays),
                 last_seen_at=user.last_seen_at,
                 total_tokens=token_by_user.get(user.id, 0),
@@ -80,6 +88,157 @@ class AdminService:
         ]
 
     # ── AI Telemetry ──────────────────────────────────────────────────────────
+
+    def update_student(
+        self,
+        *,
+        user_id: int,
+        name: str | None = None,
+        xp: int | None = None,
+        level: int | None = None,
+        streak_days: int | None = None,
+        daily_goal_minutes: int | None = None,
+    ) -> AdminUserRead:
+        user = self._get_student(user_id)
+        if name is not None:
+            user.name = name.strip()
+        if xp is not None:
+            user.xp = xp
+        if level is not None:
+            user.level = level
+        if streak_days is not None:
+            user.streak_days = streak_days
+        if daily_goal_minutes is not None:
+            user.daily_goal_minutes = daily_goal_minutes
+        self.db.commit()
+        return next(item for item in self.users_list() if item.id == user.id)
+
+    def delete_student(self, *, user_id: int, admin_user_id: int) -> None:
+        if user_id == admin_user_id:
+            raise AppError("Voce nao pode excluir sua propria conta.", status_code=409, code="cannot_delete_self")
+        user = self._get_student(user_id)
+        self.db.delete(user)
+        self.db.commit()
+
+    def _get_student(self, user_id: int) -> User:
+        user = self.db.get(User, user_id)
+        if not user:
+            raise AppError("Aluno nao encontrado.", status_code=404, code="student_not_found")
+        if user.role.value != "student":
+            raise AppError("Esta acao so pode ser aplicada a alunos.", status_code=409, code="admin_user_protected")
+        return user
+
+    def content_tree(self) -> list[AdminCourseRead]:
+        courses = self.db.scalars(
+            select(Course)
+            .options(selectinload(Course.modules).selectinload(Module.lessons))
+            .order_by(Course.id)
+        ).all()
+        return [self._course_to_admin_read(course) for course in courses]
+
+    def create_course(self, *, title: str, slug: str | None, description: str, color: str) -> AdminCourseRead:
+        normalized_slug = self._unique_course_slug(slug or title)
+        course = Course(title=title.strip(), slug=normalized_slug, description=description.strip(), color=color.strip() or "#65BE02")
+        self.db.add(course)
+        self.db.commit()
+        self.db.refresh(course)
+        return self._course_to_admin_read(course)
+
+    def create_module(self, *, course_id: int, title: str, description: str, order: int | None) -> AdminModuleRead:
+        course = self.db.get(Course, course_id)
+        if not course:
+            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
+        module = Module(
+            course_id=course_id,
+            title=title.strip(),
+            description=description.strip(),
+            order=order or self._next_module_order(course_id),
+        )
+        self.db.add(module)
+        self.db.commit()
+        self.db.refresh(module)
+        return self._module_to_admin_read(module)
+
+    def create_lesson(
+        self,
+        *,
+        module_id: int,
+        title: str,
+        description: str,
+        thumbnail_url: str,
+        video_url: str,
+        summary: str,
+        duration_minutes: int,
+        order: int | None,
+    ) -> AdminLessonRead:
+        module = self.db.get(Module, module_id)
+        if not module:
+            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        lesson = Lesson(
+            module_id=module_id,
+            title=title.strip(),
+            description=description.strip(),
+            thumbnail_url=thumbnail_url.strip() or "/images/lessons/default.jpg",
+            video_url=video_url.strip() or "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            summary=summary.strip(),
+            duration_minutes=duration_minutes,
+            order=order or self._next_lesson_order(module_id),
+        )
+        self.db.add(lesson)
+        self.db.commit()
+        self.db.refresh(lesson)
+        return self._lesson_to_admin_read(lesson)
+
+    def _next_module_order(self, course_id: int) -> int:
+        current = self.db.scalar(select(func.max(Module.order)).where(Module.course_id == course_id)) or 0
+        return int(current) + 1
+
+    def _next_lesson_order(self, module_id: int) -> int:
+        current = self.db.scalar(select(func.max(Lesson.order)).where(Lesson.module_id == module_id)) or 0
+        return int(current) + 1
+
+    def _unique_course_slug(self, value: str) -> str:
+        base = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-") or "curso"
+        slug = base[:140]
+        suffix = 2
+        while self.db.scalar(select(Course.id).where(Course.slug == slug)):
+            suffix_text = f"-{suffix}"
+            slug = f"{base[: 140 - len(suffix_text)]}{suffix_text}"
+            suffix += 1
+        return slug
+
+    def _course_to_admin_read(self, course: Course) -> AdminCourseRead:
+        modules = sorted(course.modules, key=lambda item: item.order)
+        return AdminCourseRead(
+            id=course.id,
+            title=course.title,
+            slug=course.slug,
+            description=course.description,
+            color=course.color,
+            modules=[self._module_to_admin_read(module) for module in modules],
+        )
+
+    def _module_to_admin_read(self, module: Module) -> AdminModuleRead:
+        lessons = sorted(module.lessons, key=lambda item: item.order)
+        return AdminModuleRead(
+            id=module.id,
+            title=module.title,
+            description=module.description,
+            order=module.order,
+            lessons=[self._lesson_to_admin_read(lesson) for lesson in lessons],
+        )
+
+    def _lesson_to_admin_read(self, lesson: Lesson) -> AdminLessonRead:
+        return AdminLessonRead(
+            id=lesson.id,
+            title=lesson.title,
+            description=lesson.description,
+            thumbnail_url=lesson.thumbnail_url,
+            video_url=lesson.video_url,
+            summary=lesson.summary,
+            duration_minutes=lesson.duration_minutes,
+            order=lesson.order,
+        )
 
     def ai_telemetry(self, period_days: int = 30) -> AITelemetryResponse:
         since = datetime.now(timezone.utc) - timedelta(days=period_days)

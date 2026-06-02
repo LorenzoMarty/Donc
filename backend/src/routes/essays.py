@@ -13,10 +13,13 @@ from src.schemas.essays import (
     EssayHistoryResponse,
     EssayRead,
     EssaySubmitResponse,
+    EssayThemeGenerateRequest,
     EssayThemeRead,
     JobStatusRead,
 )
 from src.services.essay_service import EssayService
+from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
+from src.utils.rate_limit import check_ai_rate_limit
 
 
 router = APIRouter(prefix="/essays", tags=["essays"])
@@ -25,6 +28,21 @@ router = APIRouter(prefix="/essays", tags=["essays"])
 @router.get("/themes", response_model=ApiResponse[list[EssayThemeRead]])
 def themes(_: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[list[EssayThemeRead]]:
     return success_response(EssayService(db).list_themes())
+
+
+@router.post("/themes/generate", response_model=ApiResponse[EssayThemeRead], status_code=201)
+def generate_theme(
+    payload: EssayThemeGenerateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssayThemeRead]:
+    check_ai_rate_limit(current_user.id)
+    focus = sanitize_ai_text(payload.focus or "", max_chars=160) or None
+    if focus and contains_prompt_injection(focus):
+        from src.middlewares.errors import AppError
+
+        raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+    return success_response(EssayService(db).generate_theme(user_id=current_user.id, focus=focus), "Tema gerado com IA.")
 
 
 @router.get("/history", response_model=ApiResponse[EssayHistoryResponse])
@@ -126,4 +144,3 @@ def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user
 def delete_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[MessageResponse]:
     EssayService(db).delete(essay_id=essay_id, user_id=current_user.id)
     return success_response(MessageResponse(message="Redacao excluida."), "Redacao excluida.")
-

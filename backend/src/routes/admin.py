@@ -7,8 +7,16 @@ from src.database.session import get_db
 from src.dependencies import get_current_user, require_admin
 from src.models import User
 from src.schemas.admin import (
+    AdminCourseCreateRequest,
+    AdminCourseRead,
+    AdminLessonCreateRequest,
+    AdminLessonRead,
+    AdminUserActionResponse,
     AdminMetricsResponse,
+    AdminModuleCreateRequest,
+    AdminModuleRead,
     AdminUserRead,
+    AdminUserUpdateRequest,
     AIGeneratedGameRead,
     AITelemetryResponse,
     GenerateGameRequest,
@@ -31,6 +39,98 @@ def metrics(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> 
 @router.get("/users", response_model=ApiResponse[list[AdminUserRead]])
 def users(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[AdminUserRead]]:
     return success_response(AdminService(db).users_list())
+
+
+@router.get("/content", response_model=ApiResponse[list[AdminCourseRead]])
+def content(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[AdminCourseRead]]:
+    return success_response(AdminService(db).content_tree())
+
+
+@router.post("/courses", response_model=ApiResponse[AdminCourseRead], status_code=201)
+def create_course(
+    payload: AdminCourseCreateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(
+        AdminService(db).create_course(
+            title=payload.title,
+            slug=payload.slug,
+            description=payload.description,
+            color=payload.color,
+        ),
+        "Curso criado.",
+    )
+
+
+@router.post("/courses/{course_id}/modules", response_model=ApiResponse[AdminModuleRead], status_code=201)
+def create_module(
+    course_id: int,
+    payload: AdminModuleCreateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminModuleRead]:
+    return success_response(
+        AdminService(db).create_module(
+            course_id=course_id,
+            title=payload.title,
+            description=payload.description,
+            order=payload.order,
+        ),
+        "Modulo criado.",
+    )
+
+
+@router.post("/modules/{module_id}/lessons", response_model=ApiResponse[AdminLessonRead], status_code=201)
+def create_lesson(
+    module_id: int,
+    payload: AdminLessonCreateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminLessonRead]:
+    return success_response(
+        AdminService(db).create_lesson(
+            module_id=module_id,
+            title=payload.title,
+            description=payload.description,
+            thumbnail_url=payload.thumbnail_url,
+            video_url=payload.video_url,
+            summary=payload.summary,
+            duration_minutes=payload.duration_minutes,
+            order=payload.order,
+        ),
+        "Aula criada.",
+    )
+
+
+@router.patch("/users/{user_id}", response_model=ApiResponse[AdminUserRead])
+def update_user(
+    user_id: int,
+    payload: AdminUserUpdateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminUserRead]:
+    return success_response(
+        AdminService(db).update_student(
+            user_id=user_id,
+            name=payload.name,
+            xp=payload.xp,
+            level=payload.level,
+            streak_days=payload.streak_days,
+            daily_goal_minutes=payload.daily_goal_minutes,
+        ),
+        "Aluno atualizado.",
+    )
+
+
+@router.delete("/users/{user_id}", response_model=ApiResponse[AdminUserActionResponse])
+def delete_user(
+    user_id: int,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminUserActionResponse]:
+    AdminService(db).delete_student(user_id=user_id, admin_user_id=current_admin.id)
+    return success_response(AdminUserActionResponse(action="deleted", user_id=user_id), "Aluno excluido.")
 
 
 @router.get("/ai-telemetry", response_model=ApiResponse[AITelemetryResponse])

@@ -4,8 +4,9 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from src.agents.theme_generator import ThemeGeneratorAgent
 from src.middlewares.errors import AppError
-from src.models import Essay, EssayCorrection, EssayStatus, EssayVersion, EssayVersionCorrection, User
+from src.models import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVersion, EssayVersionCorrection, User
 from src.repositories.essays import EssayRepository
 from src.schemas.essays import EssayEvolutionPoint, EssayHistoryResponse
 from src.services.ai_service import EssayAIService
@@ -19,6 +20,24 @@ class EssayService:
 
     def list_themes(self):
         return self.repo.list_themes()
+
+    def generate_theme(self, *, user_id: int, focus: str | None = None) -> EssayTheme:
+        result = ThemeGeneratorAgent().generate(
+            focus=focus,
+            user_id=user_id,
+            session_id=f"user:{user_id}:theme-generator",
+        )
+        theme = EssayTheme(
+            title=result.title,
+            context=result.context,
+            source="IA Donc ENEM",
+            supporting_texts=[item.model_dump() for item in result.supporting_texts],
+            is_active=True,
+        )
+        self.db.add(theme)
+        self.db.commit()
+        self.db.refresh(theme)
+        return theme
 
     def create(self, *, user_id: int, theme_id: int, title: str, content: str = "") -> Essay:
         theme = self.repo.get_theme(theme_id)
@@ -352,4 +371,3 @@ class EssayService:
         while f"{base} {suffix}".lower() in existing:
             suffix += 1
         return f"{base[:205]} {suffix}"
-

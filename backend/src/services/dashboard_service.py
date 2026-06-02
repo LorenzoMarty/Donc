@@ -1,9 +1,11 @@
 from collections import Counter
+from datetime import date, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, load_only, selectinload
 
 from src.models import Course, Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
+from src.middlewares.errors import AppError
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentExam, RecentLesson, TrendPoint
 from src.services.rank_service import allowed_difficulties_for_user
 
@@ -55,7 +57,15 @@ class DashboardService:
                 .join(LessonProgress.lesson)
                 .join(Lesson.module)
                 .join(Module.course)
-                .where(LessonProgress.user_id == user_id, Course.slug == "destrave-redacao")
+                .where(
+                    LessonProgress.user_id == user_id,
+                    Course.slug == "destrave-redacao",
+                    or_(
+                        LessonProgress.progress_percent > 0,
+                        LessonProgress.last_position_seconds > 0,
+                        LessonProgress.completed.is_(True),
+                    ),
+                )
                 .order_by(LessonProgress.updated_at.desc())
             )
         )
@@ -112,8 +122,25 @@ class DashboardService:
         ][:5]
 
         goals = [
-            GoalRead(id=goal.id, title=goal.title, current=goal.current, target=goal.target, unit=goal.unit, completed=goal.completed)
-            for goal in self.db.scalars(select(Goal).where(Goal.user_id == user_id).limit(4))
+            GoalRead(
+                id=goal.id,
+                title=goal.title,
+                current=goal.current,
+                target=goal.target,
+                unit=goal.unit,
+                completed=goal.completed,
+                due_date=goal.due_date,
+            )
+            for goal in self.db.scalars(
+                select(Goal)
+                .where(
+                    Goal.user_id == user_id,
+                    Goal.due_date >= self._week_start(),
+                    Goal.due_date <= self._week_end(),
+                )
+                .order_by(Goal.completed, Goal.id.desc())
+                .limit(6)
+            )
         ]
 
         trend = [
@@ -149,6 +176,62 @@ class DashboardService:
             suggested_lessons=suggested_lessons,
             goals=goals,
         )
+
+    def create_goal(self, *, user_id: int, title: str, target: int, unit: str) -> GoalRead:
+        goal = Goal(
+            user_id=user_id,
+            title=title.strip(),
+            target=target,
+            current=0,
+            unit=unit.strip() or "vez",
+            due_date=self._week_end(),
+            completed=False,
+        )
+        self.db.add(goal)
+        self.db.commit()
+        self.db.refresh(goal)
+        return self._goal_read(goal)
+
+    def update_goal(self, *, goal_id: int, user_id: int, completed: bool | None = None, current: int | None = None) -> GoalRead:
+        goal = self._get_goal(goal_id=goal_id, user_id=user_id)
+        if current is not None:
+            goal.current = min(current, goal.target)
+            goal.completed = goal.current >= goal.target
+        if completed is not None:
+            goal.completed = completed
+            goal.current = goal.target if completed else 0
+        self.db.commit()
+        self.db.refresh(goal)
+        return self._goal_read(goal)
+
+    def delete_goal(self, *, goal_id: int, user_id: int) -> None:
+        goal = self._get_goal(goal_id=goal_id, user_id=user_id)
+        self.db.delete(goal)
+        self.db.commit()
+
+    def _get_goal(self, *, goal_id: int, user_id: int) -> Goal:
+        goal = self.db.get(Goal, goal_id)
+        if not goal or goal.user_id != user_id:
+            raise AppError("Desafio nao encontrado.", status_code=404, code="goal_not_found")
+        return goal
+
+    def _goal_read(self, goal: Goal) -> GoalRead:
+        return GoalRead(
+            id=goal.id,
+            title=goal.title,
+            current=goal.current,
+            target=goal.target,
+            unit=goal.unit,
+            completed=goal.completed,
+            due_date=goal.due_date,
+        )
+
+    def _week_start(self) -> date:
+        today = date.today()
+        return today - timedelta(days=today.weekday())
+
+    def _week_end(self) -> date:
+        return self._week_start() + timedelta(days=6)
 
     def _mastery_map(self, corrected: list[Essay]) -> list[MasteryPoint]:
         labels = {

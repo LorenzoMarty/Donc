@@ -84,6 +84,19 @@ class ExerciseGenerationResult(BaseModel):
     adaptation_reason: str
 
 
+class GeneratedSupportingText(BaseModel):
+    title: str = Field(min_length=4, max_length=120)
+    content: str = Field(min_length=80, max_length=900)
+    type: Literal["motivador", "perspectiva"] = "motivador"
+
+
+class EssayThemeGenerationResult(BaseModel):
+    title: str = Field(min_length=20, max_length=220)
+    context: str = Field(min_length=120, max_length=1800)
+    supporting_texts: list[GeneratedSupportingText] = Field(min_length=2, max_length=3)
+    rationale: str = Field(min_length=20, max_length=500)
+
+
 class GameQuestion(BaseModel):
     prompt: str = Field(min_length=15, max_length=600, description="Enunciado da questao, pode incluir lacuna _ ou contexto.")
     options: list[str] = Field(min_length=4, max_length=4, description="Exatamente 4 opcoes de resposta, sem prefixo de letra.")
