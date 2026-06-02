@@ -52,6 +52,19 @@ def test_production_cors_uses_only_configured_origins():
     assert settings.cors_origins == ["https://app.example.com", "https://admin.example.com"]
 
 
+def test_production_allows_missing_openai_key():
+    settings = Settings(
+        environment="production",
+        database_url="postgresql+psycopg://user:pass@db:5432/app",
+        frontend_origin="https://app.example.com",
+        openai_api_key="",
+        jwt_secret_key="a" * 48,
+        seed_demo_data=False,
+    )
+
+    assert settings.openai_api_key is None
+
+
 def test_production_rejects_demo_seed_and_localhost_origin():
     for kwargs, expected in [
         ({"seed_demo_data": True, "frontend_origin": "https://app.example.com"}, "SEED_DEMO_DATA"),
