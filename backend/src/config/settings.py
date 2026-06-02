@@ -59,8 +59,6 @@ class Settings(BaseSettings):
             raise ValueError("JWT_SECRET_KEY precisa ser unico e ter pelo menos 32 caracteres em producao.")
         if self.seed_demo_data:
             raise ValueError("SEED_DEMO_DATA deve ser false em producao.")
-        if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY e obrigatoria em producao para recursos de IA.")
         if self.database_url.startswith("sqlite"):
             raise ValueError("DATABASE_URL nao pode usar SQLite em producao.")
         if any("localhost" in origin or "127.0.0.1" in origin for origin in self._configured_cors_origins()):
