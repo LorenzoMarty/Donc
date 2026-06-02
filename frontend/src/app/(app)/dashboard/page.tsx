@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, BookOpen, Check, Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
+import { ArrowRight, BookOpen, Clock3, FileText, PenLine, Plus, Sparkles, Trash2, Video } from "lucide-react";
+import { toast } from "sonner";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { apiFetch, type Dashboard, type Essay } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
 import { cn } from "@/utils";
@@ -38,10 +40,13 @@ type CompetencyRow = {
 };
 
 type TaskRow = {
+  id: number;
   title: string;
   due: string;
-  done?: boolean;
-  href: string;
+  done: boolean;
+  current: number;
+  target: number;
+  unit: string;
 };
 
 const statusLabel: Record<Essay["status"], string> = {
@@ -54,6 +59,10 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
+  const [challengeTitle, setChallengeTitle] = useState("");
+  const [challengeTarget, setChallengeTarget] = useState("1");
+  const [challengeUnit, setChallengeUnit] = useState("vez");
+  const [challengeBusy, setChallengeBusy] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -112,6 +121,60 @@ export default function DashboardPage() {
   const studySuffix = studyGoal?.unit ? ` ${studyGoal.unit}` : " min";
   const heroHref = latestDraft?.href ?? "/redacao";
   const heroCopy = buildHeroCopy({ bestScore, latestDraft: Boolean(latestDraft), progress: data.progress_general });
+
+  async function addChallenge() {
+    if (!challengeTitle.trim() || challengeBusy) return;
+    setChallengeBusy(true);
+    try {
+      const goal = await apiFetch<Dashboard["goals"][number]>("/dashboard/challenges", {
+        method: "POST",
+        body: JSON.stringify({
+          title: challengeTitle,
+          target: Number(challengeTarget) || 1,
+          unit: challengeUnit || "vez",
+        }),
+      });
+      setData((current) => (current ? { ...current, goals: [goal, ...current.goals] } : current));
+      setChallengeTitle("");
+      setChallengeTarget("1");
+      setChallengeUnit("vez");
+      toast.success("Desafio semanal criado.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nao foi possivel criar o desafio.");
+    } finally {
+      setChallengeBusy(false);
+    }
+  }
+
+  async function toggleChallenge(task: TaskRow) {
+    if (challengeBusy) return;
+    setChallengeBusy(true);
+    try {
+      const goal = await apiFetch<Dashboard["goals"][number]>(`/dashboard/challenges/${task.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ completed: !task.done }),
+      });
+      setData((current) => (current ? { ...current, goals: current.goals.map((item) => (item.id === goal.id ? goal : item)) } : current));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nao foi possivel atualizar o desafio.");
+    } finally {
+      setChallengeBusy(false);
+    }
+  }
+
+  async function deleteChallenge(task: TaskRow) {
+    if (challengeBusy) return;
+    setChallengeBusy(true);
+    try {
+      await apiFetch<{ message: string }>(`/dashboard/challenges/${task.id}`, { method: "DELETE" });
+      setData((current) => (current ? { ...current, goals: current.goals.filter((item) => item.id !== task.id) } : current));
+      toast.success("Desafio excluido.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nao foi possivel excluir o desafio.");
+    } finally {
+      setChallengeBusy(false);
+    }
+  }
 
   return (
     <div className="text-[#0f172a]">
@@ -241,7 +304,19 @@ export default function DashboardPage() {
         <div className="grid gap-5">
           <LessonsCard lessons={lessons} />
           <CompetenciesCard items={competencies} />
-          <WeeklyTasksCard tasks={tasks} />
+          <WeeklyTasksCard
+            tasks={tasks}
+            title={challengeTitle}
+            target={challengeTarget}
+            unit={challengeUnit}
+            busy={challengeBusy}
+            onTitleChange={setChallengeTitle}
+            onTargetChange={setChallengeTarget}
+            onUnitChange={setChallengeUnit}
+            onAdd={addChallenge}
+            onToggle={toggleChallenge}
+            onDelete={deleteChallenge}
+          />
         </div>
       </section>
     </div>
@@ -331,39 +406,84 @@ function CompetenciesCard({ items }: { items: CompetencyRow[] }) {
   );
 }
 
-function WeeklyTasksCard({ tasks }: { tasks: TaskRow[] }) {
+function WeeklyTasksCard({
+  tasks,
+  title,
+  target,
+  unit,
+  busy,
+  onTitleChange,
+  onTargetChange,
+  onUnitChange,
+  onAdd,
+  onToggle,
+  onDelete,
+}: {
+  tasks: TaskRow[];
+  title: string;
+  target: string;
+  unit: string;
+  busy: boolean;
+  onTitleChange: (value: string) => void;
+  onTargetChange: (value: string) => void;
+  onUnitChange: (value: string) => void;
+  onAdd: () => void;
+  onToggle: (task: TaskRow) => void;
+  onDelete: (task: TaskRow) => void;
+}) {
   const pending = tasks.filter((task) => !task.done).length;
 
   return (
     <div className="rounded-[22px] border border-border bg-white p-6">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-normal">Tarefas da semana</h2>
+        <h2 className="text-xl font-bold tracking-normal">Desafios da semana</h2>
         <span className="text-sm font-semibold text-slate-500">{pending} pendentes</span>
       </div>
+
+      <div className="mt-4 grid gap-2 rounded-xl border border-dashed border-border p-3">
+        <Input
+          value={title}
+          onChange={(event) => onTitleChange(event.target.value)}
+          placeholder="Defina um desafio para cumprir esta semana"
+          className="h-10"
+        />
+        <div className="grid grid-cols-[5rem_minmax(0,1fr)_auto] gap-2">
+          <Input type="number" min={1} value={target} onChange={(event) => onTargetChange(event.target.value)} className="h-10" />
+          <Input value={unit} onChange={(event) => onUnitChange(event.target.value)} placeholder="unidade" className="h-10" />
+          <Button type="button" size="sm" onClick={onAdd} disabled={busy || !title.trim()} className="h-10">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Criar
+          </Button>
+        </div>
+      </div>
+
       <div className="mt-4 grid gap-3">
-        {tasks.map((task) => (
-          <Link
-            key={task.title}
-            href={task.href}
+        {tasks.length ? tasks.map((task) => (
+          <div
+            key={task.id}
             className="grid grid-cols-[1.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-3 transition-colors hover:border-primary/25 hover:bg-primary/5"
           >
-            <span
-              className={cn(
-                "grid h-6 w-6 place-items-center rounded-lg border",
-                task.done ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white",
-              )}
-              aria-hidden="true"
-            >
-              {task.done ? <Check className="h-4 w-4" /> : null}
-            </span>
-            <span className={cn("truncate text-base font-semibold", task.done && "text-slate-500 line-through")}>{task.title}</span>
-            <span
-              className={cn("text-sm font-medium", task.done ? "text-slate-500" : task.due === "hoje" ? "text-primary" : "text-slate-500")}
-            >
-              {task.due}
-            </span>
-          </Link>
-        ))}
+            <input
+              type="checkbox"
+              checked={Boolean(task.done)}
+              onChange={() => onToggle(task)}
+              disabled={busy}
+              aria-label={task.title}
+              className="h-5 w-5 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
+            />
+            <div className="min-w-0">
+              <p className={cn("truncate text-base font-semibold", task.done && "text-slate-500 line-through")}>{task.title}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">{task.due}</p>
+            </div>
+            <Button type="button" size="icon" variant="ghost" onClick={() => onDelete(task)} disabled={busy} aria-label="Excluir desafio" className="h-9 w-9">
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
+        )) : (
+          <div className="rounded-xl border border-dashed border-border p-4 text-sm text-slate-500">
+            Nenhum desafio definido. Crie um objetivo semanal que voce quer tentar cumprir.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -475,45 +595,19 @@ function normalizeCompetencyLabel(competency: string, label: string) {
 }
 
 function buildTaskRows(data: Dashboard | null): TaskRow[] {
-  const goals =
-    data?.goals.slice(0, 3).map((goal) => ({
-      title: goal.title,
-      due: goal.completed ? "concluido" : `${goal.current}/${goal.target} ${goal.unit}`,
-      done: goal.completed,
-      href: hrefForGoal(goal.title),
-    })) ?? [];
-
-  const exercises =
-    data?.pending_exercises.slice(0, Math.max(0, 3 - goals.length)).map((exercise) => ({
-      title: `Praticar ${exercise.skill}`,
-      due: difficultyLabel(exercise.difficulty),
-      href: "/games",
-    })) ?? [];
-
-  const review =
-    data?.recurrent_errors?.[0] && goals.length + exercises.length < 4
-      ? [
-          {
-            title: "Revisar erro recorrente",
-            due: "redacoes",
-            href: "/redacoes",
-          },
-        ]
-      : [];
-
-  const rows = [...goals, ...exercises, ...review].slice(0, 4);
-  if (rows.length) return rows;
-
-  return [
-    { title: "Escrever primeira redacao", due: "hoje", href: "/redacao" },
-    { title: "Assistir primeira aula", due: "aulas", href: "/aulas" },
-    { title: "Treinar uma atividade", due: "pratica", href: "/games" },
-  ];
+  return (data?.goals ?? []).slice(0, 6).map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    due: goal.completed ? "concluido" : `${goal.current}/${goal.target} ${goal.unit}`,
+    done: goal.completed,
+    current: goal.current,
+    target: goal.target,
+    unit: goal.unit,
+  }));
 }
 
 function buildLessonRows(data: Dashboard | null): LessonRow[] {
-  const source = data?.recent_lessons?.length ? data.recent_lessons : (data?.suggested_lessons ?? []);
-  return source.slice(0, 3).map((lesson, index) => ({
+  return (data?.recent_lessons ?? []).slice(0, 3).map((lesson, index) => ({
     id: lesson.id,
     index: index + 1,
     title: lesson.title,
@@ -552,20 +646,6 @@ function buildWeekProgress(streak: number) {
     today: index === todayIndex,
     active: streak > 0 && index >= firstActive && index <= todayIndex,
   }));
-}
-
-function hrefForGoal(title: string) {
-  const normalized = title.toLowerCase();
-  if (normalized.includes("aula")) return "/aulas";
-  if (normalized.includes("redacao") || normalized.includes("redacoes")) return "/redacao";
-  if (normalized.includes("exercicio") || normalized.includes("treino")) return "/games";
-  return "/dashboard";
-}
-
-function difficultyLabel(value: string) {
-  if (value === "hard") return "avancado";
-  if (value === "medium") return "intermediario";
-  return "essencial";
 }
 
 function formatRelativeDate(value: string) {

@@ -1,9 +1,7 @@
-﻿from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -12,6 +10,7 @@ from src.config.security import decode_access_token
 from src.middlewares.errors import AppError
 from src.models import User, UserRole
 from src.repositories.users import UserRepository
+from src.services.streak_service import touch_daily_streak
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_prefix}/auth/login", auto_error=False)
@@ -38,11 +37,7 @@ def get_current_user(
         raise AppError("Usuario nao encontrado.", status_code=401, code="user_not_found")
 
     try:
-        db.execute(
-            text("UPDATE users SET last_seen_at = :now WHERE id = :id"),
-            {"now": datetime.now(timezone.utc), "id": user.id},
-        )
-        db.commit()
+        user = touch_daily_streak(db, user)
     except Exception:
         db.rollback()
 
@@ -53,4 +48,3 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != UserRole.ADMIN:
         raise AppError("Acesso restrito a administradores.", status_code=403, code="admin_required")
     return current_user
-

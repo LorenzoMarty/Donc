@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -22,10 +23,76 @@ class AdminUserRead(BaseModel):
     role: str
     xp: int
     level: int
+    streak_days: int
+    daily_goal_minutes: int
     essays: int
     last_seen_at: datetime | None = None
     total_tokens: int = 0
     event_count: int = 0
+
+
+class AdminUserUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    xp: int | None = Field(default=None, ge=0, le=1_000_000)
+    level: int | None = Field(default=None, ge=1, le=500)
+    streak_days: int | None = Field(default=None, ge=0, le=3650)
+    daily_goal_minutes: int | None = Field(default=None, ge=10, le=480)
+
+
+class AdminUserActionResponse(BaseModel):
+    action: Literal["deleted"]
+    user_id: int
+
+
+class AdminLessonRead(BaseModel):
+    id: int
+    title: str
+    description: str
+    thumbnail_url: str
+    video_url: str
+    summary: str
+    duration_minutes: int
+    order: int
+
+
+class AdminModuleRead(BaseModel):
+    id: int
+    title: str
+    description: str
+    order: int
+    lessons: list[AdminLessonRead] = Field(default_factory=list)
+
+
+class AdminCourseRead(BaseModel):
+    id: int
+    title: str
+    slug: str
+    description: str
+    color: str
+    modules: list[AdminModuleRead] = Field(default_factory=list)
+
+
+class AdminCourseCreateRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=120)
+    slug: str | None = Field(default=None, min_length=3, max_length=140)
+    description: str = Field(min_length=10, max_length=1200)
+    color: str = Field(default="#65BE02", max_length=40)
+
+
+class AdminModuleCreateRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=160)
+    description: str = Field(min_length=10, max_length=1200)
+    order: int | None = Field(default=None, ge=1, le=999)
+
+
+class AdminLessonCreateRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=180)
+    description: str = Field(min_length=10, max_length=1200)
+    thumbnail_url: str = Field(default="", max_length=500)
+    video_url: str = Field(default="", max_length=500)
+    summary: str = Field(min_length=10, max_length=5000)
+    duration_minutes: int = Field(default=15, ge=1, le=600)
+    order: int | None = Field(default=None, ge=1, le=999)
 
 
 # ── AI Telemetry ─────────────────────────────────────────────────────────────

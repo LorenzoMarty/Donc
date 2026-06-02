@@ -8,6 +8,7 @@ import {
   Brain,
   Check,
   CheckCircle2,
+  ChevronRight,
   Download,
   Link2,
   MoreHorizontal,
@@ -40,6 +41,7 @@ export default function EssayPage() {
   const [draftStarted, setDraftStarted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [generatingTheme, setGeneratingTheme] = useState(false);
   const [mode, setMode] = useState<EssayViewMode>("editor");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -176,6 +178,24 @@ export default function EssayPage() {
     replaceEssayUrl();
   }
 
+  async function generateTheme() {
+    if (generatingTheme) return;
+    setGeneratingTheme(true);
+    setError("");
+    try {
+      const theme = await apiFetch<EssayTheme>("/essays/themes/generate", {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      setThemes((current) => [theme, ...current.filter((item) => item.id !== theme.id)]);
+      setSelectedTheme(theme);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Nao foi possivel gerar um tema com IA.");
+    } finally {
+      setGeneratingTheme(false);
+    }
+  }
+
   async function submit() {
     if (!essay || submittingRef.current) return;
     setError("");
@@ -294,7 +314,18 @@ export default function EssayPage() {
 
       <div className="grid gap-3 pt-3">
         {!essay ? (
-          <ThemePicker themes={themes} selectedTheme={selectedTheme} onSelect={setSelectedTheme} />
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
+            <ThemePicker
+              themes={themes}
+              selectedTheme={selectedTheme}
+              generating={generatingTheme}
+              onGenerate={generateTheme}
+              onSelect={setSelectedTheme}
+            />
+            {!draftStarted ? (
+              <StartEssayCard selectedTheme={selectedTheme} onCreateDraft={() => createDraft()} />
+            ) : null}
+          </div>
         ) : hasCorrection ? (
           <CorrectionPanel correction={analysisCorrection} error={error} />
         ) : null}
@@ -306,20 +337,7 @@ export default function EssayPage() {
           </div>
         ) : null}
 
-        {!essay && !draftStarted ? (
-          <Surface className="grid min-h-[180px] place-items-center text-center">
-            <div className="max-w-xl px-3 py-2">
-              <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
-                <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
-              </div>
-              <p className="text-xl font-semibold tracking-normal">Escolha um tema e comece a escrever.</p>
-              <p className="mt-1.5 text-sm text-muted-foreground">O editor abre limpo para voce desenvolver a redacao no seu ritmo.</p>
-              <Button className="mt-4" onClick={() => createDraft()} disabled={!selectedTheme}>
-                Comecar redacao
-              </Button>
-            </div>
-          </Surface>
-        ) : (
+        {essay || draftStarted ? (
           <EssayEditor
             essay={essay}
             theme={selectedTheme}
@@ -335,7 +353,7 @@ export default function EssayPage() {
             onContentChange={setContent}
             onSubmit={submit}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -344,37 +362,99 @@ export default function EssayPage() {
 function ThemePicker({
   themes,
   selectedTheme,
+  generating,
+  onGenerate,
   onSelect,
 }: {
   themes: EssayTheme[];
   selectedTheme: EssayTheme | null;
+  generating: boolean;
+  onGenerate: () => void;
   onSelect: (theme: EssayTheme) => void;
 }) {
   return (
-    <Surface className="p-4 lg:p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <Surface className="p-4 lg:p-5">
+      <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Banco de temas</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-normal">Escolha o tema</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-normal">Escolha o tema da redacao</h2>
         </div>
-        <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
+        <Button type="button" variant="outline" size="sm" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
+          <Sparkles className="h-4 w-4" aria-hidden="true" />
+          {generating ? "Gerando..." : "Gerar tema com IA"}
+        </Button>
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {themes.map((theme) => (
           <button
             type="button"
             key={theme.id}
             onClick={() => onSelect(theme)}
             className={cn(
-              "group w-full rounded-md border border-border/80 bg-white p-3 text-left transition-all hover:bg-primary/5",
-              selectedTheme?.id === theme.id && "bg-primary/20",
+              "group grid min-h-[9.5rem] w-full content-start rounded-md border border-border/80 bg-white p-4 text-left transition-all hover:border-primary/35 hover:bg-primary/5",
+              selectedTheme?.id === theme.id && "border-primary/45 bg-primary/10 ring-2 ring-primary/10",
             )}
           >
-            <p className="text-sm font-semibold">{theme.title}</p>
-            <p className="text-safe mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground">{theme.context}</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold leading-5">{theme.title}</p>
+              <span
+                className={cn(
+                  "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border text-primary transition-colors",
+                  selectedTheme?.id === theme.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white",
+                )}
+              >
+                {selectedTheme?.id === theme.id ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+              </span>
+            </div>
+            <p className="text-safe mt-3 line-clamp-3 text-xs leading-5 text-muted-foreground">{theme.context}</p>
+            <div className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+              Selecionar
+              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
           </button>
         ))}
       </div>
+    </Surface>
+  );
+}
+
+function StartEssayCard({
+  selectedTheme,
+  onCreateDraft,
+}: {
+  selectedTheme: EssayTheme | null;
+  onCreateDraft: () => void;
+}) {
+  return (
+    <Surface className="p-4 lg:p-5 xl:sticky xl:top-4">
+      <div className="flex items-start gap-3">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+          <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proxima etapa</p>
+          <h2 className="mt-1 text-lg font-semibold tracking-normal">Comece pelo tema escolhido.</h2>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-md border border-border/80 bg-background/60 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Tema selecionado</p>
+        <p className="text-safe mt-2 text-sm font-semibold leading-5">{selectedTheme?.title ?? "Selecione um tema no banco ao lado."}</p>
+        {selectedTheme ? <p className="text-safe mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">{selectedTheme.context}</p> : null}
+      </div>
+
+      <div className="mt-5 grid gap-3 text-sm">
+        {["Editor limpo para rascunho", "Acompanhamento de estrutura", "Correcao por competencia"].map((item) => (
+          <div key={item} className="flex items-center gap-2 font-medium text-muted-foreground">
+            <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span>{item}</span>
+          </div>
+        ))}
+      </div>
+
+      <Button className="mt-6 w-full" onClick={onCreateDraft} disabled={!selectedTheme}>
+        Comecar redacao
+      </Button>
     </Surface>
   );
 }

@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TrendPoint(BaseModel):
@@ -44,6 +44,18 @@ class GoalRead(BaseModel):
     target: int
     unit: str
     completed: bool
+    due_date: date | None = None
+
+
+class GoalCreateRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=180)
+    target: int = Field(default=1, ge=1, le=999)
+    unit: str = Field(default="vez", min_length=1, max_length=40)
+
+
+class GoalUpdateRequest(BaseModel):
+    completed: bool | None = None
+    current: int | None = Field(default=None, ge=0, le=999)
 
 
 class MasteryPoint(BaseModel):
