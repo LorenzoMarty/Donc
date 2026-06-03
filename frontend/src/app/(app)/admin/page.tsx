@@ -6,13 +6,14 @@ import { LoadingCard } from "@/components/shared/loading-card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch, type AdminMetrics } from "@/services/api";
-import type { AdminCourse, AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, UserActivity } from "@/types/api";
+import type { AdminCourse, AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
 
 import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
 import { CoursesTab } from "./_tabs/courses";
+import { ThemesTab } from "./_tabs/themes";
 
 export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -21,6 +22,7 @@ export default function AdminPage() {
   const [activity, setActivity] = useState<UserActivity | null>(null);
   const [games, setGames] = useState<AIGeneratedGame[]>([]);
   const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
 
@@ -32,14 +34,16 @@ export default function AdminPage() {
       apiFetch<UserActivity>("/admin/user-activity?days=7"),
       apiFetch<AIGeneratedGame[]>("/admin/ai-games"),
       apiFetch<AdminCourse[]>("/admin/content"),
+      apiFetch<EssayTheme[]>("/admin/essay-themes"),
     ])
-      .then(([m, u, t, a, g, c]) => {
+      .then(([m, u, t, a, g, c, th]) => {
         setMetrics(m);
         setUsers(u);
         setTelemetry(t);
         setActivity(a);
         setGames(g);
         setCourses(c);
+        setThemes(th);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Acesso indisponível."));
   }, []);
@@ -73,6 +77,7 @@ export default function AdminPage() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="ai">Telemetria IA</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
+          <TabsTrigger value="themes">Temas</TabsTrigger>
           <TabsTrigger value="courses">Cursos</TabsTrigger>
           <TabsTrigger value="games">Jogos IA</TabsTrigger>
         </TabsList>
@@ -97,6 +102,10 @@ export default function AdminPage() {
             onUserUpdated={(updated) => setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)))}
             onUserDeleted={(userId) => setUsers((prev) => prev.filter((user) => user.id !== userId))}
           />
+        </TabsContent>
+
+        <TabsContent value="themes" className="mt-4">
+          <ThemesTab themes={themes} onGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])} />
         </TabsContent>
 
         <TabsContent value="courses" className="mt-4">

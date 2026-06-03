@@ -3,11 +3,13 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 import re
+import unicodedata
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from src.agents.game_generator import GameGeneratorAgent
+from src.agents.theme_generator import ThemeGeneratorAgent
 from src.config.settings import settings
 from src.middlewares.errors import AppError
 from src.models import AIInteractionLog, Course, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, Module, User
@@ -53,6 +55,44 @@ class AdminService:
             active_themes=self.db.scalar(select(func.count(EssayTheme.id)).where(EssayTheme.is_active.is_(True))) or 0,
         )
 
+    def list_essay_themes(self) -> list[EssayTheme]:
+        return list(self.db.scalars(select(EssayTheme).where(EssayTheme.is_active.is_(True)).order_by(EssayTheme.created_at.desc())))
+
+    def generate_essay_theme(self, *, focus: str | None, admin_user_id: int) -> EssayTheme:
+        existing_titles = [theme.title for theme in self.db.scalars(select(EssayTheme))]
+        agent = ThemeGeneratorAgent()
+        result = agent.generate_batch(
+            focus=focus,
+            existing_titles=existing_titles,
+            count=1,
+            user_id=admin_user_id,
+            session_id=f"admin:{admin_user_id}:theme-generator",
+        )
+        generated = result.themes[0]
+        title = self._clean_theme_title(generated.title)
+        if self._normalize_theme_title(title) in {self._normalize_theme_title(item) for item in existing_titles}:
+            raise AppError("A IA retornou um tema ja existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
+
+        theme = EssayTheme(
+            title=title,
+            context=generated.context,
+            source="IA Donc ENEM",
+            supporting_texts=[supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+            is_active=True,
+        )
+        self.db.add(theme)
+        record_ai_interaction(
+            self.db,
+            workflow="admin_theme_generation",
+            agent="ThemeGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"focus": focus, "generated_count": 1},
+        )
+        self.db.commit()
+        self.db.refresh(theme)
+        return theme
+
     def users_list(self) -> list[AdminUserRead]:
         users = self.users.list_users()
         # aggregate tokens per user
@@ -88,6 +128,16 @@ class AdminService:
             )
             for user in users
         ]
+
+    def _clean_theme_title(self, title: str) -> str:
+        cleaned = re.sub(r"^\s*(?:tema\s*)?\d+\s*[\).:\-]\s*", "", title.strip(), flags=re.IGNORECASE)
+        cleaned = cleaned.strip(" \"'")
+        return re.sub(r"\s+", " ", cleaned)
+
+    def _normalize_theme_title(self, title: str) -> str:
+        text = unicodedata.normalize("NFKD", title.lower())
+        text = "".join(char for char in text if not unicodedata.combining(char))
+        return re.sub(r"[^a-z0-9]+", "", text)
 
     # ── AI Telemetry ──────────────────────────────────────────────────────────
 

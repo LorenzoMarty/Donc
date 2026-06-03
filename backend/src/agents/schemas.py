@@ -98,7 +98,7 @@ class EssayThemeGenerationResult(BaseModel):
 
 
 class EssayThemeBatchGenerationResult(BaseModel):
-    themes: list[EssayThemeGenerationResult] = Field(min_length=4, max_length=4)
+    themes: list[EssayThemeGenerationResult] = Field(min_length=1, max_length=4)
 
 
 class GameQuestion(BaseModel):

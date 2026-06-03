@@ -25,7 +25,9 @@ from src.schemas.admin import (
     UserActivityResponse,
 )
 from src.schemas.common import ApiResponse, success_response
+from src.schemas.essays import EssayThemeGenerateRequest, EssayThemeRead
 from src.services.admin_service import AdminService
+from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -44,6 +46,25 @@ def users(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> Ap
 @router.get("/content", response_model=ApiResponse[list[AdminCourseRead]])
 def content(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[AdminCourseRead]]:
     return success_response(AdminService(db).content_tree())
+
+
+@router.get("/essay-themes", response_model=ApiResponse[list[EssayThemeRead]])
+def essay_themes(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[EssayThemeRead]]:
+    return success_response(AdminService(db).list_essay_themes())
+
+
+@router.post("/essay-themes/generate", response_model=ApiResponse[EssayThemeRead], status_code=201)
+def generate_essay_theme(
+    payload: EssayThemeGenerateRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssayThemeRead]:
+    focus = sanitize_ai_text(payload.focus or "", max_chars=160) or None
+    if focus and contains_prompt_injection(focus):
+        from src.middlewares.errors import AppError
+
+        raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+    return success_response(AdminService(db).generate_essay_theme(focus=focus, admin_user_id=current_admin.id), "Tema gerado.")
 
 
 @router.post("/courses", response_model=ApiResponse[AdminCourseRead], status_code=201)

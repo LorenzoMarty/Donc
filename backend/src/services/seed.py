@@ -507,6 +507,11 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
             context="Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
             source="Donc ENEM",
         ),
+        EssayTheme(
+            title="Desafios para promover a seguranca alimentar nas cidades brasileiras",
+            context="Analise renda, acesso a alimentos saudaveis, abastecimento local, educacao nutricional e politicas publicas.",
+            source="Donc ENEM",
+        ),
     ]
     db.add_all(themes)
     db.flush()
@@ -747,6 +752,23 @@ def seed_missing_themes(db: Session) -> None:
                 {
                     "title": "Perspectiva do avaliador",
                     "content": "O avaliador valoriza textos que relacionem escola, familia e tecnologia como agentes formativos, sem cair em solucoes simplistas como 'proibir celular'. A tese deve apontar uma causa especifica para o problema — nao apenas 'falta de incentivo'. A proposta de intervencao deve detalhar como promover leitura critica de forma concreta, com agente e meio claros.",
+                    "type": "perspectiva",
+                },
+            ],
+        },
+        {
+            "title": "Desafios para promover a seguranca alimentar nas cidades brasileiras",
+            "context": "Analise renda, acesso a alimentos saudaveis, abastecimento local, educacao nutricional e politicas publicas.",
+            "source": "Donc ENEM",
+            "supporting_texts": [
+                {
+                    "title": "Texto motivador I — Acesso desigual a alimentos saudaveis",
+                    "content": "A seguranca alimentar envolve disponibilidade, renda, qualidade nutricional e regularidade de acesso. Em grandes cidades, familias vulneraveis podem viver longe de feiras, mercados populares e equipamentos publicos de abastecimento, o que limita escolhas alimentares e amplia a dependencia de produtos baratos e pouco nutritivos.",
+                    "type": "motivador",
+                },
+                {
+                    "title": "Perspectiva do avaliador",
+                    "content": "O texto deve relacionar renda, territorio, educacao alimentar e responsabilidade estatal sem reduzir o problema a escolhas individuais. Boas propostas articulam programas de abastecimento, escolas, assistencia social e agricultura familiar, com agente, meio e finalidade claros.",
                     "type": "perspectiva",
                 },
             ],

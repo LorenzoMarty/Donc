@@ -22,6 +22,16 @@ class EssayService:
     def list_themes(self):
         return self.repo.list_themes()
 
+    def list_random_themes(self, *, limit: int = 4):
+        themes = self.repo.list_random_themes(limit=limit)
+        if len(themes) < limit:
+            raise AppError(
+                "Cadastre pelo menos 4 temas ativos para liberar o sorteio.",
+                status_code=409,
+                code="insufficient_themes",
+            )
+        return themes
+
     def generate_theme(self, *, user_id: int, focus: str | None = None) -> EssayTheme:
         return self.generate_themes(user_id=user_id, focus=focus)[0]
 

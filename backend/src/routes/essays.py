@@ -18,8 +18,6 @@ from src.schemas.essays import (
     JobStatusRead,
 )
 from src.services.essay_service import EssayService
-from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
-from src.utils.rate_limit import check_ai_rate_limit
 
 
 router = APIRouter(prefix="/essays", tags=["essays"])
@@ -30,19 +28,13 @@ def themes(_: User = Depends(get_current_user), db: Session = Depends(get_db)) -
     return success_response(EssayService(db).list_themes())
 
 
-@router.post("/themes/generate", response_model=ApiResponse[list[EssayThemeRead]], status_code=201)
+@router.post("/themes/generate", response_model=ApiResponse[list[EssayThemeRead]])
 def generate_theme(
-    payload: EssayThemeGenerateRequest,
-    current_user: User = Depends(get_current_user),
+    payload: EssayThemeGenerateRequest,  # noqa: ARG001
+    _: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[EssayThemeRead]]:
-    check_ai_rate_limit(current_user.id)
-    focus = sanitize_ai_text(payload.focus or "", max_chars=160) or None
-    if focus and contains_prompt_injection(focus):
-        from src.middlewares.errors import AppError
-
-        raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
-    return success_response(EssayService(db).generate_themes(user_id=current_user.id, focus=focus), "4 temas gerados com IA.")
+    return success_response(EssayService(db).list_random_themes(limit=4), "4 temas sorteados do banco.")
 
 
 @router.get("/history", response_model=ApiResponse[EssayHistoryResponse])
