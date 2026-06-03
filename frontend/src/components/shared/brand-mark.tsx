@@ -6,24 +6,34 @@ import Image from "next/image";
 
 import { cn } from "@/utils";
 
-export function DoncLogoMark({ className, size = "md" }: { className?: string; size?: "sm" | "md" | "lg" }) {
+export function DoncLogoMark({
+  className,
+  size = "md",
+  compressed = false,
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+  compressed?: boolean;
+}) {
+  const imageSize = compressed ? "48px" : size === "lg" ? "112px" : size === "sm" ? "80px" : "96px";
+
   return (
     <span
       className={cn(
         "relative inline-block shrink-0 overflow-hidden",
-        size === "sm" && "h-8 w-20",
-        size === "md" && "h-10 w-24",
-        size === "lg" && "h-11 w-28",
+        compressed ? "h-10 w-12" : size === "sm" && "h-8 w-20",
+        !compressed && size === "md" && "h-10 w-24",
+        !compressed && size === "lg" && "h-11 w-28",
         className,
       )}
       aria-hidden="true"
     >
       <Image
-        src="/DONC.png"
+        src={compressed ? "/DONC-comprimido.png" : "/DONC.png"}
         alt=""
         fill
-        sizes={size === "lg" ? "112px" : size === "sm" ? "80px" : "96px"}
-        className="object-contain object-left"
+        sizes={imageSize}
+        className={cn("object-contain", compressed ? "object-center" : "object-left")}
         priority
       />
     </span>
@@ -47,7 +57,7 @@ export function BrandLink({
     <Link href={href} className={cn("flex min-w-0 items-center", className)}>
       <DoncLogoMark
         size={compact ? "sm" : "md"}
-        className={cn(collapsed && "h-10 w-12")}
+        compressed={collapsed}
       />
       <motion.span
         className="sr-only"

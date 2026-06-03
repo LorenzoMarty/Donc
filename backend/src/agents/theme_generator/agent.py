@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from src.agents.base import AgnoAgentRunner
 from src.agents.schemas import EssayThemeBatchGenerationResult, EssayThemeGenerationResult, GeneratedSupportingText
@@ -32,7 +33,7 @@ class ThemeGeneratorAgent:
         user_id: int | None = None,
         session_id: str | None = None,
     ) -> EssayThemeGenerationResult:
-        return self.generate_batch(focus=focus, count=4, user_id=user_id, session_id=session_id).themes[0]
+        return self.generate_batch(focus=focus, count=1, user_id=user_id, session_id=session_id).themes[0]
 
     def generate_batch(
         self,
@@ -44,9 +45,9 @@ class ThemeGeneratorAgent:
         session_id: str | None = None,
     ) -> EssayThemeBatchGenerationResult:
         safe_focus = focus.strip() if focus else "tema atual de impacto social no Brasil"
-        safe_count = 4 if count != 4 else count
+        safe_count = min(max(count, 1), 4)
         known_titles = existing_titles or []
-        fallback = self._fallback_batch(focus=safe_focus, existing_titles=known_titles)
+        fallback = self._fallback_batch(focus=safe_focus, existing_titles=known_titles, count=safe_count)
         existing_block = "\n".join(f"- {title}" for title in known_titles[:80]) or "Nenhum titulo existente informado."
         prompt = f"""
 Foco desejado: {safe_focus}
@@ -67,12 +68,13 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
             user_id=user_id,
             session_id=session_id,
         )
-        return self._ensure_unique_batch(result=result, fallback=fallback, existing_titles=known_titles)
+        return self._ensure_unique_batch(result=result, fallback=fallback, existing_titles=known_titles, count=safe_count)
 
     def _fallback(self, *, focus: str) -> EssayThemeGenerationResult:
         return self._fallback_batch(focus=focus, existing_titles=[]).themes[0]
 
-    def _fallback_batch(self, *, focus: str, existing_titles: list[str]) -> EssayThemeBatchGenerationResult:
+    def _fallback_batch(self, *, focus: str, existing_titles: list[str], count: int = 4) -> EssayThemeBatchGenerationResult:
+        safe_count = min(max(count, 1), 4)
         candidates = [
             EssayThemeGenerationResult(
                 title="Desafios para garantir o uso critico da tecnologia na educacao brasileira",
@@ -252,19 +254,25 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                 continue
             seen.add(normalized)
             themes.append(candidate)
-            if len(themes) == 4:
+            if len(themes) == safe_count:
                 break
-        if len(themes) < 4:
-            suffix = 1
-            while len(themes) < 4:
-                base = candidates[(suffix - 1) % len(candidates)]
-                title = f"{base.title} - proposta {suffix}"
+        if len(themes) < safe_count:
+            variants = [
+                "sob a perspectiva da cidadania",
+                "sob a perspectiva da inclusao social",
+                "sob a perspectiva das politicas publicas",
+                "sob a perspectiva da educacao brasileira",
+            ]
+            variant_index = 0
+            while len(themes) < safe_count:
+                base = candidates[variant_index % len(candidates)]
+                title = f"{base.title} {variants[variant_index % len(variants)]}"
                 normalized = self._normalize_title(title)
                 if normalized not in seen:
                     seen.add(normalized)
                     themes.append(base.model_copy(update={"title": title}))
-                suffix += 1
-        return EssayThemeBatchGenerationResult(themes=themes[:4])
+                variant_index += 1
+        return EssayThemeBatchGenerationResult(themes=themes[:safe_count])
 
     def _ensure_unique_batch(
         self,
@@ -272,27 +280,47 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
         result: EssayThemeBatchGenerationResult,
         fallback: EssayThemeBatchGenerationResult,
         existing_titles: list[str],
+        count: int = 4,
     ) -> EssayThemeBatchGenerationResult:
+        safe_count = min(max(count, 1), 4)
         seen = {self._normalize_title(title) for title in existing_titles}
         themes: list[EssayThemeGenerationResult] = []
         for candidate in [*result.themes, *fallback.themes]:
-            normalized = self._normalize_title(candidate.title)
+            title = self._clean_title(candidate.title)
+            normalized = self._normalize_title(title)
             if not normalized or normalized in seen:
                 continue
             seen.add(normalized)
-            themes.append(candidate)
-            if len(themes) == 4:
+            themes.append(candidate.model_copy(update={"title": title}))
+            if len(themes) == safe_count:
                 break
-        if len(themes) < 4:
+        if len(themes) < safe_count:
+            variants = [
+                "sob a perspectiva da cidadania",
+                "sob a perspectiva da inclusao social",
+                "sob a perspectiva das politicas publicas",
+                "sob a perspectiva da educacao brasileira",
+            ]
+            variant_index = 0
             for candidate in fallback.themes:
-                normalized = self._normalize_title(f"{candidate.title} {len(themes) + 1}")
+                title = f"{self._clean_title(candidate.title)} {variants[variant_index % len(variants)]}"
+                normalized = self._normalize_title(title)
                 if normalized in seen:
+                    variant_index += 1
                     continue
                 seen.add(normalized)
-                themes.append(candidate.model_copy(update={"title": f"{candidate.title} - proposta {len(themes) + 1}"}))
-                if len(themes) == 4:
+                themes.append(candidate.model_copy(update={"title": title}))
+                if len(themes) == safe_count:
                     break
-        return EssayThemeBatchGenerationResult(themes=themes[:4])
+                variant_index += 1
+        return EssayThemeBatchGenerationResult(themes=themes[:safe_count])
+
+    def _clean_title(self, title: str) -> str:
+        cleaned = re.sub(r"^\s*(?:tema\s*)?\d+\s*[\).:\-]\s*", "", title.strip(), flags=re.IGNORECASE)
+        cleaned = cleaned.strip(" \"'")
+        return re.sub(r"\s+", " ", cleaned)
 
     def _normalize_title(self, title: str) -> str:
-        return re.sub(r"[^a-z0-9]+", "", title.lower())
+        text = unicodedata.normalize("NFKD", title.lower())
+        text = "".join(char for char in text if not unicodedata.combining(char))
+        return re.sub(r"[^a-z0-9]+", "", text)

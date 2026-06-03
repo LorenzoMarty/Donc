@@ -1,4 +1,4 @@
-﻿from sqlalchemy import select
+﻿from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from src.models import Essay, EssayTheme, EssayVersion
@@ -10,6 +10,16 @@ class EssayRepository:
 
     def list_themes(self) -> list[EssayTheme]:
         return list(self.db.scalars(select(EssayTheme).where(EssayTheme.is_active.is_(True)).order_by(EssayTheme.created_at.desc())))
+
+    def list_random_themes(self, limit: int = 4) -> list[EssayTheme]:
+        return list(
+            self.db.scalars(
+                select(EssayTheme)
+                .where(EssayTheme.is_active.is_(True))
+                .order_by(func.random())
+                .limit(limit)
+            )
+        )
 
     def get_theme(self, theme_id: int) -> EssayTheme | None:
         return self.db.get(EssayTheme, theme_id)
