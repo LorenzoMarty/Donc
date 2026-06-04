@@ -20,15 +20,21 @@ export default function GamesHub() {
   const [ready, setReady] = useState(false);
   const attempts = useGameStore((state) => state.attempts);
   const progress = useGameStore((state) => state.progress);
+  const remoteGames = useGameStore((state) => state.remoteGames);
+  const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setReady(true), 280);
     return () => window.clearTimeout(timer);
   }, []);
 
-  const categories = getEnrichedCategories(progress);
-  const games = getEnrichedGames(progress);
-  const recommended = getRecommendedGames(progress);
+  useEffect(() => {
+    hydrateRemoteGames();
+  }, [hydrateRemoteGames]);
+
+  const categories = getEnrichedCategories(progress, remoteGames);
+  const games = getEnrichedGames(progress, remoteGames);
+  const recommended = getRecommendedGames(progress, remoteGames);
   const overallProgress = games.length ? Math.round(games.reduce((sum, game) => sum + game.progress, 0) / games.length) : 0;
   const lastAttempt = attempts[0];
   const continueGame = lastAttempt ? games.find((game) => game.id === lastAttempt.gameId) : recommended[0];

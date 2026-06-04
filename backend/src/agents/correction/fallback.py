@@ -3,7 +3,7 @@
 import re
 from collections import Counter
 
-from src.agents.schemas import EssayCorrectionResult
+from src.agents.schemas import EssayCorrectionResult, InlineAnnotation
 
 
 class FallbackCorrectionProvider:
@@ -60,6 +60,16 @@ class FallbackCorrectionProvider:
         strengths = self._strengths(c1=c1, c2=c2, c3=c3, c4=c4, c5=c5)
         errors = self._errors(c1=c1, c2=c2, c3=c3, c4=c4, c5=c5)
         suggestions = self._suggestions(c1=c1, c2=c2, c3=c3, c4=c4, c5=c5)
+        inline_annotations = self._inline_annotations(
+            content=content,
+            c1=c1,
+            c2=c2,
+            c3=c3,
+            c4=c4,
+            c5=c5,
+            repeated_terms=repeated_terms,
+            connectors=connectors,
+        )
         return EssayCorrectionResult(
             total_score=c1 + c2 + c3 + c4 + c5,
             competency_1=c1,
@@ -75,7 +85,76 @@ class FallbackCorrectionProvider:
                 "fortaleca a progressao dos argumentos, detalhe a intervencao e revise clareza e norma-padrao."
             ),
             recurrent_patterns=recurrent_patterns,
+            inline_annotations=inline_annotations,
         )
+
+    def _inline_annotations(
+        self,
+        *,
+        content: str,
+        c1: int,
+        c2: int,
+        c3: int,
+        c4: int,
+        c5: int,
+        repeated_terms: list[str],
+        connectors: int,
+    ) -> list[InlineAnnotation]:
+        paragraphs = self._paragraphs(content)
+        if not paragraphs:
+            return []
+
+        annotations: list[InlineAnnotation] = []
+
+        def add(paragraph_index: int, comment: str, competency: str, kind: str = "error") -> None:
+            if len(annotations) >= 6 or paragraph_index >= len(paragraphs):
+                return
+            quote = self._quote(paragraphs[paragraph_index])
+            if not quote or any(item.quote == quote for item in annotations):
+                return
+            annotations.append(
+                InlineAnnotation(
+                    paragraph_index=paragraph_index,
+                    quote=quote,
+                    comment=comment,
+                    competency=competency,
+                    type="strength" if kind == "strength" else "error",
+                )
+            )
+
+        if c2 < 160:
+            add(0, "Desconto ligado a C2: o recorte do tema e a tese precisam ficar mais explicitos logo na abertura.", "c2")
+        if c3 < 160:
+            add(min(1, len(paragraphs) - 1), "Desconto ligado a C3: o argumento aparece, mas precisa de explicacao e evidencia mais consistentes.", "c3")
+        if c4 < 160 or connectors < 4:
+            add(min(2, len(paragraphs) - 1), "Desconto ligado a C4: faltam conexoes mais precisas entre as ideias para orientar a progressao textual.", "c4")
+        if c5 < 160:
+            add(len(paragraphs) - 1, "Desconto ligado a C5: a intervencao deve explicitar agente, acao, meio, finalidade e detalhamento.", "c5")
+        if c1 < 160 or repeated_terms:
+            add(0, "Desconto ligado a C1: revise formalidade, pontuacao, concordancia e repeticao lexical neste trecho.", "c1")
+
+        if len(annotations) < 3:
+            strongest = max({"c1": c1, "c2": c2, "c3": c3, "c4": c4, "c5": c5}.items(), key=lambda item: item[1])[0]
+            add(0, f"Ponto forte em {strongest.upper()}: este trecho ajuda a sustentar a leitura global da redacao.", strongest, "strength")
+        if len(annotations) < 3 and len(paragraphs) > 1:
+            add(1, "Observe este trecho: ele pode render mais nota se a relacao entre ideia, repertorio e tese ficar mais direta.", "c3")
+
+        return annotations[:6]
+
+    def _paragraphs(self, content: str) -> list[str]:
+        stripped = content.strip()
+        if not stripped:
+            return []
+        if re.search(r"\n\s*\n", stripped):
+            return [paragraph.strip() for paragraph in re.split(r"\n\s*\n+", stripped) if paragraph.strip()]
+        return [line.strip() for line in stripped.splitlines() if line.strip()]
+
+    def _quote(self, paragraph: str, max_words: int = 18) -> str:
+        words = list(re.finditer(r"\S+", paragraph))
+        if not words:
+            return ""
+        end = words[min(len(words), max_words) - 1].end()
+        return paragraph[:end].strip()
 
     def _patterns(
         self,

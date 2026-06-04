@@ -8,9 +8,27 @@ from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.models import User, UserGameProgress
 from src.schemas.common import ApiResponse, success_response
+from src.services.game_service import GameService
 
 
 router = APIRouter(prefix="/games", tags=["games"])
+
+
+class PublishedGameQuestion(BaseModel):
+    prompt: str
+    options: list[str]
+    answer_index: int
+    explanation: str
+
+
+class PublishedGameRead(BaseModel):
+    id: int
+    name: str
+    category: str
+    skill: str
+    difficulty: str
+    xp_reward: int
+    questions: list[PublishedGameQuestion]
 
 
 class GameCompleteRequest(BaseModel):
@@ -41,6 +59,36 @@ class GameProgressRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+@router.get("/published", response_model=ApiResponse[list[PublishedGameRead]])
+def published_games(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[PublishedGameRead]]:
+    games = GameService(db).published()
+    return success_response(
+        [
+            PublishedGameRead(
+                id=game.id,
+                name=game.name,
+                category=game.category,
+                skill=game.skill,
+                difficulty=game.difficulty,
+                xp_reward=game.xp_reward,
+                questions=[
+                    PublishedGameQuestion(
+                        prompt=q.get("prompt", ""),
+                        options=q.get("options", []),
+                        answer_index=q.get("answer_index", 0),
+                        explanation=q.get("explanation", ""),
+                    )
+                    for q in (game.questions or [])
+                ],
+            )
+            for game in games
+        ]
+    )
 
 
 @router.post("/complete", response_model=ApiResponse[GameCompleteResponse])

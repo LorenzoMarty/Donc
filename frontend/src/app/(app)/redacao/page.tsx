@@ -32,6 +32,8 @@ import { cn } from "@/utils";
 
 type EssayViewMode = "editor" | "analysis";
 
+const THEME_CHOICES_LIMIT = 4;
+
 export default function EssayPage() {
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<EssayTheme | null>(null);
@@ -63,7 +65,7 @@ export default function EssayPage() {
 
     async function loadInitialState() {
       try {
-        const items = await apiFetch<EssayTheme[]>("/essays/themes");
+        const items = await fetchThemeChoices();
         if (!mounted) return;
         setThemes(items);
 
@@ -183,12 +185,8 @@ export default function EssayPage() {
     setGeneratingTheme(true);
     setError("");
     try {
-      const sampledThemes = await apiFetch<EssayTheme[]>("/essays/themes/generate", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
-      const sampledIds = new Set(sampledThemes.map((theme) => theme.id));
-      setThemes((current) => [...sampledThemes, ...current.filter((item) => !sampledIds.has(item.id))]);
+      const sampledThemes = await fetchThemeChoices();
+      setThemes(sampledThemes);
       setSelectedTheme(sampledThemes[0] ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Nao foi possivel sortear temas do banco.");
@@ -358,6 +356,14 @@ export default function EssayPage() {
       </div>
     </div>
   );
+}
+
+async function fetchThemeChoices() {
+  const themes = await apiFetch<EssayTheme[]>("/essays/themes/generate", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  return themes.slice(0, THEME_CHOICES_LIMIT);
 }
 
 function ThemePicker({
@@ -572,11 +578,10 @@ type TextSegment = { text: string; annotation?: InlineAnnotation; index: number 
 function buildSegments(paragraph: string, annotations: InlineAnnotation[]): TextSegment[] {
   const ranges: { start: number; end: number; annotation: InlineAnnotation }[] = [];
   for (const annotation of annotations) {
-    const idx = paragraph.indexOf(annotation.quote);
-    if (idx === -1) continue;
-    const end = idx + annotation.quote.length;
-    const overlaps = ranges.some((r) => !(end <= r.start || idx >= r.end));
-    if (!overlaps) ranges.push({ start: idx, end, annotation });
+    const range = findQuoteRange(paragraph, annotation.quote);
+    if (!range) continue;
+    const overlaps = ranges.some((r) => !(range.end <= r.start || range.start >= r.end));
+    if (!overlaps) ranges.push({ start: range.start, end: range.end, annotation });
   }
   ranges.sort((a, b) => a.start - b.start);
 
@@ -592,6 +597,31 @@ function buildSegments(paragraph: string, annotations: InlineAnnotation[]): Text
   return segments;
 }
 
+function findQuoteRange(paragraph: string, quote: string) {
+  const exact = paragraph.indexOf(quote);
+  if (exact !== -1) return { start: exact, end: exact + quote.length };
+  const trimmed = quote.trim();
+  const trimmedExact = paragraph.indexOf(trimmed);
+  if (trimmedExact !== -1) return { start: trimmedExact, end: trimmedExact + trimmed.length };
+  const pattern = trimmed.split(/\s+/).map(escapeRegExp).join("\\s+");
+  const match = new RegExp(pattern, "i").exec(paragraph);
+  return match?.index === undefined ? null : { start: match.index, end: match.index + match[0].length };
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function annotationKey(annotation: InlineAnnotation) {
+  return `${annotation.paragraph_index}:${annotation.competency}:${annotation.type}:${annotation.quote}:${annotation.comment}`;
+}
+
+function annotationNumber(annotations: InlineAnnotation[], annotation: InlineAnnotation) {
+  const key = annotationKey(annotation);
+  const index = annotations.findIndex((item) => annotationKey(item) === key);
+  return index === -1 ? 0 : index + 1;
+}
+
 function EssayAnalysisWorkspace({
   title,
   content,
@@ -605,10 +635,12 @@ function EssayAnalysisWorkspace({
   correction: Essay["correction"];
   error: string;
 }) {
-  const [activeAnnotation, setActiveAnnotation] = useState<InlineAnnotation | null>(null);
+  const [activeAnnotationKey, setActiveAnnotationKey] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"geral" | "estrutura" | "clareza" | "estilo" | "fontes">("geral");
   const annotations = correction?.inline_annotations ?? [];
+  const activeAnnotation = annotations.find((annotation) => annotationKey(annotation) === activeAnnotationKey) ?? null;
   const words = countWords(content);
+  const selectAnnotation = (annotation: InlineAnnotation | null) => setActiveAnnotationKey(annotation ? annotationKey(annotation) : null);
 
   async function shareEssay() {
     const url = window.location.href;
@@ -641,7 +673,7 @@ function EssayAnalysisWorkspace({
   }
 
   return (
-    <div className="grid h-[calc(100dvh-8.75rem)] min-h-[620px] overflow-hidden rounded-md border border-border bg-card md:h-dvh md:rounded-none md:border-0 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,30rem)]">
+    <div className="grid h-[calc(100dvh-8.75rem)] min-h-[620px] grid-rows-[minmax(0,1fr)_minmax(19rem,42dvh)] overflow-hidden rounded-md border border-border bg-card md:h-dvh md:rounded-none md:border-0 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:grid-rows-none">
       <div className="flex min-h-0 flex-col">
         <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
@@ -676,15 +708,7 @@ function EssayAnalysisWorkspace({
           content={content}
           annotations={annotations}
           activeAnnotation={activeAnnotation}
-          onSelectAnnotation={setActiveAnnotation}
-        />
-        <AIFeedbackPanel
-          correction={correction}
-          error={error}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          activeAnnotation={activeAnnotation}
-          onSelectAnnotation={setActiveAnnotation}
+          onSelectAnnotation={selectAnnotation}
         />
       </div>
       <AIFeedbackPanel
@@ -692,8 +716,9 @@ function EssayAnalysisWorkspace({
         error={error}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        annotations={annotations}
         activeAnnotation={activeAnnotation}
-        onSelectAnnotation={setActiveAnnotation}
+        onSelectAnnotation={selectAnnotation}
       />
     </div>
   );
@@ -735,15 +760,20 @@ function EssayDocumentPanel({
                         key={seg.index}
                         type="button"
                         onClick={() =>
-                          onSelectAnnotation(activeAnnotation?.quote === seg.annotation?.quote ? null : (seg.annotation ?? null))
+                          onSelectAnnotation(
+                            activeAnnotation && annotationKey(activeAnnotation) === annotationKey(seg.annotation!) ? null : (seg.annotation ?? null),
+                          )
                         }
                         className={cn(
-                          "rounded-sm px-0.5 text-left underline decoration-2 underline-offset-[6px] transition-colors",
+                          "relative rounded-sm px-1 text-left underline decoration-2 underline-offset-[6px] transition-colors",
                           annotationTone(seg.annotation).mark,
-                          activeAnnotation?.quote === seg.annotation.quote && "ring-2 ring-primary/45",
+                          activeAnnotation && annotationKey(activeAnnotation) === annotationKey(seg.annotation!) && "ring-2 ring-primary/45",
                         )}
                       >
                         {seg.text}
+                        <sup className={cn("ml-1 inline-grid h-5 min-w-5 place-items-center rounded-full px-1 text-[0.62rem] font-bold leading-none no-underline", annotationTone(seg.annotation).number)}>
+                          {annotationNumber(annotations, seg.annotation)}
+                        </sup>
                       </button>
                     ) : (
                       <span key={seg.index}>{seg.text}</span>
@@ -755,13 +785,14 @@ function EssayDocumentPanel({
                       type="button"
                       onClick={() => onSelectAnnotation(annotation)}
                       className={cn(
-                        "absolute right-0 inline-grid h-9 w-9 place-items-center rounded-md border text-sm font-semibold shadow-sm transition-colors",
+                        "absolute right-0 inline-grid h-8 w-8 place-items-center rounded-full border text-xs font-bold shadow-sm transition-colors hover:scale-105",
                         annotationTone(annotation).marker,
-                        index > 0 && "translate-y-11",
+                        index > 0 && "translate-y-10",
+                        activeAnnotation && annotationKey(activeAnnotation) === annotationKey(annotation) && "ring-2 ring-primary/50",
                       )}
-                      aria-label={`Comentario ${annotations.indexOf(annotation) + 1}`}
+                      aria-label={`Comentario ${annotationNumber(annotations, annotation)}`}
                     >
-                      {annotations.indexOf(annotation) + 1}
+                      {annotationNumber(annotations, annotation)}
                     </button>
                   ))}
                 </p>
@@ -783,6 +814,7 @@ function AIFeedbackPanel({
   error,
   activeTab,
   onTabChange,
+  annotations,
   activeAnnotation,
   onSelectAnnotation,
 }: {
@@ -790,10 +822,10 @@ function AIFeedbackPanel({
   error: string;
   activeTab: AnalysisTab;
   onTabChange: (tab: AnalysisTab) => void;
+  annotations: InlineAnnotation[];
   activeAnnotation: InlineAnnotation | null;
   onSelectAnnotation: (annotation: InlineAnnotation | null) => void;
 }) {
-  const annotations = correction?.inline_annotations ?? [];
   const suggestions = buildSuggestionCards(correction, annotations, activeTab);
   const score = correction?.total_score ?? 0;
 
@@ -851,6 +883,7 @@ function AIFeedbackPanel({
         {activeAnnotation ? (
           <div className={cn("rounded-md border p-4", annotationTone(activeAnnotation).panel)}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Badge variant="outline">#{annotationNumber(annotations, activeAnnotation)}</Badge>
               <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"}>
                 {activeAnnotation.type === "error" ? "Ajuste" : "Força"}
               </Badge>
@@ -873,7 +906,7 @@ function AIFeedbackPanel({
               <SuggestionCard
                 key={`${suggestion.index}-${suggestion.title}`}
                 suggestion={suggestion}
-                active={activeAnnotation?.quote === suggestion.annotation?.quote}
+                active={Boolean(activeAnnotation && suggestion.annotation && annotationKey(activeAnnotation) === annotationKey(suggestion.annotation))}
                 onClick={() => onSelectAnnotation(suggestion.annotation ?? null)}
               />
             ))}

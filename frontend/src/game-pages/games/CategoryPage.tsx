@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 
 import { getCategoryBySlug, getGamesByCategory } from "@/features/gamification/catalog";
@@ -9,18 +9,25 @@ import { GameCardGrid } from "@/game-pages/games/components/GameCard";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useGameStore } from "@/stores/game-store";
 
 export default function CategoryPage({ categorySlug }: { categorySlug: string }) {
   const category = getCategoryBySlug(categorySlug);
   const [query, setQuery] = useState("");
+  const remoteGames = useGameStore((state) => state.remoteGames);
+  const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
+
+  useEffect(() => {
+    hydrateRemoteGames();
+  }, [hydrateRemoteGames]);
 
   const games = useMemo(() => {
     if (!category) return [];
     const normalizedQuery = query.trim().toLowerCase();
-    return getGamesByCategory(category.id).filter((game) =>
+    return getGamesByCategory(category.id, remoteGames).filter((game) =>
       !normalizedQuery || `${game.name} ${game.description} ${game.skill}`.toLowerCase().includes(normalizedQuery),
     );
-  }, [category, query]);
+  }, [category, query, remoteGames]);
 
   if (!category) {
     return (

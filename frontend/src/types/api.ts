@@ -5,6 +5,23 @@ export type ApiEnvelope<T> = {
   error?: string;
 };
 
+export type PublishedGameQuestion = {
+  prompt: string;
+  options: string[];
+  answer_index: number;
+  explanation: string;
+};
+
+export type PublishedGame = {
+  id: number;
+  name: string;
+  category: string;
+  skill: string;
+  difficulty: string;
+  xp_reward: number;
+  questions: PublishedGameQuestion[];
+};
+
 export type SupportingText = {
   title: string;
   content: string;
@@ -286,6 +303,40 @@ export type UserActivity = {
   total_events: number;
   by_type: { event_type: string; count: number }[];
   online_now: number;
+};
+
+export type AdminUserProgress = {
+  progress_general: number;
+  essay_average: number;
+  best_essay_score: number;
+  completed_lessons: number;
+  correct_exercises_rate: number;
+  essays_written: number;
+  mastery_map: { competency: string; label: string; value: number }[];
+  recurrent_errors: string[];
+};
+
+export type AdminUserLearningProfile = {
+  weak_competencies: Record<string, number>;
+  recurring_errors: string[];
+  repertories_used: string[];
+  recommendations: string[];
+};
+
+export type AdminUserAIUsage = {
+  total_tokens: number;
+  total_calls: number;
+  error_calls: number;
+  cost_usd_cents: number;
+  agents: AgentStats[];
+  daily: DailyUsage[];
+};
+
+export type AdminUserDetail = {
+  user: AdminUser;
+  progress: AdminUserProgress;
+  learning_profile: AdminUserLearningProfile;
+  ai_usage: AdminUserAIUsage;
 };
 
 export type GameQuestion = {

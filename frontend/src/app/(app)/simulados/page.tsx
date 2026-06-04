@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { apiFetch, type MockExam } from "@/services/api";
+import { useTrackEvent } from "@/hooks/use-track-event";
 
 type SubmitResult = {
   attempt_id: number;
@@ -26,6 +27,7 @@ export default function ExamsPage() {
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
+  const trackEvent = useTrackEvent();
 
   useEffect(() => {
     apiFetch<MockExam[]>("/exams")
@@ -48,6 +50,13 @@ export default function ExamsPage() {
       body: JSON.stringify({ answers }),
     });
     setResult(payload);
+    trackEvent({
+      event_type: "exam_submitted",
+      entity_id: String(active.id),
+      entity_type: "exam",
+      duration_ms: seconds * 1000,
+      meta: { score: payload.score },
+    });
   }
 
   if (loading) return <LoadingCard />;
@@ -88,6 +97,7 @@ export default function ExamsPage() {
                     setSeconds(0);
                     setResult(null);
                     setAnswers({});
+                    trackEvent({ event_type: "exam_started", entity_id: String(exam.id), entity_type: "exam" });
                   }}
                 >
                   <Play className="h-4 w-4" aria-hidden="true" />

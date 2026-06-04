@@ -9,6 +9,7 @@ from src.agents.schemas import (
     RepertoireAnalysis,
     ThesisAnalysis,
 )
+from src.agents.correction.fallback import FallbackCorrectionProvider
 from src.workflows.correction import CorrectionOrchestratorWorkflow
 
 THEME = "Impacto da desinformação na democracia"
@@ -128,6 +129,18 @@ def test_workflow_runs_without_db(monkeypatch):
     wf = make_workflow()
     result = wf.correct(theme=THEME, context="", content=CONTENT, user_id=1, essay_id=42)
     assert result.total_score > 0
+
+
+def test_fallback_correction_adds_inline_annotations():
+    result = FallbackCorrectionProvider().correct(theme=THEME, content=CONTENT)
+
+    assert result.inline_annotations
+    assert len(result.inline_annotations) >= 3
+    for annotation in result.inline_annotations:
+        paragraphs = CONTENT.split("\n\n")
+        assert annotation.paragraph_index < len(paragraphs)
+        assert annotation.quote in paragraphs[annotation.paragraph_index]
+        assert annotation.competency in {"c1", "c2", "c3", "c4", "c5"}
 
 
 def test_games_complete_endpoint(client):

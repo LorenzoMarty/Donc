@@ -3,10 +3,12 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import { getRankForXp, calculateXpReward } from "@/features/xp/xp";
+import { mapPublishedGame } from "@/features/gamification/catalog";
 import type { GameAttempt, GameCompletion, GameDefinition, GameProgress, StreakState } from "@/features/gamification/types";
-import { calculateXpReward, getRankForXp } from "@/features/xp/xp";
 import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
+import type { PublishedGame } from "@/types/api";
 
 type GameStore = {
   xp: number;
@@ -14,9 +16,12 @@ type GameStore = {
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
   hydrated: boolean;
+  remoteGames: GameDefinition[];
+  remoteGamesHydrated: boolean;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
   getGameProgress: (gameId: string) => GameProgress | undefined;
   hydrateFromBackend: () => Promise<void>;
+  hydrateRemoteGames: () => Promise<void>;
   exportProgress: () => void;
   importProgress: (json: string) => boolean;
 };
@@ -34,7 +39,17 @@ export const useGameStore = create<GameStore>()(
       attempts: [],
       progress: {},
       hydrated: false,
+      remoteGames: [],
+      remoteGamesHydrated: false,
       getGameProgress: (gameId) => get().progress[gameId],
+      hydrateRemoteGames: async () => {
+        try {
+          const rows = await apiFetch<PublishedGame[]>("/games/published");
+          set({ remoteGames: rows.map(mapPublishedGame), remoteGamesHydrated: true });
+        } catch {
+          set({ remoteGamesHydrated: true });
+        }
+      },
       hydrateFromBackend: async () => {
         try {
           const rows = await apiFetch<{ game_id: string; plays: number; best_score: number; best_accuracy: number; progress: number; last_played_at: string | null }[]>("/games/progress");

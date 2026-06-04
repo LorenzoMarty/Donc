@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from src.database.session import get_db
 from src.dependencies import require_admin
 from src.main import app
-from src.models import AIInteractionLog, User
+from src.models import AIInteractionLog, EssayTheme, User
 from src.database.session import SessionLocal
 
 
@@ -127,3 +127,54 @@ def test_admin_theme_generation_rejects_prompt_injection(client):
     assert response.status_code == 422
     assert response.json()["success"] is False
     assert response.json()["error"] == "prompt_injection_detected"
+
+
+def test_admin_can_update_essay_theme(client):
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        create_response = client.post("/api/v1/admin/essay-themes/generate", json={"focus": "mobilidade urbana"})
+        assert create_response.status_code == 201
+        theme = api_data(create_response)
+
+        update_response = client.patch(
+            f"/api/v1/admin/essay-themes/{theme['id']}",
+            json={
+                "title": "Desafios para a mobilidade urbana sustentavel no Brasil",
+                "context": "Analise transporte publico, inclusao social, sustentabilidade e planejamento urbano.",
+                "source": "Equipe pedagogica",
+            },
+        )
+        assert update_response.status_code == 200
+        updated = api_data(update_response)
+        assert updated["title"] == "Desafios para a mobilidade urbana sustentavel no Brasil"
+        assert updated["context"].startswith("Analise transporte publico")
+        assert updated["source"] == "Equipe pedagogica"
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+
+def test_admin_can_delete_essay_theme_from_active_list(client):
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        create_response = client.post("/api/v1/admin/essay-themes/generate", json={"focus": "cultura digital"})
+        assert create_response.status_code == 201
+        theme = api_data(create_response)
+
+        delete_response = client.delete(f"/api/v1/admin/essay-themes/{theme['id']}")
+        assert delete_response.status_code == 200
+        action = api_data(delete_response)
+        assert action == {"action": "deleted", "theme_id": theme["id"]}
+
+        list_response = client.get("/api/v1/admin/essay-themes")
+        assert list_response.status_code == 200
+        assert theme["id"] not in {item["id"] for item in api_data(list_response)}
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    db = SessionLocal()
+    try:
+        deleted_theme = db.get(EssayTheme, theme["id"])
+    finally:
+        db.close()
+    assert deleted_theme is not None
+    assert deleted_theme.is_active is False
