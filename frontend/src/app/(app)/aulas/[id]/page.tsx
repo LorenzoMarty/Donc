@@ -12,17 +12,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/providers/app-providers";
+import { useTrackEvent } from "@/hooks/use-track-event";
 import { apiFetch, type Lesson } from "@/services/api";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>() ?? { id: "" };
   const { refresh } = useAuth();
+  const trackEvent = useTrackEvent();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [completion, setCompletion] = useState<Lesson["progress"] | null>(null);
 
   useEffect(() => {
     apiFetch<Lesson>(`/lessons/${params.id}`).then(setLesson);
-  }, [params.id]);
+    trackEvent({ event_type: "lesson_opened", entity_id: String(params.id), entity_type: "lesson" });
+  }, [params.id, trackEvent]);
 
   async function complete() {
     if (!lesson) return;
@@ -32,6 +35,7 @@ export default function LessonPage() {
     });
     setLesson({ ...lesson, progress });
     setCompletion(progress);
+    trackEvent({ event_type: "lesson_completed", entity_id: String(lesson.id), entity_type: "lesson" });
     if ((progress.xp_earned ?? 0) > 0) {
       await refresh();
     }

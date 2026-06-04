@@ -44,6 +44,17 @@ class AdminUserActionResponse(BaseModel):
     user_id: int
 
 
+class AdminEssayThemeUpdateRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=8, max_length=220)
+    context: str | None = Field(default=None, min_length=20, max_length=5000)
+    source: str | None = Field(default=None, min_length=2, max_length=160)
+
+
+class AdminEssayThemeActionResponse(BaseModel):
+    action: Literal["deleted"]
+    theme_id: int
+
+
 class AdminLessonRead(BaseModel):
     id: int
     title: str
@@ -95,6 +106,62 @@ class AdminLessonCreateRequest(BaseModel):
     order: int | None = Field(default=None, ge=1, le=999)
 
 
+class AdminCourseUpdateRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=120)
+    description: str | None = Field(default=None, min_length=10, max_length=1200)
+    color: str | None = Field(default=None, max_length=40)
+
+
+class AdminModuleUpdateRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=160)
+    description: str | None = Field(default=None, min_length=10, max_length=1200)
+
+
+class AdminLessonUpdateRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=180)
+    description: str | None = Field(default=None, min_length=10, max_length=1200)
+    thumbnail_url: str | None = Field(default=None, max_length=500)
+    video_url: str | None = Field(default=None, max_length=500)
+    summary: str | None = Field(default=None, min_length=10, max_length=5000)
+    duration_minutes: int | None = Field(default=None, ge=1, le=600)
+
+
+class AdminMoveRequest(BaseModel):
+    direction: Literal["up", "down"]
+
+
+class AdminContentActionResponse(BaseModel):
+    action: Literal["deleted"]
+    id: int
+    kind: Literal["course", "module", "lesson"]
+
+
+# ── User detail ──────────────────────────────────────────────────────────────
+
+class MasteryPointRead(BaseModel):
+    competency: str
+    label: str
+    value: int
+
+
+class AdminUserProgress(BaseModel):
+    progress_general: int
+    essay_average: int
+    best_essay_score: int
+    completed_lessons: int
+    correct_exercises_rate: int
+    essays_written: int
+    mastery_map: list[MasteryPointRead]
+    recurrent_errors: list[str]
+
+
+class AdminUserLearningProfile(BaseModel):
+    weak_competencies: dict = Field(default_factory=dict)
+    recurring_errors: list[str] = Field(default_factory=list)
+    repertories_used: list[str] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
+
+
 # ── AI Telemetry ─────────────────────────────────────────────────────────────
 
 class AgentStats(BaseModel):
@@ -125,6 +192,22 @@ class AITelemetryResponse(BaseModel):
     agents: list[AgentStats]
     daily: list[DailyUsage]
     top_users: list[dict]
+
+
+class AdminUserAIUsage(BaseModel):
+    total_tokens: int
+    total_calls: int
+    error_calls: int
+    cost_usd_cents: int
+    agents: list[AgentStats]
+    daily: list[DailyUsage]
+
+
+class AdminUserDetailResponse(BaseModel):
+    user: AdminUserRead
+    progress: AdminUserProgress
+    learning_profile: AdminUserLearningProfile
+    ai_usage: AdminUserAIUsage
 
 
 # ── User Activity ─────────────────────────────────────────────────────────────
@@ -178,6 +261,17 @@ class ReviewGameRequest(BaseModel):
     questions: list[GameQuestionRead] | None = None
     name: str | None = Field(default=None, max_length=120)
     xp_reward: int | None = Field(default=None, ge=10, le=200)
+
+
+class UpdateGameRequest(BaseModel):
+    name: str | None = Field(default=None, max_length=120)
+    xp_reward: int | None = Field(default=None, ge=10, le=200)
+    questions: list[GameQuestionRead] | None = None
+
+
+class AIGameActionResponse(BaseModel):
+    action: Literal["deleted"]
+    game_id: int
 
 
 # ── Event Tracking ────────────────────────────────────────────────────────────

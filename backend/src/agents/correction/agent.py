@@ -50,7 +50,7 @@ Competencias ENEM: {competencies.model_dump_json()}
 Redacao:
 {content}
 """
-        return self.runner.run_structured(
+        result = self.runner.run_structured(
             agent_name="EssayCorrectionAgent",
             description="Consolida correcao ENEM com nota final e feedback pedagogico.",
             instructions=ESSAY_CONSOLIDATION_INSTRUCTIONS,
@@ -60,6 +60,9 @@ Redacao:
             user_id=user_id,
             session_id=session_id,
         )
+        if not result.inline_annotations:
+            result.inline_annotations = fallback.inline_annotations
+        return result
 
     def _fallback_result(
         self,
@@ -95,4 +98,5 @@ Redacao:
                 "O proximo passo e transformar observacoes gerais em ajustes concretos: tese mais direta, repertorio conectado e intervencao detalhada."
             ),
             recurrent_patterns=recurrent_patterns[:8],
+            inline_annotations=base.inline_annotations,
         )

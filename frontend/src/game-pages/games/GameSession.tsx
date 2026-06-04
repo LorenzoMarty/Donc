@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
@@ -16,17 +16,37 @@ import { useGameStore } from "@/stores/game-store";
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { cn } from "@/utils";
 
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 export default function GameSession({ categorySlug, gameId }: { categorySlug: string; gameId: string }) {
-  const game = getGameById(gameId);
-  const category = getCategoryBySlug(categorySlug);
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
+  const remoteGames = useGameStore((state) => state.remoteGames);
+  const remoteGamesHydrated = useGameStore((state) => state.remoteGamesHydrated);
+  const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
   const trackEvent = useTrackEvent();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [result, setResult] = useState<ReturnType<typeof completeGame> | null>(null);
   const [seconds, setSeconds] = useState(0);
+
+  const game = getGameById(gameId, remoteGames);
+  const category = getCategoryBySlug(categorySlug);
+
+  // Questoes sorteadas aleatoriamente a cada carga do jogo.
+  const questions = useMemo(() => (game ? shuffle(game.questions) : []), [game]);
+
+  useEffect(() => {
+    hydrateRemoteGames();
+  }, [hydrateRemoteGames]);
 
   useEffect(() => {
     if (result) return;
@@ -39,9 +59,18 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game?.id]);
 
-  const question = game?.questions[step];
+  const question = questions[step];
   const score = answers.filter(Boolean).length;
   const liveAccuracy = answers.length ? Math.round((score / answers.length) * 100) : 100;
+
+  // Jogo dinamico (ai-*) pode nao ter carregado ainda.
+  if (!game && !remoteGamesHydrated) {
+    return (
+      <Surface className="text-center">
+        <h1 className="text-2xl font-semibold">Carregando jogo...</h1>
+      </Surface>
+    );
+  }
 
   if (!game || !category || game.category !== category.id) {
     return (
@@ -68,14 +97,14 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
     setSelected(index);
     const nextAnswers = [...answers, isCorrect];
     window.setTimeout(() => {
-      if (step < game.questions.length - 1) {
+      if (step < questions.length - 1) {
         setAnswers(nextAnswers);
         setStep((value) => value + 1);
         setSelected(null);
         return;
       }
       setAnswers(nextAnswers);
-      const completion = completeGame(game, nextAnswers.filter(Boolean).length, game.questions.length, seconds);
+      const completion = completeGame(game, nextAnswers.filter(Boolean).length, questions.length, seconds);
       setResult(completion);
       trackEvent({ event_type: "game_completed", entity_id: game.id, entity_type: "game", duration_ms: seconds * 1000, meta: { accuracy: completion.attempt.accuracy, xp_earned: completion.xpEarned } });
     }, 620);
@@ -107,8 +136,8 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
 
       <SessionHUD
         accuracy={liveAccuracy}
-        step={Math.min(step + 1, game.questions.length)}
-        total={game.questions.length}
+        step={Math.min(step + 1, questions.length)}
+        total={questions.length}
         seconds={seconds}
         streak={streak}
         xp={game.xpReward}
@@ -131,7 +160,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                   <Badge variant="outline">{game.estimatedTime}</Badge>
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Questao {step + 1} de {game.questions.length}
+                  Questao {step + 1} de {questions.length}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal md:text-3xl">
                   {question.prompt}

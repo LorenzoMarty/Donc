@@ -7,21 +7,31 @@ from src.database.session import get_db
 from src.dependencies import get_current_user, require_admin
 from src.models import User
 from src.schemas.admin import (
+    AdminContentActionResponse,
     AdminCourseCreateRequest,
     AdminCourseRead,
+    AdminCourseUpdateRequest,
+    AdminEssayThemeActionResponse,
+    AdminEssayThemeUpdateRequest,
     AdminLessonCreateRequest,
     AdminLessonRead,
+    AdminLessonUpdateRequest,
+    AdminModuleUpdateRequest,
+    AdminMoveRequest,
     AdminUserActionResponse,
+    AdminUserDetailResponse,
     AdminMetricsResponse,
     AdminModuleCreateRequest,
     AdminModuleRead,
     AdminUserRead,
     AdminUserUpdateRequest,
+    AIGameActionResponse,
     AIGeneratedGameRead,
     AITelemetryResponse,
     GenerateGameRequest,
     ReviewGameRequest,
     TrackEventRequest,
+    UpdateGameRequest,
     UserActivityResponse,
 )
 from src.schemas.common import ApiResponse, success_response
@@ -65,6 +75,34 @@ def generate_essay_theme(
 
         raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
     return success_response(AdminService(db).generate_essay_theme(focus=focus, admin_user_id=current_admin.id), "Tema gerado.")
+
+
+@router.patch("/essay-themes/{theme_id}", response_model=ApiResponse[EssayThemeRead])
+def update_essay_theme(
+    theme_id: int,
+    payload: AdminEssayThemeUpdateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssayThemeRead]:
+    return success_response(
+        AdminService(db).update_essay_theme(
+            theme_id=theme_id,
+            title=payload.title,
+            context=payload.context,
+            source=payload.source,
+        ),
+        "Tema atualizado.",
+    )
+
+
+@router.delete("/essay-themes/{theme_id}", response_model=ApiResponse[AdminEssayThemeActionResponse])
+def delete_essay_theme(
+    theme_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminEssayThemeActionResponse]:
+    AdminService(db).delete_essay_theme(theme_id=theme_id)
+    return success_response(AdminEssayThemeActionResponse(action="deleted", theme_id=theme_id), "Tema excluido.")
 
 
 @router.post("/courses", response_model=ApiResponse[AdminCourseRead], status_code=201)
@@ -122,6 +160,115 @@ def create_lesson(
         ),
         "Aula criada.",
     )
+
+
+@router.patch("/courses/{course_id}", response_model=ApiResponse[AdminCourseRead])
+def update_course(
+    course_id: int,
+    payload: AdminCourseUpdateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(
+        AdminService(db).update_course(
+            course_id=course_id,
+            title=payload.title,
+            description=payload.description,
+            color=payload.color,
+        ),
+        "Curso atualizado.",
+    )
+
+
+@router.delete("/courses/{course_id}", response_model=ApiResponse[AdminContentActionResponse])
+def delete_course(
+    course_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminContentActionResponse]:
+    AdminService(db).delete_course(course_id=course_id)
+    return success_response(AdminContentActionResponse(action="deleted", id=course_id, kind="course"), "Curso excluido.")
+
+
+@router.patch("/modules/{module_id}", response_model=ApiResponse[AdminCourseRead])
+def update_module(
+    module_id: int,
+    payload: AdminModuleUpdateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(
+        AdminService(db).update_module(module_id=module_id, title=payload.title, description=payload.description),
+        "Modulo atualizado.",
+    )
+
+
+@router.delete("/modules/{module_id}", response_model=ApiResponse[AdminCourseRead])
+def delete_module(
+    module_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(AdminService(db).delete_module(module_id=module_id), "Modulo excluido.")
+
+
+@router.post("/modules/{module_id}/move", response_model=ApiResponse[AdminCourseRead])
+def move_module(
+    module_id: int,
+    payload: AdminMoveRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(AdminService(db).move_module(module_id=module_id, direction=payload.direction), "Ordem atualizada.")
+
+
+@router.patch("/lessons/{lesson_id}", response_model=ApiResponse[AdminCourseRead])
+def update_lesson(
+    lesson_id: int,
+    payload: AdminLessonUpdateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(
+        AdminService(db).update_lesson(
+            lesson_id=lesson_id,
+            title=payload.title,
+            description=payload.description,
+            summary=payload.summary,
+            thumbnail_url=payload.thumbnail_url,
+            video_url=payload.video_url,
+            duration_minutes=payload.duration_minutes,
+        ),
+        "Aula atualizada.",
+    )
+
+
+@router.delete("/lessons/{lesson_id}", response_model=ApiResponse[AdminCourseRead])
+def delete_lesson(
+    lesson_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(AdminService(db).delete_lesson(lesson_id=lesson_id), "Aula excluida.")
+
+
+@router.post("/lessons/{lesson_id}/move", response_model=ApiResponse[AdminCourseRead])
+def move_lesson(
+    lesson_id: int,
+    payload: AdminMoveRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(AdminService(db).move_lesson(lesson_id=lesson_id, direction=payload.direction), "Ordem atualizada.")
+
+
+@router.get("/users/{user_id}/detail", response_model=ApiResponse[AdminUserDetailResponse])
+def user_detail(
+    user_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminUserDetailResponse]:
+    return success_response(AdminService(db).user_detail(user_id))
 
 
 @router.patch("/users/{user_id}", response_model=ApiResponse[AdminUserRead])
@@ -232,3 +379,29 @@ def review_game(
         reviewer_id=current_admin.id,
     )
     return success_response(game, "Jogo atualizado.")
+
+
+@router.patch("/ai-games/{game_id}", response_model=ApiResponse[AIGeneratedGameRead])
+def update_game(
+    game_id: int,
+    payload: UpdateGameRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminService(db).update_game(
+        game_id,
+        name=payload.name,
+        xp_reward=payload.xp_reward,
+        questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
+    )
+    return success_response(game, "Jogo atualizado.")
+
+
+@router.delete("/ai-games/{game_id}", response_model=ApiResponse[AIGameActionResponse])
+def delete_game(
+    game_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGameActionResponse]:
+    AdminService(db).delete_game(game_id)
+    return success_response(AIGameActionResponse(action="deleted", game_id=game_id), "Jogo excluido.")

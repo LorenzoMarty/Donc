@@ -105,13 +105,22 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="themes" className="mt-4">
-          <ThemesTab themes={themes} onGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])} />
+          <ThemesTab
+            themes={themes}
+            onGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])}
+            onUpdated={(theme) => setThemes((prev) => prev.map((item) => (item.id === theme.id ? theme : item)))}
+            onDeleted={(themeId) => setThemes((prev) => prev.filter((item) => item.id !== themeId))}
+          />
         </TabsContent>
 
         <TabsContent value="courses" className="mt-4">
           <CoursesTab
             courses={courses}
             onCourseCreated={(course: AdminCourse) => setCourses((prev) => [...prev, course])}
+            onCourseChanged={(course: AdminCourse) =>
+              setCourses((prev) => prev.map((item) => (item.id === course.id ? course : item)))
+            }
+            onCourseRemoved={(courseId: number) => setCourses((prev) => prev.filter((item) => item.id !== courseId))}
             onModuleCreated={(courseId: number, module: AdminModule) =>
               setCourses((prev) =>
                 prev.map((course) => (course.id === courseId ? { ...course, modules: [...course.modules, module] } : course)),
@@ -135,6 +144,7 @@ export default function AdminPage() {
             games={games}
             onGenerated={(game) => setGames((prev) => [game, ...prev])}
             onReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
+            onDeleted={(gameId) => setGames((prev) => prev.filter((g) => g.id !== gameId))}
           />
         </TabsContent>
       </Tabs>

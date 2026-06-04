@@ -20,6 +20,10 @@ from src.schemas.admin import (
     AdminCourseRead,
     AdminLessonRead,
     AdminModuleRead,
+    AdminUserAIUsage,
+    AdminUserDetailResponse,
+    AdminUserLearningProfile,
+    AdminUserProgress,
     AdminUserRead,
     AgentStats,
     AIGeneratedGameRead,
@@ -27,9 +31,12 @@ from src.schemas.admin import (
     DailyUsage,
     EventTypeSummary,
     GameQuestionRead,
+    MasteryPointRead,
     UserActivityResponse,
 )
+from src.memory.profile import get_learning_profile_payload
 from src.services.ai_telemetry import record_ai_interaction
+from src.services.dashboard_service import DashboardService
 
 
 class AdminService:
@@ -91,6 +98,54 @@ class AdminService:
         )
         self.db.commit()
         self.db.refresh(theme)
+        return theme
+
+    def update_essay_theme(
+        self,
+        *,
+        theme_id: int,
+        title: str | None = None,
+        context: str | None = None,
+        source: str | None = None,
+    ) -> EssayTheme:
+        theme = self._get_active_essay_theme(theme_id)
+        if title is not None:
+            cleaned_title = self._clean_theme_title(title)
+            if len(cleaned_title) < 8:
+                raise AppError("Titulo do tema precisa ter pelo menos 8 caracteres.", status_code=422, code="invalid_theme_title")
+            normalized_title = self._normalize_theme_title(cleaned_title)
+            active_titles = [
+                item
+                for item in self.db.scalars(
+                    select(EssayTheme.title).where(EssayTheme.id != theme_id, EssayTheme.is_active.is_(True))
+                )
+            ]
+            if normalized_title in {self._normalize_theme_title(item) for item in active_titles}:
+                raise AppError("Ja existe um tema ativo com esse titulo.", status_code=409, code="duplicate_theme")
+            theme.title = cleaned_title
+        if context is not None:
+            cleaned_context = context.strip()
+            if len(cleaned_context) < 20:
+                raise AppError("Contexto do tema precisa ter pelo menos 20 caracteres.", status_code=422, code="invalid_theme_context")
+            theme.context = cleaned_context
+        if source is not None:
+            cleaned_source = source.strip()
+            if len(cleaned_source) < 2:
+                raise AppError("Fonte do tema precisa ter pelo menos 2 caracteres.", status_code=422, code="invalid_theme_source")
+            theme.source = cleaned_source
+        self.db.commit()
+        self.db.refresh(theme)
+        return theme
+
+    def delete_essay_theme(self, *, theme_id: int) -> None:
+        theme = self._get_active_essay_theme(theme_id)
+        theme.is_active = False
+        self.db.commit()
+
+    def _get_active_essay_theme(self, theme_id: int) -> EssayTheme:
+        theme = self.db.get(EssayTheme, theme_id)
+        if not theme or not theme.is_active:
+            raise AppError("Tema de redacao nao encontrado.", status_code=404, code="theme_not_found")
         return theme
 
     def users_list(self) -> list[AdminUserRead]:
@@ -172,6 +227,108 @@ class AdminService:
         self.db.delete(user)
         self.db.commit()
 
+    def user_detail(self, user_id: int) -> AdminUserDetailResponse:
+        user = self.db.get(User, user_id)
+        if not user:
+            raise AppError("Usuario nao encontrado.", status_code=404, code="user_not_found")
+
+        summary = next((item for item in self.users_list() if item.id == user_id), None)
+        if summary is None:
+            raise AppError("Usuario nao encontrado.", status_code=404, code="user_not_found")
+
+        dashboard = DashboardService(self.db).get(user_id)
+        progress = AdminUserProgress(
+            progress_general=dashboard.progress_general,
+            essay_average=dashboard.essay_average,
+            best_essay_score=dashboard.best_essay_score,
+            completed_lessons=dashboard.completed_lessons,
+            correct_exercises_rate=dashboard.correct_exercises_rate,
+            essays_written=dashboard.essays_written,
+            mastery_map=[
+                MasteryPointRead(competency=point.competency, label=point.label, value=point.value)
+                for point in dashboard.mastery_map
+            ],
+            recurrent_errors=dashboard.recurrent_errors,
+        )
+
+        profile_payload = get_learning_profile_payload(self.db, user_id)
+        learning_profile = AdminUserLearningProfile(
+            weak_competencies=profile_payload.get("weak_competencies") or {},
+            recurring_errors=profile_payload.get("recurring_errors") or [],
+            repertories_used=profile_payload.get("repertories_used") or [],
+            recommendations=profile_payload.get("recommendations") or [],
+        )
+
+        ai_usage = self._user_ai_usage(user_id)
+
+        return AdminUserDetailResponse(
+            user=summary,
+            progress=progress,
+            learning_profile=learning_profile,
+            ai_usage=ai_usage,
+        )
+
+    def _user_ai_usage(self, user_id: int) -> AdminUserAIUsage:
+        logs = self.db.scalars(select(AIInteractionLog).where(AIInteractionLog.user_id == user_id)).all()
+        total_tokens = sum(log.token_count for log in logs)
+        total_calls = len(logs)
+        error_calls = sum(1 for log in logs if log.status == "error")
+
+        agent_map: dict[str, dict] = {}
+        day_map: dict[str, dict] = {}
+        for log in logs:
+            key = f"{log.workflow}::{log.agent}"
+            agent = agent_map.setdefault(
+                key,
+                {"agent": log.agent, "workflow": log.workflow, "calls": 0, "success": 0, "errors": 0, "tokens": 0, "latency_total": 0},
+            )
+            agent["calls"] += 1
+            agent["tokens"] += log.token_count
+            agent["latency_total"] += log.latency_ms
+            if log.status == "error":
+                agent["errors"] += 1
+            else:
+                agent["success"] += 1
+
+            day = log.created_at.strftime("%Y-%m-%d") if log.created_at else "unknown"
+            bucket = day_map.setdefault(day, {"tokens": 0, "calls": 0, "errors": 0})
+            bucket["tokens"] += log.token_count
+            bucket["calls"] += 1
+            if log.status == "error":
+                bucket["errors"] += 1
+
+        agents = [
+            AgentStats(
+                agent=v["agent"],
+                workflow=v["workflow"],
+                total_calls=v["calls"],
+                success_calls=v["success"],
+                error_calls=v["errors"],
+                total_tokens=v["tokens"],
+                avg_latency_ms=int(v["latency_total"] / v["calls"]) if v["calls"] else 0,
+                cost_usd_cents=self._token_cost_cents(v["tokens"]),
+            )
+            for v in sorted(agent_map.values(), key=lambda x: x["tokens"], reverse=True)
+        ]
+        daily = [
+            DailyUsage(
+                date=day,
+                total_tokens=v["tokens"],
+                total_calls=v["calls"],
+                error_calls=v["errors"],
+                cost_usd_cents=self._token_cost_cents(v["tokens"]),
+            )
+            for day, v in sorted(day_map.items())
+        ]
+        return AdminUserAIUsage(
+            total_tokens=total_tokens,
+            total_calls=total_calls,
+            error_calls=error_calls,
+            cost_usd_cents=self._token_cost_cents(total_tokens),
+            agents=agents,
+            daily=daily,
+        )
+
     def _get_student(self, user_id: int) -> User:
         user = self.db.get(User, user_id)
         if not user:
@@ -240,6 +397,132 @@ class AdminService:
         self.db.commit()
         self.db.refresh(lesson)
         return self._lesson_to_admin_read(lesson)
+
+    def _course_read_by_id(self, course_id: int) -> AdminCourseRead:
+        course = self.db.scalars(
+            select(Course)
+            .options(selectinload(Course.modules).selectinload(Module.lessons))
+            .where(Course.id == course_id)
+        ).first()
+        if not course:
+            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
+        return self._course_to_admin_read(course)
+
+    def update_course(self, *, course_id: int, title: str | None, description: str | None, color: str | None) -> AdminCourseRead:
+        course = self.db.get(Course, course_id)
+        if not course:
+            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
+        if title is not None:
+            course.title = title.strip()
+        if description is not None:
+            course.description = description.strip()
+        if color is not None:
+            course.color = color.strip() or course.color
+        self.db.commit()
+        return self._course_read_by_id(course_id)
+
+    def delete_course(self, *, course_id: int) -> None:
+        course = self.db.get(Course, course_id)
+        if not course:
+            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
+        self.db.delete(course)
+        self.db.commit()
+
+    def update_module(self, *, module_id: int, title: str | None, description: str | None) -> AdminCourseRead:
+        module = self.db.get(Module, module_id)
+        if not module:
+            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        if title is not None:
+            module.title = title.strip()
+        if description is not None:
+            module.description = description.strip()
+        self.db.commit()
+        return self._course_read_by_id(module.course_id)
+
+    def delete_module(self, *, module_id: int) -> AdminCourseRead:
+        module = self.db.get(Module, module_id)
+        if not module:
+            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        course_id = module.course_id
+        self.db.delete(module)
+        self.db.commit()
+        return self._course_read_by_id(course_id)
+
+    def move_module(self, *, module_id: int, direction: str) -> AdminCourseRead:
+        module = self.db.get(Module, module_id)
+        if not module:
+            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        siblings = list(
+            self.db.scalars(
+                select(Module).where(Module.course_id == module.course_id).order_by(Module.order, Module.id)
+            )
+        )
+        self._swap_order(siblings, module.id, direction)
+        self.db.commit()
+        return self._course_read_by_id(module.course_id)
+
+    def update_lesson(
+        self,
+        *,
+        lesson_id: int,
+        title: str | None,
+        description: str | None,
+        summary: str | None,
+        thumbnail_url: str | None,
+        video_url: str | None,
+        duration_minutes: int | None,
+    ) -> AdminCourseRead:
+        lesson = self.db.get(Lesson, lesson_id)
+        if not lesson:
+            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+        if title is not None:
+            lesson.title = title.strip()
+        if description is not None:
+            lesson.description = description.strip()
+        if summary is not None:
+            lesson.summary = summary.strip()
+        if thumbnail_url is not None:
+            lesson.thumbnail_url = thumbnail_url.strip() or lesson.thumbnail_url
+        if video_url is not None:
+            lesson.video_url = video_url.strip() or lesson.video_url
+        if duration_minutes is not None:
+            lesson.duration_minutes = duration_minutes
+        self.db.commit()
+        return self._course_read_by_id(self.db.get(Module, lesson.module_id).course_id)
+
+    def delete_lesson(self, *, lesson_id: int) -> AdminCourseRead:
+        lesson = self.db.get(Lesson, lesson_id)
+        if not lesson:
+            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+        course_id = self.db.get(Module, lesson.module_id).course_id
+        self.db.delete(lesson)
+        self.db.commit()
+        return self._course_read_by_id(course_id)
+
+    def move_lesson(self, *, lesson_id: int, direction: str) -> AdminCourseRead:
+        lesson = self.db.get(Lesson, lesson_id)
+        if not lesson:
+            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+        siblings = list(
+            self.db.scalars(
+                select(Lesson).where(Lesson.module_id == lesson.module_id).order_by(Lesson.order, Lesson.id)
+            )
+        )
+        self._swap_order(siblings, lesson.id, direction)
+        self.db.commit()
+        return self._course_read_by_id(self.db.get(Module, lesson.module_id).course_id)
+
+    def _swap_order(self, siblings: list, item_id: int, direction: str) -> None:
+        # Normaliza ordens sequenciais (1..n) e troca com o vizinho.
+        for position, sibling in enumerate(siblings):
+            sibling.order = position + 1
+        index = next((i for i, s in enumerate(siblings) if s.id == item_id), None)
+        if index is None:
+            return
+        target = index - 1 if direction == "up" else index + 1
+        if target < 0 or target >= len(siblings):
+            return
+        siblings[index].order, siblings[target].order = siblings[target].order, siblings[index].order
 
     def _next_module_order(self, course_id: int) -> int:
         current = self.db.scalar(select(func.max(Module.order)).where(Module.course_id == course_id)) or 0
@@ -504,6 +787,34 @@ class AdminService:
         self.db.commit()
         self.db.refresh(game)
         return self._game_to_read(game)
+
+    def update_game(
+        self,
+        game_id: int,
+        *,
+        name: str | None = None,
+        xp_reward: int | None = None,
+        questions: list[dict] | None = None,
+    ) -> AIGeneratedGameRead:
+        game = self.db.get(AIGeneratedGame, game_id)
+        if not game:
+            raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+        if name is not None:
+            game.name = name
+        if xp_reward is not None:
+            game.xp_reward = xp_reward
+        if questions is not None:
+            game.questions = questions
+        self.db.commit()
+        self.db.refresh(game)
+        return self._game_to_read(game)
+
+    def delete_game(self, game_id: int) -> None:
+        game = self.db.get(AIGeneratedGame, game_id)
+        if not game:
+            raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+        self.db.delete(game)
+        self.db.commit()
 
     def _game_to_read(self, game: AIGeneratedGame) -> AIGeneratedGameRead:
         questions = [

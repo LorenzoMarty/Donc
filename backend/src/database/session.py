@@ -12,7 +12,10 @@ class Base(DeclarativeBase):
 
 engine_options = {"pool_pre_ping": True}
 if settings.database_url.startswith("postgres"):
-    engine_options["connect_args"] = {"connect_timeout": settings.database_connect_timeout_seconds}
+    connect_args = {"connect_timeout": settings.database_connect_timeout_seconds}
+    if "pooler.supabase.com" in settings.database_url or ":6543/" in settings.database_url:
+        connect_args["prepare_threshold"] = None
+    engine_options["connect_args"] = connect_args
 
 engine = create_engine(settings.database_url, **engine_options)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

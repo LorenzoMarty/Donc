@@ -2,14 +2,20 @@
 
 import { Fragment, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Edit2, Save, Search, Trash2, X } from "lucide-react";
+import { BarChart3, Edit2, Eye, Loader2, Save, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { CompetencyBarChart } from "@/components/shared/charts";
 import { apiFetch } from "@/services/api";
-import type { AdminUser } from "@/types/api";
+import type { AdminUser, AdminUserDetail } from "@/types/api";
+
+function centsToDollars(cents: number) {
+  return `$${(cents / 100).toFixed(4)}`;
+}
 
 const ONLINE_WINDOW_MS = 300_000;
 
@@ -62,6 +68,24 @@ export function UsersTab({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<UserDraft | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [detail, setDetail] = useState<AdminUserDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  async function openDetail(user: AdminUser) {
+    setDetailOpen(true);
+    setDetail(null);
+    setDetailLoading(true);
+    try {
+      const data = await apiFetch<AdminUserDetail>(`/admin/users/${user.id}/detail`);
+      setDetail(data);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nao foi possivel carregar o detalhe.");
+      setDetailOpen(false);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
 
   useEffect(() => {
     const updateNow = () => setNow(Date.now());
@@ -196,6 +220,16 @@ export function UsersTab({
                             size="icon"
                             variant="ghost"
                             className="h-9 w-9"
+                            onClick={() => openDetail(user)}
+                            aria-label="Ver progresso e consumo de IA"
+                          >
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-9 w-9"
                             disabled={!isStudent || busyId === user.id}
                             onClick={() => (isEditing ? (setEditingId(null), setDraft(null)) : startEditing(user))}
                             aria-label={isEditing ? "Fechar controle do aluno" : "Controlar aluno"}
@@ -246,6 +280,104 @@ export function UsersTab({
           </table>
         </div>
       </div>
+
+      <Modal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title={detail ? detail.user.name : "Detalhe do aluno"}
+        description={detail ? detail.user.email : undefined}
+        className="max-w-2xl"
+      >
+        {detailLoading || !detail ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Carregando...
+          </div>
+        ) : (
+          <UserDetailView detail={detail} />
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function UserDetailView({ detail }: { detail: AdminUserDetail }) {
+  const { progress, learning_profile: profile, ai_usage: ai } = detail;
+  const masteryData = progress.mastery_map.map((point) => ({ competency: point.competency, value: point.value }));
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Progresso" value={`${progress.progress_general}%`} />
+        <Stat label="Media redacao" value={String(progress.essay_average)} />
+        <Stat label="Aulas concluidas" value={String(progress.completed_lessons)} />
+        <Stat label="Acerto exercicios" value={`${progress.correct_exercises_rate}%`} />
+      </div>
+
+      <section>
+        <h3 className="mb-2 text-sm font-semibold">Dominio por competencia</h3>
+        <CompetencyBarChart data={masteryData} />
+      </section>
+
+      <section>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+          <BarChart3 className="h-4 w-4 text-primary" />
+          Consumo de IA
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Tokens" value={formatTokens(ai.total_tokens)} />
+          <Stat label="Chamadas" value={String(ai.total_calls)} />
+          <Stat label="Erros" value={String(ai.error_calls)} />
+          <Stat label="Custo" value={centsToDollars(ai.cost_usd_cents)} />
+        </div>
+        {ai.agents.length ? (
+          <div className="mt-3 space-y-1">
+            {ai.agents.slice(0, 6).map((agent) => (
+              <div key={`${agent.workflow}-${agent.agent}`} className="flex items-center justify-between gap-2 rounded-md border bg-background/40 px-3 py-1.5 text-xs">
+                <span className="min-w-0 truncate font-medium">{agent.agent}</span>
+                <span className="shrink-0 text-muted-foreground">
+                  {formatTokens(agent.total_tokens)} tok · {centsToDollars(agent.cost_usd_cents)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-muted-foreground">Sem consumo de IA registrado.</p>
+        )}
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2">
+        <DetailList title="Competencias fracas" items={Object.entries(profile.weak_competencies).map(([k, v]) => `${k.toUpperCase()}: ${v}x`)} />
+        <DetailList title="Erros recorrentes" items={profile.recurring_errors.length ? profile.recurring_errors : progress.recurrent_errors} />
+        <DetailList title="Recomendacoes" items={profile.recommendations} />
+        <DetailList title="Repertorios usados" items={profile.repertories_used} />
+      </section>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border bg-background/40 px-3 py-2">
+      <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-base font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function DetailList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div>
+      <h4 className="mb-1.5 text-xs font-semibold text-muted-foreground">{title}</h4>
+      {items.length ? (
+        <ul className="space-y-1 text-xs">
+          {items.map((item, index) => (
+            <li key={index} className="rounded-md border bg-background/40 px-2.5 py-1.5">{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted-foreground">—</p>
+      )}
     </div>
   );
 }

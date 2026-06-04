@@ -1,13 +1,58 @@
 import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuote, SpellCheck } from "lucide-react";
 
-import type { GameCategory, GameCategoryId, GameDefinition, GameProgress } from "@/features/gamification/types";
+import type { GameCategory, GameCategoryId, GameDefinition, GameDifficulty, GameProgress } from "@/features/gamification/types";
 import { connectiveGames } from "@/games/connectives";
 import { grammarGames } from "@/games/grammar";
 import { repertoireGames } from "@/games/repertoire";
 import { structureGames } from "@/games/structure";
 import { thesisGames } from "@/games/thesis";
+import type { PublishedGame } from "@/types/api";
 
 const gamesCatalog: GameDefinition[] = [...structureGames, ...connectiveGames, ...thesisGames, ...repertoireGames, ...grammarGames];
+
+const VALID_CATEGORIES: GameCategoryId[] = [
+  "estrutura",
+  "coesao",
+  "argumentacao",
+  "repertorio",
+  "gramatica",
+  "competencias-enem",
+  "desafios-diarios",
+];
+
+const DIFFICULTY_LABEL: Record<string, GameDifficulty> = {
+  easy: "Essencial",
+  medium: "Intermediario",
+  hard: "Avancado",
+};
+
+/** Converte um jogo aprovado vindo do backend em GameDefinition jogavel pelo aluno. */
+export function mapPublishedGame(game: PublishedGame): GameDefinition {
+  const category = (VALID_CATEGORIES.includes(game.category as GameCategoryId)
+    ? game.category
+    : "competencias-enem") as GameCategoryId;
+  return {
+    id: `ai-${game.id}`,
+    name: game.name,
+    category,
+    description: game.skill ? `Atividade gerada para treinar ${game.skill}.` : "Atividade gerada por IA.",
+    difficulty: DIFFICULTY_LABEL[game.difficulty] ?? "Intermediario",
+    xpReward: game.xp_reward,
+    estimatedTime: `${Math.max(2, Math.round(game.questions.length * 0.5))} min`,
+    thumbnail: `${category}-ia`,
+    progress: 0,
+    unlocked: true,
+    engine: "quiz",
+    skill: game.skill || "Treino",
+    questions: game.questions.map((q, index) => ({
+      id: `ai-${game.id}-q${index}`,
+      prompt: q.prompt,
+      options: q.options,
+      answerIndex: q.answer_index,
+      explanation: q.explanation,
+    })),
+  };
+}
 
 const baseCategories: GameCategory[] = [
   {
@@ -93,16 +138,16 @@ export function getCategoryBySlug(slug: string) {
   return baseCategories.find((category) => category.slug === slug);
 }
 
-export function getGameById(gameId: string) {
-  return gamesCatalog.find((game) => game.id === gameId);
+export function getGameById(gameId: string, extra: GameDefinition[] = []) {
+  return [...gamesCatalog, ...extra].find((game) => game.id === gameId);
 }
 
-export function getGamesByCategory(category: GameCategoryId) {
-  return gamesCatalog.filter((game) => game.category === category);
+export function getGamesByCategory(category: GameCategoryId, extra: GameDefinition[] = []) {
+  return [...gamesCatalog, ...extra].filter((game) => game.category === category);
 }
 
-export function getRecommendedGames(progress: Record<string, GameProgress>) {
-  return [...gamesCatalog]
+export function getRecommendedGames(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
+  return [...gamesCatalog, ...extra]
     .sort((a, b) => {
       const aProgress = progress[a.id]?.progress ?? 0;
       const bProgress = progress[b.id]?.progress ?? 0;
@@ -111,17 +156,17 @@ export function getRecommendedGames(progress: Record<string, GameProgress>) {
     .slice(0, 4);
 }
 
-export function getEnrichedGames(progress: Record<string, GameProgress>) {
-  return gamesCatalog.map((game) => ({
+export function getEnrichedGames(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
+  return [...gamesCatalog, ...extra].map((game) => ({
     ...game,
     progress: progress[game.id]?.progress ?? game.progress,
     unlocked: game.unlocked,
   }));
 }
 
-export function getEnrichedCategories(progress: Record<string, GameProgress>) {
+export function getEnrichedCategories(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
   return baseCategories.map((category) => {
-    const games = getGamesByCategory(category.id);
+    const games = getGamesByCategory(category.id, extra);
     const categoryProgress = games.length
       ? Math.round(games.reduce((sum, game) => sum + (progress[game.id]?.progress ?? 0), 0) / games.length)
       : 0;

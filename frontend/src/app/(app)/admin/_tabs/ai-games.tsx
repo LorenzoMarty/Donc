@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Save, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -34,14 +34,18 @@ function statusBadge(status: string) {
 function GameCard({
   game,
   onReviewed,
+  onDeleted,
 }: {
   game: AIGeneratedGame;
   onReviewed: (updated: AIGeneratedGame) => void;
+  onDeleted: (gameId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingQ, setEditingQ] = useState<GameQuestion[] | null>(null);
   const [notes, setNotes] = useState("");
   const [reviewing, setReviewing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const questions = editingQ ?? game.questions;
 
@@ -57,11 +61,43 @@ function GameCard({
         }),
       });
       onReviewed(result);
+      setEditingQ(null);
       toast.success(action === "approve" ? "Jogo aprovado." : "Jogo rejeitado.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao revisar.");
     } finally {
       setReviewing(false);
+    }
+  }
+
+  async function saveEdits() {
+    if (!editingQ) return;
+    setSaving(true);
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ questions: editingQ }),
+      });
+      onReviewed(result);
+      setEditingQ(null);
+      toast.success("Alteracoes salvas.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`Excluir o jogo "${game.name}"? Esta acao nao pode ser desfeita.`)) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/admin/ai-games/${game.id}`, { method: "DELETE" });
+      onDeleted(game.id);
+      toast.success("Jogo excluido.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir.");
+      setDeleting(false);
     }
   }
 
@@ -142,11 +178,11 @@ function GameCard({
             ))}
           </div>
 
-          {editingQ && (
+          {editingQ && game.status === "pending" && (
             <p className="text-xs text-amber-600">Questões editadas. As alterações serão salvas ao aprovar/rejeitar.</p>
           )}
 
-          {game.status === "pending" && (
+          {game.status === "pending" ? (
             <div className="space-y-3">
               <textarea
                 value={notes}
@@ -155,7 +191,7 @@ function GameCard({
                 className="w-full resize-none rounded border bg-background p-2 text-sm outline-none focus:ring-1 focus:ring-ring"
                 rows={2}
               />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => review("approve")} disabled={reviewing}>
                   {reviewing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   Aprovar
@@ -163,7 +199,24 @@ function GameCard({
                 <Button size="sm" variant="outline" onClick={() => review("reject")} disabled={reviewing}>
                   Rejeitar
                 </Button>
+                <Button size="sm" variant="destructive" onClick={remove} disabled={deleting} className="ml-auto">
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir
+                </Button>
               </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {editingQ && (
+                <Button size="sm" onClick={saveEdits} disabled={saving}>
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Salvar alterações
+                </Button>
+              )}
+              <Button size="sm" variant="destructive" onClick={remove} disabled={deleting} className="ml-auto">
+                <Trash2 className="h-3.5 w-3.5" />
+                Excluir
+              </Button>
             </div>
           )}
 
@@ -180,15 +233,18 @@ export function AIGamesTab({
   games,
   onGenerated,
   onReviewed,
+  onDeleted,
 }: {
   games: AIGeneratedGame[];
   onGenerated: (game: AIGeneratedGame) => void;
   onReviewed: (updated: AIGeneratedGame) => void;
+  onDeleted: (gameId: number) => void;
 }) {
   const [skill, setSkill] = useState("");
   const [category, setCategory] = useState("coesao");
   const [difficulty, setDifficulty] = useState("medium");
   const [count, setCount] = useState(5);
+  const [gamesCount, setGamesCount] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
@@ -198,16 +254,27 @@ export function AIGamesTab({
       return;
     }
     setGenerating(true);
+    const total = Math.min(Math.max(gamesCount, 1), 5);
+    let created = 0;
     try {
-      const game = await apiFetch<AIGeneratedGame>("/admin/ai-games/generate", {
-        method: "POST",
-        body: JSON.stringify({ skill: skill.trim(), category, difficulty, count }),
-      });
-      onGenerated(game);
-      toast.success(`Jogo "${game.name}" gerado. Revise antes de aprovar.`);
+      for (let i = 0; i < total; i++) {
+        const game = await apiFetch<AIGeneratedGame>("/admin/ai-games/generate", {
+          method: "POST",
+          body: JSON.stringify({ skill: skill.trim(), category, difficulty, count }),
+        });
+        onGenerated(game);
+        created++;
+      }
+      toast.success(`${created} ${created === 1 ? "jogo gerado" : "jogos gerados"}. Revise antes de aprovar.`);
       setSkill("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao gerar jogo.");
+      toast.error(
+        err instanceof Error
+          ? created > 0
+            ? `${created} gerado(s); falha no restante: ${err.message}`
+            : err.message
+          : "Erro ao gerar jogo.",
+      );
     } finally {
       setGenerating(false);
     }
@@ -255,13 +322,24 @@ export function AIGamesTab({
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">Quantidade de questões</label>
+            <label className="text-xs text-muted-foreground">Questões por jogo</label>
             <input
               type="number"
               min={3}
               max={10}
               value={count}
               onChange={(e) => setCount(Number(e.target.value))}
+              className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Quantidade de jogos</label>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={gamesCount}
+              onChange={(e) => setGamesCount(Number(e.target.value))}
               className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -291,7 +369,7 @@ export function AIGamesTab({
 
       <div className="space-y-3">
         {filtered.map((game) => (
-          <GameCard key={game.id} game={game} onReviewed={onReviewed} />
+          <GameCard key={game.id} game={game} onReviewed={onReviewed} onDeleted={onDeleted} />
         ))}
         {filtered.length === 0 && (
           <div className="rounded-lg border bg-card p-8 text-center">
