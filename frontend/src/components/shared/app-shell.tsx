@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type W
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
   BookOpen,
   FilePenLine,
   Gamepad2,
@@ -37,7 +36,6 @@ type WorkspaceNavItem = {
 const workspaceNav: WorkspaceNavItem[] = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/redacao", label: "Redação", icon: FilePenLine },
-  { href: "/redacoes", label: "Histórico", icon: BarChart3 },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/games", label: "Atividades", icon: Gamepad2 },
 ];
@@ -183,30 +181,39 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white transition-[width,padding] duration-200 ease-in-out md:flex",
+        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white transition-[width,padding] duration-200 ease-in-out md:flex",
         collapsed ? "py-4" : "py-5",
       )}
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       onWheel={onWheel}
     >
-      <div
-        className={cn(
-          "mb-5 flex overflow-hidden",
-          collapsed ? "flex-col items-center gap-3 px-3" : "items-center justify-between gap-2 px-4",
-        )}
-      >
-        <BrandLink collapsed={collapsed} href="/dashboard" className={collapsed ? "w-full justify-center" : undefined} />
-        <button
-          onClick={onToggle}
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          className={cn(
-            "grid shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-primary/7 hover:text-primary",
-            collapsed ? "h-9 w-9 border border-border/80 bg-white" : "h-8 w-8",
-          )}
-        >
-          {collapsed ? <PanelLeftOpen className="h-5 w-5" aria-hidden="true" /> : <PanelLeftClose className="h-5 w-5" aria-hidden="true" />}
-        </button>
-      </div>
+      {collapsed ? (
+        <div className="mb-5 flex flex-col items-center px-3">
+          <div className="relative grid h-9 w-9 place-items-center">
+            <span className="grid place-items-center transition-opacity duration-150 group-hover:opacity-0">
+              <BrandLink collapsed href="/dashboard" className="w-full justify-center" />
+            </span>
+            <button
+              onClick={onToggle}
+              aria-label="Expandir menu"
+              className="absolute inset-0 grid place-items-center rounded-md border border-border/80 bg-white text-muted-foreground opacity-0 transition-opacity duration-150 pointer-events-none hover:bg-primary/7 hover:text-primary group-hover:pointer-events-auto group-hover:opacity-100"
+            >
+              <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-5 flex items-center justify-between gap-2 overflow-hidden px-4">
+          <BrandLink collapsed={false} href="/dashboard" />
+          <button
+            onClick={onToggle}
+            aria-label="Recolher menu"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-primary/7 hover:text-primary"
+          >
+            <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       <div className={cn("mb-6 overflow-hidden", collapsed ? "px-3" : "px-4")}>
         {collapsed ? (
