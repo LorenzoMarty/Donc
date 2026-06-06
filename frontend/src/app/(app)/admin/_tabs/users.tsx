@@ -1,12 +1,12 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import { BarChart3, Edit2, Eye, Loader2, Save, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { CompetencyBarChart } from "@/components/shared/charts";
@@ -156,12 +156,12 @@ export function UsersTab({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nome ou e-mail..."
-            className="h-9 w-full rounded-md border bg-background pl-8 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+            className="pl-9"
           />
         </div>
         <Badge variant="secondary">{online} online agora</Badge>
@@ -286,7 +286,8 @@ export function UsersTab({
         onClose={() => setDetailOpen(false)}
         title={detail ? detail.user.name : "Detalhe do aluno"}
         description={detail ? detail.user.email : undefined}
-        className="max-w-2xl"
+        icon={BarChart3}
+        size="lg"
       >
         {detailLoading || !detail ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
@@ -396,7 +397,7 @@ function StudentEditor({
   onSave: () => void;
 }) {
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(12rem,1.4fr)_repeat(4,minmax(6rem,0.8fr))_auto] lg:items-end">
+    <div className="collapse-in grid gap-3 lg:grid-cols-[minmax(12rem,1.4fr)_repeat(4,minmax(6rem,0.8fr))_auto] lg:items-end">
       <Field label="Nome">
         <Input value={draft.name} onChange={(event) => onChange({ ...draft, name: event.target.value })} disabled={busy} />
       </Field>
@@ -434,14 +435,5 @@ function StudentEditor({
         </Button>
       </div>
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="grid gap-1.5 text-xs font-semibold text-muted-foreground">
-      {label}
-      {children}
-    </label>
   );
 }

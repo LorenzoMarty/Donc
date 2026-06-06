@@ -21,7 +21,11 @@ type AnswerLog = {
   correct: boolean;
 };
 
-export function ConnectivePrecisionSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
+/**
+ * Engine generico de "rodada infinita cronometrada": combo, timer decrescente,
+ * 3 strikes encerram, XP ao vivo e revisao de erros. Dirigido por `game.questions`.
+ */
+export function TimedRushSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const xp = useGameStore((state) => state.xp);
   const [round, setRound] = useState(0);
@@ -39,8 +43,8 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
   const [leveledUp, setLeveledUp] = useState(false);
   const { playCorrect, playWrong } = useGameSounds();
 
-  const questionPool = game.questions;
-  const question = questionPool[round % questionPool.length];
+  const questionPool = useMemo(() => game.questions ?? [], [game.questions]);
+  const question = questionPool.length ? questionPool[round % questionPool.length] : undefined;
   const difficultyStage = Math.min(5, Math.floor(round / 5));
   const roundDuration = getRoundDuration(round);
   const errors = answerLog.filter((answer) => !answer.correct);
@@ -146,6 +150,17 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
     setLeveledUp(false);
   }
 
+  if (!question) {
+    return (
+      <section className="game-surface bg-card p-6 text-center">
+        <h1 className="text-2xl font-semibold">Atividade sem questões</h1>
+        <Button asChild className="mt-4">
+          <Link href={`/games/${category.slug}`}>Voltar à categoria</Link>
+        </Button>
+      </section>
+    );
+  }
+
   return (
     <div className="space-y-5 md:space-y-6">
       <div className="space-y-5 md:space-y-6">
@@ -168,7 +183,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
           </div>
         </header>
 
-        <ConnectiveHud
+        <RushHud
           combo={combo}
           xp={xp}
           sessionXp={sessionXp}
@@ -197,12 +212,12 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                 >
                   <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
                   <div className="mb-5 flex flex-wrap items-center gap-2">
-                    <Badge className="border-primary/20 bg-primary/10 text-primary">Coesao textual</Badge>
+                    <Badge className="border-primary/20 bg-primary/10 text-primary">{game.skill}</Badge>
                     <Badge variant="outline">Velocidade {difficultyStage + 1}</Badge>
                     <Badge variant="outline">Rodada {round + 1}</Badge>
                   </div>
 
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Complete a lacuna</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Decida rápido</p>
                   <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
                     {question.prompt}
                   </h2>
@@ -236,7 +251,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
                               <X className="h-5 w-5 text-red-700" aria-hidden="true" />
                             ) : null}
                           </div>
-                          <p className="text-lg font-semibold tracking-normal text-foreground">{option}</p>
+                          <p className="text-base font-semibold leading-6 tracking-normal text-foreground">{option}</p>
                         </motion.button>
                       );
                     })}
@@ -299,7 +314,7 @@ export function ConnectivePrecisionSession({ game, category }: { game: GameDefin
   );
 }
 
-function ConnectiveHud({
+function RushHud({
   combo,
   xp,
   sessionXp,
@@ -492,7 +507,7 @@ function ResultModal({
                 Jogar novamente
               </Button>
               <Button asChild variant="outline">
-                <Link href={`/games/${categorySlug}`}>Voltar a categoria</Link>
+                <Link href={`/games/${categorySlug}`}>Voltar à categoria</Link>
               </Button>
             </div>
           </motion.section>

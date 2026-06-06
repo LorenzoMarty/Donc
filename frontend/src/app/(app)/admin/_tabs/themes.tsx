@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import type { ReactNode } from "react";
 import { Edit2, FileText, Plus, Save, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/services/api";
 import type { EssayTheme, SupportingText } from "@/types/api";
 
@@ -156,7 +158,7 @@ export function ThemesTab({
             const isEditing = editingId === theme.id;
             const isBusy = busyId === theme.id;
             return (
-              <article key={theme.id} className="rounded-md border border-border bg-background/40 p-4">
+              <article key={theme.id} className={isEditing ? "rounded-md border border-primary/30 bg-card p-4" : "game-tile bg-card p-4"}>
                 {isEditing && draft ? (
                   <ThemeEditor
                     draft={draft}
@@ -205,7 +207,7 @@ export function ThemesTab({
           <h3 className="text-sm font-semibold">Gerar tema com IA</h3>
         </div>
         <div className="grid gap-3">
-          <Field label="Foco opcional">
+          <Field label="Foco opcional" counter={{ value: focus.length, max: 160 }}>
             <Input value={focus} maxLength={160} placeholder="Ex.: tecnologia, saúde pública" onChange={(event) => setFocus(event.target.value)} />
           </Field>
           <div className="grid gap-2">
@@ -267,10 +269,10 @@ function ThemeEditor({
 
   return (
     <div className="grid gap-3">
-      <Field label="Título">
+      <Field label="Título" counter={{ value: draft.title.length, max: 220 }}>
         <Input value={draft.title} maxLength={220} onChange={(event) => onChange({ ...draft, title: event.target.value })} disabled={busy} />
       </Field>
-      <Field label="Contexto">
+      <Field label="Contexto" counter={{ value: draft.context.length, max: 5000 }}>
         <Textarea value={draft.context} maxLength={5000} onChange={(event) => onChange({ ...draft, context: event.target.value })} disabled={busy} rows={5} />
       </Field>
       <div className="grid gap-2">
@@ -284,24 +286,28 @@ function ThemeEditor({
         {draft.supporting_texts.map((text, index) => (
           <div key={`${text.title}-${index}`} className="grid gap-2 rounded-md border bg-background/50 p-3">
             <div className="flex items-center gap-2">
-              <select
+              <Select
                 value={text.type}
                 disabled={busy}
                 onChange={(event) => updateText(index, { type: event.target.value as TextType })}
-                className="h-9 rounded-md border bg-card px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/20"
+                className="h-9 text-xs"
               >
                 {TEXT_TYPES.map((item) => (
                   <option key={item.value} value={item.value}>
                     {item.label}
                   </option>
                 ))}
-              </select>
-              <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeText(index)} disabled={busy || draft.supporting_texts.length === 1} aria-label="Remover texto">
+              </Select>
+              <Button type="button" size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-destructive" onClick={() => removeText(index)} disabled={busy || draft.supporting_texts.length === 1} aria-label="Remover texto">
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
-            <Input value={text.title} maxLength={120} onChange={(event) => updateText(index, { title: event.target.value })} disabled={busy} />
-            <Textarea value={text.content} maxLength={1200} onChange={(event) => updateText(index, { content: event.target.value })} disabled={busy} rows={4} />
+            <Field counter={{ value: text.title.length, max: 120 }}>
+              <Input value={text.title} maxLength={120} onChange={(event) => updateText(index, { title: event.target.value })} disabled={busy} placeholder="Título do texto de apoio" />
+            </Field>
+            <Field counter={{ value: text.content.length, max: 1200 }}>
+              <Textarea value={text.content} maxLength={1200} onChange={(event) => updateText(index, { content: event.target.value })} disabled={busy} rows={4} placeholder="Conteúdo do texto de apoio" />
+            </Field>
           </div>
         ))}
       </div>
@@ -316,24 +322,6 @@ function ThemeEditor({
         </Button>
       </div>
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="grid gap-1.5 text-xs font-semibold text-muted-foreground">
-      {label}
-      {children}
-    </label>
-  );
-}
-
-function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      {...props}
-      className={`min-h-[8rem] w-full resize-y rounded-md border bg-background px-3 py-2 text-sm leading-6 outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${className ?? ""}`}
-    />
   );
 }
 
