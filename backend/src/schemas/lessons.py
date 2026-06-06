@@ -29,6 +29,23 @@ class ExercisePreview(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ModuleActivityRead(BaseModel):
+    id: int
+    statement: str
+    skill: str
+    difficulty: str
+    lesson_id: int | None = None
+    base_lesson_ids: list[int] = Field(default_factory=list)
+
+
+class ModuleItemRead(BaseModel):
+    id: int
+    kind: str
+    order: int
+    lesson: "LessonRead | None" = None
+    activity: ModuleActivityRead | None = None
+
+
 class LessonRead(BaseModel):
     id: int
     title: str
@@ -54,6 +71,7 @@ class ModuleRead(BaseModel):
     completed: bool = False
     xp_reward: int = 75
     lessons: list[LessonRead] = []
+    items: list[ModuleItemRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 

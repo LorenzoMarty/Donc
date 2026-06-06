@@ -8,10 +8,15 @@ from src.dependencies import get_current_user, require_admin
 from src.models import User
 from src.schemas.admin import (
     AdminContentActionResponse,
+    AdminActivityCreateRequest,
+    AdminActivityGenerateRequest,
+    AdminActivityRead,
+    AdminActivityUpdateRequest,
     AdminCourseCreateRequest,
     AdminCourseRead,
     AdminCourseUpdateRequest,
     AdminEssayThemeActionResponse,
+    AdminEssayThemeGenerateRequest,
     AdminEssayThemeUpdateRequest,
     AdminLessonCreateRequest,
     AdminLessonRead,
@@ -35,7 +40,7 @@ from src.schemas.admin import (
     UserActivityResponse,
 )
 from src.schemas.common import ApiResponse, success_response
-from src.schemas.essays import EssayThemeGenerateRequest, EssayThemeRead
+from src.schemas.essays import EssayThemeRead
 from src.services.admin_service import AdminService
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
 
@@ -65,7 +70,7 @@ def essay_themes(_: User = Depends(require_admin), db: Session = Depends(get_db)
 
 @router.post("/essay-themes/generate", response_model=ApiResponse[EssayThemeRead], status_code=201)
 def generate_essay_theme(
-    payload: EssayThemeGenerateRequest,
+    payload: AdminEssayThemeGenerateRequest,
     current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ApiResponse[EssayThemeRead]:
@@ -74,7 +79,15 @@ def generate_essay_theme(
         from src.middlewares.errors import AppError
 
         raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
-    return success_response(AdminService(db).generate_essay_theme(focus=focus, admin_user_id=current_admin.id), "Tema gerado.")
+    requirements = {item.type: item.count for item in payload.supporting_text_requirements if item.count > 0}
+    return success_response(
+        AdminService(db).generate_essay_theme(
+            focus=focus,
+            admin_user_id=current_admin.id,
+            supporting_text_requirements=requirements or None,
+        ),
+        "Tema gerado.",
+    )
 
 
 @router.patch("/essay-themes/{theme_id}", response_model=ApiResponse[EssayThemeRead])
@@ -89,7 +102,7 @@ def update_essay_theme(
             theme_id=theme_id,
             title=payload.title,
             context=payload.context,
-            source=payload.source,
+            supporting_texts=[item.model_dump() for item in payload.supporting_texts] if payload.supporting_texts is not None else None,
         ),
         "Tema atualizado.",
     )
@@ -159,6 +172,50 @@ def create_lesson(
             order=payload.order,
         ),
         "Aula criada.",
+    )
+
+
+@router.post("/modules/{module_id}/activities", response_model=ApiResponse[AdminCourseRead], status_code=201)
+def create_activity(
+    module_id: int,
+    payload: AdminActivityCreateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(
+        AdminService(db).create_activity(
+            module_id=module_id,
+            statement=payload.statement,
+            options=payload.options,
+            correct_answer=payload.correct_answer,
+            explanation=payload.explanation,
+            skill=payload.skill,
+            difficulty=payload.difficulty,
+            lesson_id=payload.lesson_id,
+            base_lesson_ids=payload.base_lesson_ids,
+            order=payload.order,
+        ),
+        "Atividade criada.",
+    )
+
+
+@router.post("/modules/{module_id}/activities/generate", response_model=ApiResponse[list[AdminActivityRead]])
+def generate_activity_draft(
+    module_id: int,
+    payload: AdminActivityGenerateRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AdminActivityRead]]:
+    return success_response(
+        AdminService(db).generate_activity_drafts(
+            module_id=module_id,
+            lesson_ids=payload.lesson_ids,
+            difficulty=payload.difficulty,
+            count=payload.count,
+            focus=payload.focus,
+            admin_user_id=current_admin.id,
+        ),
+        "Atividade gerada para revisão.",
     )
 
 
@@ -260,6 +317,48 @@ def move_lesson(
     db: Session = Depends(get_db),
 ) -> ApiResponse[AdminCourseRead]:
     return success_response(AdminService(db).move_lesson(lesson_id=lesson_id, direction=payload.direction), "Ordem atualizada.")
+
+
+@router.patch("/activities/{activity_id}", response_model=ApiResponse[AdminCourseRead])
+def update_activity(
+    activity_id: int,
+    payload: AdminActivityUpdateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(
+        AdminService(db).update_activity(
+            activity_id=activity_id,
+            statement=payload.statement,
+            options=payload.options,
+            correct_answer=payload.correct_answer,
+            explanation=payload.explanation,
+            skill=payload.skill,
+            difficulty=payload.difficulty,
+            lesson_id=payload.lesson_id,
+            base_lesson_ids=payload.base_lesson_ids,
+        ),
+        "Atividade atualizada.",
+    )
+
+
+@router.delete("/activities/{activity_id}", response_model=ApiResponse[AdminCourseRead])
+def delete_activity(
+    activity_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(AdminService(db).delete_activity(activity_id=activity_id), "Atividade excluida.")
+
+
+@router.post("/module-items/{item_id}/move", response_model=ApiResponse[AdminCourseRead])
+def move_module_item(
+    item_id: int,
+    payload: AdminMoveRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminCourseRead]:
+    return success_response(AdminService(db).move_module_item(item_id=item_id, direction=payload.direction), "Ordem atualizada.")
 
 
 @router.get("/users/{user_id}/detail", response_model=ApiResponse[AdminUserDetailResponse])

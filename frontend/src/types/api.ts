@@ -25,7 +25,7 @@ export type PublishedGame = {
 export type SupportingText = {
   title: string;
   content: string;
-  type: "motivador" | "perspectiva";
+  type: "motivador" | "perspectiva" | "dados" | "repertorio" | "imagem";
 };
 
 export type InlineAnnotation = {
@@ -115,7 +115,34 @@ export type Course = {
   completed: boolean;
   xp_reward: number;
   user_rank: RankSummary | null;
-  modules: { id: number; title: string; description: string; order: number; progress_percent: number; completed: boolean; xp_reward: number; lessons: Lesson[] }[];
+  modules: {
+    id: number;
+    title: string;
+    description: string;
+    order: number;
+    progress_percent: number;
+    completed: boolean;
+    xp_reward: number;
+    lessons: Lesson[];
+    items?: ModuleItem[];
+  }[];
+};
+
+export type ModuleActivity = {
+  id: number;
+  statement: string;
+  skill: string;
+  difficulty: string;
+  lesson_id: number | null;
+  base_lesson_ids: number[];
+};
+
+export type ModuleItem = {
+  id: number;
+  kind: "lesson" | "activity";
+  order: number;
+  lesson?: Lesson | null;
+  activity?: ModuleActivity | null;
 };
 
 export type Exercise = {
@@ -251,12 +278,34 @@ export type AdminLesson = {
   order: number;
 };
 
+export type AdminActivity = {
+  id: number;
+  statement: string;
+  options: string[];
+  correct_answer: "A" | "B" | "C" | "D" | "E";
+  explanation: string;
+  skill: string;
+  difficulty: "easy" | "medium" | "hard";
+  lesson_id: number | null;
+  base_lesson_ids: number[];
+  order: number;
+};
+
+export type AdminModuleItem = {
+  id: number;
+  kind: "lesson" | "activity";
+  order: number;
+  lesson: AdminLesson | null;
+  activity: AdminActivity | null;
+};
+
 export type AdminModule = {
   id: number;
   title: string;
   description: string;
   order: number;
   lessons: AdminLesson[];
+  items?: AdminModuleItem[];
 };
 
 export type AdminCourse = {
@@ -289,6 +338,7 @@ export type DailyUsage = {
 
 export type AITelemetry = {
   period_days: number;
+  has_data: boolean;
   total_tokens: number;
   total_calls: number;
   error_calls: number;

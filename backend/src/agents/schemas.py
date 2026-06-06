@@ -84,16 +84,19 @@ class ExerciseGenerationResult(BaseModel):
     adaptation_reason: str
 
 
+SupportingTextType = Literal["motivador", "perspectiva", "dados", "repertorio", "imagem"]
+
+
 class GeneratedSupportingText(BaseModel):
     title: str = Field(min_length=4, max_length=120)
     content: str = Field(min_length=80, max_length=900)
-    type: Literal["motivador", "perspectiva"] = "motivador"
+    type: SupportingTextType = "motivador"
 
 
 class EssayThemeGenerationResult(BaseModel):
     title: str = Field(min_length=20, max_length=220)
     context: str = Field(min_length=120, max_length=1800)
-    supporting_texts: list[GeneratedSupportingText] = Field(min_length=2, max_length=3)
+    supporting_texts: list[GeneratedSupportingText] = Field(min_length=1, max_length=8)
     rationale: str = Field(min_length=20, max_length=500)
 
 

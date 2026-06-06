@@ -8,18 +8,21 @@ import unicodedata
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
+from src.agents.exercise import ExerciseGeneratorAgent
 from src.agents.game_generator import GameGeneratorAgent
 from src.agents.theme_generator import ThemeGeneratorAgent
 from src.config.settings import settings
 from src.middlewares.errors import AppError
-from src.models import AIInteractionLog, Course, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, Module, User
+from src.models import AIInteractionLog, Course, Difficulty, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, Module, ModuleItem, User
 from src.models.events import AIGeneratedGame, UserEvent
 from src.repositories.users import UserRepository
 from src.schemas.admin import (
     AdminMetricsResponse,
+    AdminActivityRead,
     AdminCourseRead,
     AdminLessonRead,
     AdminModuleRead,
+    AdminModuleItemRead,
     AdminUserAIUsage,
     AdminUserDetailResponse,
     AdminUserLearningProfile,
@@ -65,13 +68,20 @@ class AdminService:
     def list_essay_themes(self) -> list[EssayTheme]:
         return list(self.db.scalars(select(EssayTheme).where(EssayTheme.is_active.is_(True)).order_by(EssayTheme.created_at.desc())))
 
-    def generate_essay_theme(self, *, focus: str | None, admin_user_id: int) -> EssayTheme:
+    def generate_essay_theme(
+        self,
+        *,
+        focus: str | None,
+        admin_user_id: int,
+        supporting_text_requirements: dict[str, int] | None = None,
+    ) -> EssayTheme:
         existing_titles = [theme.title for theme in self.db.scalars(select(EssayTheme))]
         agent = ThemeGeneratorAgent()
         result = agent.generate_batch(
             focus=focus,
             existing_titles=existing_titles,
             count=1,
+            supporting_text_requirements=supporting_text_requirements,
             user_id=admin_user_id,
             session_id=f"admin:{admin_user_id}:theme-generator",
         )
@@ -84,7 +94,10 @@ class AdminService:
             title=title,
             context=generated.context,
             source="IA Donc ENEM",
-            supporting_texts=[supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+            supporting_texts=self._normalize_supporting_texts(
+                [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+                requirements=supporting_text_requirements,
+            ),
             is_active=True,
         )
         self.db.add(theme)
@@ -94,7 +107,7 @@ class AdminService:
             agent="ThemeGeneratorAgent",
             user_id=admin_user_id,
             runner=agent.runner,
-            meta={"focus": focus, "generated_count": 1},
+            meta={"focus": focus, "generated_count": 1, "supporting_text_requirements": supporting_text_requirements or {}},
         )
         self.db.commit()
         self.db.refresh(theme)
@@ -106,7 +119,7 @@ class AdminService:
         theme_id: int,
         title: str | None = None,
         context: str | None = None,
-        source: str | None = None,
+        supporting_texts: list[dict] | None = None,
     ) -> EssayTheme:
         theme = self._get_active_essay_theme(theme_id)
         if title is not None:
@@ -128,14 +141,34 @@ class AdminService:
             if len(cleaned_context) < 20:
                 raise AppError("Contexto do tema precisa ter pelo menos 20 caracteres.", status_code=422, code="invalid_theme_context")
             theme.context = cleaned_context
-        if source is not None:
-            cleaned_source = source.strip()
-            if len(cleaned_source) < 2:
-                raise AppError("Fonte do tema precisa ter pelo menos 2 caracteres.", status_code=422, code="invalid_theme_source")
-            theme.source = cleaned_source
+        if supporting_texts is not None:
+            theme.supporting_texts = self._normalize_supporting_texts(supporting_texts)
         self.db.commit()
         self.db.refresh(theme)
         return theme
+
+    def _normalize_supporting_texts(self, texts: list[dict], requirements: dict[str, int] | None = None) -> list[dict]:
+        allowed = {"motivador", "perspectiva", "dados", "repertorio", "imagem"}
+        cleaned: list[dict] = []
+        for item in texts:
+            kind = str(item.get("type") or "motivador").strip()
+            title = str(item.get("title") or "").strip()
+            content = str(item.get("content") or "").strip()
+            if kind not in allowed:
+                raise AppError("Tipo de texto motivador invalido.", status_code=422, code="invalid_supporting_text_type")
+            if len(title) < 4:
+                raise AppError("Titulo do texto motivador precisa ter pelo menos 4 caracteres.", status_code=422, code="invalid_supporting_text")
+            if len(content) < 40:
+                raise AppError("Texto motivador precisa ter pelo menos 40 caracteres.", status_code=422, code="invalid_supporting_text")
+            cleaned.append({"title": title, "content": content, "type": kind})
+        if not cleaned:
+            raise AppError("Adicione pelo menos um texto motivador.", status_code=422, code="missing_supporting_texts")
+        if len(cleaned) > 8:
+            raise AppError("Use no maximo 8 textos motivadores por tema.", status_code=422, code="too_many_supporting_texts")
+        for kind, amount in (requirements or {}).items():
+            if amount > 0 and sum(1 for item in cleaned if item["type"] == kind) < amount:
+                raise AppError("A IA nao gerou a quantidade solicitada de textos motivadores.", status_code=422, code="supporting_text_count_mismatch")
+        return cleaned
 
     def delete_essay_theme(self, *, theme_id: int) -> None:
         theme = self._get_active_essay_theme(theme_id)
@@ -340,7 +373,12 @@ class AdminService:
     def content_tree(self) -> list[AdminCourseRead]:
         courses = self.db.scalars(
             select(Course)
-            .options(selectinload(Course.modules).selectinload(Module.lessons))
+            .options(
+                selectinload(Course.modules).selectinload(Module.lessons),
+                selectinload(Course.modules).selectinload(Module.exercises),
+                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.lesson),
+                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.exercise),
+            )
             .order_by(Course.id)
         ).all()
         return [self._course_to_admin_read(course) for course in courses]
@@ -383,6 +421,8 @@ class AdminService:
         module = self.db.get(Module, module_id)
         if not module:
             raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        lesson_order = order or self._next_lesson_order(module_id)
+        item_order = order or self._next_item_order(module_id)
         lesson = Lesson(
             module_id=module_id,
             title=title.strip(),
@@ -391,17 +431,125 @@ class AdminService:
             video_url=video_url.strip() or "https://www.youtube.com/embed/dQw4w9WgXcQ",
             summary=summary.strip(),
             duration_minutes=duration_minutes,
-            order=order or self._next_lesson_order(module_id),
+            order=lesson_order,
         )
         self.db.add(lesson)
+        self.db.flush()
+        self.db.add(
+            ModuleItem(
+                module_id=module_id,
+                kind="lesson",
+                lesson_id=lesson.id,
+                order=item_order,
+            )
+        )
         self.db.commit()
         self.db.refresh(lesson)
         return self._lesson_to_admin_read(lesson)
 
+    def create_activity(
+        self,
+        *,
+        module_id: int,
+        statement: str,
+        options: list[str],
+        correct_answer: str,
+        explanation: str,
+        skill: str,
+        difficulty: str,
+        lesson_id: int | None,
+        base_lesson_ids: list[int],
+        order: int | None,
+    ) -> AdminCourseRead:
+        module = self.db.get(Module, module_id)
+        if not module:
+            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        self._validate_activity_lessons(module_id=module_id, lesson_id=lesson_id, base_lesson_ids=base_lesson_ids)
+        exercise = Exercise(
+            module_id=module_id,
+            lesson_id=lesson_id,
+            statement=statement.strip(),
+            options=[option.strip() for option in options],
+            correct_answer=correct_answer,
+            explanation=explanation.strip(),
+            skill=skill.strip(),
+            difficulty=Difficulty(difficulty),
+            base_lesson_ids=base_lesson_ids,
+        )
+        self.db.add(exercise)
+        self.db.flush()
+        item_order = order or self._next_item_order(module_id)
+        self.db.add(ModuleItem(module_id=module_id, kind="activity", exercise_id=exercise.id, order=item_order))
+        self.db.commit()
+        return self._course_read_by_id(module.course_id)
+
+    def generate_activity_drafts(
+        self,
+        *,
+        module_id: int,
+        lesson_ids: list[int],
+        difficulty: str,
+        count: int,
+        focus: str | None,
+        admin_user_id: int,
+    ) -> list[AdminActivityRead]:
+        module = self.db.get(Module, module_id)
+        if not module:
+            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+        lessons = list(
+            self.db.scalars(select(Lesson).where(Lesson.module_id == module_id, Lesson.id.in_(lesson_ids)).order_by(Lesson.order, Lesson.id))
+        )
+        if len(lessons) != len(set(lesson_ids)):
+            raise AppError("Selecione apenas aulas deste modulo.", status_code=422, code="invalid_activity_lessons")
+        lesson_context = "\n\n".join(
+            f"Aula: {lesson.title}\nDescricao: {lesson.description}\nResumo: {lesson.summary}" for lesson in lessons
+        )
+        generation_focus = focus.strip() if focus else f"atividade de fixacao com base nas aulas selecionadas:\n{lesson_context}"
+        agent = ExerciseGeneratorAgent()
+        result = agent.generate(
+            focus=generation_focus,
+            difficulty=difficulty,  # type: ignore[arg-type]
+            count=count,
+            profile={"source": "admin_course_builder", "lesson_ids": lesson_ids},
+            user_id=admin_user_id,
+            session_id=f"admin:{admin_user_id}:course-activity",
+        )
+        record_ai_interaction(
+            self.db,
+            workflow="admin_activity_generation",
+            agent="ExerciseGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"module_id": module_id, "lesson_ids": lesson_ids, "difficulty": difficulty, "count": count},
+        )
+        drafts: list[AdminActivityRead] = []
+        for index, question in enumerate(result.questions[:count], start=1):
+            drafts.append(
+                AdminActivityRead(
+                    id=0 - index,
+                    statement=question.statement,
+                    options=question.options,
+                    correct_answer=question.correct_answer,
+                    explanation=question.explanation,
+                    skill=question.skill,
+                    difficulty=question.difficulty,
+                    lesson_id=lesson_ids[-1] if lesson_ids else None,
+                    base_lesson_ids=lesson_ids,
+                    order=self._next_item_order(module_id),
+                )
+            )
+        self.db.commit()
+        return drafts
+
     def _course_read_by_id(self, course_id: int) -> AdminCourseRead:
         course = self.db.scalars(
             select(Course)
-            .options(selectinload(Course.modules).selectinload(Module.lessons))
+            .options(
+                selectinload(Course.modules).selectinload(Module.lessons),
+                selectinload(Course.modules).selectinload(Module.exercises),
+                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.lesson),
+                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.exercise),
+            )
             .where(Course.id == course_id)
         ).first()
         if not course:
@@ -503,6 +651,9 @@ class AdminService:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
             raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+        item = self.db.scalar(select(ModuleItem).where(ModuleItem.lesson_id == lesson_id))
+        if item:
+            return self.move_module_item(item_id=item.id, direction=direction)
         siblings = list(
             self.db.scalars(
                 select(Lesson).where(Lesson.module_id == lesson.module_id).order_by(Lesson.order, Lesson.id)
@@ -511,6 +662,71 @@ class AdminService:
         self._swap_order(siblings, lesson.id, direction)
         self.db.commit()
         return self._course_read_by_id(self.db.get(Module, lesson.module_id).course_id)
+
+    def update_activity(
+        self,
+        *,
+        activity_id: int,
+        statement: str | None,
+        options: list[str] | None,
+        correct_answer: str | None,
+        explanation: str | None,
+        skill: str | None,
+        difficulty: str | None,
+        lesson_id: int | None,
+        base_lesson_ids: list[int] | None,
+    ) -> AdminCourseRead:
+        exercise = self.db.get(Exercise, activity_id)
+        if not exercise:
+            raise AppError("Atividade nao encontrada.", status_code=404, code="activity_not_found")
+        if base_lesson_ids is not None or lesson_id is not None:
+            self._validate_activity_lessons(
+                module_id=exercise.module_id,
+                lesson_id=lesson_id,
+                base_lesson_ids=base_lesson_ids if base_lesson_ids is not None else exercise.base_lesson_ids,
+            )
+        if statement is not None:
+            exercise.statement = statement.strip()
+        if options is not None:
+            exercise.options = [option.strip() for option in options]
+        if correct_answer is not None:
+            exercise.correct_answer = correct_answer
+        if explanation is not None:
+            exercise.explanation = explanation.strip()
+        if skill is not None:
+            exercise.skill = skill.strip()
+        if difficulty is not None:
+            exercise.difficulty = Difficulty(difficulty)
+        if lesson_id is not None:
+            exercise.lesson_id = lesson_id
+        if base_lesson_ids is not None:
+            exercise.base_lesson_ids = base_lesson_ids
+        self.db.commit()
+        return self._course_read_by_id(self.db.get(Module, exercise.module_id).course_id)
+
+    def delete_activity(self, *, activity_id: int) -> AdminCourseRead:
+        exercise = self.db.get(Exercise, activity_id)
+        if not exercise:
+            raise AppError("Atividade nao encontrada.", status_code=404, code="activity_not_found")
+        course_id = self.db.get(Module, exercise.module_id).course_id
+        item = self.db.scalar(select(ModuleItem).where(ModuleItem.exercise_id == activity_id))
+        if item:
+            self.db.delete(item)
+        self.db.delete(exercise)
+        self.db.commit()
+        return self._course_read_by_id(course_id)
+
+    def move_module_item(self, *, item_id: int, direction: str) -> AdminCourseRead:
+        item = self.db.get(ModuleItem, item_id)
+        if not item:
+            raise AppError("Item do modulo nao encontrado.", status_code=404, code="module_item_not_found")
+        siblings = list(
+            self.db.scalars(select(ModuleItem).where(ModuleItem.module_id == item.module_id).order_by(ModuleItem.order, ModuleItem.id))
+        )
+        self._swap_order(siblings, item.id, direction)
+        self._sync_lesson_orders(item.module_id)
+        self.db.commit()
+        return self._course_read_by_id(self.db.get(Module, item.module_id).course_id)
 
     def _swap_order(self, siblings: list, item_id: int, direction: str) -> None:
         # Normaliza ordens sequenciais (1..n) e troca com o vizinho.
@@ -531,6 +747,30 @@ class AdminService:
     def _next_lesson_order(self, module_id: int) -> int:
         current = self.db.scalar(select(func.max(Lesson.order)).where(Lesson.module_id == module_id)) or 0
         return int(current) + 1
+
+    def _next_item_order(self, module_id: int) -> int:
+        current = self.db.scalar(select(func.max(ModuleItem.order)).where(ModuleItem.module_id == module_id)) or 0
+        if current:
+            return int(current) + 1
+        return self._next_lesson_order(module_id)
+
+    def _sync_lesson_orders(self, module_id: int) -> None:
+        items = list(
+            self.db.scalars(
+                select(ModuleItem).where(ModuleItem.module_id == module_id, ModuleItem.kind == "lesson").order_by(ModuleItem.order, ModuleItem.id)
+            )
+        )
+        for position, item in enumerate(items, start=1):
+            if item.lesson:
+                item.lesson.order = position
+
+    def _validate_activity_lessons(self, *, module_id: int, lesson_id: int | None, base_lesson_ids: list[int]) -> None:
+        ids = {item for item in [lesson_id, *base_lesson_ids] if item is not None}
+        if not ids:
+            return
+        found = set(self.db.scalars(select(Lesson.id).where(Lesson.module_id == module_id, Lesson.id.in_(ids))))
+        if found != ids:
+            raise AppError("Selecione apenas aulas deste modulo para a atividade.", status_code=422, code="invalid_activity_lessons")
 
     def _unique_course_slug(self, value: str) -> str:
         base = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-") or "curso"
@@ -555,12 +795,14 @@ class AdminService:
 
     def _module_to_admin_read(self, module: Module) -> AdminModuleRead:
         lessons = sorted(module.lessons, key=lambda item: item.order)
+        items = self._module_items(module)
         return AdminModuleRead(
             id=module.id,
             title=module.title,
             description=module.description,
             order=module.order,
             lessons=[self._lesson_to_admin_read(lesson) for lesson in lessons],
+            items=items,
         )
 
     def _lesson_to_admin_read(self, lesson: Lesson) -> AdminLessonRead:
@@ -574,6 +816,41 @@ class AdminService:
             duration_minutes=lesson.duration_minutes,
             order=lesson.order,
         )
+
+    def _activity_to_admin_read(self, exercise: Exercise, order: int | None = None) -> AdminActivityRead:
+        item_order = order
+        if item_order is None and exercise.module_item:
+            item_order = exercise.module_item.order
+        return AdminActivityRead(
+            id=exercise.id,
+            statement=exercise.statement,
+            options=exercise.options,
+            correct_answer=exercise.correct_answer,
+            explanation=exercise.explanation,
+            skill=exercise.skill,
+            difficulty=exercise.difficulty.value,
+            lesson_id=exercise.lesson_id,
+            base_lesson_ids=exercise.base_lesson_ids or [],
+            order=item_order or 0,
+        )
+
+    def _module_items(self, module: Module) -> list[AdminModuleItemRead]:
+        explicit_items = [item for item in module.items if (item.kind == "lesson" and item.lesson) or (item.kind == "activity" and item.exercise)]
+        if not explicit_items:
+            return [
+                AdminModuleItemRead(id=0 - lesson.id, kind="lesson", order=lesson.order, lesson=self._lesson_to_admin_read(lesson))
+                for lesson in sorted(module.lessons, key=lambda item: (item.order, item.id))
+            ]
+        return [
+            AdminModuleItemRead(
+                id=item.id,
+                kind="lesson" if item.kind == "lesson" else "activity",
+                order=item.order,
+                lesson=self._lesson_to_admin_read(item.lesson) if item.kind == "lesson" and item.lesson else None,
+                activity=self._activity_to_admin_read(item.exercise, order=item.order) if item.kind == "activity" and item.exercise else None,
+            )
+            for item in sorted(explicit_items, key=lambda entry: (entry.order, entry.id))
+        ]
 
     def ai_telemetry(self, period_days: int = 30) -> AITelemetryResponse:
         since = datetime.now(timezone.utc) - timedelta(days=period_days)
@@ -657,6 +934,7 @@ class AdminService:
 
         return AITelemetryResponse(
             period_days=period_days,
+            has_data=total_calls > 0,
             total_tokens=total_tokens,
             total_calls=total_calls,
             error_calls=error_calls,

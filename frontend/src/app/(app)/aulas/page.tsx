@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, CheckCircle2, ChevronDown, CirclePlay, Flame, LockKeyhole, type LucideIcon } from "lucide-react";
+import { BookOpen, CheckCircle2, ChevronDown, CirclePlay, ClipboardList, Flame, LockKeyhole, type LucideIcon } from "lucide-react";
 
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
@@ -10,6 +10,7 @@ import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { apiFetch, type Course, type Lesson } from "@/services/api";
+import type { ModuleItem } from "@/types/api";
 import { cn } from "@/utils";
 
 type CourseModule = Course["modules"][number];
@@ -44,7 +45,7 @@ export default function LessonsPage() {
       <PageHeader
         eyebrow="Cursos"
         title="Trilha de aulas"
-        description="Curso, modulos e aulas em uma sequencia unica. Concluir aulas libera XP; fechar modulos e o curso libera bonus maiores."
+        description="Cursos, módulos e atividades em uma sequência clara. Concluir aulas libera XP; fechar módulos e cursos libera bônus maiores."
       />
 
       <div className="space-y-3">
@@ -122,6 +123,7 @@ function CoursePanel({ course }: { course: Course }) {
 
 function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModule; index: number; open: boolean; onToggle: () => void }) {
   const lessons = module.lessons ?? [];
+  const items = module.items?.length ? module.items : lessons.map((lesson) => ({ id: -lesson.id, kind: "lesson" as const, order: lesson.order, lesson, activity: null }));
   const completedLessons = lessons.filter((lesson) => lesson.progress.completed).length;
   const moduleProgress = module.progress_percent ?? progressFromLessons(lessons);
 
@@ -134,7 +136,7 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-safe text-lg font-semibold tracking-normal">{module.title}</h3>
-            {module.completed ? <Badge variant="success">modulo concluido</Badge> : null}
+            {module.completed ? <Badge variant="success">módulo concluído</Badge> : null}
             <Badge variant="outline">{module.xp_reward ?? 75}xp bonus</Badge>
           </div>
           <p className="mt-1 text-sm leading-5 text-muted-foreground">{module.description}</p>
@@ -152,14 +154,18 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
       {open ? (
         <div className="mt-4 border-t border-border pt-3">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Conteudo do modulo</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Conteúdo do módulo</p>
             <span className="text-xs font-semibold text-muted-foreground">
               {completedLessons}/{lessons.length} aulas
             </span>
           </div>
           <div className="grid gap-1.5">
-            {lessons.map((lesson) => (
-              <LessonRow key={lesson.id} lesson={lesson} moduleOrder={module.order} />
+            {items.map((item) => (
+              item.kind === "lesson" && item.lesson ? (
+                <LessonRow key={`lesson-${item.id}`} lesson={item.lesson} moduleOrder={module.order} itemOrder={item.order} />
+              ) : item.activity ? (
+                <ActivityRow key={`activity-${item.id}`} item={item} moduleOrder={module.order} />
+              ) : null
             ))}
           </div>
         </div>
@@ -168,7 +174,7 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
   );
 }
 
-function LessonRow({ lesson, moduleOrder }: { lesson: Lesson; moduleOrder: number }) {
+function LessonRow({ lesson, moduleOrder, itemOrder }: { lesson: Lesson; moduleOrder: number; itemOrder: number }) {
   const completed = lesson.progress.completed;
 
   return (
@@ -181,7 +187,7 @@ function LessonRow({ lesson, moduleOrder }: { lesson: Lesson; moduleOrder: numbe
       </span>
       <span className="min-w-0 flex-1">
         <span className="text-safe block text-sm font-semibold">
-          {moduleOrder}.{lesson.order} - {lesson.title}
+          {moduleOrder}.{itemOrder} - {lesson.title}
         </span>
         <span className="text-xs text-muted-foreground">{lesson.duration_minutes} min</span>
       </span>
@@ -191,6 +197,25 @@ function LessonRow({ lesson, moduleOrder }: { lesson: Lesson; moduleOrder: numbe
         aria-hidden="true"
       />
     </Link>
+  );
+}
+
+function ActivityRow({ item, moduleOrder }: { item: ModuleItem; moduleOrder: number }) {
+  const activity = item.activity;
+  if (!activity) return null;
+  return (
+    <div className="flex min-h-11 items-center gap-3 rounded-md border border-border bg-background/35 px-2.5 py-1.5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center text-amber-600">
+        <ClipboardList className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-safe block text-sm font-semibold">
+          {moduleOrder}.{item.order} - Atividade de fixação
+        </span>
+        <span className="line-clamp-1 text-xs text-muted-foreground">{activity.statement}</span>
+      </span>
+      <Badge variant="outline" className="shrink-0 text-xs">{difficultyLabel[activity.difficulty] ?? "essencial"}</Badge>
+    </div>
   );
 }
 

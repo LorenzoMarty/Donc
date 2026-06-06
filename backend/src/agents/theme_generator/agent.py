@@ -13,7 +13,7 @@ THEME_GENERATOR_INSTRUCTIONS = """
 <rules>
   <rule>O titulo deve ter formato de tema ENEM: problema social + recorte brasileiro.</rule>
   <rule>O contexto deve orientar o estudante sem entregar tese pronta.</rule>
-  <rule>Inclua 2 a 3 textos motivadores curtos, variados e sem inventar estatisticas especificas.</rule>
+  <rule>Inclua textos de apoio curtos, variados e sem inventar estatisticas especificas.</rule>
   <rule>Quando solicitado um lote, os titulos devem ser distintos entre si e diferentes dos titulos ja existentes.</rule>
   <rule>Evite temas ofensivos, partidarios, sensacionalistas ou que exijam experiencia pessoal sensivel.</rule>
   <rule>Priorize cidadania, educacao, tecnologia, meio ambiente, cultura, saude publica ou desigualdades.</rule>
@@ -30,10 +30,17 @@ class ThemeGeneratorAgent:
         self,
         *,
         focus: str | None = None,
+        supporting_text_requirements: dict[str, int] | None = None,
         user_id: int | None = None,
         session_id: str | None = None,
     ) -> EssayThemeGenerationResult:
-        return self.generate_batch(focus=focus, count=1, user_id=user_id, session_id=session_id).themes[0]
+        return self.generate_batch(
+            focus=focus,
+            count=1,
+            supporting_text_requirements=supporting_text_requirements,
+            user_id=user_id,
+            session_id=session_id,
+        ).themes[0]
 
     def generate_batch(
         self,
@@ -41,12 +48,19 @@ class ThemeGeneratorAgent:
         focus: str | None = None,
         existing_titles: list[str] | None = None,
         count: int = 4,
+        supporting_text_requirements: dict[str, int] | None = None,
         user_id: int | None = None,
         session_id: str | None = None,
     ) -> EssayThemeBatchGenerationResult:
         safe_focus = focus.strip() if focus else "tema atual de impacto social no Brasil"
         safe_count = min(max(count, 1), 4)
         known_titles = existing_titles or []
+        requirements = {
+            key: max(0, min(5, int(value)))
+            for key, value in (supporting_text_requirements or {"motivador": 2, "perspectiva": 1}).items()
+            if int(value) > 0
+        }
+        requirements_block = "\n".join(f"- {kind}: {amount}" for kind, amount in requirements.items()) or "- motivador: 2"
         fallback = self._fallback_batch(focus=safe_focus, existing_titles=known_titles, count=safe_count)
         existing_block = "\n".join(f"- {title}" for title in known_titles[:80]) or "Nenhum titulo existente informado."
         prompt = f"""
@@ -54,6 +68,8 @@ Foco desejado: {safe_focus}
 Publico: estudantes brasileiros treinando redacao ENEM.
 Quantidade obrigatoria: {safe_count} temas.
 Formato: lista com exatamente {safe_count} propostas de redacao, cada uma com titulo, contexto e textos motivadores.
+Tipos e quantidades obrigatorias de textos de apoio por tema:
+{requirements_block}
 Titulos ja existentes que nao podem ser repetidos:
 {existing_block}
 Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo do lote, mesmo com pequenas variacoes de maiusculas, acentos ou pontuacao.

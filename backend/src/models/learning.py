@@ -38,6 +38,22 @@ class Module(Base):
     course = relationship("Course", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     exercises = relationship("Exercise", back_populates="module", cascade="all, delete-orphan")
+    items = relationship("ModuleItem", back_populates="module", cascade="all, delete-orphan")
+
+
+class ModuleItem(Base):
+    __tablename__ = "module_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    lesson_id: Mapped[int | None] = mapped_column(ForeignKey("lessons.id", ondelete="CASCADE"), nullable=True)
+    exercise_id: Mapped[int | None] = mapped_column(ForeignKey("exercises.id", ondelete="CASCADE"), nullable=True)
+    order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    module = relationship("Module", back_populates="items")
+    lesson = relationship("Lesson", back_populates="module_item")
+    exercise = relationship("Exercise", back_populates="module_item")
 
 
 class Lesson(Base):
@@ -56,6 +72,7 @@ class Lesson(Base):
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson")
     progress = relationship("LessonProgress", back_populates="lesson", cascade="all, delete-orphan")
+    module_item = relationship("ModuleItem", back_populates="lesson", uselist=False)
 
 
 class Exercise(Base):
@@ -70,10 +87,12 @@ class Exercise(Base):
     explanation: Mapped[str] = mapped_column(Text, nullable=False)
     skill: Mapped[str] = mapped_column(String(160), nullable=False)
     difficulty: Mapped[Difficulty] = mapped_column(SQLEnum(Difficulty), default=Difficulty.MEDIUM, nullable=False)
+    base_lesson_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
 
     module = relationship("Module", back_populates="exercises")
     lesson = relationship("Lesson", back_populates="exercises")
     answers = relationship("ExerciseAnswer", back_populates="exercise", cascade="all, delete-orphan")
+    module_item = relationship("ModuleItem", back_populates="exercise", uselist=False)
 
 
 class ExerciseAnswer(Base):

@@ -141,14 +141,79 @@ def test_admin_can_update_essay_theme(client):
             json={
                 "title": "Desafios para a mobilidade urbana sustentavel no Brasil",
                 "context": "Analise transporte publico, inclusao social, sustentabilidade e planejamento urbano.",
-                "source": "Equipe pedagogica",
+                "supporting_texts": [
+                    {
+                        "title": "Texto motivador I",
+                        "content": "O transporte publico de qualidade amplia acesso a escola, trabalho e cultura nas cidades brasileiras.",
+                        "type": "motivador",
+                    },
+                    {
+                        "title": "Dados urbanos",
+                        "content": "Indicadores de mobilidade ajudam a avaliar tempo de deslocamento, custo da passagem e acesso desigual.",
+                        "type": "dados",
+                    },
+                ],
             },
         )
         assert update_response.status_code == 200
         updated = api_data(update_response)
         assert updated["title"] == "Desafios para a mobilidade urbana sustentavel no Brasil"
         assert updated["context"].startswith("Analise transporte publico")
-        assert updated["source"] == "Equipe pedagogica"
+        assert [item["type"] for item in updated["supporting_texts"]] == ["motivador", "dados"]
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+
+def test_admin_can_create_activity_between_lessons(client):
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        course_response = client.post(
+            "/api/v1/admin/courses",
+            json={"title": "Curso Atividades", "description": "Curso usado para validar atividades entre aulas."},
+        )
+        course = api_data(course_response)
+        module_response = client.post(
+            f"/api/v1/admin/courses/{course['id']}/modules",
+            json={"title": "Modulo Atividades", "description": "Modulo com aulas e atividade."},
+        )
+        module = api_data(module_response)
+        first = api_data(
+            client.post(
+                f"/api/v1/admin/modules/{module['id']}/lessons",
+                json={"title": "Aula Base 1", "description": "Primeira aula base.", "summary": "Resumo suficiente da primeira aula."},
+            )
+        )
+        second = api_data(
+            client.post(
+                f"/api/v1/admin/modules/{module['id']}/lessons",
+                json={"title": "Aula Base 2", "description": "Segunda aula base.", "summary": "Resumo suficiente da segunda aula."},
+            )
+        )
+
+        activity_response = client.post(
+            f"/api/v1/admin/modules/{module['id']}/activities",
+            json={
+                "statement": "Qual alternativa melhor conecta as duas aulas ao planejamento da redacao?",
+                "options": [
+                    "A) Ignorar o recorte do tema.",
+                    "B) Relacionar tese, argumento e exemplo.",
+                    "C) Copiar integralmente a coletanea.",
+                    "D) Encerrar sem proposta.",
+                    "E) Usar repertorio sem explicar.",
+                ],
+                "correct_answer": "B",
+                "explanation": "A alternativa B integra projeto argumentativo e uso produtivo das aulas.",
+                "skill": "Projeto de texto",
+                "difficulty": "medium",
+                "lesson_id": second["id"],
+                "base_lesson_ids": [first["id"], second["id"]],
+            },
+        )
+        assert activity_response.status_code == 201
+        updated_course = api_data(activity_response)
+        updated_module = updated_course["modules"][0]
+        assert [item["kind"] for item in updated_module["items"]] == ["lesson", "lesson", "activity"]
+        assert updated_module["items"][2]["activity"]["base_lesson_ids"] == [first["id"], second["id"]]
     finally:
         app.dependency_overrides.pop(require_admin, None)
 
