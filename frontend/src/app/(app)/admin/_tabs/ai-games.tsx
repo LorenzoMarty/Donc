@@ -6,6 +6,10 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/http-client";
 import type { AIGeneratedGame, GameQuestion } from "@/types/api";
 import { cn } from "@/utils";
@@ -133,20 +137,20 @@ function GameCard({
       </button>
 
       {open && (
-        <div className="border-t p-4 space-y-4">
+        <div className="collapse-in border-t p-4 space-y-4">
           <div className="space-y-4">
             {questions.map((q, qi) => (
-              <div key={qi} className="rounded-md border bg-background/60 p-3 space-y-2">
+              <div key={qi} className="rounded-md border bg-background/60 p-3 space-y-2.5">
                 <div className="flex items-start gap-2">
-                  <span className="mt-0.5 text-xs font-bold text-muted-foreground shrink-0">Q{qi + 1}</span>
-                  <textarea
+                  <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[0.65rem] font-bold text-primary">Q{qi + 1}</span>
+                  <Textarea
                     value={q.prompt}
                     onChange={(e) => updateField(qi, "prompt", e.target.value)}
-                    className="w-full resize-none rounded border bg-background p-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                    className="min-h-0 resize-none text-sm"
                     rows={2}
                   />
                 </div>
-                <div className="grid gap-1.5 pl-5">
+                <div className="grid gap-1.5 pl-8">
                   {q.options.map((opt, oi) => (
                     <div key={oi} className="flex items-center gap-2">
                       <button
@@ -154,25 +158,18 @@ function GameCard({
                         onClick={() => updateField(qi, "answer_index", oi)}
                         className={cn(
                           "h-5 w-5 shrink-0 rounded-full border-2 transition-colors",
-                          q.answer_index === oi ? "border-primary bg-primary" : "border-muted-foreground",
+                          q.answer_index === oi ? "border-primary bg-primary" : "border-muted-foreground hover:border-primary/50",
                         )}
                         title="Marcar como correta"
+                        aria-label={`Marcar alternativa ${oi + 1} como correta`}
                       />
-                      <input
-                        value={opt}
-                        onChange={(e) => updateOption(qi, oi, e.target.value)}
-                        className="flex-1 rounded border bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
-                      />
+                      <Input value={opt} onChange={(e) => updateOption(qi, oi, e.target.value)} className="h-9 flex-1 text-xs" />
                     </div>
                   ))}
                 </div>
-                <div className="pl-5">
+                <div className="pl-8">
                   <p className="text-xs text-muted-foreground mb-1">Explicação:</p>
-                  <input
-                    value={q.explanation}
-                    onChange={(e) => updateField(qi, "explanation", e.target.value)}
-                    className="w-full rounded border bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
-                  />
+                  <Input value={q.explanation} onChange={(e) => updateField(qi, "explanation", e.target.value)} className="h-9 text-xs" />
                 </div>
               </div>
             ))}
@@ -184,11 +181,11 @@ function GameCard({
 
           {game.status === "pending" ? (
             <div className="space-y-3">
-              <textarea
+              <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas internas (opcional)..."
-                className="w-full resize-none rounded border bg-background p-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+                className="min-h-0 resize-none"
                 rows={2}
               />
               <div className="flex flex-wrap gap-2">
@@ -292,57 +289,25 @@ export function AIGamesTab({
           <h2 className="font-semibold">Gerar novo jogo com IA</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className="text-xs text-muted-foreground">Habilidade</label>
-            <input
-              value={skill}
-              onChange={(e) => setSkill(e.target.value)}
-              placeholder="ex: uso de conectivos adversativos"
-              className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Categoria</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
-            >
+          <Field label="Habilidade" className="lg:col-span-2">
+            <Input value={skill} onChange={(e) => setSkill(e.target.value)} placeholder="ex: uso de conectivos adversativos" />
+          </Field>
+          <Field label="Categoria">
+            <Select value={category} onChange={(e) => setCategory(e.target.value)}>
               {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Dificuldade</label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
-            >
+            </Select>
+          </Field>
+          <Field label="Dificuldade">
+            <Select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
               {DIFFICULTIES.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Questões por jogo</label>
-            <input
-              type="number"
-              min={3}
-              max={10}
-              value={count}
-              onChange={(e) => setCount(Number(e.target.value))}
-              className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Quantidade de jogos</label>
-            <input
-              type="number"
-              min={1}
-              max={5}
-              value={gamesCount}
-              onChange={(e) => setGamesCount(Number(e.target.value))}
-              className="mt-1 w-full rounded border bg-background px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
+            </Select>
+          </Field>
+          <Field label="Questões por jogo">
+            <Input type="number" min={3} max={10} value={count} onChange={(e) => setCount(Number(e.target.value))} />
+          </Field>
+          <Field label="Quantidade de jogos">
+            <Input type="number" min={1} max={5} value={gamesCount} onChange={(e) => setGamesCount(Number(e.target.value))} />
+          </Field>
         </div>
         <Button onClick={generate} disabled={generating}>
           {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

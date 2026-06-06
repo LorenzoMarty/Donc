@@ -6,8 +6,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 import { getCategoryBySlug, getGameById } from "@/features/gamification/catalog";
-import { ConnectivePrecisionSession } from "@/games/connectives/ConnectivePrecisionSession";
 import { EssayAssemblySession } from "@/games/structure/EssayAssemblySession";
+import { TimedRushSession } from "@/games/_engines/TimedRushSession";
+import { ClassifyDragSession } from "@/games/_engines/ClassifyDragSession";
+import { OrderSession } from "@/games/_engines/OrderSession";
+import { FillBlankSession } from "@/games/_engines/FillBlankSession";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +45,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const category = getCategoryBySlug(categorySlug);
 
   // Questoes sorteadas aleatoriamente a cada carga do jogo.
-  const questions = useMemo(() => (game ? shuffle(game.questions) : []), [game]);
+  const questions = useMemo(() => (game?.questions ? shuffle(game.questions) : []), [game]);
 
   useEffect(() => {
     hydrateRemoteGames();
@@ -83,13 +86,23 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
     );
   }
 
-  if (game.id === "connectives-precision") {
-    return <ConnectivePrecisionSession game={game} category={category} />;
+  // Roteamento por engine: cada engine interativo tem seu próprio componente.
+  if (game.engine === "timed-rush") {
+    return <TimedRushSession game={game} category={category} />;
   }
-
-  if (game.id === "essay-assembly") {
+  if (game.engine === "classify") {
+    return <ClassifyDragSession game={game} category={category} />;
+  }
+  if (game.engine === "order") {
+    return <OrderSession game={game} category={category} />;
+  }
+  if (game.engine === "fill-blank") {
+    return <FillBlankSession game={game} category={category} />;
+  }
+  if (game.engine === "sequence") {
     return <EssayAssemblySession game={game} category={category} />;
   }
+  // engine "quiz" e "choice" usam o render inline abaixo.
 
   function answer(index: number) {
     if (!question || selected !== null || result || !game) return;

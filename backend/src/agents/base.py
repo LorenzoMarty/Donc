@@ -59,7 +59,6 @@ class AgnoAgentRunner:
                     id=settings.openai_model,
                     api_key=settings.openai_api_key,
                     timeout=settings.ai_sync_timeout_seconds,
-                    fallback_models=[settings.openai_fallback_model] if settings.openai_fallback_model else None,
                 )
                 agent_kwargs: dict[str, Any] = {
                     "model": model,
@@ -188,7 +187,9 @@ class AgnoAgentRunner:
             pass
 
     def _extract_token_count(self, metrics: Any) -> int:
-        total = self._metric_value(metrics, {"total_tokens", "total_token_count", "tokens", "output_tokens", "input_tokens"})
+        total = self._metric_value(metrics, {"total_tokens", "total_token_count", "tokens"})
+        if total <= 0:
+            total = self._metric_value(metrics, {"input_tokens", "output_tokens"})
         return max(0, int(total or 0))
 
     def _metric_value(self, value: Any, keys: set[str]) -> int:

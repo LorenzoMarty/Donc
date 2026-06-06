@@ -12,6 +12,9 @@ Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar 
 
 Regras obrigatórias para trabalhar neste repositório:
 
+0. **Sempre responder em português (pt-BR).** Toda comunicação com o usuário deve ser em
+   português brasileiro, independentemente do idioma da pergunta.
+
 1. **Analisar o sistema só quando necessário.** Não rode análise completa (ex.: skill
    `analyze-system`, varredura ampla do código, `SYSTEM_ANALYSIS.md`) para tarefas pequenas ou
    localizadas. Análise ampla só quando a tarefa realmente exigir entender o sistema inteiro.
@@ -74,14 +77,21 @@ Em dev local sem Docker, `.env` define `NEXT_PUBLIC_API_URL=http://localhost:800
 - `src/app/(auth)/` — páginas de login/cadastro/recuperação de senha
 - `src/app/` (raiz) — páginas de marketing (landing, `pricing`, `sobre`, `plataforma`, `trilhas`)
 - `src/features/gamification/` — XP, ranks, streaks dos jogos (apenas client-side, persistido em localStorage via Zustand)
-- `src/games/` — definições estáticas de questões dos jogos (conectivos, gramática, estrutura, tese, repertório)
-- `src/game-pages/` — componentes de UI de sessão de jogo (CategoryPage, GameSession, etc.)
+- `src/games/` — definições estáticas dos jogos por categoria (`connectives`, `grammar`,
+  `structure`, `repertoire`, `thesis`, `competencies`, `challenges`). Cada `index.ts` exporta
+  `GameDefinition[]`. `src/games/_engines/` contém os componentes de engine interativos
+  reutilizáveis (`TimedRushSession`, `ClassifyDragSession`, `OrderSession`, `FillBlankSession`).
+- `src/game-pages/` — componentes de UI de sessão de jogo (CategoryPage, GameSession, etc.).
+  `GameSession` roteia por `game.engine` para o componente certo.
 - `src/components/shared/` — componentes reutilizáveis (AppShell, EssayEditor, LessonPlayer, charts)
   - `app-shell.tsx`: sidebar desktop. Nav **não** tem "Histórico" — a rota `/redacoes` existe mas é
     acessada via Painel/Perfil. Quando recolhida, a logo comprimida vira a seta de expandir no hover
     de qualquer ponto da sidebar (`group` no `<aside>` + `group-hover`). Estado persiste em
     `localStorage` (`sidebar-collapsed`).
-- `src/components/ui/` — primitivos shadcn/radix (Badge, Button, Card, etc.)
+- `src/components/ui/` — primitivos shadcn/radix (Badge, Button, Card, etc.). Formulários usam os
+  primitivos compartilhados `Input`/`Textarea`/`Select`/`Field` (label+hint+erro+contador) e o
+  `Modal` (props `icon`/`size`/`footer` + animação de entrada). Use-os nos formulários do admin
+  em vez de `<input>`/`<select>` crus.
 - `src/stores/game-store.ts` — Zustand store com persistência para XP/streak/progresso dos jogos
 - `src/lib/http-client.ts` — `apiFetch<T>()` adiciona Bearer token do localStorage + desempacota `ApiEnvelope<T>`
 - `src/services/api.ts` — re-exporta `apiFetch`, `authApi` e todos os tipos da API
@@ -114,6 +124,18 @@ Correção é assíncrona via Celery:
 
 ### Jogos (Client-side)
 XP, streaks e progresso dos jogos são **totalmente client-side** — sem chamadas ao backend. `useGameStore` (Zustand + chave localStorage `donk.games.v1`) rastreia tudo. Definições dos jogos ficam como TypeScript estático em `src/games/`.
+
+**Engines** (campo `engine` em `GameDefinition`, roteado por `GameSession`):
+- `quiz`/`choice` — múltipla escolha (render inline no `GameSession`).
+- `timed-rush` — rodada infinita cronometrada (combo/strike/timer); usa `questions`.
+- `classify` — arrastar itens para baldes (dnd-kit); usa `classify` (buckets + items).
+- `order` — ordenar frases por rodada (dnd-kit sortable); usa `order.rounds`.
+- `fill-blank` — digitar resposta com normalização tolerante; usa `fillBlank.rounds`.
+- `sequence` — montagem da redação (`EssayAssemblySession`, específico do `essay-assembly`).
+
+Há 7 categorias no hub, cada uma com ≥3 atividades. Para criar uma atividade nova, adicione uma
+`GameDefinition` ao `index.ts` da categoria com o `engine` e o payload correspondente — não é
+preciso tocar nos componentes de engine.
 
 ### Variáveis de Ambiente
 | Variável | Finalidade |

@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from src.agents.base import AgnoAgentRunner
+from src.config.settings import settings
 from src.models import AIInteractionLog
 
 
@@ -30,6 +31,9 @@ def record_ai_interaction(
         if prompt_hash is None and prompt is not None:
             prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
+        resolved_tokens = token_count if token_count is not None else (runner.last_token_count if runner is not None else 0)
+        cost_estimate = int((resolved_tokens / 1000) * settings.ai_cost_cents_per_1k_tokens)
+
         db.add(
             AIInteractionLog(
                 user_id=user_id,
@@ -38,8 +42,8 @@ def record_ai_interaction(
                 agent=agent,
                 status=status or (runner.last_status if runner is not None else "success"),
                 latency_ms=latency_ms if latency_ms is not None else (runner.last_latency_ms if runner is not None else 0),
-                token_count=token_count if token_count is not None else (runner.last_token_count if runner is not None else 0),
-                cost_estimate=0,
+                token_count=resolved_tokens,
+                cost_estimate=cost_estimate,
                 prompt_hash=prompt_hash,
                 error=error if error is not None else (runner.last_error if runner is not None else None),
                 meta={

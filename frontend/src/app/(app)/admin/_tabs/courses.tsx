@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import type { ReactNode } from "react";
 import { BookOpen, ChevronDown, ChevronRight, ChevronUp, ClipboardList, Folder, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/utils";
 import { apiFetch } from "@/services/api";
 import type { AdminActivity, AdminCourse, AdminLesson, AdminModule, AdminModuleItem } from "@/types/api";
 
@@ -190,9 +193,9 @@ function CourseNode({
   const modules = [...course.modules].sort((a, b) => a.order - b.order);
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="game-tile bg-card">
       <div className="flex items-start gap-3 border-b px-4 py-3">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="mt-0.5 text-muted-foreground" aria-label="Expandir curso">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="mt-0.5 text-muted-foreground transition-transform hover:text-foreground" aria-label="Expandir curso">
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
         <Folder className="mt-0.5 h-5 w-5 shrink-0" style={{ color: course.color }} aria-hidden="true" />
@@ -204,7 +207,7 @@ function CourseNode({
       </div>
 
       {open ? (
-        <div className="grid gap-2 p-3">
+        <div className="collapse-in grid gap-2 p-3">
           {modules.map((module, index) => (
             <ModuleNode
               key={module.id}
@@ -348,8 +351,13 @@ function CourseModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [description, setDescription] = useState(editing?.description ?? "");
   const [color, setColor] = useState(editing?.color ?? "#65BE02");
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const titleError = submitted && !title.trim() ? "Informe um título." : null;
+  const descError = submitted && !description.trim() ? "Informe uma descrição." : null;
 
   async function submit() {
+    setSubmitted(true);
     if (!title.trim() || !description.trim()) return toast.error("Informe título e descrição.");
     setBusy(true);
     try {
@@ -370,13 +378,32 @@ function CourseModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   }
 
   return (
-    <Modal open onClose={onClose} title={editing ? "Editar curso" : "Novo curso"}>
+    <Modal
+      open
+      onClose={onClose}
+      title={editing ? "Editar curso" : "Novo curso"}
+      description="Organize trilhas de conteúdo para os alunos."
+      icon={Folder}
+      footer={<ModalActions busy={busy} onClose={onClose} onSubmit={submit} />}
+    >
       <div className="grid gap-3">
-        <Field label="Título"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-        {!editing ? <Field label="Slug opcional"><Input value={slug} onChange={(e) => setSlug(e.target.value)} /></Field> : null}
-        <Field label="Descrição"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
-        <Field label="Cor"><Input type="color" value={color} onChange={(e) => setColor(e.target.value)} /></Field>
-        <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
+        <Field label="Título" required error={titleError}>
+          <Input value={title} error={Boolean(titleError)} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Redação nota 1000" />
+        </Field>
+        {!editing ? (
+          <Field label="Slug" hint="Opcional — gerado automaticamente se vazio.">
+            <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="redacao-nota-1000" />
+          </Field>
+        ) : null}
+        <Field label="Descrição" required error={descError}>
+          <Textarea value={description} error={Boolean(descError)} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
+        <Field label="Cor de destaque">
+          <div className="flex items-center gap-3">
+            <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-11 w-16 cursor-pointer p-1" />
+            <span className="text-sm font-medium text-muted-foreground">{color.toUpperCase()}</span>
+          </div>
+        </Field>
       </div>
     </Modal>
   );
@@ -387,8 +414,13 @@ function ModuleModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [title, setTitle] = useState(editing?.title ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const titleError = submitted && !title.trim() ? "Informe um título." : null;
+  const descError = submitted && !description.trim() ? "Informe uma descrição." : null;
 
   async function submit() {
+    setSubmitted(true);
     if (!title.trim() || !description.trim()) return toast.error("Informe título e descrição.");
     setBusy(true);
     try {
@@ -409,11 +441,21 @@ function ModuleModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   }
 
   return (
-    <Modal open onClose={onClose} title={editing ? "Editar módulo" : "Novo módulo"}>
+    <Modal
+      open
+      onClose={onClose}
+      title={editing ? "Editar módulo" : "Novo módulo"}
+      description="Agrupe aulas e atividades em uma sequência."
+      icon={FolderPlus}
+      footer={<ModalActions busy={busy} onClose={onClose} onSubmit={submit} />}
+    >
       <div className="grid gap-3">
-        <Field label="Título"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-        <Field label="Descrição"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
-        <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
+        <Field label="Título" required error={titleError}>
+          <Input value={title} error={Boolean(titleError)} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label="Descrição" required error={descError}>
+          <Textarea value={description} error={Boolean(descError)} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
       </div>
     </Modal>
   );
@@ -428,8 +470,14 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [videoUrl, setVideoUrl] = useState(editing?.video_url ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState(editing?.thumbnail_url ?? "");
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const titleError = submitted && !title.trim() ? "Informe um título." : null;
+  const descError = submitted && !description.trim() ? "Informe uma descrição." : null;
+  const summaryError = submitted && !summary.trim() ? "Informe um resumo." : null;
 
   async function submit() {
+    setSubmitted(true);
     if (!title.trim() || !description.trim() || !summary.trim()) return toast.error("Preencha título, descrição e resumo.");
     setBusy(true);
     const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl };
@@ -451,17 +499,36 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   }
 
   return (
-    <Modal open onClose={onClose} title={editing ? "Editar aula" : "Nova aula"}>
+    <Modal
+      open
+      onClose={onClose}
+      title={editing ? "Editar aula" : "Nova aula"}
+      description="Conteúdo em vídeo ou texto para o aluno estudar."
+      icon={BookOpen}
+      size="lg"
+      footer={<ModalActions busy={busy} onClose={onClose} onSubmit={submit} />}
+    >
       <div className="grid gap-3">
-        <Field label="Título"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-        <Field label="Descrição"><Input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
-        <Field label="Resumo"><Textarea value={summary} onChange={(e) => setSummary(e.target.value)} className="min-h-24" /></Field>
+        <Field label="Título" required error={titleError}>
+          <Input value={title} error={Boolean(titleError)} onChange={(e) => setTitle(e.target.value)} />
+        </Field>
+        <Field label="Descrição" required error={descError}>
+          <Input value={description} error={Boolean(descError)} onChange={(e) => setDescription(e.target.value)} />
+        </Field>
+        <Field label="Resumo" required error={summaryError}>
+          <Textarea value={summary} error={Boolean(summaryError)} onChange={(e) => setSummary(e.target.value)} className="min-h-24" />
+        </Field>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Duração (min)"><Input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} /></Field>
-          <Field label="Vídeo URL"><Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} /></Field>
+          <Field label="Duração (min)">
+            <Input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} />
+          </Field>
+          <Field label="Vídeo URL">
+            <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://..." />
+          </Field>
         </div>
-        <Field label="Thumbnail URL"><Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} /></Field>
-        <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
+        <Field label="Thumbnail URL">
+          <Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." />
+        </Field>
       </div>
     </Modal>
   );
@@ -486,6 +553,12 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
   );
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const skillError = submitted && !draft.skill.trim() ? "Informe a habilidade." : null;
+  const statementError = submitted && draft.statement.trim().length < 20 ? "Mínimo de 20 caracteres." : null;
+  const explanationError = submitted && !draft.explanation.trim() ? "Informe a explicação." : null;
+  const optionsError = submitted && draft.options.some((option) => !option.trim()) ? "Preencha todas as alternativas." : null;
 
   async function generateDraft() {
     if (!draft.base_lesson_ids.length) return toast.error("Escolha as aulas que servirão de base para a IA.");
@@ -505,6 +578,7 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
   }
 
   async function submit() {
+    setSubmitted(true);
     if (draft.statement.trim().length < 20 || draft.options.some((option) => !option.trim()) || !draft.explanation.trim() || !draft.skill.trim()) {
       toast.error("Revise enunciado, alternativas, explicação e habilidade.");
       return;
@@ -534,61 +608,110 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
   }
 
   return (
-    <Modal open onClose={onClose} title={editing ? "Editar atividade" : "Nova atividade"}>
-      <div className="grid gap-3">
-        <Field label="Aulas usadas pela IA">
-          <div className="grid gap-1 rounded-md border bg-background/50 p-2">
-            {courseModule.lessons.map((lesson) => (
-              <label key={lesson.id} className="flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
-                  checked={draft.base_lesson_ids.includes(lesson.id)}
-                  onChange={(event) =>
-                    setDraft((current) => ({
-                      ...current,
-                      base_lesson_ids: event.target.checked
-                        ? [...current.base_lesson_ids, lesson.id]
-                        : current.base_lesson_ids.filter((id) => id !== lesson.id),
-                      lesson_id: event.target.checked ? lesson.id : current.lesson_id,
-                    }))
-                  }
-                />
-                {lesson.title}
-              </label>
-            ))}
+    <Modal
+      open
+      onClose={onClose}
+      title={editing ? "Editar atividade" : "Nova atividade"}
+      description="Questão de múltipla escolha — gere com IA ou monte manualmente."
+      icon={ClipboardList}
+      size="xl"
+      footer={<ModalActions busy={busy} onClose={onClose} onSubmit={submit} />}
+    >
+      <div className="grid gap-4">
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
+            <p className="text-sm font-semibold">Gerar com IA</p>
           </div>
-        </Field>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={generateDraft} disabled={generating || busy}>
+          <Field label="Aulas usadas como base" hint="Selecione ao menos uma aula para a IA se basear.">
+            <div className="grid gap-1 rounded-md border bg-card p-2">
+              {courseModule.lessons.length ? (
+                courseModule.lessons.map((lesson) => {
+                  const checked = draft.base_lesson_ids.includes(lesson.id);
+                  return (
+                    <label
+                      key={lesson.id}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-muted/60",
+                        checked && "bg-primary/8 font-medium",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        checked={checked}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            base_lesson_ids: event.target.checked
+                              ? [...current.base_lesson_ids, lesson.id]
+                              : current.base_lesson_ids.filter((id) => id !== lesson.id),
+                            lesson_id: event.target.checked ? lesson.id : current.lesson_id,
+                          }))
+                        }
+                      />
+                      {lesson.title}
+                    </label>
+                  );
+                })
+              ) : (
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">Nenhuma aula neste módulo.</p>
+              )}
+            </div>
+          </Field>
+          <Button type="button" size="sm" variant="outline" className="mt-2" onClick={generateDraft} disabled={generating || busy}>
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             {generating ? "Gerando..." : "Gerar com IA"}
           </Button>
         </div>
-        <Field label="Habilidade"><Input value={draft.skill} onChange={(e) => setDraft({ ...draft, skill: e.target.value })} /></Field>
-        <Field label="Dificuldade">
-          <select value={draft.difficulty} onChange={(e) => setDraft({ ...draft, difficulty: e.target.value as AdminActivity["difficulty"] })} className="h-10 rounded-md border bg-card px-3 text-sm">
-            <option value="easy">Essencial</option>
-            <option value="medium">Intermediária</option>
-            <option value="hard">Avançada</option>
-          </select>
-        </Field>
-        <Field label="Enunciado"><Textarea value={draft.statement} onChange={(e) => setDraft({ ...draft, statement: e.target.value })} className="min-h-24" /></Field>
-        <div className="grid gap-2">
-          <p className="text-xs font-semibold text-muted-foreground">Alternativas</p>
-          {draft.options.map((option, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <span className="w-5 text-xs font-semibold">{String.fromCharCode(65 + index)}</span>
-              <Input value={option} onChange={(e) => setDraft({ ...draft, options: draft.options.map((item, current) => (current === index ? e.target.value : item)) })} />
-            </div>
-          ))}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Habilidade" required error={skillError}>
+            <Input value={draft.skill} error={Boolean(skillError)} onChange={(e) => setDraft({ ...draft, skill: e.target.value })} />
+          </Field>
+          <Field label="Dificuldade">
+            <Select value={draft.difficulty} onChange={(e) => setDraft({ ...draft, difficulty: e.target.value as AdminActivity["difficulty"] })}>
+              <option value="easy">Essencial</option>
+              <option value="medium">Intermediária</option>
+              <option value="hard">Avançada</option>
+            </Select>
+          </Field>
         </div>
-        <Field label="Resposta correta">
-          <select value={draft.correct_answer} onChange={(e) => setDraft({ ...draft, correct_answer: e.target.value as AdminActivity["correct_answer"] })} className="h-10 rounded-md border bg-card px-3 text-sm">
-            {["A", "B", "C", "D", "E"].map((letter) => <option key={letter} value={letter}>{letter}</option>)}
-          </select>
+        <Field label="Enunciado" required error={statementError} counter={{ value: draft.statement.length, max: 1000 }}>
+          <Textarea value={draft.statement} error={Boolean(statementError)} onChange={(e) => setDraft({ ...draft, statement: e.target.value })} className="min-h-24" />
         </Field>
-        <Field label="Explicação"><Textarea value={draft.explanation} onChange={(e) => setDraft({ ...draft, explanation: e.target.value })} /></Field>
-        <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
+        <Field label="Alternativas" hint="Clique no círculo para marcar a resposta correta." error={optionsError}>
+          <div className="grid gap-2">
+            {draft.options.map((option, index) => {
+              const letter = String.fromCharCode(65 + index) as AdminActivity["correct_answer"];
+              const isCorrect = draft.correct_answer === letter;
+              return (
+                <div key={index} className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDraft({ ...draft, correct_answer: letter })}
+                    className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors",
+                      isCorrect ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:border-primary/50",
+                    )}
+                    title="Marcar como correta"
+                    aria-label={`Marcar alternativa ${letter} como correta`}
+                  >
+                    {letter}
+                  </button>
+                  <Input
+                    value={option}
+                    error={Boolean(optionsError) && !option.trim()}
+                    onChange={(e) => setDraft({ ...draft, options: draft.options.map((item, current) => (current === index ? e.target.value : item)) })}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </Field>
+        <Field label="Explicação" required error={explanationError}>
+          <Textarea value={draft.explanation} error={Boolean(explanationError)} onChange={(e) => setDraft({ ...draft, explanation: e.target.value })} />
+        </Field>
       </div>
     </Modal>
   );
@@ -596,22 +719,9 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
 
 function ModalActions({ busy, onClose, onSubmit }: { busy: boolean; onClose: () => void; onSubmit: () => void }) {
   return (
-    <div className="mt-1 flex justify-end gap-2">
+    <div className="flex justify-end gap-2">
       <Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cancelar</Button>
       <Button type="button" onClick={onSubmit} disabled={busy}>Salvar</Button>
     </div>
   );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="grid gap-1.5 text-xs font-semibold text-muted-foreground">
-      {label}
-      {children}
-    </label>
-  );
-}
-
-function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`min-h-20 rounded-md border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/20 ${className ?? ""}`} />;
 }

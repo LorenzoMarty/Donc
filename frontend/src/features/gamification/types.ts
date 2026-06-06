@@ -11,14 +11,61 @@ export type GameCategoryId =
 
 export type GameDifficulty = "Essencial" | "Intermediario" | "Avancado";
 
-type GameEngine = "quiz" | "choice" | "sequence";
+export type GameEngine = "quiz" | "choice" | "sequence" | "timed-rush" | "classify" | "order" | "fill-blank";
 
-type GameQuestion = {
+export type GameQuestion = {
   id: string;
   prompt: string;
   options: string[];
   answerIndex: number;
   explanation: string;
+};
+
+/** Payload do engine `classify`: arrastar cada item para o balde correto. */
+export type ClassifyBucket = {
+  id: string;
+  label: string;
+  hint?: string;
+};
+
+export type ClassifyItem = {
+  id: string;
+  text: string;
+  bucketId: string;
+  explanation?: string;
+};
+
+export type ClassifyPayload = {
+  instruction: string;
+  buckets: ClassifyBucket[];
+  items: ClassifyItem[];
+};
+
+/** Payload do engine `order`: ordenar frases na sequencia correta. Cada rodada e independente. */
+export type OrderRound = {
+  id: string;
+  instruction: string;
+  /** Itens ja na ordem correta; a UI embaralha para o aluno. */
+  items: string[];
+  explanation: string;
+};
+
+export type OrderPayload = {
+  rounds: OrderRound[];
+};
+
+/** Payload do engine `fill-blank`: digitar a resposta que completa a lacuna `___`. */
+export type FillBlankRound = {
+  id: string;
+  /** Texto com `___` marcando a lacuna. */
+  prompt: string;
+  /** Respostas aceitas (normalizadas: minusculas, sem acento, espacos colapsados). */
+  accepted: string[];
+  explanation: string;
+};
+
+export type FillBlankPayload = {
+  rounds: FillBlankRound[];
 };
 
 export type GameDefinition = {
@@ -34,7 +81,14 @@ export type GameDefinition = {
   unlocked: boolean;
   engine: GameEngine;
   skill: string;
-  questions: GameQuestion[];
+  /** Usado por `quiz`, `choice` e `timed-rush`. */
+  questions?: GameQuestion[];
+  /** Usado por `classify`. */
+  classify?: ClassifyPayload;
+  /** Usado por `order`. */
+  order?: OrderPayload;
+  /** Usado por `fill-blank`. */
+  fillBlank?: FillBlankPayload;
 };
 
 export type GameCategory = {

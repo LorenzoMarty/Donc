@@ -1,6 +1,8 @@
 import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuote, SpellCheck } from "lucide-react";
 
 import type { GameCategory, GameCategoryId, GameDefinition, GameDifficulty, GameProgress } from "@/features/gamification/types";
+import { challengeGames } from "@/games/challenges";
+import { competencyGames } from "@/games/competencies";
 import { connectiveGames } from "@/games/connectives";
 import { grammarGames } from "@/games/grammar";
 import { repertoireGames } from "@/games/repertoire";
@@ -8,7 +10,15 @@ import { structureGames } from "@/games/structure";
 import { thesisGames } from "@/games/thesis";
 import type { PublishedGame } from "@/types/api";
 
-const gamesCatalog: GameDefinition[] = [...structureGames, ...connectiveGames, ...thesisGames, ...repertoireGames, ...grammarGames];
+const gamesCatalog: GameDefinition[] = [
+  ...structureGames,
+  ...connectiveGames,
+  ...thesisGames,
+  ...repertoireGames,
+  ...grammarGames,
+  ...competencyGames,
+  ...challengeGames,
+];
 
 const VALID_CATEGORIES: GameCategoryId[] = [
   "estrutura",
