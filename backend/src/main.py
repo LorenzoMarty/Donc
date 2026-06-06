@@ -36,6 +36,7 @@ def _ensure_runtime_columns() -> None:
         ("essays", "paragraph_count", "paragraph_count INTEGER NOT NULL DEFAULT 0"),
         ("essay_versions", "paragraph_count", "paragraph_count INTEGER NOT NULL DEFAULT 0"),
         ("essay_themes", "supporting_texts", "supporting_texts JSON"),
+        ("exercises", "base_lesson_ids", "base_lesson_ids JSON NOT NULL DEFAULT '[]'"),
         ("essay_corrections", "inline_annotations", "inline_annotations JSON"),
         ("essay_version_corrections", "inline_annotations", "inline_annotations JSON"),
     ]

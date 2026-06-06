@@ -16,3 +16,5 @@ coverage/
 *.db
 *.tsbuildinfo
 docker/postgres-data/
+CLAUDE.md
+claude/

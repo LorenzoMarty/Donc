@@ -2,17 +2,7 @@
 
 import { useState } from "react";
 import type { ReactNode } from "react";
-import {
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Folder,
-  FolderPlus,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, ChevronUp, ClipboardList, Folder, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { apiFetch } from "@/services/api";
-import type { AdminCourse, AdminLesson, AdminModule } from "@/types/api";
+import type { AdminActivity, AdminCourse, AdminLesson, AdminModule, AdminModuleItem } from "@/types/api";
 
 type ModalState =
   | { kind: "course"; mode: "create" }
@@ -29,6 +19,8 @@ type ModalState =
   | { kind: "module"; mode: "edit"; courseId: number; module: AdminModule }
   | { kind: "lesson"; mode: "create"; moduleId: number }
   | { kind: "lesson"; mode: "edit"; moduleId: number; lesson: AdminLesson }
+  | { kind: "activity"; mode: "create"; module: AdminModule }
+  | { kind: "activity"; mode: "edit"; module: AdminModule; activity: AdminActivity }
   | null;
 
 export function CoursesTab({
@@ -50,47 +42,42 @@ export function CoursesTab({
 
   async function moveModule(moduleId: number, direction: "up" | "down") {
     try {
-      const course = await apiFetch<AdminCourse>(`/admin/modules/${moduleId}/move`, {
-        method: "POST",
-        body: JSON.stringify({ direction }),
-      });
+      const course = await apiFetch<AdminCourse>(`/admin/modules/${moduleId}/move`, { method: "POST", body: JSON.stringify({ direction }) });
       onCourseChanged(course);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel reordenar.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível reordenar.");
     }
   }
 
-  async function moveLesson(lessonId: number, direction: "up" | "down") {
+  async function moveItem(item: AdminModuleItem, direction: "up" | "down") {
     try {
-      const course = await apiFetch<AdminCourse>(`/admin/lessons/${lessonId}/move`, {
-        method: "POST",
-        body: JSON.stringify({ direction }),
-      });
+      const endpoint = item.id > 0 ? `/admin/module-items/${item.id}/move` : `/admin/lessons/${item.lesson?.id}/move`;
+      const course = await apiFetch<AdminCourse>(endpoint, { method: "POST", body: JSON.stringify({ direction }) });
       onCourseChanged(course);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel reordenar.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível reordenar.");
     }
   }
 
   async function deleteCourse(course: AdminCourse) {
-    if (!window.confirm(`Excluir o curso "${course.title}" e todos os modulos/aulas? Esta acao nao pode ser desfeita.`)) return;
+    if (!window.confirm(`Excluir o curso "${course.title}" e todo o conteúdo vinculado?`)) return;
     try {
       await apiFetch(`/admin/courses/${course.id}`, { method: "DELETE" });
       onCourseRemoved(course.id);
-      toast.success("Curso excluido.");
+      toast.success("Curso excluído.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel excluir.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir o curso.");
     }
   }
 
   async function deleteModule(module: AdminModule) {
-    if (!window.confirm(`Excluir o modulo "${module.title}" e suas aulas?`)) return;
+    if (!window.confirm(`Excluir o módulo "${module.title}" e suas aulas?`)) return;
     try {
       const course = await apiFetch<AdminCourse>(`/admin/modules/${module.id}`, { method: "DELETE" });
       onCourseChanged(course);
-      toast.success("Modulo excluido.");
+      toast.success("Módulo excluído.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel excluir.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir o módulo.");
     }
   }
 
@@ -99,9 +86,20 @@ export function CoursesTab({
     try {
       const course = await apiFetch<AdminCourse>(`/admin/lessons/${lesson.id}`, { method: "DELETE" });
       onCourseChanged(course);
-      toast.success("Aula excluida.");
+      toast.success("Aula excluída.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel excluir.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir a aula.");
+    }
+  }
+
+  async function deleteActivity(activity: AdminActivity) {
+    if (!window.confirm("Excluir esta atividade?")) return;
+    try {
+      const course = await apiFetch<AdminCourse>(`/admin/activities/${activity.id}`, { method: "DELETE" });
+      onCourseChanged(course);
+      toast.success("Atividade excluída.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir a atividade.");
     }
   }
 
@@ -109,7 +107,7 @@ export function CoursesTab({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Estrutura de conteudo</Badge>
+          <Badge variant="secondary">Estrutura de conteúdo</Badge>
           <Badge variant="outline">{courses.length} cursos</Badge>
         </div>
         <Button type="button" size="sm" onClick={() => setModal({ kind: "course", mode: "create" })}>
@@ -132,57 +130,26 @@ export function CoursesTab({
             onAddLesson={(moduleId) => setModal({ kind: "lesson", mode: "create", moduleId })}
             onEditLesson={(moduleId, lesson) => setModal({ kind: "lesson", mode: "edit", moduleId, lesson })}
             onDeleteLesson={deleteLesson}
-            onMoveLesson={moveLesson}
+            onAddActivity={(module) => setModal({ kind: "activity", mode: "create", module })}
+            onEditActivity={(module, activity) => setModal({ kind: "activity", mode: "edit", module, activity })}
+            onDeleteActivity={deleteActivity}
+            onMoveItem={moveItem}
           />
         ))}
-        {!courses.length ? (
-          <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">Nenhum curso cadastrado.</p>
-        ) : null}
+        {!courses.length ? <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">Nenhum curso cadastrado.</p> : null}
       </div>
 
       {modal?.kind === "course" ? (
-        <CourseModal
-          state={modal}
-          onClose={() => setModal(null)}
-          onCreated={(course) => {
-            onCourseCreated(course);
-            setModal(null);
-          }}
-          onUpdated={(course) => {
-            onCourseChanged(course);
-            setModal(null);
-          }}
-        />
+        <CourseModal state={modal} onClose={() => setModal(null)} onCreated={(course) => { onCourseCreated(course); setModal(null); }} onUpdated={(course) => { onCourseChanged(course); setModal(null); }} />
       ) : null}
-
       {modal?.kind === "module" ? (
-        <ModuleModal
-          state={modal}
-          onClose={() => setModal(null)}
-          onCreated={(courseId, module) => {
-            onModuleCreated(courseId, module);
-            setModal(null);
-          }}
-          onUpdated={(course) => {
-            onCourseChanged(course);
-            setModal(null);
-          }}
-        />
+        <ModuleModal state={modal} onClose={() => setModal(null)} onCreated={(courseId, module) => { onModuleCreated(courseId, module); setModal(null); }} onUpdated={(course) => { onCourseChanged(course); setModal(null); }} />
       ) : null}
-
       {modal?.kind === "lesson" ? (
-        <LessonModal
-          state={modal}
-          onClose={() => setModal(null)}
-          onCreated={(moduleId, lesson) => {
-            onLessonCreated(moduleId, lesson);
-            setModal(null);
-          }}
-          onUpdated={(course) => {
-            onCourseChanged(course);
-            setModal(null);
-          }}
-        />
+        <LessonModal state={modal} onClose={() => setModal(null)} onCreated={(moduleId, lesson) => { onLessonCreated(moduleId, lesson); setModal(null); }} onUpdated={(course) => { onCourseChanged(course); setModal(null); }} />
+      ) : null}
+      {modal?.kind === "activity" ? (
+        <ActivityModal state={modal} onClose={() => setModal(null)} onUpdated={(course) => { onCourseChanged(course); setModal(null); }} />
       ) : null}
     </div>
   );
@@ -199,7 +166,10 @@ function CourseNode({
   onAddLesson,
   onEditLesson,
   onDeleteLesson,
-  onMoveLesson,
+  onAddActivity,
+  onEditActivity,
+  onDeleteActivity,
+  onMoveItem,
 }: {
   course: AdminCourse;
   onEdit: () => void;
@@ -211,7 +181,10 @@ function CourseNode({
   onAddLesson: (moduleId: number) => void;
   onEditLesson: (moduleId: number, lesson: AdminLesson) => void;
   onDeleteLesson: (lesson: AdminLesson) => void;
-  onMoveLesson: (lessonId: number, direction: "up" | "down") => void;
+  onAddActivity: (module: AdminModule) => void;
+  onEditActivity: (module: AdminModule, activity: AdminActivity) => void;
+  onDeleteActivity: (activity: AdminActivity) => void;
+  onMoveItem: (item: AdminModuleItem, direction: "up" | "down") => void;
 }) {
   const [open, setOpen] = useState(true);
   const modules = [...course.modules].sort((a, b) => a.order - b.order);
@@ -219,13 +192,13 @@ function CourseNode({
   return (
     <div className="rounded-lg border bg-card">
       <div className="flex items-start gap-3 border-b px-4 py-3">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="mt-0.5 text-muted-foreground" aria-label="Expandir">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="mt-0.5 text-muted-foreground" aria-label="Expandir curso">
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
         <Folder className="mt-0.5 h-5 w-5 shrink-0" style={{ color: course.color }} aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{course.title}</p>
-          <p className="text-xs text-muted-foreground">{course.slug} · {modules.length} modulos</p>
+          <p className="text-xs text-muted-foreground">{course.slug} · {modules.length} módulos</p>
         </div>
         <RowActions onEdit={onEdit} onDelete={onDelete} />
       </div>
@@ -244,12 +217,15 @@ function CourseNode({
               onAddLesson={() => onAddLesson(module.id)}
               onEditLesson={(lesson) => onEditLesson(module.id, lesson)}
               onDeleteLesson={onDeleteLesson}
-              onMoveLesson={onMoveLesson}
+              onAddActivity={() => onAddActivity(module)}
+              onEditActivity={(activity) => onEditActivity(module, activity)}
+              onDeleteActivity={onDeleteActivity}
+              onMoveItem={onMoveItem}
             />
           ))}
           <Button type="button" variant="outline" size="sm" className="justify-start" onClick={onAddModule}>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Novo modulo
+            Novo módulo
           </Button>
         </div>
       ) : null}
@@ -267,7 +243,10 @@ function ModuleNode({
   onAddLesson,
   onEditLesson,
   onDeleteLesson,
-  onMoveLesson,
+  onAddActivity,
+  onEditActivity,
+  onDeleteActivity,
+  onMoveItem,
 }: {
   module: AdminModule;
   isFirst: boolean;
@@ -278,9 +257,12 @@ function ModuleNode({
   onAddLesson: () => void;
   onEditLesson: (lesson: AdminLesson) => void;
   onDeleteLesson: (lesson: AdminLesson) => void;
-  onMoveLesson: (lessonId: number, direction: "up" | "down") => void;
+  onAddActivity: () => void;
+  onEditActivity: (activity: AdminActivity) => void;
+  onDeleteActivity: (activity: AdminActivity) => void;
+  onMoveItem: (item: AdminModuleItem, direction: "up" | "down") => void;
 }) {
-  const lessons = [...module.lessons].sort((a, b) => a.order - b.order);
+  const items = normalizedItems(module);
 
   return (
     <div className="rounded-md border bg-background/40 p-3">
@@ -288,50 +270,57 @@ function ModuleNode({
         <Folder className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{module.order}. {module.title}</p>
-          <p className="text-xs text-muted-foreground">{lessons.length} aulas</p>
+          <p className="text-xs text-muted-foreground">{items.length} itens na sequência</p>
         </div>
         <MoveButtons isFirst={isFirst} isLast={isLast} onMove={onMove} />
         <RowActions onEdit={onEdit} onDelete={onDelete} />
       </div>
 
       <div className="mt-2 grid gap-1 pl-6">
-        {lessons.map((lesson, index) => (
-          <div key={lesson.id} className="flex items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/50">
-            <BookOpen className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate text-xs">{lesson.order}. {lesson.title}</span>
-            <span className="text-[0.65rem] text-muted-foreground">{lesson.duration_minutes}min</span>
-            <MoveButtons isFirst={index === 0} isLast={index === lessons.length - 1} onMove={(d) => onMoveLesson(lesson.id, d)} />
-            <RowActions onEdit={() => onEditLesson(lesson)} onDelete={() => onDeleteLesson(lesson)} small />
+        {items.map((item, index) => (
+          <div key={`${item.kind}-${item.id}`} className="flex items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/50">
+            {item.kind === "lesson" ? <BookOpen className="h-3.5 w-3.5 shrink-0 text-primary" /> : <ClipboardList className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
+            <span className="min-w-0 flex-1 truncate text-xs">
+              {item.order}. {item.kind === "lesson" ? item.lesson?.title : item.activity?.statement}
+            </span>
+            <Badge variant="outline" className="shrink-0 text-[0.65rem]">{item.kind === "lesson" ? "aula" : "atividade"}</Badge>
+            <MoveButtons isFirst={index === 0} isLast={index === items.length - 1} onMove={(direction) => onMoveItem(item, direction)} />
+            {item.kind === "lesson" && item.lesson ? (
+              <RowActions onEdit={() => onEditLesson(item.lesson as AdminLesson)} onDelete={() => onDeleteLesson(item.lesson as AdminLesson)} small />
+            ) : item.activity ? (
+              <RowActions onEdit={() => onEditActivity(item.activity as AdminActivity)} onDelete={() => onDeleteActivity(item.activity as AdminActivity)} small />
+            ) : null}
           </div>
         ))}
-        <Button type="button" variant="ghost" size="sm" className="justify-start text-xs" onClick={onAddLesson}>
-          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-          Nova aula
-        </Button>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button type="button" variant="ghost" size="sm" className="justify-start text-xs" onClick={onAddLesson}>
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+            Nova aula
+          </Button>
+          <Button type="button" variant="ghost" size="sm" className="justify-start text-xs" onClick={onAddActivity}>
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            Nova atividade
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
+function normalizedItems(module: AdminModule): AdminModuleItem[] {
+  if (module.items?.length) return [...module.items].sort((a, b) => a.order - b.order);
+  return [...module.lessons]
+    .sort((a, b) => a.order - b.order)
+    .map((lesson) => ({ id: -lesson.id, kind: "lesson", order: lesson.order, lesson, activity: null }));
+}
+
 function MoveButtons({ isFirst, isLast, onMove }: { isFirst: boolean; isLast: boolean; onMove: (direction: "up" | "down") => void }) {
   return (
     <div className="flex shrink-0">
-      <button
-        type="button"
-        disabled={isFirst}
-        onClick={() => onMove("up")}
-        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
-        aria-label="Mover para cima"
-      >
+      <button type="button" disabled={isFirst} onClick={() => onMove("up")} className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30" aria-label="Mover para cima">
         <ChevronUp className="h-3.5 w-3.5" />
       </button>
-      <button
-        type="button"
-        disabled={isLast}
-        onClick={() => onMove("down")}
-        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
-        aria-label="Mover para baixo"
-      >
+      <button type="button" disabled={isLast} onClick={() => onMove("down")} className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30" aria-label="Mover para baixo">
         <ChevronDown className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -342,37 +331,17 @@ function RowActions({ onEdit, onDelete, small }: { onEdit: () => void; onDelete:
   const size = small ? "h-3.5 w-3.5" : "h-4 w-4";
   return (
     <div className="flex shrink-0">
-      <button
-        type="button"
-        onClick={onEdit}
-        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        aria-label="Editar"
-      >
+      <button type="button" onClick={onEdit} className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Editar">
         <Pencil className={size} />
       </button>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-        aria-label="Excluir"
-      >
+      <button type="button" onClick={onDelete} className="rounded p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive" aria-label="Excluir">
         <Trash2 className={size} />
       </button>
     </div>
   );
 }
 
-function CourseModal({
-  state,
-  onClose,
-  onCreated,
-  onUpdated,
-}: {
-  state: Extract<ModalState, { kind: "course" }>;
-  onClose: () => void;
-  onCreated: (course: AdminCourse) => void;
-  onUpdated: (course: AdminCourse) => void;
-}) {
+function CourseModal({ state, onClose, onCreated, onUpdated }: { state: Extract<ModalState, { kind: "course" }>; onClose: () => void; onCreated: (course: AdminCourse) => void; onUpdated: (course: AdminCourse) => void }) {
   const editing = state.mode === "edit" ? state.course : null;
   const [title, setTitle] = useState(editing?.title ?? "");
   const [slug, setSlug] = useState(editing?.slug ?? "");
@@ -381,29 +350,20 @@ function CourseModal({
   const [busy, setBusy] = useState(false);
 
   async function submit() {
-    if (!title.trim() || !description.trim()) {
-      toast.error("Informe titulo e descricao.");
-      return;
-    }
+    if (!title.trim() || !description.trim()) return toast.error("Informe título e descrição.");
     setBusy(true);
     try {
       if (editing) {
-        const course = await apiFetch<AdminCourse>(`/admin/courses/${editing.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ title, description, color }),
-        });
+        const course = await apiFetch<AdminCourse>(`/admin/courses/${editing.id}`, { method: "PATCH", body: JSON.stringify({ title, description, color }) });
         onUpdated(course);
         toast.success("Curso atualizado.");
       } else {
-        const course = await apiFetch<AdminCourse>("/admin/courses", {
-          method: "POST",
-          body: JSON.stringify({ title, slug: slug || null, description, color }),
-        });
+        const course = await apiFetch<AdminCourse>("/admin/courses", { method: "POST", body: JSON.stringify({ title, slug: slug || null, description, color }) });
         onCreated(course);
         toast.success("Curso criado.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel salvar.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
     } finally {
       setBusy(false);
     }
@@ -412,97 +372,54 @@ function CourseModal({
   return (
     <Modal open onClose={onClose} title={editing ? "Editar curso" : "Novo curso"}>
       <div className="grid gap-3">
-        <Field label="Titulo">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </Field>
-        {!editing ? (
-          <Field label="Slug opcional">
-            <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
-          </Field>
-        ) : null}
-        <Field label="Descricao">
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-        </Field>
-        <Field label="Cor">
-          <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-        </Field>
+        <Field label="Título"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+        {!editing ? <Field label="Slug opcional"><Input value={slug} onChange={(e) => setSlug(e.target.value)} /></Field> : null}
+        <Field label="Descrição"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        <Field label="Cor"><Input type="color" value={color} onChange={(e) => setColor(e.target.value)} /></Field>
         <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
       </div>
     </Modal>
   );
 }
 
-function ModuleModal({
-  state,
-  onClose,
-  onCreated,
-  onUpdated,
-}: {
-  state: Extract<ModalState, { kind: "module" }>;
-  onClose: () => void;
-  onCreated: (courseId: number, module: AdminModule) => void;
-  onUpdated: (course: AdminCourse) => void;
-}) {
+function ModuleModal({ state, onClose, onCreated, onUpdated }: { state: Extract<ModalState, { kind: "module" }>; onClose: () => void; onCreated: (courseId: number, module: AdminModule) => void; onUpdated: (course: AdminCourse) => void }) {
   const editing = state.mode === "edit" ? state.module : null;
   const [title, setTitle] = useState(editing?.title ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
-    if (!title.trim() || !description.trim()) {
-      toast.error("Informe titulo e descricao.");
-      return;
-    }
+    if (!title.trim() || !description.trim()) return toast.error("Informe título e descrição.");
     setBusy(true);
     try {
       if (editing) {
-        const course = await apiFetch<AdminCourse>(`/admin/modules/${editing.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ title, description }),
-        });
+        const course = await apiFetch<AdminCourse>(`/admin/modules/${editing.id}`, { method: "PATCH", body: JSON.stringify({ title, description }) });
         onUpdated(course);
-        toast.success("Modulo atualizado.");
+        toast.success("Módulo atualizado.");
       } else {
-        const createdModule = await apiFetch<AdminModule>(`/admin/courses/${state.courseId}/modules`, {
-          method: "POST",
-          body: JSON.stringify({ title, description }),
-        });
+        const createdModule = await apiFetch<AdminModule>(`/admin/courses/${state.courseId}/modules`, { method: "POST", body: JSON.stringify({ title, description }) });
         onCreated(state.courseId, createdModule);
-        toast.success("Modulo criado.");
+        toast.success("Módulo criado.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel salvar.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Modal open onClose={onClose} title={editing ? "Editar modulo" : "Novo modulo"}>
+    <Modal open onClose={onClose} title={editing ? "Editar módulo" : "Novo módulo"}>
       <div className="grid gap-3">
-        <Field label="Titulo">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </Field>
-        <Field label="Descricao">
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-        </Field>
+        <Field label="Título"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+        <Field label="Descrição"><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
         <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
       </div>
     </Modal>
   );
 }
 
-function LessonModal({
-  state,
-  onClose,
-  onCreated,
-  onUpdated,
-}: {
-  state: Extract<ModalState, { kind: "lesson" }>;
-  onClose: () => void;
-  onCreated: (moduleId: number, lesson: AdminLesson) => void;
-  onUpdated: (course: AdminCourse) => void;
-}) {
+function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<ModalState, { kind: "lesson" }>; onClose: () => void; onCreated: (moduleId: number, lesson: AdminLesson) => void; onUpdated: (course: AdminCourse) => void }) {
   const editing = state.mode === "edit" ? state.lesson : null;
   const [title, setTitle] = useState(editing?.title ?? "");
   const [description, setDescription] = useState(editing?.description ?? "");
@@ -513,37 +430,21 @@ function LessonModal({
   const [busy, setBusy] = useState(false);
 
   async function submit() {
-    if (!title.trim() || !description.trim() || !summary.trim()) {
-      toast.error("Preencha titulo, descricao e resumo.");
-      return;
-    }
+    if (!title.trim() || !description.trim() || !summary.trim()) return toast.error("Preencha título, descrição e resumo.");
     setBusy(true);
-    const body = {
-      title,
-      description,
-      summary,
-      duration_minutes: Number(durationMinutes),
-      video_url: videoUrl,
-      thumbnail_url: thumbnailUrl,
-    };
+    const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl };
     try {
       if (editing) {
-        const course = await apiFetch<AdminCourse>(`/admin/lessons/${editing.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        });
+        const course = await apiFetch<AdminCourse>(`/admin/lessons/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) });
         onUpdated(course);
         toast.success("Aula atualizada.");
       } else {
-        const lesson = await apiFetch<AdminLesson>(`/admin/modules/${state.moduleId}/lessons`, {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
+        const lesson = await apiFetch<AdminLesson>(`/admin/modules/${state.moduleId}/lessons`, { method: "POST", body: JSON.stringify(body) });
         onCreated(state.moduleId, lesson);
         toast.success("Aula criada.");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel salvar.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
     } finally {
       setBusy(false);
     }
@@ -552,26 +453,141 @@ function LessonModal({
   return (
     <Modal open onClose={onClose} title={editing ? "Editar aula" : "Nova aula"}>
       <div className="grid gap-3">
-        <Field label="Titulo">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </Field>
-        <Field label="Descricao">
-          <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-        </Field>
-        <Field label="Resumo">
-          <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} className="min-h-24" />
-        </Field>
+        <Field label="Título"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+        <Field label="Descrição"><Input value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
+        <Field label="Resumo"><Textarea value={summary} onChange={(e) => setSummary(e.target.value)} className="min-h-24" /></Field>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Duracao (min)">
-            <Input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} />
-          </Field>
-          <Field label="Video URL">
-            <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
-          </Field>
+          <Field label="Duração (min)"><Input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} /></Field>
+          <Field label="Vídeo URL"><Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} /></Field>
         </div>
-        <Field label="Thumbnail URL">
-          <Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} />
+        <Field label="Thumbnail URL"><Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} /></Field>
+        <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
+      </div>
+    </Modal>
+  );
+}
+
+function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalState, { kind: "activity" }>; onClose: () => void; onUpdated: (course: AdminCourse) => void }) {
+  const editing = state.mode === "edit" ? state.activity : null;
+  const courseModule = state.module;
+  const [draft, setDraft] = useState<AdminActivity>(
+    editing ?? {
+      id: 0,
+      statement: "",
+      options: ["", "", "", "", ""],
+      correct_answer: "A",
+      explanation: "",
+      skill: "",
+      difficulty: "medium",
+      lesson_id: null,
+      base_lesson_ids: [],
+      order: normalizedItems(courseModule).length + 1,
+    },
+  );
+  const [busy, setBusy] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  async function generateDraft() {
+    if (!draft.base_lesson_ids.length) return toast.error("Escolha as aulas que servirão de base para a IA.");
+    setGenerating(true);
+    try {
+      const generated = await apiFetch<AdminActivity[]>(`/admin/modules/${courseModule.id}/activities/generate`, {
+        method: "POST",
+        body: JSON.stringify({ lesson_ids: draft.base_lesson_ids, difficulty: draft.difficulty, count: 1, focus: draft.skill || null }),
+      });
+      if (generated[0]) setDraft({ ...generated[0], id: editing?.id ?? 0 });
+      toast.success("Atividade gerada. Revise antes de salvar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível gerar a atividade.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function submit() {
+    if (draft.statement.trim().length < 20 || draft.options.some((option) => !option.trim()) || !draft.explanation.trim() || !draft.skill.trim()) {
+      toast.error("Revise enunciado, alternativas, explicação e habilidade.");
+      return;
+    }
+    setBusy(true);
+    const body = {
+      statement: draft.statement,
+      options: draft.options,
+      correct_answer: draft.correct_answer,
+      explanation: draft.explanation,
+      skill: draft.skill,
+      difficulty: draft.difficulty,
+      lesson_id: draft.lesson_id,
+      base_lesson_ids: draft.base_lesson_ids,
+    };
+    try {
+      const course = editing
+        ? await apiFetch<AdminCourse>(`/admin/activities/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) })
+        : await apiFetch<AdminCourse>(`/admin/modules/${courseModule.id}/activities`, { method: "POST", body: JSON.stringify(body) });
+      onUpdated(course);
+      toast.success(editing ? "Atividade atualizada." : "Atividade criada.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={editing ? "Editar atividade" : "Nova atividade"}>
+      <div className="grid gap-3">
+        <Field label="Aulas usadas pela IA">
+          <div className="grid gap-1 rounded-md border bg-background/50 p-2">
+            {courseModule.lessons.map((lesson) => (
+              <label key={lesson.id} className="flex items-center gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={draft.base_lesson_ids.includes(lesson.id)}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      base_lesson_ids: event.target.checked
+                        ? [...current.base_lesson_ids, lesson.id]
+                        : current.base_lesson_ids.filter((id) => id !== lesson.id),
+                      lesson_id: event.target.checked ? lesson.id : current.lesson_id,
+                    }))
+                  }
+                />
+                {lesson.title}
+              </label>
+            ))}
+          </div>
         </Field>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={generateDraft} disabled={generating || busy}>
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            {generating ? "Gerando..." : "Gerar com IA"}
+          </Button>
+        </div>
+        <Field label="Habilidade"><Input value={draft.skill} onChange={(e) => setDraft({ ...draft, skill: e.target.value })} /></Field>
+        <Field label="Dificuldade">
+          <select value={draft.difficulty} onChange={(e) => setDraft({ ...draft, difficulty: e.target.value as AdminActivity["difficulty"] })} className="h-10 rounded-md border bg-card px-3 text-sm">
+            <option value="easy">Essencial</option>
+            <option value="medium">Intermediária</option>
+            <option value="hard">Avançada</option>
+          </select>
+        </Field>
+        <Field label="Enunciado"><Textarea value={draft.statement} onChange={(e) => setDraft({ ...draft, statement: e.target.value })} className="min-h-24" /></Field>
+        <div className="grid gap-2">
+          <p className="text-xs font-semibold text-muted-foreground">Alternativas</p>
+          {draft.options.map((option, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <span className="w-5 text-xs font-semibold">{String.fromCharCode(65 + index)}</span>
+              <Input value={option} onChange={(e) => setDraft({ ...draft, options: draft.options.map((item, current) => (current === index ? e.target.value : item)) })} />
+            </div>
+          ))}
+        </div>
+        <Field label="Resposta correta">
+          <select value={draft.correct_answer} onChange={(e) => setDraft({ ...draft, correct_answer: e.target.value as AdminActivity["correct_answer"] })} className="h-10 rounded-md border bg-card px-3 text-sm">
+            {["A", "B", "C", "D", "E"].map((letter) => <option key={letter} value={letter}>{letter}</option>)}
+          </select>
+        </Field>
+        <Field label="Explicação"><Textarea value={draft.explanation} onChange={(e) => setDraft({ ...draft, explanation: e.target.value })} /></Field>
         <ModalActions busy={busy} onClose={onClose} onSubmit={submit} />
       </div>
     </Modal>
@@ -581,12 +597,8 @@ function LessonModal({
 function ModalActions({ busy, onClose, onSubmit }: { busy: boolean; onClose: () => void; onSubmit: () => void }) {
   return (
     <div className="mt-1 flex justify-end gap-2">
-      <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
-        Cancelar
-      </Button>
-      <Button type="button" onClick={onSubmit} disabled={busy}>
-        Salvar
-      </Button>
+      <Button type="button" variant="outline" onClick={onClose} disabled={busy}>Cancelar</Button>
+      <Button type="button" onClick={onSubmit} disabled={busy}>Salvar</Button>
     </div>
   );
 }
@@ -601,10 +613,5 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      {...props}
-      className={`min-h-20 rounded-md border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/20 ${className ?? ""}`}
-    />
-  );
+  return <textarea {...props} className={`min-h-20 rounded-md border bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/20 ${className ?? ""}`} />;
 }

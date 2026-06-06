@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.middlewares.errors import AppError
 from src.models import LearningReward, Lesson, LessonProgress, Module, User
 from src.repositories.learning import LearningRepository
-from src.schemas.lessons import CourseRead, ExercisePreview, LessonProgressRead, LessonRead, ModuleRead, RankRead
+from src.schemas.lessons import CourseRead, ExercisePreview, LessonProgressRead, LessonRead, ModuleActivityRead, ModuleItemRead, ModuleRead, RankRead
 from src.services.rank_service import allowed_difficulties_for_user, level_for_xp, next_rank_for_xp, rank_for_xp
 
 
@@ -95,6 +95,7 @@ class LessonService:
             completed=self._module_completed(module.id, user_id),
             xp_reward=MODULE_XP,
             lessons=[self._lesson_schema(lesson, user_id) for lesson in sorted(module.lessons, key=lambda item: item.order)],
+            items=self._module_items(module, user_id),
         )
 
     def _lesson_schema(self, lesson, user_id: int) -> LessonRead:
@@ -132,6 +133,41 @@ class LessonService:
             next_rank_xp=next_rank.min_xp if next_rank else None,
             exercise_difficulty=rank.max_difficulty.value,
         )
+
+    def _module_items(self, module, user_id: int) -> list[ModuleItemRead]:
+        items = [
+            item
+            for item in getattr(module, "items", [])
+            if (item.kind == "lesson" and item.lesson) or (item.kind == "activity" and item.exercise)
+        ]
+        if not items:
+            return [
+                ModuleItemRead(id=0 - lesson.id, kind="lesson", order=lesson.order, lesson=self._lesson_schema(lesson, user_id))
+                for lesson in sorted(module.lessons, key=lambda item: (item.order, item.id))
+            ]
+        user = self._get_user(user_id)
+        allowed_difficulties = set(allowed_difficulties_for_user(user))
+        result: list[ModuleItemRead] = []
+        for item in sorted(items, key=lambda entry: (entry.order, entry.id)):
+            if item.kind == "lesson" and item.lesson:
+                result.append(ModuleItemRead(id=item.id, kind="lesson", order=item.order, lesson=self._lesson_schema(item.lesson, user_id)))
+            elif item.kind == "activity" and item.exercise and item.exercise.difficulty in allowed_difficulties:
+                result.append(
+                    ModuleItemRead(
+                        id=item.id,
+                        kind="activity",
+                        order=item.order,
+                        activity=ModuleActivityRead(
+                            id=item.exercise.id,
+                            statement=item.exercise.statement,
+                            skill=item.exercise.skill,
+                            difficulty=item.exercise.difficulty.value,
+                            lesson_id=item.exercise.lesson_id,
+                            base_lesson_ids=item.exercise.base_lesson_ids or [],
+                        ),
+                    )
+                )
+        return result
 
     def _get_user(self, user_id: int) -> User:
         user = self.db.get(User, user_id)

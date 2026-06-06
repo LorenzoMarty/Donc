@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AdminMetricsResponse(BaseModel):
@@ -44,10 +44,36 @@ class AdminUserActionResponse(BaseModel):
     user_id: int
 
 
+SupportingTextType = Literal["motivador", "perspectiva", "dados", "repertorio", "imagem"]
+
+
+class AdminSupportingTextRequest(BaseModel):
+    title: str = Field(min_length=4, max_length=120)
+    content: str = Field(min_length=40, max_length=1200)
+    type: SupportingTextType = "motivador"
+
+
+class AdminSupportingTextRequirement(BaseModel):
+    type: SupportingTextType
+    count: int = Field(ge=0, le=5)
+
+
 class AdminEssayThemeUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=8, max_length=220)
     context: str | None = Field(default=None, min_length=20, max_length=5000)
-    source: str | None = Field(default=None, min_length=2, max_length=160)
+    supporting_texts: list[AdminSupportingTextRequest] | None = Field(default=None, max_length=8)
+
+
+class AdminEssayThemeGenerateRequest(BaseModel):
+    focus: str | None = Field(default=None, max_length=160)
+    supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=5)
+
+    @model_validator(mode="after")
+    def ensure_requested_texts(self):
+        total = sum(item.count for item in self.supporting_text_requirements)
+        if total > 8:
+            raise ValueError("A proposta pode ter no maximo 8 textos de apoio.")
+        return self
 
 
 class AdminEssayThemeActionResponse(BaseModel):
@@ -66,12 +92,34 @@ class AdminLessonRead(BaseModel):
     order: int
 
 
+class AdminActivityRead(BaseModel):
+    id: int
+    statement: str
+    options: list[str]
+    correct_answer: str
+    explanation: str
+    skill: str
+    difficulty: str
+    lesson_id: int | None = None
+    base_lesson_ids: list[int] = Field(default_factory=list)
+    order: int
+
+
+class AdminModuleItemRead(BaseModel):
+    id: int
+    kind: Literal["lesson", "activity"]
+    order: int
+    lesson: AdminLessonRead | None = None
+    activity: AdminActivityRead | None = None
+
+
 class AdminModuleRead(BaseModel):
     id: int
     title: str
     description: str
     order: int
     lessons: list[AdminLessonRead] = Field(default_factory=list)
+    items: list[AdminModuleItemRead] = Field(default_factory=list)
 
 
 class AdminCourseRead(BaseModel):
@@ -106,6 +154,25 @@ class AdminLessonCreateRequest(BaseModel):
     order: int | None = Field(default=None, ge=1, le=999)
 
 
+class AdminActivityCreateRequest(BaseModel):
+    statement: str = Field(min_length=20, max_length=1200)
+    options: list[str] = Field(min_length=5, max_length=5)
+    correct_answer: str = Field(pattern="^[A-E]$")
+    explanation: str = Field(min_length=20, max_length=1200)
+    skill: str = Field(min_length=3, max_length=160)
+    difficulty: Literal["easy", "medium", "hard"] = "medium"
+    lesson_id: int | None = Field(default=None, gt=0)
+    base_lesson_ids: list[int] = Field(default_factory=list, max_length=8)
+    order: int | None = Field(default=None, ge=1, le=999)
+
+
+class AdminActivityGenerateRequest(BaseModel):
+    lesson_ids: list[int] = Field(min_length=1, max_length=8)
+    difficulty: Literal["easy", "medium", "hard"] = "medium"
+    count: int = Field(default=1, ge=1, le=3)
+    focus: str | None = Field(default=None, max_length=160)
+
+
 class AdminCourseUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=120)
     description: str | None = Field(default=None, min_length=10, max_length=1200)
@@ -126,6 +193,17 @@ class AdminLessonUpdateRequest(BaseModel):
     duration_minutes: int | None = Field(default=None, ge=1, le=600)
 
 
+class AdminActivityUpdateRequest(BaseModel):
+    statement: str | None = Field(default=None, min_length=20, max_length=1200)
+    options: list[str] | None = Field(default=None, min_length=5, max_length=5)
+    correct_answer: str | None = Field(default=None, pattern="^[A-E]$")
+    explanation: str | None = Field(default=None, min_length=20, max_length=1200)
+    skill: str | None = Field(default=None, min_length=3, max_length=160)
+    difficulty: Literal["easy", "medium", "hard"] | None = None
+    lesson_id: int | None = Field(default=None, gt=0)
+    base_lesson_ids: list[int] | None = Field(default=None, max_length=8)
+
+
 class AdminMoveRequest(BaseModel):
     direction: Literal["up", "down"]
 
@@ -133,7 +211,7 @@ class AdminMoveRequest(BaseModel):
 class AdminContentActionResponse(BaseModel):
     action: Literal["deleted"]
     id: int
-    kind: Literal["course", "module", "lesson"]
+    kind: Literal["course", "module", "lesson", "activity"]
 
 
 # ── User detail ──────────────────────────────────────────────────────────────
@@ -185,6 +263,7 @@ class DailyUsage(BaseModel):
 
 class AITelemetryResponse(BaseModel):
     period_days: int
+    has_data: bool = False
     total_tokens: int
     total_calls: int
     error_calls: int

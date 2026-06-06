@@ -18,19 +18,25 @@ function formatTokens(n: number) {
 
 export function AITelemetryTab({
   telemetry,
+  initialError,
   onPeriodChange,
 }: {
   telemetry: AITelemetry;
+  initialError?: string;
   onPeriodChange: (days: number) => Promise<void>;
 }) {
   const [period, setPeriod] = useState(30);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(initialError ?? "");
 
   async function changePeriod(days: number) {
     setPeriod(days);
     setLoading(true);
+    setError("");
     try {
       await onPeriodChange(days);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível carregar os custos de IA.");
     } finally {
       setLoading(false);
     }
@@ -40,6 +46,12 @@ export function AITelemetryTab({
 
   return (
     <div className="space-y-6">
+      {error ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
       {/* Period selector */}
       <div className="flex flex-wrap gap-2">
         {[7, 14, 30, 60, 90].map((d) => (
@@ -69,6 +81,12 @@ export function AITelemetryTab({
           </div>
         ))}
       </div>
+
+      {!error && !telemetry.has_data ? (
+        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          Ainda não há chamadas de IA registradas neste período. Quando alunos ou administradores usarem recursos com IA, os custos aparecerão aqui.
+        </div>
+      ) : null}
 
       {/* Daily chart */}
       {telemetry.daily.length > 0 && (

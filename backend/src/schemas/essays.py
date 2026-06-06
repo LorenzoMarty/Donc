@@ -1,12 +1,14 @@
 from datetime import datetime
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SupportingTextRead(BaseModel):
     title: str
     content: str
-    type: str
+    type: Literal["motivador", "perspectiva", "dados", "repertorio", "imagem"]
 
 
 class InlineAnnotationRead(BaseModel):

@@ -15,10 +15,23 @@ import { AIGamesTab } from "./_tabs/ai-games";
 import { CoursesTab } from "./_tabs/courses";
 import { ThemesTab } from "./_tabs/themes";
 
+const EMPTY_TELEMETRY: AITelemetry = {
+  period_days: 30,
+  has_data: false,
+  total_tokens: 0,
+  total_calls: 0,
+  error_calls: 0,
+  cost_usd_cents: 0,
+  agents: [],
+  daily: [],
+  top_users: [],
+};
+
 export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [telemetry, setTelemetry] = useState<AITelemetry | null>(null);
+  const [telemetryError, setTelemetryError] = useState("");
   const [activity, setActivity] = useState<UserActivity | null>(null);
   const [games, setGames] = useState<AIGeneratedGame[]>([]);
   const [courses, setCourses] = useState<AdminCourse[]>([]);
@@ -27,7 +40,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState("overview");
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       apiFetch<AdminMetrics>("/admin/metrics"),
       apiFetch<AdminUser[]>("/admin/users"),
       apiFetch<AITelemetry>("/admin/ai-telemetry?days=30"),
@@ -35,24 +48,28 @@ export default function AdminPage() {
       apiFetch<AIGeneratedGame[]>("/admin/ai-games"),
       apiFetch<AdminCourse[]>("/admin/content"),
       apiFetch<EssayTheme[]>("/admin/essay-themes"),
-    ])
-      .then(([m, u, t, a, g, c, th]) => {
-        setMetrics(m);
-        setUsers(u);
-        setTelemetry(t);
-        setActivity(a);
-        setGames(g);
-        setCourses(c);
-        setThemes(th);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Acesso indisponível."));
+    ]).then(([m, u, t, a, g, c, th]) => {
+      if (m.status === "fulfilled") setMetrics(m.value);
+      else setError(m.reason instanceof Error ? m.reason.message : "Não foi possível carregar o painel administrativo.");
+
+      if (u.status === "fulfilled") setUsers(u.value);
+      if (t.status === "fulfilled") setTelemetry(t.value);
+      else {
+        setTelemetry(EMPTY_TELEMETRY);
+        setTelemetryError(t.reason instanceof Error ? t.reason.message : "Não foi possível carregar os custos de IA.");
+      }
+      if (a.status === "fulfilled") setActivity(a.value);
+      if (g.status === "fulfilled") setGames(g.value);
+      if (c.status === "fulfilled") setCourses(c.value);
+      if (th.status === "fulfilled") setThemes(th.value);
+    });
   }, []);
 
   if (error) {
     return (
       <div className="rounded-lg border p-6 md:p-8">
         <Badge variant="outline">Admin</Badge>
-        <h1 className="mt-3 text-2xl font-bold">Acesso restrito</h1>
+        <h1 className="mt-3 text-2xl font-bold">Painel indisponível</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error}</p>
       </div>
     );
@@ -68,15 +85,15 @@ export default function AdminPage() {
         <Badge variant="secondary">Painel administrativo</Badge>
         <h1 className="mt-3 text-3xl font-bold tracking-normal md:text-4xl">Operação e dados</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Métricas, telemetria de IA, usuários e geração de conteúdo.
+          Acompanhe uso da plataforma, custos de IA, alunos e conteúdo pedagógico em um só lugar.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="ai">Telemetria IA</TabsTrigger>
-          <TabsTrigger value="users">Usuários</TabsTrigger>
+          <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          <TabsTrigger value="ai">Custos de IA</TabsTrigger>
+          <TabsTrigger value="users">Alunos</TabsTrigger>
           <TabsTrigger value="themes">Temas</TabsTrigger>
           <TabsTrigger value="courses">Cursos</TabsTrigger>
           <TabsTrigger value="games">Jogos IA</TabsTrigger>
@@ -89,9 +106,11 @@ export default function AdminPage() {
         <TabsContent value="ai" className="mt-4">
           <AITelemetryTab
             telemetry={telemetry}
+            initialError={telemetryError}
             onPeriodChange={async (days) => {
               const t = await apiFetch<AITelemetry>(`/admin/ai-telemetry?days=${days}`);
               setTelemetry(t);
+              setTelemetryError("");
             }}
           />
         </TabsContent>
@@ -131,7 +150,13 @@ export default function AdminPage() {
                 prev.map((course) => ({
                   ...course,
                   modules: course.modules.map((module) =>
-                    module.id === moduleId ? { ...module, lessons: [...module.lessons, lesson] } : module,
+                    module.id === moduleId
+                      ? {
+                          ...module,
+                          lessons: [...module.lessons, lesson],
+                          items: [...(module.items ?? []), { id: -lesson.id, kind: "lesson", order: lesson.order, lesson, activity: null }],
+                        }
+                      : module,
                   ),
                 })),
               )

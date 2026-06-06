@@ -80,7 +80,7 @@ export function UsersTab({
       const data = await apiFetch<AdminUserDetail>(`/admin/users/${user.id}/detail`);
       setDetail(data);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel carregar o detalhe.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível carregar os detalhes do aluno.");
       setDetailOpen(false);
     } finally {
       setDetailLoading(false);
@@ -127,7 +127,7 @@ export function UsersTab({
       setDraft(null);
       toast.success("Aluno atualizado.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel atualizar o aluno.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível atualizar o aluno.");
     } finally {
       setBusyId(null);
     }
@@ -146,7 +146,7 @@ export function UsersTab({
       }
       toast.success("Aluno excluido.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel excluir o aluno.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir o aluno.");
     } finally {
       setBusyId(null);
     }
@@ -165,7 +165,7 @@ export function UsersTab({
           />
         </div>
         <Badge variant="secondary">{online} online agora</Badge>
-        <Badge variant="outline">{users.length} usuarios</Badge>
+        <Badge variant="outline">{users.length} usuários</Badge>
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -272,7 +272,7 @@ export function UsersTab({
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum usuario encontrado.
+                    Nenhum usuário encontrado.
                   </td>
                 </tr>
               )}

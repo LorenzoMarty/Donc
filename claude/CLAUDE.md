@@ -8,6 +8,29 @@ Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar 
 
 ---
 
+## Política de Trabalho do Claude
+
+Regras obrigatórias para trabalhar neste repositório:
+
+1. **Analisar o sistema só quando necessário.** Não rode análise completa (ex.: skill
+   `analyze-system`, varredura ampla do código, `SYSTEM_ANALYSIS.md`) para tarefas pequenas ou
+   localizadas. Análise ampla só quando a tarefa realmente exigir entender o sistema inteiro.
+
+2. **Resolver dúvidas pela documentação primeiro.** Qualquer dúvida sobre o sistema
+   (arquitetura, estrutura, comandos, decisões) deve ser respondida lendo **este `claude/CLAUDE.md`
+   e os documentos em `claude/docs/`** antes de explorar o código. Só investigue o código se a
+   resposta não estiver documentada.
+
+3. **Documentar ao concluir.** Após terminar uma tarefa, registre o que mudou em `claude/docs/`
+   (um arquivo por tarefa, ver `claude/docs/README.md`) e **atualize este `claude/CLAUDE.md`
+   sempre que necessário** — quando arquitetura, estrutura de pastas, comandos, rotas ou decisões
+   relevantes mudarem.
+
+> Nota: a raiz tem um `CLAUDE.md` curto que só faz `@claude/CLAUDE.md` — isso reativa o auto-load.
+> O arquivo real de instruções é **este** (`claude/CLAUDE.md`); edite-o aqui, não na raiz.
+
+---
+
 ## Comandos
 
 ### Frontend (`frontend/`)
@@ -45,13 +68,19 @@ No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz pr
 Em dev local sem Docker, `.env` define `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` para acesso direto ao backend.
 
 ### Estrutura do Frontend
-- `src/app/(app)/` — rotas protegidas, envolvidas por `AppShell` via `(app)/layout.tsx`
+- `src/app/(app)/` — rotas protegidas, envolvidas por `AppShell` via `(app)/layout.tsx`. Rotas:
+  `dashboard`, `redacao`, `redacoes`, `aulas`, `games`, `simulados`, `conquistas`, `trilhas`,
+  `perfil`, `onboarding`, `admin`.
 - `src/app/(auth)/` — páginas de login/cadastro/recuperação de senha
-- `src/app/` (raiz) — páginas de marketing (landing, pricing, sobre, etc.)
+- `src/app/` (raiz) — páginas de marketing (landing, `pricing`, `sobre`, `plataforma`, `trilhas`)
 - `src/features/gamification/` — XP, ranks, streaks dos jogos (apenas client-side, persistido em localStorage via Zustand)
 - `src/games/` — definições estáticas de questões dos jogos (conectivos, gramática, estrutura, tese, repertório)
 - `src/game-pages/` — componentes de UI de sessão de jogo (CategoryPage, GameSession, etc.)
 - `src/components/shared/` — componentes reutilizáveis (AppShell, EssayEditor, LessonPlayer, charts)
+  - `app-shell.tsx`: sidebar desktop. Nav **não** tem "Histórico" — a rota `/redacoes` existe mas é
+    acessada via Painel/Perfil. Quando recolhida, a logo comprimida vira a seta de expandir no hover
+    de qualquer ponto da sidebar (`group` no `<aside>` + `group-hover`). Estado persiste em
+    `localStorage` (`sidebar-collapsed`).
 - `src/components/ui/` — primitivos shadcn/radix (Badge, Button, Card, etc.)
 - `src/stores/game-store.ts` — Zustand store com persistência para XP/streak/progresso dos jogos
 - `src/lib/http-client.ts` — `apiFetch<T>()` adiciona Bearer token do localStorage + desempacota `ApiEnvelope<T>`
@@ -62,8 +91,10 @@ Token armazenado em `localStorage` (`access_token`) e em cookie (para SSR/middle
 
 ### Estrutura do Backend
 Segue padrão **Routes → Services → Repositories**:
-- `src/routes/` — routers FastAPI (auth, dashboard, lessons, exercises, essays, exams, ai, admin)
-- `src/services/` — lógica de negócio (EssayService, AuthService, AIService, etc.)
+- `src/routes/` — routers FastAPI (auth, dashboard, lessons, exercises, essays, exams, ai, admin, games)
+- `src/services/` — lógica de negócio (EssayService, AuthService, AIService, GameService,
+  DashboardService, ExamService, ExerciseService, LessonService, RankService, StreakService,
+  `ai_telemetry` p/ custo/uso de IA, `seed` p/ dados demo)
 - `src/repositories/` — queries SQLAlchemy (UserRepository, EssayRepository, etc.)
 - `src/models/` — modelos ORM SQLAlchemy
 - `src/schemas/` — schemas Pydantic de request/response

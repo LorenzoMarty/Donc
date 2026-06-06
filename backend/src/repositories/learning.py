@@ -1,7 +1,7 @@
 ﻿from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from src.models import Course, Exercise, Lesson, LessonProgress, Module
+from src.models import Course, Exercise, Lesson, LessonProgress, Module, ModuleItem
 
 
 class LearningRepository:
@@ -11,7 +11,12 @@ class LearningRepository:
     def list_courses(self) -> list[Course]:
         stmt = (
             select(Course)
-            .options(selectinload(Course.modules).selectinload(Module.lessons), selectinload(Course.modules).selectinload(Module.exercises))
+            .options(
+                selectinload(Course.modules).selectinload(Module.lessons),
+                selectinload(Course.modules).selectinload(Module.exercises),
+                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.lesson),
+                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.exercise),
+            )
             .order_by(Course.id)
         )
         return list(self.db.scalars(stmt))
