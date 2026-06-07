@@ -5,7 +5,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { getRankForXp, calculateXpReward } from "@/features/xp/xp";
 import { mapPublishedGame } from "@/features/gamification/catalog";
-import { applyEvent, emptyAdaptiveProfile, tagOutcomeToEvents } from "@/features/gamification/adaptive";
+import { applyEvent, emptyAdaptiveProfile, eventsForOutcome, tagOutcomeToEvents } from "@/features/gamification/adaptive";
+import type { CognitiveDecision } from "@/features/gamification/adaptive";
 import type { SkillProfile } from "@/features/gamification/symptoms";
 import type { AdaptiveProfile, CognitiveEventRecord, GameAttempt, GameCompletion, GameDefinition, GameProgress, SkillTag, StreakState } from "@/features/gamification/types";
 import { todayKey, updateStreak } from "@/features/streak/streak";
@@ -24,6 +25,7 @@ type GameStore = {
   remoteGamesHydrated: boolean;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
   recordSkillOutcomes: (entries: { tag: SkillTag; correct: boolean }[]) => void;
+  recordCognitiveOutcome: (game: GameDefinition, decision: CognitiveDecision) => void;
   trackCognitiveEvent: (event: Omit<CognitiveEventRecord, "at">) => void;
   getGameProgress: (gameId: string) => GameProgress | undefined;
   hydrateFromBackend: () => Promise<void>;
@@ -61,6 +63,23 @@ export const useGameStore = create<GameStore>()(
         const events = tagOutcomeToEvents(entries, new Date().toISOString());
         const adaptive = events.reduce((profile, event) => applyEvent(profile, event), get().adaptive);
         set({ skills, adaptive });
+      },
+      recordCognitiveOutcome: (game, decision) => {
+        const at = new Date().toISOString();
+        // Camada cognitiva é a fonte principal: deriva eventos por hub a partir da qualidade.
+        const events = eventsForOutcome(game, decision, at);
+        const adaptive = events.reduce((profile, event) => applyEvent(profile, event), get().adaptive);
+        // Compat legada: mantém attempts/errors por tag para consumidores antigos.
+        let skills = get().skills;
+        if (decision.tags?.length) {
+          const correct = decision.grade ? decision.grade === "S" || decision.grade === "A" : !!decision.correct;
+          skills = { ...skills };
+          for (const tag of decision.tags) {
+            const prev = skills[tag] ?? { attempts: 0, errors: 0 };
+            skills[tag] = { attempts: prev.attempts + 1, errors: prev.errors + (correct ? 0 : 1) };
+          }
+        }
+        set({ adaptive, skills });
       },
       trackCognitiveEvent: (event) => {
         set({ adaptive: applyEvent(get().adaptive, { ...event, at: new Date().toISOString() }) });
@@ -190,7 +209,17 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: "donk.games.v1",
+      version: 2,
       storage: createJSONStorage(() => localStorage),
+      // v2: AdaptiveProfile mudou para 7 hubs pt-BR. Reinicia o perfil cognitivo preservando
+      // xp/streak/attempts/progress/skills. attempts/errors seguem só como compat legada.
+      migrate: (persisted, from) => {
+        const state = (persisted ?? {}) as Partial<GameStore>;
+        if (from < 2) {
+          return { ...state, adaptive: emptyAdaptiveProfile() };
+        }
+        return state;
+      },
       partialize: (state) => ({
         xp: state.xp,
         streak: state.streak,

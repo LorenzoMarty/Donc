@@ -1,102 +1,44 @@
+import { HUBS, HUB_IDS, gameTags } from "@/features/gamification/symptoms";
 import type {
   AdaptiveProfile,
   CognitiveEvent,
   CognitiveEventRecord,
   GameDefinition,
-  GameEngine,
+  Grade,
   Recommendation,
   SkillTag,
   SymptomHubId,
 } from "@/features/gamification/types";
 
 /**
- * Camada adaptativa orientada a eventos (MVP, client-side).
+ * Núcleo cognitivo orientado a eventos (client-side). Fonte de verdade do treino adaptativo.
  *
  * Princípio: NÃO somamos pontos (`profile.x += 5`). Cada decisão vira um evento cognitivo com
  * severidade contínua; o perfil é uma média móvel exponencial (EWMA) desses sinais. Maestria é
- * qualidade × consistência, não porcentagem de acerto.
+ * qualidade × consistência, não porcentagem de acerto. attempts/errors só existem como compat.
  */
 
-const HUB_IDS: SymptomHubId[] = ["texto_artificial", "argumentacao_superficial", "repertorio_forcado"];
-
-/** Eventos negativos (sintoma presente) e positivos (qualidade demonstrada) por hub. */
-const NEGATIVE_EVENTS: CognitiveEvent[] = [
-  "GENERIC_SENTENCE",
-  "ARTIFICIAL_TONE",
-  "SHALLOW_ARGUMENT",
-  "WEAK_PROGRESSION",
-  "FORCED_REPERTOIRE",
-];
+/** Conjunto de eventos negativos (sintoma presente), derivado do registro de hubs. */
+const NEGATIVE_EVENTS = new Set<CognitiveEvent>(HUB_IDS.flatMap((id) => HUBS[id].negativeEvents));
 
 export function isNegativeEvent(type: CognitiveEvent): boolean {
-  return NEGATIVE_EVENTS.includes(type);
+  return NEGATIVE_EVENTS.has(type);
 }
 
-/** Definição de cada hub cognitivo: rótulo, hub pt-BR equivalente, tags, eventos e engine-missão. */
-export const COGNITIVE_HUBS: Record<
-  SymptomHubId,
-  {
-    label: string;
-    /** Hub de sintoma pt-BR correspondente (em `symptoms.ts`). */
-    legacyHubId: string;
-    tags: SkillTag[];
-    negative: CognitiveEvent[];
-    positive: CognitiveEvent[];
-    missionEngine: GameEngine;
-    /** Frase de fraqueza dominante para a home adaptativa. */
-    weaknessNarrative: string;
-  }
-> = {
-  texto_artificial: {
-    label: "Seu texto parece artificial",
-    legacyHubId: "texto-robotico",
-    tags: ["texto-robotico", "conectivo-artificial", "abstracao-excessiva", "repeticao-lexical"],
-    negative: ["ARTIFICIAL_TONE", "GENERIC_SENTENCE"],
-    positive: ["NATURAL_FLOW"],
-    missionEngine: "duel",
-    weaknessNarrative:
-      "Seu texto vem soando artificial. Continue treinando naturalidade e fluidez para apagar a cara de fórmula pronta.",
-  },
-  argumentacao_superficial: {
-    label: "Você afirma, mas não aprofunda",
-    legacyHubId: "nao-aprofunda",
-    tags: ["argumentacao-rasa", "progressao-fraca", "abstracao-excessiva"],
-    negative: ["SHALLOW_ARGUMENT", "WEAK_PROGRESSION"],
-    positive: ["GOOD_PROGRESSION"],
-    missionEngine: "argument-escalation",
-    weaknessNarrative:
-      "Você vem apresentando argumentação superficial. Continue treinando progressão argumentativa e densidade analítica.",
-  },
-  repertorio_forcado: {
-    label: "Seu repertório não encaixa",
-    legacyHubId: "repertorio-nao-encaixa",
-    tags: ["repertorio-decorativo", "c2"],
-    negative: ["FORCED_REPERTOIRE"],
-    positive: ["GOOD_REPERTOIRE_LINK"],
-    missionEngine: "text-surgery",
-    weaknessNarrative:
-      "Seu repertório vem entrando de forma forçada. Continue treinando integração orgânica e pertinência argumentativa.",
-  },
-};
-
-/** Mapa tag → hub cognitivo (usado pela ponte com o skill system legado). */
+/** Mapa tag → hub (primeiro hub que reivindica a tag vence). */
 const TAG_TO_HUB: Partial<Record<SkillTag, SymptomHubId>> = (() => {
   const map: Partial<Record<SkillTag, SymptomHubId>> = {};
-  for (const hub of HUB_IDS) {
-    for (const tag of COGNITIVE_HUBS[hub].tags) {
-      // Primeiro hub que reivindica a tag vence (tags compartilhadas pendem para o mais específico).
-      if (!map[tag]) map[tag] = hub;
+  for (const id of HUB_IDS) {
+    for (const tag of HUBS[id].tags) {
+      if (!map[tag]) map[tag] = id;
     }
   }
   return map;
 })();
 
 export function emptyAdaptiveProfile(): AdaptiveProfile {
-  return {
-    weaknessSignals: { texto_artificial: 0, argumentacao_superficial: 0, repertorio_forcado: 0 },
-    mastery: { texto_artificial: 0, argumentacao_superficial: 0, repertorio_forcado: 0 },
-    recentEvents: [],
-  };
+  const zero = () => Object.fromEntries(HUB_IDS.map((id) => [id, 0])) as Record<SymptomHubId, number>;
+  return { weaknessSignals: zero(), mastery: zero(), recentEvents: [] };
 }
 
 const EWMA_ALPHA = 0.3; // peso do sinal mais recente
@@ -104,7 +46,7 @@ const MAX_EVENTS = 40;
 
 /**
  * Aplica um evento ao perfil. Pura: retorna novo perfil.
- * - evento negativo: empurra `weaknessSignals[hub]` para cima (alvo = severity) e maestria para baixo.
+ * - evento negativo: empurra `weaknessSignals[hub]` para cima (alvo = severity) e maestria p/ baixo.
  * - evento positivo: empurra `weaknessSignals[hub]` para baixo e maestria para cima.
  */
 export function applyEvent(profile: AdaptiveProfile, event: CognitiveEventRecord): AdaptiveProfile {
@@ -113,11 +55,9 @@ export function applyEvent(profile: AdaptiveProfile, event: CognitiveEventRecord
   const prevWeak = profile.weaknessSignals[hub] ?? 0;
   const prevMastery = profile.mastery[hub] ?? 0;
 
-  // Alvo do sinal de fraqueza: severity se negativo, 0 se positivo.
   const weakTarget = negative ? event.severity : 0;
   const nextWeak = round2(prevWeak + EWMA_ALPHA * (weakTarget - prevWeak));
 
-  // Maestria 0..100: alvo alto para positivos, baixo para negativos, ponderado pela severity.
   const masteryTarget = negative ? Math.max(0, 60 - event.severity * 60) : 60 + event.severity * 40;
   const nextMastery = Math.round(prevMastery + EWMA_ALPHA * (masteryTarget - prevMastery));
 
@@ -149,34 +89,105 @@ export function dominantWeakness(profile: AdaptiveProfile): SymptomHubId | null 
 
 /**
  * Recomendação automática: lê os sinais, escolhe o hub dominante e a missão correspondente.
- * Sem dados, recomenda o hub `texto_artificial` como diagnóstico inicial.
+ * Sem dados, recomenda um diagnóstico inicial (`texto-robotico`).
  */
 export function recommendHub(profile: AdaptiveProfile, games: GameDefinition[]): Recommendation {
-  const hub = dominantWeakness(profile);
-  if (!hub) {
-    const mission = missionForHub("texto_artificial", games);
-    return {
-      hub: "texto_artificial",
-      reason: "Comece por um diagnóstico: descubra se seu texto soa natural ou artificial.",
-      missionGameId: mission?.id ?? null,
-    };
-  }
+  const hub = dominantWeakness(profile) ?? "texto-robotico";
   const mission = missionForHub(hub, games);
-  return { hub, reason: COGNITIVE_HUBS[hub].weaknessNarrative, missionGameId: mission?.id ?? null };
+  const reason = dominantWeakness(profile)
+    ? HUBS[hub].weaknessNarrative
+    : "Comece por um diagnóstico: descubra que sintoma mais trava sua redação hoje.";
+  return { hub, reason, missionGameId: mission?.id ?? null };
 }
 
-/** Missão (jogo) associada ao engine do hub. */
+/** Missão (jogo) profunda associada a um hub: prioriza `hubs` explícito, depois os engines do hub. */
 export function missionForHub(hub: SymptomHubId, games: GameDefinition[]): GameDefinition | undefined {
-  const { missionEngine } = COGNITIVE_HUBS[hub];
-  return (
-    games.find((g) => g.hubs?.includes(hub)) ??
-    games.find((g) => g.engine === missionEngine)
-  );
+  const explicit = games.find((g) => g.hubs?.includes(hub));
+  if (explicit) return explicit;
+  for (const engine of HUBS[hub].missionEngines) {
+    const byEngine = games.find((g) => g.engine === engine);
+    if (byEngine) return byEngine;
+  }
+  return undefined;
+}
+
+/** Hubs derivados de um conjunto de tags (para `enrichGame`). */
+export function deriveHubsFromTags(tags: SkillTag[]): SymptomHubId[] {
+  const set = new Set<SymptomHubId>();
+  for (const tag of tags) {
+    const hub = TAG_TO_HUB[tag];
+    if (hub) set.add(hub);
+  }
+  return [...set];
+}
+
+/** Eventos possíveis (negativos + positivos) de um conjunto de hubs (para `enrichGame`). */
+export function possibleEventsForHubs(hubs: SymptomHubId[]): CognitiveEvent[] {
+  const set = new Set<CognitiveEvent>();
+  for (const id of hubs) {
+    HUBS[id].negativeEvents.forEach((e) => set.add(e));
+    HUBS[id].positiveEvents.forEach((e) => set.add(e));
+  }
+  return [...set];
+}
+
+/** Severidade e polaridade a partir de uma nota qualitativa S/A/B/C. */
+export function gradeToSeverity(grade: Grade): { negative: boolean; severity: number } {
+  switch (grade) {
+    case "S":
+      return { negative: false, severity: 0.9 };
+    case "A":
+      return { negative: false, severity: 0.6 };
+    case "B":
+      return { negative: true, severity: 0.3 };
+    case "C":
+      return { negative: true, severity: 0.6 };
+    default: // "Fraco"
+      return { negative: true, severity: 0.9 };
+  }
+}
+
+/** Decisão de uma missão traduzida em sinais cognitivos. */
+export type CognitiveDecision = { tags?: SkillTag[]; grade?: Grade; correct?: boolean };
+
+function hubsForDecision(game: GameDefinition, decision: CognitiveDecision): SymptomHubId[] {
+  const fromTags = decision.tags ? deriveHubsFromTags(decision.tags) : [];
+  if (fromTags.length) return fromTags;
+  if (game.hubs?.length) return game.hubs;
+  return deriveHubsFromTags(gameTags(game)).slice(0, 1);
 }
 
 /**
- * Ponte com o skill system legado: traduz os `{tag, correct}` que os engines já emitem em eventos
- * cognitivos com severidade. Permite instrumentar os engines existentes sem reescrevê-los.
+ * Contrato cognitivo: traduz uma decisão de missão em eventos por hub.
+ * Severidade vem do `grade` (qualidade) quando houver; senão do `correct` (compat binária).
+ */
+export function eventsForOutcome(
+  game: GameDefinition,
+  decision: CognitiveDecision,
+  at: string,
+): CognitiveEventRecord[] {
+  const hubs = hubsForDecision(game, decision);
+  if (!hubs.length) return [];
+
+  let negative: boolean;
+  let severity: number;
+  if (decision.grade) {
+    ({ negative, severity } = gradeToSeverity(decision.grade));
+  } else {
+    negative = !decision.correct;
+    severity = negative ? 0.7 : 0.4;
+  }
+
+  return hubs.map((hub) => {
+    const def = HUBS[hub];
+    const type = negative ? def.negativeEvents[0] : def.positiveEvents[0];
+    return { type, severity, hub, at };
+  });
+}
+
+/**
+ * Ponte legada: traduz `{tag, correct}` (usado por drills) em eventos cognitivos binários.
+ * Mantida para os engines rasos que ainda chamam `recordSkillOutcomes`.
  */
 export function tagOutcomeToEvents(
   outcomes: { tag: SkillTag; correct: boolean }[],
@@ -186,12 +197,12 @@ export function tagOutcomeToEvents(
   for (const { tag, correct } of outcomes) {
     const hub = TAG_TO_HUB[tag];
     if (!hub) continue;
-    const def = COGNITIVE_HUBS[hub];
-    if (correct) {
-      events.push({ type: def.positive[0], severity: 0.4, hub, at });
-    } else {
-      events.push({ type: def.negative[0], severity: 0.7, hub, at });
-    }
+    const def = HUBS[hub];
+    events.push(
+      correct
+        ? { type: def.positiveEvents[0], severity: 0.4, hub, at }
+        : { type: def.negativeEvents[0], severity: 0.7, hub, at },
+    );
   }
   return events;
 }

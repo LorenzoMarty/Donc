@@ -10,6 +10,7 @@ import { ArrowLeft, Check, GripVertical, Wrench, X } from "lucide-react";
 
 import type { CollapseRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +32,7 @@ function shuffle<T>(items: T[]): T[] {
 /** Engine `essay-collapse`: reconstruir uma redação degradada (reordenar + reconectar). */
 export function EssayCollapseSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const recordSkillOutcomes = useGameStore((state) => state.recordSkillOutcomes);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
   const rounds = useMemo<CollapseRound[]>(() => shuffle(game.essayCollapse?.rounds ?? []), [game.essayCollapse]);
 
@@ -91,7 +92,9 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
     setHits((v) => v + roundHits);
     setUnits((v) => v + roundUnits);
     if (!orderOk || connectorHits < connectors.length) setMissed((m) => [...m, { id: round.id, text: round.explanation }]);
-    round.tags?.forEach((tag) => recordSkillOutcomes([{ tag, correct: roundHits === roundUnits }]));
+    // Qualidade da reconstrução da rodada → nota S/A/B/C, alimentando os sinais cognitivos.
+    const roundGrade = pointsToGrade((roundHits / Math.max(roundUnits, 1)) * 4);
+    recordCognitiveOutcome(game, { tags: round.tags, grade: roundGrade });
     setChecked(true);
   }
 
@@ -209,8 +212,9 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
 
       <EngineResult
         result={result}
-        headline={`${result?.attempt.accuracy ?? 0}% reconstruído`}
-        subline={`${hits} de ${units} elementos no lugar.`}
+        grade={pointsToGrade((hits / Math.max(units, 1)) * 4)}
+        headline={GRADE_LABEL[pointsToGrade((hits / Math.max(units, 1)) * 4)]}
+        subline={`Você recompôs o projeto de texto em ${hits} de ${units} elementos. Foco: ordem e conexões que sustentam a progressão.`}
         review={missed}
         onRestart={restart}
         categorySlug={category.slug}

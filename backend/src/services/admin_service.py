@@ -127,12 +127,11 @@ class AdminService:
             if len(cleaned_title) < 8:
                 raise AppError("Titulo do tema precisa ter pelo menos 8 caracteres.", status_code=422, code="invalid_theme_title")
             normalized_title = self._normalize_theme_title(cleaned_title)
-            active_titles = [
-                item
-                for item in self.db.scalars(
+            active_titles = list(
+                self.db.scalars(
                     select(EssayTheme.title).where(EssayTheme.id != theme_id, EssayTheme.is_active.is_(True))
                 )
-            ]
+            )
             if normalized_title in {self._normalize_theme_title(item) for item in active_titles}:
                 raise AppError("Ja existe um tema ativo com esse titulo.", status_code=409, code="duplicate_theme")
             theme.title = cleaned_title
@@ -1049,7 +1048,6 @@ class AdminService:
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
-            from src.middlewares.errors import AppError
             raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
         game.status = "approved" if action == "approve" else "rejected"
         game.reviewed_at = datetime.now(timezone.utc)

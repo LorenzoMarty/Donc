@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Stethoscope, X } from "lucide-react";
 
 import type { CorrectorCase, GameCategory, GameCompletion, GameDefinition, SkillTag } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +28,7 @@ const COMPETENCY_TAG: Record<string, SkillTag> = { C1: "c1", C2: "c2", C3: "c3",
 /** Engine `corrector`: marcar os problemas realmente presentes no parágrafo (precisão + recall). */
 export function CorrectorSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const recordSkillOutcomes = useGameStore((state) => state.recordSkillOutcomes);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
   const cases = useMemo<CorrectorCase[]>(() => shuffle(game.corrector?.cases ?? []), [game.corrector]);
 
@@ -68,16 +69,15 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
   function diagnose() {
     if (checked || !current) return;
     let hits = 0;
-    const outcomes: { tag: SkillTag; correct: boolean }[] = [];
+    const tags = new Set<SkillTag>(current.tags ?? []);
     for (const candidate of current.candidates) {
       const marked = selected.has(candidate.id);
-      const ok = marked === candidate.present;
-      if (ok) hits += 1;
-      if (candidate.present) outcomes.push({ tag: COMPETENCY_TAG[candidate.competency], correct: ok });
+      if (marked === candidate.present) hits += 1;
+      if (candidate.present) tags.add(COMPETENCY_TAG[candidate.competency]);
     }
-    const allRight = hits === current.candidates.length;
-    current.tags?.forEach((tag) => outcomes.push({ tag, correct: allRight }));
-    if (outcomes.length) recordSkillOutcomes(outcomes);
+    // Qualidade diagnóstica do caso → nota S/A/B/C, alimentando os sinais cognitivos.
+    const caseGrade = pointsToGrade((hits / Math.max(current.candidates.length, 1)) * 4);
+    recordCognitiveOutcome(game, { tags: [...tags], grade: caseGrade });
     setCorrectTotal((v) => v + hits);
     setCandidateTotal((v) => v + current.candidates.length);
     setChecked(true);
@@ -180,8 +180,9 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
 
       <EngineResult
         result={result}
-        headline={`${result?.attempt.accuracy ?? 0}% de precisão diagnóstica`}
-        subline={`${correctTotal} de ${candidateTotal} classificações corretas.`}
+        grade={pointsToGrade((correctTotal / Math.max(candidateTotal, 1)) * 4)}
+        headline={GRADE_LABEL[pointsToGrade((correctTotal / Math.max(candidateTotal, 1)) * 4)]}
+        subline={`Você leu a matriz com precisão em ${correctTotal} de ${candidateTotal} classificações. Foco: enxergar o que realmente está presente.`}
         onRestart={restart}
         categorySlug={category.slug}
       />

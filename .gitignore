@@ -11,6 +11,10 @@ out/
 dist/
 build/
 coverage/
+htmlcov/
+.coverage
+playwright-report/
+test-results/
 .DS_Store
 *.log
 *.db

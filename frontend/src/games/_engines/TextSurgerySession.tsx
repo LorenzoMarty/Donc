@@ -35,7 +35,7 @@ function shuffle<T>(items: T[]): T[] {
 /** Engine `text-surgery`: restaurar um texto degradado, slot a slot (escolha curada + reescrita por IA). */
 export function TextSurgerySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const recordSkillOutcomes = useGameStore((state) => state.recordSkillOutcomes);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
   const cases = useMemo<SurgeryCase[]>(() => game.textSurgery?.cases ?? [], [game.textSurgery]);
 
@@ -72,7 +72,7 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
     setGrades((g) => [...g, grade]);
     setLastNote(note);
     setPhase("revealed");
-    if (tags?.length) recordSkillOutcomes(tags.map((tag) => ({ tag, correct: grade === "S" || grade === "A" })));
+    recordCognitiveOutcome(game, { tags, grade });
   }
 
   function pickChoice(optionText: string, grade: Grade, note: string) {

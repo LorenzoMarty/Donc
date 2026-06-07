@@ -1,6 +1,8 @@
 import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuote, SpellCheck } from "lucide-react";
 
 import type { GameCategory, GameCategoryId, GameDefinition, GameDifficulty, GameProgress } from "@/features/gamification/types";
+import { deriveHubsFromTags, possibleEventsForHubs } from "@/features/gamification/adaptive";
+import { gameTags } from "@/features/gamification/symptoms";
 import { challengeGames } from "@/games/challenges";
 import { competencyGames } from "@/games/competencies";
 import { connectiveGames } from "@/games/connectives";
@@ -34,6 +36,18 @@ const gamesCatalog: GameDefinition[] = [
   ...survivalGames,
 ];
 
+/**
+ * Garante o contrato cognitivo de toda missão: preenche `skills`/`hubs`/`possibleEvents` a partir
+ * das `tags` quando o autor não os declarou. Missões profundas podem sobrescrever com valores
+ * curados; o enriquecimento só completa o que falta.
+ */
+export function enrichGame(game: GameDefinition): GameDefinition {
+  const skills = game.skills ?? gameTags(game);
+  const hubs = game.hubs ?? deriveHubsFromTags(skills);
+  const possibleEvents = game.possibleEvents ?? possibleEventsForHubs(hubs);
+  return { ...game, skills, hubs, possibleEvents };
+}
+
 const VALID_CATEGORIES: GameCategoryId[] = [
   "estrutura",
   "coesao",
@@ -55,7 +69,7 @@ export function mapPublishedGame(game: PublishedGame): GameDefinition {
   const category = (VALID_CATEGORIES.includes(game.category as GameCategoryId)
     ? game.category
     : "competencias-enem") as GameCategoryId;
-  return {
+  return enrichGame({
     id: `ai-${game.id}`,
     name: game.name,
     category,
@@ -75,7 +89,7 @@ export function mapPublishedGame(game: PublishedGame): GameDefinition {
       answerIndex: q.answer_index,
       explanation: q.explanation,
     })),
-  };
+  });
 }
 
 const baseCategories: GameCategory[] = [
@@ -162,21 +176,24 @@ export function getCategoryBySlug(slug: string) {
   return baseCategories.find((category) => category.slug === slug);
 }
 
+/** Catálogo estático com o contrato cognitivo garantido (hubs/skills/possibleEvents). */
+const enrichedCatalog: GameDefinition[] = gamesCatalog.map(enrichGame);
+
 export function getGameById(gameId: string, extra: GameDefinition[] = []) {
-  return [...gamesCatalog, ...extra].find((game) => game.id === gameId);
+  return [...enrichedCatalog, ...extra].find((game) => game.id === gameId);
 }
 
 /** Todos os jogos estáticos (sem os remotos de IA). Usado pelo modo Survival e pelos hubs. */
 export function getAllGames(extra: GameDefinition[] = []) {
-  return [...gamesCatalog, ...extra];
+  return [...enrichedCatalog, ...extra];
 }
 
 export function getGamesByCategory(category: GameCategoryId, extra: GameDefinition[] = []) {
-  return [...gamesCatalog, ...extra].filter((game) => game.category === category);
+  return [...enrichedCatalog, ...extra].filter((game) => game.category === category);
 }
 
 export function getRecommendedGames(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
-  return [...gamesCatalog, ...extra]
+  return [...enrichedCatalog, ...extra]
     .sort((a, b) => {
       const aProgress = progress[a.id]?.progress ?? 0;
       const bProgress = progress[b.id]?.progress ?? 0;
@@ -186,7 +203,7 @@ export function getRecommendedGames(progress: Record<string, GameProgress>, extr
 }
 
 export function getEnrichedGames(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
-  return [...gamesCatalog, ...extra].map((game) => ({
+  return [...enrichedCatalog, ...extra].map((game) => ({
     ...game,
     progress: progress[game.id]?.progress ?? game.progress,
     unlocked: game.unlocked,

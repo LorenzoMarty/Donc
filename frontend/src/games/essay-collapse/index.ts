@@ -15,6 +15,8 @@ export const collapseGames: GameDefinition[] = [
     engine: "essay-collapse",
     skill: "Arquitetura textual",
     tags: ["progressao-fraca", "c4"],
+    hubs: ["perde-na-c3", "repete-ideias"],
+    cognitiveFocus: ["reconstruction", "progression"],
     essayCollapse: {
       rounds: [
         {

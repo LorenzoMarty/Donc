@@ -1,0 +1,11 @@
+# Dependências de qualidade/teste do backend (instalar no .venv).
+#   .venv\Scripts\python -m pip install -r requirements-dev.txt
+-r requirements.txt
+
+pytest-cov==6.0.0
+prospector[with_bandit]==1.13.3
+bandit==1.8.0
+black==24.10.0
+isort==5.13.2
+mypy==1.14.1
+httpx==0.28.1

@@ -65,7 +65,8 @@ class AIJobService:
             client = redis.from_url(settings.redis_url, socket_connect_timeout=0.2, socket_timeout=0.2)
             client.publish(f"ai-job:{job.id}", json.dumps(job_payload(job)))
         except Exception:
-            return
+            # Publicação é best-effort: se o Redis estiver fora, apenas ignora.
+            pass
 
 
 def job_payload(job: AIJob) -> dict:

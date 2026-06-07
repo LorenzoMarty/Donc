@@ -15,8 +15,8 @@ export const escalationGames: GameDefinition[] = [
     engine: "argument-escalation",
     skill: "Profundidade argumentativa",
     tags: ["argumentacao-rasa", "tese-vaga"],
-    hubs: ["argumentacao_superficial"],
-    cognitiveFocus: ["progression"],
+    hubs: ["nao-aprofunda", "introducao-sem-tese"],
+    cognitiveFocus: ["progression", "diagnosis"],
     escalation: {
       ladders: [
         {
