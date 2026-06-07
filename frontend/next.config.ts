@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Produção/deploy usa standalone; E2E desliga (NEXT_DISABLE_STANDALONE=1) para servir via `next start`.
+  output: process.env.NEXT_DISABLE_STANDALONE ? undefined : "standalone",
   poweredByHeader: false,
   compress: true,
   images: {

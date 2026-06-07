@@ -7,6 +7,7 @@ import { ArrowLeft, Bot, UserRound } from "lucide-react";
 
 import type { ArtificialityRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ function shuffle<T>(items: T[]): T[] {
 /** Engine `artificiality`: detectar trecho autêntico × artificial e o defeito dominante. */
 export function ArtificialitySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const recordSkillOutcomes = useGameStore((state) => state.recordSkillOutcomes);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
   const rounds = useMemo<ArtificialityRound[]>(() => shuffle(game.artificiality?.rounds ?? []), [game.artificiality]);
 
@@ -76,7 +77,7 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
     setPhase("done");
     if (correct) setScore((v) => v + 1);
     else setMissed((m) => [...m, { id: round.id, text: round.explanation }]);
-    if (round.tags?.length) recordSkillOutcomes(round.tags.map((tag) => ({ tag, correct })));
+    recordCognitiveOutcome(game, { tags: round.tags, correct });
   }
 
   function next() {
@@ -183,8 +184,9 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
 
       <EngineResult
         result={result}
-        headline={`${result?.attempt.accuracy ?? 0}% de detecção`}
-        subline={`Você acertou ${score} de ${rounds.length} trechos.`}
+        grade={pointsToGrade((score / Math.max(rounds.length, 1)) * 4)}
+        headline={GRADE_LABEL[pointsToGrade((score / Math.max(rounds.length, 1)) * 4)]}
+        subline={`Você distinguiu o autêntico do artificial em ${score} de ${rounds.length} trechos. Foco: leitura crítica de naturalidade.`}
         review={missed}
         onRestart={restart}
         categorySlug={category.slug}

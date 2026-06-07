@@ -1,0 +1,87 @@
+# Configuração do Prospector para o backend (FastAPI).
+# Rodar: .venv\Scripts\python -m prospector
+#
+# Divisão de responsabilidades:
+#   - black/isort  -> formatação (linha, imports, espaçamento)
+#   - prospector   -> LÓGICA: código morto, erros prováveis, complexidade, segurança (bandit)
+# Por isso o estilo puro (pycodestyle/comprimento de linha) fica desligado aqui.
+
+strictness: low
+test-warnings: false
+doc-warnings: false
+member-warnings: false
+autodetect: false
+max-line-length: 120
+
+ignore-paths:
+  - .venv
+  - alembic
+  - tests
+  - src/prompts/knowledge_seed
+
+ignore-patterns:
+  - (^|/)\..+
+  - .*__pycache__.*
+
+# Erros prováveis e código morto (alto sinal).
+pyflakes:
+  run: true
+
+# Complexidade ciclomática.
+mccabe:
+  run: true
+  options:
+    max-complexity: 15
+
+# Segredos/código suspeito. Desligado: sobrepõe o bandit e gera falso positivo no
+# JWT secret placeholder de settings.py (que já é um aviso intencional no próprio código).
+dodgy:
+  run: false
+
+# Segurança.
+bandit:
+  run: true
+  options:
+    skips:
+      - B101   # asserts intencionais
+      - B110   # try/except/pass = degradação graciosa intencional (redis/agno opcionais)
+      - B105   # JWT secret placeholder em settings.py é default intencional (troca-se em produção)
+
+# Formatação fica com black/isort — desliga o ruído estilístico.
+pycodestyle:
+  run: false
+pep8:
+  run: false
+
+pylint:
+  run: true
+  disable:
+    # docstrings/estilo
+    - missing-module-docstring
+    - missing-class-docstring
+    - missing-function-docstring
+    - trailing-newlines
+    - line-too-long
+    - mixed-line-endings        # CRLF/LF é artefato de checkout no Windows
+    - not-callable              # falso positivo com SQLAlchemy func.count/expressões
+    - unsubscriptable-object    # falso positivo com SQLAlchemy Mapped[]/generics
+    - cyclic-import             # acoplamento queues<->tasks intencional do projeto
+    # arquitetura (decisões do projeto)
+    - too-few-public-methods
+    - too-many-locals
+    - too-many-arguments
+    - too-many-positional-arguments
+    - too-many-instance-attributes
+    - too-many-branches
+    - too-many-statements
+    - duplicate-code
+    - import-outside-toplevel   # imports lazy intencionais (agno/openai)
+    - import-error              # deps resolvidas no venv/runtime
+    - logging-fstring-interpolation
+    - fixme
+  options:
+    max-args: 10
+
+# Tipagem gradual: rodar à parte com `mypy src`.
+mypy:
+  run: false

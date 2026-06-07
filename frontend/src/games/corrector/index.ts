@@ -15,6 +15,8 @@ export const correctorGames: GameDefinition[] = [
     engine: "corrector",
     skill: "Leitura crítica de correção",
     tags: ["c3", "c4"],
+    hubs: ["perde-na-c3", "conclusao-formula"],
+    cognitiveFocus: ["diagnosis", "prioritization"],
     corrector: {
       cases: [
         {

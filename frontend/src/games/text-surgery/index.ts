@@ -15,7 +15,7 @@ export const surgeryGames: GameDefinition[] = [
     engine: "text-surgery",
     skill: "Refinamento de escrita",
     tags: ["texto-robotico", "repeticao-lexical", "conectivo-artificial"],
-    hubs: ["texto_artificial", "repertorio_forcado"],
+    hubs: ["texto-robotico", "repete-ideias", "repertorio-nao-encaixa"],
     cognitiveFocus: ["refinement", "prioritization", "reconstruction"],
     textSurgery: {
       cases: [

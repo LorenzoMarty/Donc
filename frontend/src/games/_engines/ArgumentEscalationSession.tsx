@@ -29,7 +29,7 @@ function shuffle<T>(items: T[]): T[] {
 /** Engine `argument-escalation`: subir a escada da tese, do raso ao sofisticado. */
 export function ArgumentEscalationSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const recordSkillOutcomes = useGameStore((state) => state.recordSkillOutcomes);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
 
   const steps = useMemo<Step[]>(() => {
@@ -73,7 +73,7 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
       const right = current.options.find((o) => o.correct);
       setMissed((m) => [...m, { id: `${step}`, text: `Nível ${current.level}: ${right?.note ?? "veja o patamar superior."}` }]);
     }
-    if (current.tags?.length) recordSkillOutcomes(current.tags.map((tag) => ({ tag, correct })));
+    recordCognitiveOutcome(game, { tags: current.tags, correct });
   }
 
   function next() {

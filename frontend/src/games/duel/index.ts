@@ -15,7 +15,7 @@ export const duelGames: GameDefinition[] = [
     engine: "duel",
     skill: "Julgamento de qualidade",
     tags: ["argumentacao-rasa", "texto-robotico"],
-    hubs: ["texto_artificial"],
+    hubs: ["texto-robotico", "nao-aprofunda"],
     cognitiveFocus: ["diagnosis", "refinement"],
     duel: {
       rounds: [

@@ -5,7 +5,8 @@ import { useEffect, useMemo } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { getAllGames } from "@/features/gamification/catalog";
-import { gamesForHub, getSymptomHub, masteryForTags, recommendTrainings } from "@/features/gamification/symptoms";
+import { masteryForHub, missionForHub } from "@/features/gamification/adaptive";
+import { gamesForHub, getSymptomHub } from "@/features/gamification/symptoms";
 import { GameCardGrid } from "@/game-pages/games/components/GameCard";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import { useGameStore } from "@/stores/game-store";
 export default function SymptomPage({ symptomId }: { symptomId: string }) {
   const hub = getSymptomHub(symptomId);
   const progress = useGameStore((state) => state.progress);
-  const skills = useGameStore((state) => state.skills);
+  const adaptive = useGameStore((state) => state.adaptive);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
 
@@ -23,9 +24,16 @@ export default function SymptomPage({ symptomId }: { symptomId: string }) {
     hydrateRemoteGames();
   }, [hydrateRemoteGames]);
 
-  const games = useMemo(() => (hub ? gamesForHub(getAllGames(remoteGames), hub) : []), [hub, remoteGames]);
-  const recommended = useMemo(() => recommendTrainings(games, skills, 1)[0], [games, skills]);
-  const mastery = hub ? masteryForTags(skills, hub.tags) : null;
+  // Missões do hub, com as profundas (engines do hub) à frente dos drills legados.
+  const games = useMemo(() => {
+    if (!hub) return [];
+    const all = gamesForHub(getAllGames(remoteGames), hub);
+    const deep = new Set(hub.missionEngines);
+    return [...all].sort((a, b) => Number(deep.has(b.engine)) - Number(deep.has(a.engine)) || b.xpReward - a.xpReward);
+  }, [hub, remoteGames]);
+  const recommended = useMemo(() => (hub ? missionForHub(hub.id, games) : undefined), [hub, games]);
+  const mastery = hub ? masteryForHub(adaptive, hub.id) : 0;
+  const hasSignal = hub ? (adaptive.weaknessSignals[hub.id] ?? 0) > 0 || mastery > 0 : false;
 
   if (!hub) {
     return (
@@ -63,9 +71,9 @@ export default function SymptomPage({ symptomId }: { symptomId: string }) {
               <Icon className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{games.length} treinos para este sintoma</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{games.length} missões para este sintoma</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-normal">
-                {mastery === null ? "Sem diagnóstico ainda — comece a treinar" : `Sua maestria: ${mastery}%`}
+                {hasSignal ? `Sua maestria: ${mastery}/100` : "Sem diagnóstico ainda — comece a treinar"}
               </h2>
             </div>
           </div>

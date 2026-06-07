@@ -15,6 +15,8 @@ export const artificialityGames: GameDefinition[] = [
     engine: "artificiality",
     skill: "Naturalidade textual",
     tags: ["texto-robotico", "abstracao-excessiva"],
+    hubs: ["texto-robotico"],
+    cognitiveFocus: ["diagnosis"],
     artificiality: {
       rounds: [
         {

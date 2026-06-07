@@ -31,10 +31,18 @@ export type GameEngine =
 export type Grade = "S" | "A" | "B" | "C" | "Fraco";
 
 /**
- * Camada cognitiva (MVP) — três hubs de sintoma de alto nível. Union estável para sincronização
- * futura com backend. Mapeiam-se aos hubs pt-BR internos (ver `adaptive.ts`).
+ * Hubs de sintoma — a navegação cognitiva principal. São os 7 sintomas reais que o aluno "sente"
+ * na própria escrita. Union estável (ids pt-BR) para sincronização futura com backend. O registro
+ * completo de cada hub vive em `symptoms.ts` (`HUBS`).
  */
-export type SymptomHubId = "texto_artificial" | "argumentacao_superficial" | "repertorio_forcado";
+export type SymptomHubId =
+  | "texto-robotico"
+  | "repete-ideias"
+  | "repertorio-nao-encaixa"
+  | "nao-aprofunda"
+  | "introducao-sem-tese"
+  | "perde-na-c3"
+  | "conclusao-formula";
 
 /** Foco cognitivo de uma missão — o tipo de trabalho mental que ela treina. */
 export type CognitiveFocus =
@@ -47,20 +55,31 @@ export type CognitiveFocus =
 /**
  * Evento cognitivo emitido durante uma sessão. NÃO é acerto/erro: é um sinal de qualidade textual
  * com severidade contínua. Negativos puxam o sinal de fraqueza; positivos puxam a maestria.
+ * Cada hub tem ≥1 evento negativo (sintoma presente) e 1 positivo (qualidade demonstrada).
  */
 export type CognitiveEvent =
-  // texto_artificial
+  // texto-robotico
   | "GENERIC_SENTENCE"
   | "ARTIFICIAL_TONE"
-  // argumentacao_superficial
-  | "SHALLOW_ARGUMENT"
-  | "WEAK_PROGRESSION"
-  // repertorio_forcado
+  | "NATURAL_FLOW"
+  // repete-ideias
+  | "LEXICAL_REPETITION"
+  | "LEXICAL_VARIETY"
+  // repertorio-nao-encaixa
   | "FORCED_REPERTOIRE"
-  // positivos
   | "GOOD_REPERTOIRE_LINK"
+  // nao-aprofunda
+  | "SHALLOW_ARGUMENT"
+  | "DEEP_ARGUMENT"
+  // introducao-sem-tese
+  | "VAGUE_THESIS"
+  | "SHARP_THESIS"
+  // perde-na-c3
+  | "WEAK_PROGRESSION"
   | "GOOD_PROGRESSION"
-  | "NATURAL_FLOW";
+  // conclusao-formula
+  | "FORMULAIC_CONCLUSION"
+  | "COMPLETE_INTERVENTION";
 
 /** Registro de um evento cognitivo no histórico do perfil adaptativo. */
 export type CognitiveEventRecord = {
@@ -291,10 +310,14 @@ export type GameDefinition = {
   survival?: SurvivalPayload;
   /** Tags de sintoma agregadas do jogo (para hubs/adaptativo quando o item não traz tags). */
   tags?: SkillTag[];
-  /** Hubs cognitivos que esta missão treina (camada adaptativa do MVP). */
+  /** Hubs de sintoma que esta missão treina (navegação cognitiva). Garantido por `enrichGame`. */
   hubs?: SymptomHubId[];
+  /** Skills/tags trabalhadas pela missão. Garantido por `enrichGame` (agrega de `tags`). */
+  skills?: SkillTag[];
   /** Tipo de trabalho cognitivo que a missão exercita. */
   cognitiveFocus?: CognitiveFocus[];
+  /** Eventos cognitivos que a missão pode emitir. Garantido por `enrichGame` (deriva dos hubs). */
+  possibleEvents?: CognitiveEvent[];
 };
 
 export type GameCategory = {

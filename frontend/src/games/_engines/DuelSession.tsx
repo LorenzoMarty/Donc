@@ -27,7 +27,7 @@ function shuffle<T>(items: T[]): T[] {
 /** Engine `duel`: duas versões próximas; escolher a melhor e perceber a dimensão decisiva. */
 export function DuelSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const recordSkillOutcomes = useGameStore((state) => state.recordSkillOutcomes);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
   const rounds = useMemo<DuelRound[]>(() => shuffle(game.duel?.rounds ?? []), [game.duel]);
 
@@ -57,7 +57,7 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
     setPicked(side);
     if (correct) setScore((v) => v + 1);
     else setMissed((m) => [...m, { id: round.id, text: `${round.context} — vencia "${round.winner.toUpperCase()}" por ${round.dimension}.` }]);
-    if (round.tags?.length) recordSkillOutcomes(round.tags.map((tag) => ({ tag, correct })));
+    recordCognitiveOutcome(game, { tags: round.tags, correct });
   }
 
   function next() {

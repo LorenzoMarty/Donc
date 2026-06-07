@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarCheck, ChevronRight, Dumbbell, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarCheck, ChevronRight, Dumbbell } from "lucide-react";
 
-import { getEnrichedCategories, getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
-import { masteryForTags, symptomHubs } from "@/features/gamification/symptoms";
-import { GameCardGrid } from "@/game-pages/games/components/GameCard";
-import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
+import { getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
+import { masteryForHub } from "@/features/gamification/adaptive";
+import { symptomHubs } from "@/features/gamification/symptoms";
 import { ProgressDashboard } from "@/game-pages/games/components/ProgressDashboard";
 import { AdaptiveSpotlight } from "@/game-pages/games/components/AdaptiveSpotlight";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ export default function GamesHub() {
   const [ready, setReady] = useState(false);
   const attempts = useGameStore((state) => state.attempts);
   const progress = useGameStore((state) => state.progress);
-  const skills = useGameStore((state) => state.skills);
   const adaptive = useGameStore((state) => state.adaptive);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
@@ -36,7 +34,6 @@ export default function GamesHub() {
     hydrateRemoteGames();
   }, [hydrateRemoteGames]);
 
-  const categories = getEnrichedCategories(progress, remoteGames);
   const games = getEnrichedGames(progress, remoteGames);
   const recommended = getRecommendedGames(progress, remoteGames);
   const overallProgress = games.length ? Math.round(games.reduce((sum, game) => sum + game.progress, 0) / games.length) : 0;
@@ -86,8 +83,8 @@ export default function GamesHub() {
                 </Button>
               )}
               <Button asChild variant="outline" size="lg">
-                <Link href="#categorias">
-                  Ver categorias
+                <Link href="#sintomas">
+                  Ver sintomas
                   <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
@@ -128,18 +125,18 @@ export default function GamesHub() {
 
       <AdaptiveSpotlight adaptive={adaptive} games={games} />
 
-      <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
+      <section id="sintomas" className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Treine pelo seu sintoma</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">O que está travando sua escrita?</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">O que está travando sua redação?</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Escolha o problema que você sente — o treinador encontra os exercícios certos para ele.
+            Escolha o sintoma que você sente na própria escrita — o treinador monta a sequência de missões certa para ele.
           </p>
         </div>
         <div className="fluid-grid gap-3 [--grid-min:17rem]">
           {symptomHubs.map((hub) => {
             const HubIcon = hub.icon;
-            const mastery = masteryForTags(skills, hub.tags);
+            const mastery = masteryForHub(adaptive, hub.id);
             return (
               <Link
                 key={hub.id}
@@ -150,9 +147,9 @@ export default function GamesHub() {
                   <span className="grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
                     <HubIcon className="h-5 w-5" aria-hidden="true" />
                   </span>
-                  {mastery !== null && (
+                  {mastery > 0 && (
                     <span className="rounded-full border border-border bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-                      {mastery}%
+                      {mastery}/100
                     </span>
                   )}
                 </div>
@@ -166,38 +163,6 @@ export default function GamesHub() {
             );
           })}
         </div>
-      </section>
-
-      <section id="categorias" className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Categorias</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">Academia de habilidades</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Escolha o treino mais útil para sua escrita agora.</p>
-          </div>
-          <div className="game-chip inline-flex w-fit items-center gap-2 bg-background/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-            {categories.length} areas
-          </div>
-        </div>
-        <div className="fluid-grid gap-3 [--grid-min:17rem]">
-          {categories.map((category, index) => (
-            <CategoryCard key={category.id} category={category} index={index} />
-          ))}
-        </div>
-      </section>
-
-      <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Recomendados</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground">Treinos de maior impacto</h2>
-          </div>
-          <Button asChild variant="outline">
-            <Link href={`/games/${recommended[0]?.category ?? "coesao"}`}>Ver categoria</Link>
-          </Button>
-        </div>
-        <GameCardGrid games={recommended.slice(0, 3)} progress={progress} variant="compact" />
       </section>
     </div>
   );

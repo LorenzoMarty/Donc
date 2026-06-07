@@ -144,25 +144,40 @@ em `src/games/_engines/`):
 Alternativas de `quiz`/`timed-rush` são embaralhadas em runtime (`_engines/shuffleOptions.ts`).
 Feedback qualitativo S/A/B/C via `_engines/grade.ts`.
 
-**Perfil adaptativo (client-side):** `useGameStore.skills` (`Record<SkillTag,{attempts,errors}>`)
-alimentado por `recordSkillOutcomes`; seletores em `features/gamification/symptoms.ts`
-(`masteryFor`, `topWeaknesses`, `recommendTrainings`, `gamesForHub`).
+**Núcleo cognitivo orientado a eventos (fonte principal):** `useGameStore.adaptive`
+(`AdaptiveProfile` = `weaknessSignals`/`mastery`/`recentEvents`, por **7 hubs**). Registro único
+`HUBS: Record<SymptomHubId, SymptomHub>` em `features/gamification/symptoms.ts` — fonte de verdade
+com UI (título/ícone/cor) **e** contrato cognitivo (`tags`, `negativeEvents`, `positiveEvents`,
+`cognitiveFocus`, `missionEngines`, `weaknessNarrative`). `SymptomHubId` = ids pt-BR
+(`texto-robotico`, `repete-ideias`, `repertorio-nao-encaixa`, `nao-aprofunda`,
+`introducao-sem-tese`, `perde-na-c3`, `conclusao-formula`).
 
-**Camada cognitiva orientada a eventos (ao lado do skill system):** `useGameStore.adaptive`
-(`AdaptiveProfile` = `weaknessSignals`/`mastery`/`recentEvents`). Núcleo puro em
-`features/gamification/adaptive.ts`: 3 hubs cognitivos (`SymptomHubId`: `texto_artificial`,
-`argumentacao_superficial`, `repertorio_forcado`) mapeados aos hubs pt-BR via `COGNITIVE_HUBS`;
-`applyEvent` (EWMA contínua, não acerto/% simples), `dominantWeakness`, `recommendHub`,
-`tagOutcomeToEvents` (ponte: `recordSkillOutcomes` emite `CognitiveEvent`s automaticamente).
-Ação `trackCognitiveEvent` no store; `adaptive` persistido em `donk.games.v1`. A home
-(`GamesHub`) mostra a seção "Continue evoluindo" via `AdaptiveSpotlight` (fraqueza dominante +
-missão recomendada). Missões `duel`/`argument-escalation`/`text-surgery` anotadas com
-`hubs`/`cognitiveFocus` e exibem nota qualitativa S/A/B/C.
+Núcleo puro em `features/gamification/adaptive.ts`: `applyEvent` (EWMA contínua, **nunca**
+acerto/% simples), `dominantWeakness`, `recommendHub` (treinador: próxima missão), `masteryForHub`,
+`eventsForOutcome`/`gradeToSeverity` (decisão → eventos via nota S/A/B/C), `deriveHubsFromTags`/
+`possibleEventsForHubs` (usados por `enrichGame`). Store: ação `recordCognitiveOutcome(game,
+{tags,grade?,correct?})` é o caminho principal dos engines; persistido em `donk.games.v1`
+(`version: 2`, `migrate` reinicia `adaptive`).
 
-**Hubs por sintoma:** `symptomHubs` em `symptoms.ts`; seção no `GamesHub` e página
-`SymptomPage` (rota `games/treino/[symptomId]`). Categorias (coesão, gramática…) seguem como
-tags internas. Para criar atividade nova, adicione uma `GameDefinition` ao `index.ts` da
-pasta do engine com `engine`, payload e `tags`, e registre em `catalog.ts`.
+**Contrato de missão:** toda `GameDefinition` tem `hubs`/`skills`/`cognitiveFocus`/`difficulty`/
+`possibleEvents` — garantido por `enrichGame` em `catalog.ts` (preenche das `tags` quando ausente;
+as 6 missões profundas têm anotação curada). Os **6 engines profundos** (`duel`,
+`argument-escalation`, `artificiality`, `corrector`, `essay-collapse`, `text-surgery`) emitem
+eventos via `recordCognitiveOutcome` e exibem nota qualitativa **S/A/B/C** no `EngineResult`
+(nunca "% de acerto").
+
+**Skill system legado (só compat):** `useGameStore.skills` (`Record<SkillTag,{attempts,errors}>`)
+via `recordSkillOutcomes` (drills `quiz`/`timed-rush`/`classify`/`order`/`fill-blank`). Não é a
+fonte principal. Seletores legados em `symptoms.ts` (`masteryFor`, `topWeaknesses`,
+`recommendTrainings`).
+
+**Navegação hub-first:** entrada única "Atividades" → `GamesHub` = treinador no topo
+(`AdaptiveSpotlight`, "Continue evoluindo") + grade dos **7 hubs** (sem seção de categorias).
+`SymptomPage` (rota `games/treino/[symptomId]`) é o browse de missões do hub (profundas à frente).
+Categorias (coesão, gramática…) viram só tags/agrupamento interno; rotas `/games/[categorySlug]`
+seguem vivas para back-compat. URLs de jogo: `/games/{category}/{gameId}` (inalteradas).
+Para criar missão nova, adicione `GameDefinition` ao `index.ts` do engine com `engine`, payload e
+`tags` (hubs/skills/possibleEvents vêm do `enrichGame`), e registre em `catalog.ts`.
 
 **IA de reescrita:** `POST /ai/evaluate-rewrite` (backend `agents/rewrite_evaluator`, com fallback
 heurístico sem `OPENAI_API_KEY`), consumido pelo Text Surgery.

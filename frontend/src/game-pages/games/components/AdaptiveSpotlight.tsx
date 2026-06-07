@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ArrowRight, Compass, Sparkles, TrendingUp } from "lucide-react";
 
-import { COGNITIVE_HUBS, masteryForHub, recommendHub } from "@/features/gamification/adaptive";
+import { masteryForHub, recommendHub } from "@/features/gamification/adaptive";
+import { HUBS } from "@/features/gamification/symptoms";
 import type { AdaptiveProfile, GameDefinition } from "@/features/gamification/types";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
  */
 export function AdaptiveSpotlight({ adaptive, games }: { adaptive: AdaptiveProfile; games: GameDefinition[] }) {
   const recommendation = recommendHub(adaptive, games);
-  const hub = COGNITIVE_HUBS[recommendation.hub];
+  const hub = HUBS[recommendation.hub];
   const mission = recommendation.missionGameId
     ? games.find((game) => game.id === recommendation.missionGameId)
     : undefined;
@@ -38,7 +39,7 @@ export function AdaptiveSpotlight({ adaptive, games }: { adaptive: AdaptiveProfi
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {hasSignal ? "Sua fraqueza dominante" : "Comece por aqui"}
           </p>
-          <h3 className="mt-2 text-lg font-semibold leading-snug text-foreground">{hub.label}</h3>
+          <h3 className="mt-2 text-lg font-semibold leading-snug text-foreground">{hub.title}</h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{recommendation.reason}</p>
 
           {hasSignal && (
