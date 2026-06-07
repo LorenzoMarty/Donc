@@ -5,8 +5,9 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { getRankForXp, calculateXpReward } from "@/features/xp/xp";
 import { mapPublishedGame } from "@/features/gamification/catalog";
+import { applyEvent, emptyAdaptiveProfile, tagOutcomeToEvents } from "@/features/gamification/adaptive";
 import type { SkillProfile } from "@/features/gamification/symptoms";
-import type { GameAttempt, GameCompletion, GameDefinition, GameProgress, SkillTag, StreakState } from "@/features/gamification/types";
+import type { AdaptiveProfile, CognitiveEventRecord, GameAttempt, GameCompletion, GameDefinition, GameProgress, SkillTag, StreakState } from "@/features/gamification/types";
 import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
@@ -17,11 +18,13 @@ type GameStore = {
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
   skills: SkillProfile;
+  adaptive: AdaptiveProfile;
   hydrated: boolean;
   remoteGames: GameDefinition[];
   remoteGamesHydrated: boolean;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
   recordSkillOutcomes: (entries: { tag: SkillTag; correct: boolean }[]) => void;
+  trackCognitiveEvent: (event: Omit<CognitiveEventRecord, "at">) => void;
   getGameProgress: (gameId: string) => GameProgress | undefined;
   hydrateFromBackend: () => Promise<void>;
   hydrateRemoteGames: () => Promise<void>;
@@ -42,6 +45,7 @@ export const useGameStore = create<GameStore>()(
       attempts: [],
       progress: {},
       skills: {},
+      adaptive: emptyAdaptiveProfile(),
       hydrated: false,
       remoteGames: [],
       remoteGamesHydrated: false,
@@ -53,7 +57,13 @@ export const useGameStore = create<GameStore>()(
           const prev = skills[tag] ?? { attempts: 0, errors: 0 };
           skills[tag] = { attempts: prev.attempts + 1, errors: prev.errors + (correct ? 0 : 1) };
         }
-        set({ skills });
+        // Ponte com a camada cognitiva: traduz acerto/erro por tag em eventos com severidade.
+        const events = tagOutcomeToEvents(entries, new Date().toISOString());
+        const adaptive = events.reduce((profile, event) => applyEvent(profile, event), get().adaptive);
+        set({ skills, adaptive });
+      },
+      trackCognitiveEvent: (event) => {
+        set({ adaptive: applyEvent(get().adaptive, { ...event, at: new Date().toISOString() }) });
       },
       hydrateRemoteGames: async () => {
         try {
@@ -187,6 +197,7 @@ export const useGameStore = create<GameStore>()(
         attempts: state.attempts,
         progress: state.progress,
         skills: state.skills,
+        adaptive: state.adaptive,
       }),
     },
   ),

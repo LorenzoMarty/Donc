@@ -10,6 +10,7 @@ import { masteryForTags, symptomHubs } from "@/features/gamification/symptoms";
 import { GameCardGrid } from "@/game-pages/games/components/GameCard";
 import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
 import { ProgressDashboard } from "@/game-pages/games/components/ProgressDashboard";
+import { AdaptiveSpotlight } from "@/game-pages/games/components/AdaptiveSpotlight";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGameStore } from "@/stores/game-store";
@@ -22,6 +23,7 @@ export default function GamesHub() {
   const attempts = useGameStore((state) => state.attempts);
   const progress = useGameStore((state) => state.progress);
   const skills = useGameStore((state) => state.skills);
+  const adaptive = useGameStore((state) => state.adaptive);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
 
@@ -123,6 +125,8 @@ export default function GamesHub() {
       </motion.header>
 
       <ProgressDashboard overallProgress={overallProgress} weeklyProgress={weeklyProgress} />
+
+      <AdaptiveSpotlight adaptive={adaptive} games={games} />
 
       <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
         <div className="mb-5">

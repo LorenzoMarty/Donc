@@ -148,6 +148,17 @@ Feedback qualitativo S/A/B/C via `_engines/grade.ts`.
 alimentado por `recordSkillOutcomes`; seletores em `features/gamification/symptoms.ts`
 (`masteryFor`, `topWeaknesses`, `recommendTrainings`, `gamesForHub`).
 
+**Camada cognitiva orientada a eventos (ao lado do skill system):** `useGameStore.adaptive`
+(`AdaptiveProfile` = `weaknessSignals`/`mastery`/`recentEvents`). Núcleo puro em
+`features/gamification/adaptive.ts`: 3 hubs cognitivos (`SymptomHubId`: `texto_artificial`,
+`argumentacao_superficial`, `repertorio_forcado`) mapeados aos hubs pt-BR via `COGNITIVE_HUBS`;
+`applyEvent` (EWMA contínua, não acerto/% simples), `dominantWeakness`, `recommendHub`,
+`tagOutcomeToEvents` (ponte: `recordSkillOutcomes` emite `CognitiveEvent`s automaticamente).
+Ação `trackCognitiveEvent` no store; `adaptive` persistido em `donk.games.v1`. A home
+(`GamesHub`) mostra a seção "Continue evoluindo" via `AdaptiveSpotlight` (fraqueza dominante +
+missão recomendada). Missões `duel`/`argument-escalation`/`text-surgery` anotadas com
+`hubs`/`cognitiveFocus` e exibem nota qualitativa S/A/B/C.
+
 **Hubs por sintoma:** `symptomHubs` em `symptoms.ts`; seção no `GamesHub` e página
 `SymptomPage` (rota `games/treino/[symptomId]`). Categorias (coesão, gramática…) seguem como
 tags internas. Para criar atividade nova, adicione uma `GameDefinition` ao `index.ts` da
