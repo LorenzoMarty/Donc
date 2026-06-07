@@ -7,6 +7,7 @@ import { ArrowLeft, Check, Swords, X } from "lucide-react";
 
 import type { DuelRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -158,8 +159,9 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
 
       <EngineResult
         result={result}
-        headline={`${result?.attempt.accuracy ?? 0}% de acerto`}
-        subline={`Você venceu ${score} de ${rounds.length} duelos.`}
+        grade={pointsToGrade((score / Math.max(rounds.length, 1)) * 4)}
+        headline={GRADE_LABEL[pointsToGrade((score / Math.max(rounds.length, 1)) * 4)]}
+        subline={`Você percebeu a versão de maior qualidade em ${score} de ${rounds.length} duelos. Foco: naturalidade e profundidade, não acerto bruto.`}
         review={missed}
         onRestart={restart}
         categorySlug={category.slug}

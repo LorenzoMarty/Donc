@@ -7,6 +7,7 @@ import { ArrowLeft, Check, TrendingUp, X } from "lucide-react";
 
 import type { EscalationOption, GameCategory, GameCompletion, GameDefinition, SkillTag } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -175,8 +176,9 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
 
       <EngineResult
         result={result}
-        headline={`${result?.attempt.accuracy ?? 0}% de profundidade`}
-        subline={`Você subiu ${score} de ${steps.length} degraus.`}
+        grade={pointsToGrade((score / Math.max(steps.length, 1)) * 4)}
+        headline={GRADE_LABEL[pointsToGrade((score / Math.max(steps.length, 1)) * 4)]}
+        subline={`Você sustentou a progressão em ${score} de ${steps.length} degraus. Foco: aprofundar de verdade, não só responder.`}
         review={missed}
         onRestart={restart}
         categorySlug={category.slug}

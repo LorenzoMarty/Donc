@@ -30,6 +30,67 @@ export type GameEngine =
 /** Nota qualitativa de qualidade textual (S é o teto). */
 export type Grade = "S" | "A" | "B" | "C" | "Fraco";
 
+/**
+ * Camada cognitiva (MVP) — três hubs de sintoma de alto nível. Union estável para sincronização
+ * futura com backend. Mapeiam-se aos hubs pt-BR internos (ver `adaptive.ts`).
+ */
+export type SymptomHubId = "texto_artificial" | "argumentacao_superficial" | "repertorio_forcado";
+
+/** Foco cognitivo de uma missão — o tipo de trabalho mental que ela treina. */
+export type CognitiveFocus =
+  | "diagnosis"
+  | "refinement"
+  | "progression"
+  | "reconstruction"
+  | "prioritization";
+
+/**
+ * Evento cognitivo emitido durante uma sessão. NÃO é acerto/erro: é um sinal de qualidade textual
+ * com severidade contínua. Negativos puxam o sinal de fraqueza; positivos puxam a maestria.
+ */
+export type CognitiveEvent =
+  // texto_artificial
+  | "GENERIC_SENTENCE"
+  | "ARTIFICIAL_TONE"
+  // argumentacao_superficial
+  | "SHALLOW_ARGUMENT"
+  | "WEAK_PROGRESSION"
+  // repertorio_forcado
+  | "FORCED_REPERTOIRE"
+  // positivos
+  | "GOOD_REPERTOIRE_LINK"
+  | "GOOD_PROGRESSION"
+  | "NATURAL_FLOW";
+
+/** Registro de um evento cognitivo no histórico do perfil adaptativo. */
+export type CognitiveEventRecord = {
+  type: CognitiveEvent;
+  /** 0..1 — intensidade do sinal. */
+  severity: number;
+  hub: SymptomHubId;
+  /** ISO timestamp. */
+  at: string;
+};
+
+/**
+ * Perfil adaptativo orientado a eventos. Sinais contínuos, não contagem bruta:
+ * - `weaknessSignals`: 0..1 por hub (EWMA da severidade negativa recente).
+ * - `mastery`: 0..100 por hub (qualidade × consistência dos sinais positivos).
+ * - `recentEvents`: janela recente de eventos para narrativa e recomendação.
+ */
+export type AdaptiveProfile = {
+  weaknessSignals: Record<SymptomHubId, number>;
+  mastery: Record<SymptomHubId, number>;
+  recentEvents: CognitiveEventRecord[];
+};
+
+/** Recomendação automática: qual hub treinar a seguir e por quê. */
+export type Recommendation = {
+  hub: SymptomHubId;
+  reason: string;
+  missionGameId: string | null;
+};
+
 /** Etiquetas de sintoma/habilidade usadas pelo perfil adaptativo e pelos hubs. */
 export type SkillTag =
   | "repeticao-lexical"
@@ -230,6 +291,10 @@ export type GameDefinition = {
   survival?: SurvivalPayload;
   /** Tags de sintoma agregadas do jogo (para hubs/adaptativo quando o item não traz tags). */
   tags?: SkillTag[];
+  /** Hubs cognitivos que esta missão treina (camada adaptativa do MVP). */
+  hubs?: SymptomHubId[];
+  /** Tipo de trabalho cognitivo que a missão exercita. */
+  cognitiveFocus?: CognitiveFocus[];
 };
 
 export type GameCategory = {
