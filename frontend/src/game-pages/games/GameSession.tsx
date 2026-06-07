@@ -11,6 +11,14 @@ import { TimedRushSession } from "@/games/_engines/TimedRushSession";
 import { ClassifyDragSession } from "@/games/_engines/ClassifyDragSession";
 import { OrderSession } from "@/games/_engines/OrderSession";
 import { FillBlankSession } from "@/games/_engines/FillBlankSession";
+import { DuelSession } from "@/games/_engines/DuelSession";
+import { ArgumentEscalationSession } from "@/games/_engines/ArgumentEscalationSession";
+import { ArtificialitySession } from "@/games/_engines/ArtificialitySession";
+import { CorrectorSession } from "@/games/_engines/CorrectorSession";
+import { EssayCollapseSession } from "@/games/_engines/EssayCollapseSession";
+import { SurvivalSession } from "@/games/_engines/SurvivalSession";
+import { TextSurgerySession } from "@/games/_engines/TextSurgerySession";
+import { shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -45,7 +53,10 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const category = getCategoryBySlug(categorySlug);
 
   // Questoes sorteadas aleatoriamente a cada carga do jogo.
-  const questions = useMemo(() => (game?.questions ? shuffle(game.questions) : []), [game]);
+  const questions = useMemo(
+    () => (game?.questions ? shuffle(game.questions).map(shuffleQuestionOptions) : []),
+    [game],
+  );
 
   useEffect(() => {
     hydrateRemoteGames();
@@ -101,6 +112,27 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   }
   if (game.engine === "sequence") {
     return <EssayAssemblySession game={game} category={category} />;
+  }
+  if (game.engine === "duel") {
+    return <DuelSession game={game} category={category} />;
+  }
+  if (game.engine === "argument-escalation") {
+    return <ArgumentEscalationSession game={game} category={category} />;
+  }
+  if (game.engine === "artificiality") {
+    return <ArtificialitySession game={game} category={category} />;
+  }
+  if (game.engine === "corrector") {
+    return <CorrectorSession game={game} category={category} />;
+  }
+  if (game.engine === "essay-collapse") {
+    return <EssayCollapseSession game={game} category={category} />;
+  }
+  if (game.engine === "survival") {
+    return <SurvivalSession game={game} category={category} />;
+  }
+  if (game.engine === "text-surgery") {
+    return <TextSurgerySession game={game} category={category} />;
   }
   // engine "quiz" e "choice" usam o render inline abaixo.
 

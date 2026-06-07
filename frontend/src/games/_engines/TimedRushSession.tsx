@@ -10,6 +10,7 @@ import type { GameCategory, GameCompletion, GameDefinition } from "@/features/ga
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
+import { shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
 import { cn } from "@/utils";
 
 type AnswerLog = {
@@ -43,7 +44,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const [leveledUp, setLeveledUp] = useState(false);
   const { playCorrect, playWrong } = useGameSounds();
 
-  const questionPool = useMemo(() => game.questions ?? [], [game.questions]);
+  const questionPool = useMemo(() => (game.questions ?? []).map(shuffleQuestionOptions), [game.questions]);
   const question = questionPool.length ? questionPool[round % questionPool.length] : undefined;
   const difficultyStage = Math.min(5, Math.floor(round / 5));
   const roundDuration = getRoundDuration(round);

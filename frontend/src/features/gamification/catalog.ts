@@ -8,6 +8,13 @@ import { grammarGames } from "@/games/grammar";
 import { repertoireGames } from "@/games/repertoire";
 import { structureGames } from "@/games/structure";
 import { thesisGames } from "@/games/thesis";
+import { duelGames } from "@/games/duel";
+import { escalationGames } from "@/games/escalation";
+import { artificialityGames } from "@/games/artificiality";
+import { correctorGames } from "@/games/corrector";
+import { collapseGames } from "@/games/essay-collapse";
+import { surgeryGames } from "@/games/text-surgery";
+import { survivalGames } from "@/games/survival";
 import type { PublishedGame } from "@/types/api";
 
 const gamesCatalog: GameDefinition[] = [
@@ -18,6 +25,13 @@ const gamesCatalog: GameDefinition[] = [
   ...grammarGames,
   ...competencyGames,
   ...challengeGames,
+  ...duelGames,
+  ...escalationGames,
+  ...artificialityGames,
+  ...correctorGames,
+  ...collapseGames,
+  ...surgeryGames,
+  ...survivalGames,
 ];
 
 const VALID_CATEGORIES: GameCategoryId[] = [
@@ -150,6 +164,11 @@ export function getCategoryBySlug(slug: string) {
 
 export function getGameById(gameId: string, extra: GameDefinition[] = []) {
   return [...gamesCatalog, ...extra].find((game) => game.id === gameId);
+}
+
+/** Todos os jogos estáticos (sem os remotos de IA). Usado pelo modo Survival e pelos hubs. */
+export function getAllGames(extra: GameDefinition[] = []) {
+  return [...gamesCatalog, ...extra];
 }
 
 export function getGamesByCategory(category: GameCategoryId, extra: GameDefinition[] = []) {

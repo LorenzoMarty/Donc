@@ -39,3 +39,9 @@ class AIStudyPlanRequest(BaseModel):
     minutes_per_day: int = Field(default=45, ge=10, le=180)
     intensity: Literal["leve", "normal", "intenso"] = "normal"
 
+
+class AIEvaluateRewriteRequest(BaseModel):
+    original: str = Field(min_length=3, max_length=800, description="Trecho original/degradado.")
+    rewritten: str = Field(min_length=1, max_length=800, description="Reescrita do aluno.")
+    criteria: str | None = Field(default=None, max_length=240, description="Criterio pedagogico avaliado.")
+

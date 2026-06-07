@@ -11,7 +11,50 @@ export type GameCategoryId =
 
 export type GameDifficulty = "Essencial" | "Intermediario" | "Avancado";
 
-export type GameEngine = "quiz" | "choice" | "sequence" | "timed-rush" | "classify" | "order" | "fill-blank";
+export type GameEngine =
+  | "quiz"
+  | "choice"
+  | "sequence"
+  | "timed-rush"
+  | "classify"
+  | "order"
+  | "fill-blank"
+  | "text-surgery"
+  | "essay-collapse"
+  | "artificiality"
+  | "argument-escalation"
+  | "duel"
+  | "corrector"
+  | "survival";
+
+/** Nota qualitativa de qualidade textual (S é o teto). */
+export type Grade = "S" | "A" | "B" | "C" | "Fraco";
+
+/** Etiquetas de sintoma/habilidade usadas pelo perfil adaptativo e pelos hubs. */
+export type SkillTag =
+  | "repeticao-lexical"
+  | "conectivo-artificial"
+  | "tese-vaga"
+  | "progressao-fraca"
+  | "repertorio-decorativo"
+  | "abstracao-excessiva"
+  | "ambiguidade"
+  | "intervencao-incompleta"
+  | "texto-robotico"
+  | "argumentacao-rasa"
+  | "fuga-tangenciamento"
+  | "conclusao-formula"
+  | "introducao-sem-tese"
+  | "falacia"
+  | "crase"
+  | "regencia"
+  | "concordancia"
+  | "pontuacao"
+  | "c1"
+  | "c2"
+  | "c3"
+  | "c4"
+  | "c5";
 
 export type GameQuestion = {
   id: string;
@@ -68,6 +111,88 @@ export type FillBlankPayload = {
   rounds: FillBlankRound[];
 };
 
+/** Engine `duel`: duas versões próximas; escolher a melhor e a dimensão decisiva. */
+export type DuelRound = {
+  id: string;
+  context: string;
+  a: string;
+  b: string;
+  winner: "a" | "b";
+  /** Dimensão que decide o duelo (ex.: "progressão", "naturalidade", "profundidade"). */
+  dimension: string;
+  explanation: string;
+  tags?: SkillTag[];
+};
+export type DuelPayload = { rounds: DuelRound[] };
+
+/** Engine `argument-escalation`: subir a escada da tese, do raso ao sofisticado. */
+export type EscalationOption = { text: string; correct: boolean; note: string };
+export type EscalationRung = { level: number; instruction: string; options: EscalationOption[] };
+export type EscalationLadder = { id: string; theme: string; rungs: EscalationRung[]; tags?: SkillTag[] };
+export type EscalationPayload = { ladders: EscalationLadder[] };
+
+/** Engine `artificiality`: detectar trecho autêntico × artificial e o tipo de defeito. */
+export type ArtificialityFlawOption = { id: string; label: string; correct: boolean; note: string };
+export type ArtificialityRound = {
+  id: string;
+  passage: string;
+  verdict: "humano" | "artificial";
+  /** Quando `artificial`, opções para marcar o defeito dominante. */
+  flaw?: { options: ArtificialityFlawOption[] };
+  explanation: string;
+  tags?: SkillTag[];
+};
+export type ArtificialityPayload = { rounds: ArtificialityRound[] };
+
+/** Engine `corrector`: marcar os problemas realmente presentes no parágrafo. */
+export type CorrectorCandidate = {
+  id: string;
+  label: string;
+  competency: "C1" | "C2" | "C3" | "C4" | "C5";
+  present: boolean;
+  note: string;
+};
+export type CorrectorCase = { id: string; paragraph: string; candidates: CorrectorCandidate[]; tags?: SkillTag[] };
+export type CorrectorPayload = { cases: CorrectorCase[] };
+
+/** Engine `essay-collapse`: reconstruir uma redação degradada. */
+export type CollapseConnector = {
+  slotId: string;
+  before: string;
+  after: string;
+  options: { text: string; correct: boolean; note: string }[];
+};
+export type CollapseRound = {
+  id: string;
+  brief: string;
+  /** Parágrafos/frases embaralhados; `correctIndex` é a posição correta. */
+  fragments: { id: string; text: string; correctIndex: number }[];
+  connectors?: CollapseConnector[];
+  explanation: string;
+  tags?: SkillTag[];
+};
+export type EssayCollapsePayload = { rounds: CollapseRound[] };
+
+/** Engine `text-surgery`: restaurar um texto degradado, slot a slot. */
+export type SurgeryChoiceOption = { text: string; grade: Grade; note: string };
+export type SurgerySegment =
+  | string
+  | {
+      slotId: string;
+      mode: "choice" | "rewrite";
+      /** Para `choice`: opções com grade embutida. */
+      options?: SurgeryChoiceOption[];
+      /** Para `rewrite`: texto-base degradado e critério avaliado pela IA. */
+      base?: string;
+      criteria?: string;
+      tags?: SkillTag[];
+    };
+export type SurgeryCase = { id: string; brief: string; segments: SurgerySegment[] };
+export type TextSurgeryPayload = { cases: SurgeryCase[] };
+
+/** Engine `survival`: sequência longa agregando questões de vários jogos. */
+export type SurvivalPayload = { poolGameIds?: string[] };
+
 export type GameDefinition = {
   id: string;
   name: string;
@@ -89,6 +214,22 @@ export type GameDefinition = {
   order?: OrderPayload;
   /** Usado por `fill-blank`. */
   fillBlank?: FillBlankPayload;
+  /** Usado por `duel`. */
+  duel?: DuelPayload;
+  /** Usado por `argument-escalation`. */
+  escalation?: EscalationPayload;
+  /** Usado por `artificiality`. */
+  artificiality?: ArtificialityPayload;
+  /** Usado por `corrector`. */
+  corrector?: CorrectorPayload;
+  /** Usado por `essay-collapse`. */
+  essayCollapse?: EssayCollapsePayload;
+  /** Usado por `text-surgery`. */
+  textSurgery?: TextSurgeryPayload;
+  /** Usado por `survival`. */
+  survival?: SurvivalPayload;
+  /** Tags de sintoma agregadas do jogo (para hubs/adaptativo quando o item não traz tags). */
+  tags?: SkillTag[];
 };
 
 export type GameCategory = {

@@ -5,7 +5,8 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 import { getRankForXp, calculateXpReward } from "@/features/xp/xp";
 import { mapPublishedGame } from "@/features/gamification/catalog";
-import type { GameAttempt, GameCompletion, GameDefinition, GameProgress, StreakState } from "@/features/gamification/types";
+import type { SkillProfile } from "@/features/gamification/symptoms";
+import type { GameAttempt, GameCompletion, GameDefinition, GameProgress, SkillTag, StreakState } from "@/features/gamification/types";
 import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
@@ -15,10 +16,12 @@ type GameStore = {
   streak: StreakState;
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
+  skills: SkillProfile;
   hydrated: boolean;
   remoteGames: GameDefinition[];
   remoteGamesHydrated: boolean;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
+  recordSkillOutcomes: (entries: { tag: SkillTag; correct: boolean }[]) => void;
   getGameProgress: (gameId: string) => GameProgress | undefined;
   hydrateFromBackend: () => Promise<void>;
   hydrateRemoteGames: () => Promise<void>;
@@ -38,10 +41,20 @@ export const useGameStore = create<GameStore>()(
       streak: initialStreak,
       attempts: [],
       progress: {},
+      skills: {},
       hydrated: false,
       remoteGames: [],
       remoteGamesHydrated: false,
       getGameProgress: (gameId) => get().progress[gameId],
+      recordSkillOutcomes: (entries) => {
+        if (!entries.length) return;
+        const skills: SkillProfile = { ...get().skills };
+        for (const { tag, correct } of entries) {
+          const prev = skills[tag] ?? { attempts: 0, errors: 0 };
+          skills[tag] = { attempts: prev.attempts + 1, errors: prev.errors + (correct ? 0 : 1) };
+        }
+        set({ skills });
+      },
       hydrateRemoteGames: async () => {
         try {
           const rows = await apiFetch<PublishedGame[]>("/games/published");
@@ -72,8 +85,8 @@ export const useGameStore = create<GameStore>()(
         }
       },
       exportProgress: () => {
-        const { xp, streak, attempts, progress } = get();
-        const blob = new Blob([JSON.stringify({ xp, streak, attempts, progress, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
+        const { xp, streak, attempts, progress, skills } = get();
+        const blob = new Blob([JSON.stringify({ xp, streak, attempts, progress, skills, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -83,12 +96,13 @@ export const useGameStore = create<GameStore>()(
       },
       importProgress: (json) => {
         try {
-          const parsed = JSON.parse(json) as { xp?: number; streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress> };
+          const parsed = JSON.parse(json) as { xp?: number; streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress>; skills?: SkillProfile };
           set({
             xp: typeof parsed.xp === "number" ? parsed.xp : get().xp,
             streak: parsed.streak ?? get().streak,
             attempts: Array.isArray(parsed.attempts) ? parsed.attempts : get().attempts,
             progress: parsed.progress && typeof parsed.progress === "object" ? parsed.progress : get().progress,
+            skills: parsed.skills && typeof parsed.skills === "object" ? parsed.skills : get().skills,
           });
           return true;
         } catch {
@@ -172,6 +186,7 @@ export const useGameStore = create<GameStore>()(
         streak: state.streak,
         attempts: state.attempts,
         progress: state.progress,
+        skills: state.skills,
       }),
     },
   ),

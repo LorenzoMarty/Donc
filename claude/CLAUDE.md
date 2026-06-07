@@ -125,17 +125,36 @@ Correção é assíncrona via Celery:
 ### Jogos (Client-side)
 XP, streaks e progresso dos jogos são **totalmente client-side** — sem chamadas ao backend. `useGameStore` (Zustand + chave localStorage `donk.games.v1`) rastreia tudo. Definições dos jogos ficam como TypeScript estático em `src/games/`.
 
-**Engines** (campo `engine` em `GameDefinition`, roteado por `GameSession`):
+**Engines** (campo `engine` em `GameDefinition`, roteado por `GameSession` via switch; componentes
+em `src/games/_engines/`):
 - `quiz`/`choice` — múltipla escolha (render inline no `GameSession`).
 - `timed-rush` — rodada infinita cronometrada (combo/strike/timer); usa `questions`.
-- `classify` — arrastar itens para baldes (dnd-kit); usa `classify` (buckets + items).
+- `classify` — arrastar itens para baldes (dnd-kit); usa `classify`.
 - `order` — ordenar frases por rodada (dnd-kit sortable); usa `order.rounds`.
 - `fill-blank` — digitar resposta com normalização tolerante; usa `fillBlank.rounds`.
 - `sequence` — montagem da redação (`EssayAssemblySession`, específico do `essay-assembly`).
+- `text-surgery` — restaurar texto degradado (escolha curada + reescrita avaliada por IA); usa `textSurgery`.
+- `essay-collapse` — reconstruir redação (reordenar + reconectar); usa `essayCollapse`.
+- `artificiality` — detectar trecho autêntico × artificial; usa `artificiality`.
+- `argument-escalation` — escada da tese; usa `escalation`.
+- `duel` — duas versões, escolher a melhor; usa `duel`.
+- `corrector` — multi-seleção de problemas presentes; usa `corrector`.
+- `survival` — maratona agregada (timer/vidas/combo); usa `survival` (agrega via `getAllGames`).
 
-Há 7 categorias no hub, cada uma com ≥3 atividades. Para criar uma atividade nova, adicione uma
-`GameDefinition` ao `index.ts` da categoria com o `engine` e o payload correspondente — não é
-preciso tocar nos componentes de engine.
+Alternativas de `quiz`/`timed-rush` são embaralhadas em runtime (`_engines/shuffleOptions.ts`).
+Feedback qualitativo S/A/B/C via `_engines/grade.ts`.
+
+**Perfil adaptativo (client-side):** `useGameStore.skills` (`Record<SkillTag,{attempts,errors}>`)
+alimentado por `recordSkillOutcomes`; seletores em `features/gamification/symptoms.ts`
+(`masteryFor`, `topWeaknesses`, `recommendTrainings`, `gamesForHub`).
+
+**Hubs por sintoma:** `symptomHubs` em `symptoms.ts`; seção no `GamesHub` e página
+`SymptomPage` (rota `games/treino/[symptomId]`). Categorias (coesão, gramática…) seguem como
+tags internas. Para criar atividade nova, adicione uma `GameDefinition` ao `index.ts` da
+pasta do engine com `engine`, payload e `tags`, e registre em `catalog.ts`.
+
+**IA de reescrita:** `POST /ai/evaluate-rewrite` (backend `agents/rewrite_evaluator`, com fallback
+heurístico sem `OPENAI_API_KEY`), consumido pelo Text Surgery.
 
 ### Variáveis de Ambiente
 | Variável | Finalidade |
