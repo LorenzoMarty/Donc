@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from src.agents.analytics import AnalyticsAgent
 from src.agents.exercise import ExerciseGeneratorAgent
+from src.agents.rewrite_evaluator import RewriteEvaluatorAgent
 from src.agents.study_planner import StudyPlannerAgent
 from src.database.session import get_db
 from src.dependencies import get_current_user
@@ -23,12 +24,13 @@ from src.schemas.common import ApiResponse, success_response
 from src.schemas.ai import (
     AIAnalyzeRequest,
     AICorrectRequest,
+    AIEvaluateRewriteRequest,
     AIGenerateExerciseRequest,
     AIJobResponse,
     AIRecommendRequest,
     AIStudyPlanRequest,
 )
-from src.agents.schemas import AnalyticsResult, ExerciseGenerationResult, RecommendationResult, StudyPlanResult
+from src.agents.schemas import AnalyticsResult, ExerciseGenerationResult, RecommendationResult, RewriteEvaluationResult, StudyPlanResult
 from src.schemas.essays import EssayRead
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.essay_service import EssayService
@@ -84,6 +86,37 @@ def generate_exercise(
         user_id=current_user.id,
         runner=agent.runner,
         meta={"focus": focus, "difficulty": payload.difficulty, "count": payload.count},
+        commit=True,
+    )
+    return success_response(result)
+
+
+@router.post("/evaluate-rewrite", response_model=ApiResponse[RewriteEvaluationResult])
+def evaluate_rewrite(
+    payload: AIEvaluateRewriteRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    check_ai_rate_limit(current_user.id)
+    original = sanitize_ai_text(payload.original, max_chars=800)
+    rewritten = sanitize_ai_text(payload.rewritten, max_chars=800)
+    criteria = sanitize_ai_text(payload.criteria, max_chars=240) if payload.criteria else None
+    _reject_prompt_injection(rewritten)
+    agent = RewriteEvaluatorAgent()
+    result = agent.evaluate(
+        original=original,
+        rewritten=rewritten,
+        criteria=criteria,
+        user_id=current_user.id,
+        session_id=f"user:{current_user.id}:rewrite",
+    )
+    record_ai_interaction(
+        db,
+        workflow="rewrite_evaluation",
+        agent="RewriteEvaluatorAgent",
+        user_id=current_user.id,
+        runner=agent.runner,
+        meta={"criteria": criteria or ""},
         commit=True,
     )
     return success_response(result)

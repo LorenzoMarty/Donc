@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, CalendarCheck, ChevronRight, Dumbbell, Sparkles } from "lucide-react";
 
 import { getEnrichedCategories, getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
+import { masteryForTags, symptomHubs } from "@/features/gamification/symptoms";
 import { GameCardGrid } from "@/game-pages/games/components/GameCard";
 import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
 import { ProgressDashboard } from "@/game-pages/games/components/ProgressDashboard";
@@ -20,6 +21,7 @@ export default function GamesHub() {
   const [ready, setReady] = useState(false);
   const attempts = useGameStore((state) => state.attempts);
   const progress = useGameStore((state) => state.progress);
+  const skills = useGameStore((state) => state.skills);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
 
@@ -121,6 +123,46 @@ export default function GamesHub() {
       </motion.header>
 
       <ProgressDashboard overallProgress={overallProgress} weeklyProgress={weeklyProgress} />
+
+      <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
+        <div className="mb-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Treine pelo seu sintoma</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">O que está travando sua escrita?</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Escolha o problema que você sente — o treinador encontra os exercícios certos para ele.
+          </p>
+        </div>
+        <div className="fluid-grid gap-3 [--grid-min:17rem]">
+          {symptomHubs.map((hub) => {
+            const HubIcon = hub.icon;
+            const mastery = masteryForTags(skills, hub.tags);
+            return (
+              <Link
+                key={hub.id}
+                href={`/games/treino/${hub.id}`}
+                className="game-tile group flex flex-col gap-3 bg-background/64 p-4 transition-colors hover:border-primary/50 hover:bg-primary/5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+                    <HubIcon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  {mastery !== null && (
+                    <span className="rounded-full border border-border bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                      {mastery}%
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-semibold leading-snug tracking-normal text-foreground">{hub.title}</h3>
+                <p className="text-sm leading-6 text-muted-foreground">{hub.description}</p>
+                <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                  Treinar
+                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       <section id="categorias" className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

@@ -116,6 +116,16 @@ class GameGenerationResult(BaseModel):
     questions: list[GameQuestion] = Field(min_length=3, max_length=10, description="Lista de questoes do jogo.")
 
 
+class RewriteEvaluationResult(BaseModel):
+    grade: Literal["S", "A", "B", "C", "Fraco"] = Field(description="Nota geral da reescrita; S e o teto.")
+    tecnica: int = Field(ge=0, le=100, description="Correcao gramatical e adequacao a norma culta.")
+    naturalidade: int = Field(ge=0, le=100, description="Fluidez e ausencia de tom artificial/robotico.")
+    sofisticacao: int = Field(ge=0, le=100, description="Densidade lexical e maturidade da construcao.")
+    precisao: int = Field(ge=0, le=100, description="Fidelidade ao sentido e ao criterio pedido.")
+    feedback: str = Field(min_length=10, max_length=500, description="Comentario objetivo sobre o impacto da reescrita.")
+    melhorias: list[str] = Field(default_factory=list, description="Ajustes concretos para subir de grade.")
+
+
 class AnalyticsResult(BaseModel):
     summary: str
     estimated_level: str
