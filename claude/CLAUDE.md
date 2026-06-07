@@ -43,7 +43,12 @@ npm run build        # build de produção
 npm run lint         # eslint --max-warnings=0
 npm run typecheck    # next typegen && tsc --noEmit
 npm run format       # prettier --write .
+npm run test         # Vitest (unit + stores)
+npm run test:coverage# Vitest com cobertura
+npm run test:e2e     # Playwright smoke (sobe backend+frontend isolados)
+npm run quality      # lint + typecheck + test (gate local)
 ```
+> E2E: rodar `npm run test:e2e:install` uma vez (baixa o Chromium). Detalhes em `docs/testing.md`.
 
 ### Backend (`backend/`)
 ```bash
@@ -54,7 +59,12 @@ uvicorn src.main:app --reload   # servidor de desenvolvimento em :8000
 celery -A src.queues.celery_app:celery_app worker --loglevel=INFO  # worker assíncrono
 alembic upgrade head            # executar migrações do banco
 pytest                          # rodar testes
+pytest --cov                    # testes com cobertura
+prospector                      # análise estática + bandit (segurança)
+.\quality.ps1                   # prospector + pytest --cov (gate local)
 ```
+> Deps de qualidade/teste: `python -m pip install -r requirements-dev.txt`. Guia: `docs/testing.md`.
+> Testes em `tests/` (`unit/`, `integration/`, `fixtures/`). Config em `pyproject.toml` e `.prospector.yaml`.
 
 ### Stack completa via Docker
 ```bash

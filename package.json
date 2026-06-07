@@ -2,6 +2,12 @@
   "name": "donk-enem-platform",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "dev": "docker compose up --build",
     "dev:frontend": "npm --prefix frontend run dev",
