@@ -30,6 +30,9 @@
   --app-gutter: clamp(1rem, 2.7vw, 2.25rem);
   --app-page-gap: clamp(1rem, 2.1vw, 1.65rem);
   --font-essay: 'Merriweather', Georgia, serif;
+  /* Preferência de "letra" do usuário (ver src/lib/appearance.ts). */
+  --ui-font-scale: 1;
+  --ui-line-height: 1.55;
 }
 
 .dark {
@@ -62,7 +65,7 @@ html {
   min-width: 320px;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  font-size: 70%;
+  font-size: calc(70% * var(--ui-font-scale, 1));
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
 }
@@ -82,6 +85,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  line-height: var(--ui-line-height, 1.55);
   letter-spacing: 0;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
@@ -139,7 +143,7 @@ li {
 
 @media (max-width: 767px) {
   html {
-    font-size: 100%;
+    font-size: calc(100% * var(--ui-font-scale, 1));
   }
 }
 

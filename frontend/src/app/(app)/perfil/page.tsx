@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
+import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -404,6 +405,8 @@ export default function ProfilePage() {
           </Button>
         </Surface>
       </section>
+
+      <AppearanceSettings />
     </div>
   );
 }

@@ -29,6 +29,42 @@ Regras obrigatórias para trabalhar neste repositório:
    sempre que necessário** — quando arquitetura, estrutura de pastas, comandos, rotas ou decisões
    relevantes mudarem.
 
+4. **Escopo fechado.** Altere só o necessário. Não refatore nem melhore fora do escopo. Se encontrar algo importante, registre como observação.
+
+5. **Siga padrões existentes.** Observe como o projeto organiza arquivos, nomes, validações, testes e convenções. Siga o mesmo padrão.
+
+6. **Explique decisões com tradeoff.** Toda decisão que envolva performance, segurança, arquitetura ou escalabilidade deve ter justificativa resumida.
+
+7. **Valide impacto antes de mudanças globais.** Auth, middlewares, banco, CI/CD, contratos de API, containers → identifique o que pode ser afetado antes de alterar.
+
+8. **Sem dependência nova sem justificativa.** Verifique se o problema já se resolve com o que existe. Se precisar de lib nova, justifique.
+
+9. **Sem presunção.** Se doc incompleta e código não confirma → declare incerteza. Nunca invente regras, fluxos ou arquitetura.
+
+10. **Simples e incremental.** Menor sistema que resolve o problema. Sem abstração prematura. Sem reescrita ampla quando mudança pequena resolve.
+
+11. **Sem mudança silenciosa.** Alterações em fluxo, contrato de API, autenticação, regra de negócio ou persistência → informe explicitamente ao usuário.
+
+12. **Valide antes de concluir.** Sintaxe, imports, tipagem, build ou testes disponíveis devem passar antes de declarar tarefa pronta.
+
+13. **Sem duplicação.** Antes de criar função, hook ou componente novo: verifique se já existe algo reutilizável. Prefira extensão.
+
+14. **Funções pequenas e separadas.** Parsing, validação, regra de negócio e persistência em camadas distintas. Sem mistura de responsabilidades.
+
+15. **Erros visíveis.** Sem except/pass, fallback silencioso ou log insuficiente. Erro relevante deve ser registrado ou propagado.
+
+16. **Valide entradas externas.** Dados de API, formulário, arquivo, env ou IA devem ser validados antes de uso. Nunca confie em formato implícito.
+
+17. **Alerte antes de destruir.** Migração destrutiva, reset, remoção de schema ou limpeza de dados → explique impacto antes de executar.
+
+18. **Comentário explica intenção, não repete código.** Só comente decisões, tradeoffs ou comportamento não óbvio. Sem comentário redundante.
+
+19. **Pergunte antes de implementar o errado.** Se o requisito for ambíguo e a implementação errada custar mais do que 1 pergunta: pergunte antes. Uma pergunta certeira vale mais que horas de retrabalho.
+
+20. **Sinalize dívida técnica, não a esconda.** Se precisar fazer algo não ideal por limitação de escopo, tempo ou contexto: registre como TODO com motivo claro. Dívida não registrada vira bug futuro.
+
+21. **Nenhum segredo no código.** Credenciais, tokens, chaves, senhas ou dados sensíveis nunca no código ou log. Sempre via variável de ambiente validada.
+
 > Nota: a raiz tem um `CLAUDE.md` curto que só faz `@claude/CLAUDE.md` — isso reativa o auto-load.
 > O arquivo real de instruções é **este** (`claude/CLAUDE.md`); edite-o aqui, não na raiz.
 
