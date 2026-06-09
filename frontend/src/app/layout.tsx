@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 
 import { Providers } from "@/providers/app-providers";
+import { APPEARANCE_INIT_SCRIPT } from "@/lib/appearance";
 import "./globals.css";
 
 const merriweather = Merriweather({
@@ -35,6 +36,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${merriweather.variable}`}>
+      <head>
+        {/* Aplica a preferência de letra antes da pintura para evitar flash de tamanho. */}
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_INIT_SCRIPT }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>
