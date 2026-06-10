@@ -1,3 +1,38 @@
+[project]
+name = "donc-enem-backend"
+version = "1.0.0"
+description = "Donc ENEM backend (FastAPI)"
+requires-python = ">=3.11"
+# Espelha backend/requirements.txt (fonte usada em Docker/local). Mantenha os dois em sincronia.
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "SQLAlchemy==2.0.36",
+    "psycopg[binary]==3.2.3",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.0",
+    "python-jose[cryptography]==3.3.0",
+    "bcrypt==4.2.1",
+    "python-multipart==0.0.20",
+    "email-validator==2.2.0",
+    "openai==2.36.0",
+    "httpx==0.28.1",
+    "agno==2.6.5",
+    "alembic==1.14.0",
+    "celery[redis]==5.4.0",
+    "redis==5.2.1",
+    "pgvector==0.3.6",
+    "langfuse==2.57.12",
+    "opentelemetry-api==1.29.0",
+    "opentelemetry-sdk==1.29.0",
+    "opentelemetry-exporter-otlp==1.29.0",
+    "pytest==8.3.4",
+]
+
+[tool.uv]
+# App, não biblioteca: não empacota a raiz (evita exigência de build backend no `uv lock`).
+package = false
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
