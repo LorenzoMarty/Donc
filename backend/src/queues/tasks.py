@@ -7,6 +7,7 @@ from src.queues.celery_app import celery_app
 from src.queues.jobs import AIJobService
 from src.schemas.essays import EssayRead
 from src.services.essay_service import EssayService
+from src.telemetry import flush_ai_telemetry
 
 
 def run_correct_essay_job(job_id: str) -> dict:
@@ -32,6 +33,7 @@ def run_correct_essay_job(job_id: str) -> dict:
             AIJobService(db).mark_failed(job, error)
         raise
     finally:
+        flush_ai_telemetry()
         db.close()
 
 

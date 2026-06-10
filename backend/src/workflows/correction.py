@@ -3,8 +3,10 @@
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
+from contextlib import ExitStack
 from typing import TypeVar
 
+from opentelemetry import context as otel_context
 from sqlalchemy.orm import Session
 
 from src.agents.base import AgnoAgentRunner
@@ -15,7 +17,8 @@ from src.agents.repertoire import RepertoireAgent
 from src.agents.schemas import EssayCorrectionResult, GrammarAnalysis, RepertoireAnalysis, ThesisAnalysis
 from src.agents.thesis import ThesisAgent
 from src.memory import update_learning_profile
-from src.services.ai_telemetry import build_interaction_log
+from src.services.ai_telemetry import build_interaction_log, safe_persist_interaction
+from src.telemetry import flush_ai_telemetry, get_ai_telemetry_client
 from src.utils.ai_security import guarded_student_text, sanitize_ai_text
 
 
@@ -48,11 +51,40 @@ class CorrectionOrchestratorWorkflow:
         safe_content = guarded_student_text(content, max_chars=20000)
         session_id = f"essay:{essay_id}" if essay_id is not None else None
 
+        # Trace raiz Langfuse: um trace por correção, com os 5 agentes como spans-filhos.
+        trace_stack, parent_ctx = self._start_trace(user_id=user_id, session_id=session_id, essay_id=essay_id)
+        with trace_stack:
+            try:
+                return self._run_pipeline(
+                    safe_theme=safe_theme,
+                    safe_context=safe_context,
+                    safe_content=safe_content,
+                    session_id=session_id,
+                    user_id=user_id,
+                    job_id=job_id,
+                    parent_ctx=parent_ctx,
+                )
+            finally:
+                flush_ai_telemetry()
+
+    def _run_pipeline(
+        self,
+        *,
+        safe_theme: str,
+        safe_context: str,
+        safe_content: str,
+        session_id: str | None,
+        user_id: int | None,
+        job_id: str | None,
+        parent_ctx,
+    ) -> EssayCorrectionResult:
         # ThesisAgent, GrammarAgent e RepertoireAgent são independentes — rodam em paralelo.
+        # _bind_ctx propaga o contexto OTel do trace raiz para os threads, mantendo o
+        # aninhamento dos spans (best practice: hierarquia de spans).
         with ThreadPoolExecutor(max_workers=3) as pool:
-            t_fut = pool.submit(self._timed_call, lambda: self.thesis_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id))
-            g_fut = pool.submit(self._timed_call, lambda: self.grammar_agent.analyze(content=safe_content, user_id=user_id, session_id=session_id))
-            r_fut = pool.submit(self._timed_call, lambda: self.repertoire_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id))
+            t_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.thesis_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id)))
+            g_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.grammar_agent.analyze(content=safe_content, user_id=user_id, session_id=session_id)))
+            r_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.repertoire_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id)))
             wait([t_fut, g_fut, r_fut])
 
         thesis, t_ms, t_status, t_err = t_fut.result()
@@ -105,6 +137,47 @@ class CorrectionOrchestratorWorkflow:
             update_learning_profile(self.db, user_id=user_id, correction=correction)
         return correction
 
+    def _start_trace(self, *, user_id: int | None, session_id: str | None, essay_id: int | None) -> tuple[ExitStack, object]:
+        """Abre o span raiz do trace e devolve o contexto OTel para propagar aos threads.
+        No-op silencioso quando o tracing está desligado."""
+        stack = ExitStack()
+        client = get_ai_telemetry_client()
+        if client is None:
+            return stack, otel_context.get_current()
+        try:
+            from langfuse import propagate_attributes
+
+            propagation: dict[str, object] = {"trace_name": self.workflow_name}
+            if user_id is not None:
+                propagation["user_id"] = str(user_id)
+            if session_id:
+                propagation["session_id"] = session_id
+            stack.enter_context(propagate_attributes(**propagation))
+            stack.enter_context(
+                client.start_as_current_observation(
+                    as_type="span",
+                    name=self.workflow_name,
+                    metadata={"workflow": self.workflow_name, "essay_id": essay_id},
+                )
+            )
+        except Exception:  # pragma: no cover - telemetria nunca bloqueia a correção
+            stack.close()
+            return ExitStack(), otel_context.get_current()
+        return stack, otel_context.get_current()
+
+    @staticmethod
+    def _bind_ctx(parent_ctx: object, run: Callable[[], T]) -> Callable[[], T]:
+        """Anexa o contexto OTel do trace raiz dentro do thread worker."""
+
+        def runner() -> T:
+            token = otel_context.attach(parent_ctx)
+            try:
+                return run()
+            finally:
+                otel_context.detach(token)
+
+        return runner
+
     def _timed_call(self, run: Callable[[], T]) -> tuple[T, int, str, str | None]:
         start = time.perf_counter()
         status = "success"
@@ -156,8 +229,8 @@ class CorrectionOrchestratorWorkflow:
     ) -> None:
         if self.db is None:
             return
-        self.db.add(
-            build_interaction_log(
+        try:
+            log = build_interaction_log(
                 workflow=self.workflow_name,
                 agent=agent,
                 user_id=user_id,
@@ -168,5 +241,8 @@ class CorrectionOrchestratorWorkflow:
                 latency_ms=latency_ms,
                 error=error,
             )
-        )
+        except Exception:
+            return
+        # Telemetria é não-crítica: SAVEPOINT isola um INSERT ruim do commit da correção.
+        safe_persist_interaction(self.db, log)
 

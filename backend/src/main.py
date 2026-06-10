@@ -13,7 +13,7 @@ from src.models import *  # noqa: F403 - garante registro das tabelas no metadat
 from src.routes import admin, ai, auth, dashboard, essays, exams, exercises, games, lessons
 from src.schemas.common import ApiResponse, HealthData, success_response
 from src.services.seed import seed_database
-from src.telemetry import configure_ai_telemetry
+from src.telemetry import configure_ai_telemetry, flush_ai_telemetry
 from src.vectorstore import seed_knowledge_base
 
 
@@ -68,6 +68,7 @@ async def lifespan(_: FastAPI):
     except Exception:
         logger.exception("Application startup tasks failed")
     yield
+    flush_ai_telemetry()
 
 
 app = FastAPI(
