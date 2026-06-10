@@ -3,11 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from contextlib import ExitStack
 from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
 from src.config.settings import settings
+from src.telemetry import get_ai_telemetry_client
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -39,14 +41,20 @@ class AgnoAgentRunner:
     ) -> T:
         self._reset_run_state(prompt)
         start = time.perf_counter()
-        span_context = self._span_context(
+        base_metadata = {
+            "agent": agent_name,
+            "description": description,
+            "output_schema": output_schema.__name__,
+            "model": settings.openai_model,
+            "prompt_hash": self.last_prompt_hash or "",
+        }
+        stack, span = self._start_observation(
             agent_name=agent_name,
-            description=description,
-            output_schema=output_schema,
             user_id=user_id,
             session_id=session_id,
+            metadata=base_metadata,
         )
-        with span_context as span:
+        with stack:
             if not settings.openai_api_key:
                 return self._finish_run(fallback, start=start, span=span, used_fallback=True, error="openai_api_key_missing")
 
@@ -108,39 +116,38 @@ class AgnoAgentRunner:
         self.last_model = settings.openai_model
         self.last_prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
-    def _span_context(
+    def _start_observation(
         self,
         *,
         agent_name: str,
-        description: str,
-        output_schema: type[BaseModel],
         user_id: int | None,
         session_id: str | None,
-    ):
+        metadata: dict[str, Any],
+    ) -> tuple[ExitStack, Any]:
+        """Abre um span Langfuse para o agente (pai dos spans de geracao gerados
+        pelo OpenLIT). Identidade de trace (user_id/session_id) e propagada para
+        todas as observacoes-filhas. No-op silencioso se tracing estiver off."""
+        stack = ExitStack()
+        client = get_ai_telemetry_client()
+        if client is None:
+            return stack, _NoopSpan()
         try:
-            from opentelemetry import trace
+            from langfuse import propagate_attributes
 
-            tracer = trace.get_tracer("src.ai")
-            span_context = tracer.start_as_current_span(f"ai.{agent_name}")
-        except Exception:  # pragma: no cover - telemetry must never block generation
-            return _NoopSpanContext()
-
-        return _TelemetrySpanContext(
-            span_context,
-            attributes={
-                "langfuse.trace.name": agent_name,
-                "langfuse.observation.type": "generation",
-                "langfuse.observation.model.name": settings.openai_model,
-                "gen_ai.system": "openai",
-                "gen_ai.request.model": settings.openai_model,
-                "ai.agent": agent_name,
-                "ai.description": description,
-                "ai.output_schema": output_schema.__name__,
-                "ai.prompt_hash": self.last_prompt_hash or "",
-                **({"user.id": str(user_id), "langfuse.user.id": str(user_id)} if user_id is not None else {}),
-                **({"session.id": session_id, "langfuse.session.id": session_id} if session_id else {}),
-            },
-        )
+            propagation: dict[str, Any] = {}
+            if user_id is not None:
+                propagation["user_id"] = str(user_id)
+            if session_id:
+                propagation["session_id"] = session_id
+            if propagation:
+                stack.enter_context(propagate_attributes(**propagation))
+            span = stack.enter_context(
+                client.start_as_current_observation(as_type="span", name=f"ai.{agent_name}", metadata=metadata)
+            )
+            return stack, span
+        except Exception:  # pragma: no cover - telemetria nunca bloqueia geracao
+            stack.close()
+            return ExitStack(), _NoopSpan()
 
     def _build_agno_db(self):
         if not settings.database_url.startswith("postgres"):
@@ -174,22 +181,24 @@ class AgnoAgentRunner:
         self.last_error = error
         self.last_status = "error" if error else "success"
         try:
-            span.set_attribute("ai.latency_ms", self.last_latency_ms)
-            span.set_attribute("ai.token_count", self.last_token_count)
-            span.set_attribute("ai.used_fallback", used_fallback)
-            span.set_attribute("ai.status", self.last_status)
-            if error:
-                span.set_attribute("error.message", error)
+            span.update(
+                metadata={
+                    "latency_ms": self.last_latency_ms,
+                    "token_count": self.last_token_count,
+                    "input_tokens": self.last_input_tokens,
+                    "output_tokens": self.last_output_tokens,
+                    "used_fallback": used_fallback,
+                    "status": self.last_status,
+                    **({"error": error} if error else {}),
+                }
+            )
         except Exception:
             pass
         return result
 
     def _mark_span_error(self, span: Any, error: str) -> None:
         try:
-            from opentelemetry.trace import Status, StatusCode
-
-            span.set_status(Status(StatusCode.ERROR, error))
-            span.set_attribute("error.message", error)
+            span.update(level="ERROR", status_message=error)
         except Exception:
             pass
 
@@ -224,27 +233,8 @@ class AgnoAgentRunner:
             return 0
 
 
-class _TelemetrySpanContext:
-    def __init__(self, span_context: Any, attributes: dict[str, str]) -> None:
-        self.span_context = span_context
-        self.attributes = attributes
+class _NoopSpan:
+    """Span nulo usado quando o tracing esta desligado."""
 
-    def __enter__(self):
-        span = self.span_context.__enter__()
-        for key, value in self.attributes.items():
-            span.set_attribute(key, value)
-        return span
-
-    def __exit__(self, *args: Any) -> Any:
-        return self.span_context.__exit__(*args)
-
-
-class _NoopSpanContext:
-    def __enter__(self) -> "_NoopSpanContext":
-        return self
-
-    def __exit__(self, *_: Any) -> None:
-        return None
-
-    def set_attribute(self, *_: Any) -> None:
+    def update(self, *_: Any, **__: Any) -> None:
         return None
