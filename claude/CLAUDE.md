@@ -168,6 +168,16 @@ Correção é assíncrona via Celery:
 5. Se `OPENAI_API_KEY` ausente ou agno falhar, agentes retornam valor `fallback` configurado (degradação graciosa)
 6. Após correção, `update_learning_profile()` atualiza `StudentLearningProfile` para rastrear competências fracas e erros recorrentes
 
+### Custos de IA (telemetria)
+Cada chamada grava um `AIInteractionLog` (`ai_interaction_logs`) com `model`, `input_tokens`,
+`output_tokens` e `cost_micro_usd`. Custo é calculado em **micro-USD** (1 USD = 1M micros) pela
+tabela de preço oficial OpenAI por modelo em `src/config/ai_pricing.py` (`cost_micro_usd()`).
+`build_interaction_log()` em `services/ai_telemetry.py` é a fonte única do cálculo (usada por
+`record_ai_interaction` e pelo `CorrectionOrchestratorWorkflow`). A conversão para **R$** usa a
+cotação **PTAX/BCB** em `services/fx_rate.py` (`get_usd_brl()`, cache TTL + fallback). O painel admin
+(`AdminService.ai_telemetry`) agrega por workflow, por modelo, diário e top-users, expondo custo em
+USD e BRL — exibido em `admin/_tabs/ai-telemetry.tsx`.
+
 ### Jogos (Client-side)
 XP, streaks e progresso dos jogos são **totalmente client-side** — sem chamadas ao backend. `useGameStore` (Zustand + chave localStorage `donk.games.v1`) rastreia tudo. Definições dos jogos ficam como TypeScript estático em `src/games/`.
 
@@ -240,6 +250,8 @@ heurístico sem `OPENAI_API_KEY`), consumido pelo Text Surgery.
 | `INTERNAL_API_URL` | Destino do proxy server-side (padrão: `http://127.0.0.1:8000/api/v1`) |
 | `SEED_DEMO_DATA` | Popula usuários/conteúdo demo no startup (padrão: `true`) |
 | `ENABLE_PGVECTOR` | Habilita extensão vector + seed da base de conhecimento |
+| `USD_BRL_FALLBACK_RATE` | Cotação USD→BRL usada quando a PTAX/BCB falha (padrão: `5.40`) |
+| `USD_BRL_RATE_TTL_HOURS` | TTL do cache da cotação PTAX (padrão: `6`) |
 
 ### Migrações do Banco
 Backend cria tabelas automaticamente via `Base.metadata.create_all()` no startup. Alembic (`alembic.ini`) gerencia migrações de schema em produção. Função `_ensure_paragraph_count_columns()` no startup é guarda de migração manual para coluna `paragraph_count`.

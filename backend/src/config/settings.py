@@ -27,7 +27,9 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_host: str | None = None
-    ai_cost_cents_per_1k_tokens: float = 0.5
+    ai_cost_cents_per_1k_tokens: float = 0.5  # legado: fallback de linhas antigas sem cost_micro_usd
+    usd_brl_fallback_rate: float = 5.40  # usado quando a cotação PTAX/BCB falha
+    usd_brl_rate_ttl_hours: int = 6
     ai_rate_limit_per_minute: int = 20
     seed_demo_data: bool = False
     frontend_origin: str = "http://localhost:3000"

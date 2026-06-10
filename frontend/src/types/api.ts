@@ -326,6 +326,26 @@ export type AgentStats = {
   total_tokens: number;
   avg_latency_ms: number;
   cost_usd_cents: number;
+  cost_usd_micros: number;
+  cost_brl_cents: number;
+};
+
+export type WorkflowStats = {
+  workflow: string;
+  total_calls: number;
+  error_calls: number;
+  total_tokens: number;
+  cost_usd_micros: number;
+  cost_brl_cents: number;
+  avg_cost_brl_cents: number;
+};
+
+export type ModelStats = {
+  model: string;
+  total_calls: number;
+  total_tokens: number;
+  cost_usd_micros: number;
+  cost_brl_cents: number;
 };
 
 export type DailyUsage = {
@@ -334,6 +354,8 @@ export type DailyUsage = {
   total_calls: number;
   error_calls: number;
   cost_usd_cents: number;
+  cost_usd_micros: number;
+  cost_brl_cents: number;
 };
 
 export type AITelemetry = {
@@ -343,9 +365,15 @@ export type AITelemetry = {
   total_calls: number;
   error_calls: number;
   cost_usd_cents: number;
+  cost_usd_micros: number;
+  cost_brl_cents: number;
+  usd_brl_rate: number;
+  rate_source: string;
   agents: AgentStats[];
+  workflows: WorkflowStats[];
+  models: ModelStats[];
   daily: DailyUsage[];
-  top_users: { user_id: number; label: string; total_tokens: number; cost_usd_cents: number }[];
+  top_users: { user_id: number; label: string; total_tokens: number; cost_usd_cents: number; cost_usd_micros: number; cost_brl_cents: number }[];
 };
 
 export type UserActivity = {
@@ -378,6 +406,10 @@ export type AdminUserAIUsage = {
   total_calls: number;
   error_calls: number;
   cost_usd_cents: number;
+  cost_usd_micros: number;
+  cost_brl_cents: number;
+  usd_brl_rate: number;
+  rate_source: string;
   agents: AgentStats[];
   daily: DailyUsage[];
 };
