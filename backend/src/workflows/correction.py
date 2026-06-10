@@ -1,6 +1,5 @@
 ﻿from __future__ import annotations
 
-import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -8,6 +7,7 @@ from typing import TypeVar
 
 from sqlalchemy.orm import Session
 
+from src.agents.base import AgnoAgentRunner
 from src.agents.correction import EssayCorrectionAgent
 from src.agents.enem import ENEMCompetencyAgent
 from src.agents.grammar import GrammarAgent
@@ -15,7 +15,7 @@ from src.agents.repertoire import RepertoireAgent
 from src.agents.schemas import EssayCorrectionResult, GrammarAnalysis, RepertoireAnalysis, ThesisAnalysis
 from src.agents.thesis import ThesisAgent
 from src.memory import update_learning_profile
-from src.models import AIInteractionLog
+from src.services.ai_telemetry import build_interaction_log
 from src.utils.ai_security import guarded_student_text, sanitize_ai_text
 
 
@@ -60,12 +60,12 @@ class CorrectionOrchestratorWorkflow:
         repertoire, r_ms, r_status, r_err = r_fut.result()
 
         # Log paralelos do thread principal (SQLAlchemy Session não é thread-safe).
-        for name, ms, status, err, tokens in [
-            ("ThesisAgent", t_ms, t_status, t_err, self.thesis_agent.runner.last_token_count),
-            ("GrammarAgent", g_ms, g_status, g_err, self.grammar_agent.runner.last_token_count),
-            ("RepertoireAgent", r_ms, r_status, r_err, self.repertoire_agent.runner.last_token_count),
+        for name, ms, status, err, runner in [
+            ("ThesisAgent", t_ms, t_status, t_err, self.thesis_agent.runner),
+            ("GrammarAgent", g_ms, g_status, g_err, self.grammar_agent.runner),
+            ("RepertoireAgent", r_ms, r_status, r_err, self.repertoire_agent.runner),
         ]:
-            self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, token_count=tokens)
+            self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, runner=runner)
 
         competencies = self._step(
             "ENEMCompetencyAgent",
@@ -78,7 +78,7 @@ class CorrectionOrchestratorWorkflow:
                 user_id=user_id,
                 session_id=session_id,
             ),
-            token_getter=lambda: self.enem_agent.runner.last_token_count,
+            runner=self.enem_agent.runner,
             user_id=user_id,
             job_id=job_id,
             prompt=safe_content,
@@ -96,7 +96,7 @@ class CorrectionOrchestratorWorkflow:
                 user_id=user_id,
                 session_id=session_id,
             ),
-            token_getter=lambda: self.correction_agent.runner.last_token_count,
+            runner=self.correction_agent.runner,
             user_id=user_id,
             job_id=job_id,
             prompt=safe_content,
@@ -127,7 +127,7 @@ class CorrectionOrchestratorWorkflow:
         user_id: int | None,
         job_id: str | None,
         prompt: str,
-        token_getter: Callable[[], int] | None = None,
+        runner: AgnoAgentRunner | None = None,
     ) -> T:
         start = time.perf_counter()
         status = "success"
@@ -140,8 +140,7 @@ class CorrectionOrchestratorWorkflow:
             raise
         finally:
             latency_ms = int((time.perf_counter() - start) * 1000)
-            tokens = token_getter() if token_getter is not None else 0
-            self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error, token_count=tokens)
+            self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error, runner=runner)
 
     def _log(
         self,
@@ -153,21 +152,20 @@ class CorrectionOrchestratorWorkflow:
         job_id: str | None,
         prompt: str,
         error: str | None,
-        token_count: int = 0,
+        runner: AgnoAgentRunner | None = None,
     ) -> None:
         if self.db is None:
             return
         self.db.add(
-            AIInteractionLog(
-                user_id=user_id,
-                job_id=job_id,
+            build_interaction_log(
                 workflow=self.workflow_name,
                 agent=agent,
+                user_id=user_id,
+                job_id=job_id,
+                runner=runner,
+                prompt=prompt,
                 status=status,
                 latency_ms=latency_ms,
-                token_count=token_count,
-                cost_estimate=0,
-                prompt_hash=hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
                 error=error,
             )
         )

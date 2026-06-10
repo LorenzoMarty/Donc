@@ -22,7 +22,13 @@ const EMPTY_TELEMETRY: AITelemetry = {
   total_calls: 0,
   error_calls: 0,
   cost_usd_cents: 0,
+  cost_usd_micros: 0,
+  cost_brl_cents: 0,
+  usd_brl_rate: 0,
+  rate_source: "",
   agents: [],
+  workflows: [],
+  models: [],
   daily: [],
   top_users: [],
 };

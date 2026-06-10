@@ -11,11 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { CompetencyBarChart } from "@/components/shared/charts";
 import { apiFetch } from "@/services/api";
+import { formatBRLCents, formatTokens } from "@/lib/format";
 import type { AdminUser, AdminUserDetail } from "@/types/api";
-
-function centsToDollars(cents: number) {
-  return `$${(cents / 100).toFixed(4)}`;
-}
 
 const ONLINE_WINDOW_MS = 300_000;
 
@@ -28,12 +25,6 @@ function formatDate(iso: string | null, now: number | null) {
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} min atras`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} h atras`;
   return d.toLocaleDateString("pt-BR");
-}
-
-function formatTokens(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
 }
 
 type UserDraft = {
@@ -329,7 +320,7 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
           <Stat label="Tokens" value={formatTokens(ai.total_tokens)} />
           <Stat label="Chamadas" value={String(ai.total_calls)} />
           <Stat label="Erros" value={String(ai.error_calls)} />
-          <Stat label="Custo" value={centsToDollars(ai.cost_usd_cents)} />
+          <Stat label="Custo" value={formatBRLCents(ai.cost_brl_cents)} />
         </div>
         {ai.agents.length ? (
           <div className="mt-3 space-y-1">
@@ -337,7 +328,7 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
               <div key={`${agent.workflow}-${agent.agent}`} className="flex items-center justify-between gap-2 rounded-md border bg-background/40 px-3 py-1.5 text-xs">
                 <span className="min-w-0 truncate font-medium">{agent.agent}</span>
                 <span className="shrink-0 text-muted-foreground">
-                  {formatTokens(agent.total_tokens)} tok · {centsToDollars(agent.cost_usd_cents)}
+                  {formatTokens(agent.total_tokens)} tok · {formatBRLCents(agent.cost_brl_cents)}
                 </span>
               </div>
             ))}

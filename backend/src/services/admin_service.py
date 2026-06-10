@@ -35,11 +35,14 @@ from src.schemas.admin import (
     EventTypeSummary,
     GameQuestionRead,
     MasteryPointRead,
+    ModelStats,
     UserActivityResponse,
+    WorkflowStats,
 )
 from src.memory.profile import get_learning_profile_payload
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.dashboard_service import DashboardService
+from src.services.fx_rate import get_usd_brl
 
 
 class AdminService:
@@ -49,6 +52,21 @@ class AdminService:
 
     def _token_cost_cents(self, tokens: int) -> int:
         return int((tokens / 1000) * settings.ai_cost_cents_per_1k_tokens)
+
+    def _log_cost_micros(self, log: AIInteractionLog) -> int:
+        """Custo da chamada em micro-USD. Usa cost_micro_usd real; cai no cálculo
+        legado (token_count × taxa) para linhas antigas sem custo gravado."""
+        if getattr(log, "cost_micro_usd", 0):
+            return log.cost_micro_usd
+        return int((log.token_count / 1000) * settings.ai_cost_cents_per_1k_tokens * 10_000)
+
+    @staticmethod
+    def _micros_to_usd_cents(micros: int) -> int:
+        return int(round(micros / 10_000))
+
+    @staticmethod
+    def _micros_to_brl_cents(micros: int, rate: float) -> int:
+        return int(round((micros / 1_000_000) * rate * 100))
 
     # ── Existing ──────────────────────────────────────────────────────────────
 
@@ -302,31 +320,35 @@ class AdminService:
 
     def _user_ai_usage(self, user_id: int) -> AdminUserAIUsage:
         logs = self.db.scalars(select(AIInteractionLog).where(AIInteractionLog.user_id == user_id)).all()
+        fx = get_usd_brl()
+        rate = fx.rate
         total_tokens = sum(log.token_count for log in logs)
         total_calls = len(logs)
         error_calls = sum(1 for log in logs if log.status == "error")
+        total_micros = sum(self._log_cost_micros(log) for log in logs)
 
         agent_map: dict[str, dict] = {}
         day_map: dict[str, dict] = {}
         for log in logs:
+            micros = self._log_cost_micros(log)
+            is_error = log.status == "error"
             key = f"{log.workflow}::{log.agent}"
             agent = agent_map.setdefault(
                 key,
-                {"agent": log.agent, "workflow": log.workflow, "calls": 0, "success": 0, "errors": 0, "tokens": 0, "latency_total": 0},
+                {"agent": log.agent, "workflow": log.workflow, "calls": 0, "success": 0, "errors": 0, "tokens": 0, "latency_total": 0, "micros": 0},
             )
             agent["calls"] += 1
             agent["tokens"] += log.token_count
             agent["latency_total"] += log.latency_ms
-            if log.status == "error":
-                agent["errors"] += 1
-            else:
-                agent["success"] += 1
+            agent["micros"] += micros
+            agent["errors" if is_error else "success"] += 1
 
             day = log.created_at.strftime("%Y-%m-%d") if log.created_at else "unknown"
-            bucket = day_map.setdefault(day, {"tokens": 0, "calls": 0, "errors": 0})
+            bucket = day_map.setdefault(day, {"tokens": 0, "calls": 0, "errors": 0, "micros": 0})
             bucket["tokens"] += log.token_count
             bucket["calls"] += 1
-            if log.status == "error":
+            bucket["micros"] += micros
+            if is_error:
                 bucket["errors"] += 1
 
         agents = [
@@ -338,9 +360,11 @@ class AdminService:
                 error_calls=v["errors"],
                 total_tokens=v["tokens"],
                 avg_latency_ms=int(v["latency_total"] / v["calls"]) if v["calls"] else 0,
-                cost_usd_cents=self._token_cost_cents(v["tokens"]),
+                cost_usd_cents=self._micros_to_usd_cents(v["micros"]),
+                cost_usd_micros=v["micros"],
+                cost_brl_cents=self._micros_to_brl_cents(v["micros"], rate),
             )
-            for v in sorted(agent_map.values(), key=lambda x: x["tokens"], reverse=True)
+            for v in sorted(agent_map.values(), key=lambda x: x["micros"], reverse=True)
         ]
         daily = [
             DailyUsage(
@@ -348,7 +372,9 @@ class AdminService:
                 total_tokens=v["tokens"],
                 total_calls=v["calls"],
                 error_calls=v["errors"],
-                cost_usd_cents=self._token_cost_cents(v["tokens"]),
+                cost_usd_cents=self._micros_to_usd_cents(v["micros"]),
+                cost_usd_micros=v["micros"],
+                cost_brl_cents=self._micros_to_brl_cents(v["micros"], rate),
             )
             for day, v in sorted(day_map.items())
         ]
@@ -356,7 +382,11 @@ class AdminService:
             total_tokens=total_tokens,
             total_calls=total_calls,
             error_calls=error_calls,
-            cost_usd_cents=self._token_cost_cents(total_tokens),
+            cost_usd_cents=self._micros_to_usd_cents(total_micros),
+            cost_usd_micros=total_micros,
+            cost_brl_cents=self._micros_to_brl_cents(total_micros, rate),
+            usd_brl_rate=rate,
+            rate_source=fx.source,
             agents=agents,
             daily=daily,
         )
@@ -853,6 +883,8 @@ class AdminService:
 
     def ai_telemetry(self, period_days: int = 30) -> AITelemetryResponse:
         since = datetime.now(timezone.utc) - timedelta(days=period_days)
+        fx = get_usd_brl()
+        rate = fx.rate
 
         base = select(AIInteractionLog).where(AIInteractionLog.created_at >= since)
         logs = self.db.scalars(base).all()
@@ -860,21 +892,49 @@ class AdminService:
         total_tokens = sum(log.token_count for log in logs)
         total_calls = len(logs)
         error_calls = sum(1 for log in logs if log.status == "error")
-        cost_usd_cents = self._token_cost_cents(total_tokens)
+        total_micros = sum(self._log_cost_micros(log) for log in logs)
 
-        # per-agent aggregation
         agent_map: dict[str, dict] = {}
+        workflow_map: dict[str, dict] = {}
+        model_map: dict[str, dict] = {}
+        day_map: dict[str, dict] = {}
         for log in logs:
+            micros = self._log_cost_micros(log)
+            is_error = log.status == "error"
+
             key = f"{log.workflow}::{log.agent}"
-            if key not in agent_map:
-                agent_map[key] = {"agent": log.agent, "workflow": log.workflow, "calls": 0, "success": 0, "errors": 0, "tokens": 0, "latency_total": 0}
-            agent_map[key]["calls"] += 1
-            agent_map[key]["tokens"] += log.token_count
-            agent_map[key]["latency_total"] += log.latency_ms
-            if log.status == "error":
-                agent_map[key]["errors"] += 1
-            else:
-                agent_map[key]["success"] += 1
+            agent = agent_map.setdefault(
+                key,
+                {"agent": log.agent, "workflow": log.workflow, "calls": 0, "success": 0, "errors": 0, "tokens": 0, "latency_total": 0, "micros": 0},
+            )
+            agent["calls"] += 1
+            agent["tokens"] += log.token_count
+            agent["latency_total"] += log.latency_ms
+            agent["micros"] += micros
+            agent["errors" if is_error else "success"] += 1
+
+            wf = workflow_map.setdefault(
+                log.workflow, {"workflow": log.workflow, "calls": 0, "errors": 0, "tokens": 0, "micros": 0}
+            )
+            wf["calls"] += 1
+            wf["tokens"] += log.token_count
+            wf["micros"] += micros
+            if is_error:
+                wf["errors"] += 1
+
+            model_name = log.model or (log.meta or {}).get("model") or "desconhecido"
+            md = model_map.setdefault(model_name, {"model": model_name, "calls": 0, "tokens": 0, "micros": 0})
+            md["calls"] += 1
+            md["tokens"] += log.token_count
+            md["micros"] += micros
+
+            day = log.created_at.strftime("%Y-%m-%d") if log.created_at else "unknown"
+            bucket = day_map.setdefault(day, {"tokens": 0, "calls": 0, "errors": 0, "micros": 0})
+            bucket["tokens"] += log.token_count
+            bucket["calls"] += 1
+            bucket["micros"] += micros
+            if is_error:
+                bucket["errors"] += 1
 
         agents = [
             AgentStats(
@@ -885,21 +945,36 @@ class AdminService:
                 error_calls=v["errors"],
                 total_tokens=v["tokens"],
                 avg_latency_ms=int(v["latency_total"] / v["calls"]) if v["calls"] else 0,
-                cost_usd_cents=self._token_cost_cents(v["tokens"]),
+                cost_usd_cents=self._micros_to_usd_cents(v["micros"]),
+                cost_usd_micros=v["micros"],
+                cost_brl_cents=self._micros_to_brl_cents(v["micros"], rate),
             )
-            for v in sorted(agent_map.values(), key=lambda x: x["tokens"], reverse=True)
+            for v in sorted(agent_map.values(), key=lambda x: x["micros"], reverse=True)
         ]
 
-        # daily aggregation
-        day_map: dict[str, dict] = {}
-        for log in logs:
-            day = log.created_at.strftime("%Y-%m-%d") if log.created_at else "unknown"
-            if day not in day_map:
-                day_map[day] = {"tokens": 0, "calls": 0, "errors": 0}
-            day_map[day]["tokens"] += log.token_count
-            day_map[day]["calls"] += 1
-            if log.status == "error":
-                day_map[day]["errors"] += 1
+        workflows = [
+            WorkflowStats(
+                workflow=v["workflow"],
+                total_calls=v["calls"],
+                error_calls=v["errors"],
+                total_tokens=v["tokens"],
+                cost_usd_micros=v["micros"],
+                cost_brl_cents=self._micros_to_brl_cents(v["micros"], rate),
+                avg_cost_brl_cents=self._micros_to_brl_cents(int(v["micros"] / v["calls"]) if v["calls"] else 0, rate),
+            )
+            for v in sorted(workflow_map.values(), key=lambda x: x["micros"], reverse=True)
+        ]
+
+        models = [
+            ModelStats(
+                model=v["model"],
+                total_calls=v["calls"],
+                total_tokens=v["tokens"],
+                cost_usd_micros=v["micros"],
+                cost_brl_cents=self._micros_to_brl_cents(v["micros"], rate),
+            )
+            for v in sorted(model_map.values(), key=lambda x: x["micros"], reverse=True)
+        ]
 
         daily = [
             DailyUsage(
@@ -907,28 +982,37 @@ class AdminService:
                 total_tokens=v["tokens"],
                 total_calls=v["calls"],
                 error_calls=v["errors"],
-                cost_usd_cents=self._token_cost_cents(v["tokens"]),
+                cost_usd_cents=self._micros_to_usd_cents(v["micros"]),
+                cost_usd_micros=v["micros"],
+                cost_brl_cents=self._micros_to_brl_cents(v["micros"], rate),
             )
             for day, v in sorted(day_map.items())
         ]
 
-        # top users by token consumption
-        top_rows = self.db.execute(
-            select(AIInteractionLog.user_id, func.sum(AIInteractionLog.token_count).label("total"))
-            .where(AIInteractionLog.created_at >= since, AIInteractionLog.user_id.is_not(None))
-            .group_by(AIInteractionLog.user_id)
-            .order_by(func.sum(AIInteractionLog.token_count).desc())
-            .limit(10)
-        ).all()
-        user_ids = [row.user_id for row in top_rows]
+        # top users por custo (micro-USD agregado)
+        user_micros: dict[int, dict] = {}
+        for log in logs:
+            if log.user_id is None:
+                continue
+            entry = user_micros.setdefault(log.user_id, {"tokens": 0, "micros": 0})
+            entry["tokens"] += log.token_count
+            entry["micros"] += self._log_cost_micros(log)
+        top_sorted = sorted(user_micros.items(), key=lambda kv: kv[1]["micros"], reverse=True)[:10]
+        user_ids = [uid for uid, _ in top_sorted]
         user_names: dict[int, str] = {}
         if user_ids:
             name_rows = self.db.execute(select(User.id, User.name, User.email).where(User.id.in_(user_ids))).all()
             user_names = {row.id: f"{row.name} ({row.email})" for row in name_rows}
-
         top_users = [
-            {"user_id": row.user_id, "label": user_names.get(row.user_id, f"User {row.user_id}"), "total_tokens": int(row.total or 0), "cost_usd_cents": self._token_cost_cents(int(row.total or 0))}
-            for row in top_rows
+            {
+                "user_id": uid,
+                "label": user_names.get(uid, f"User {uid}"),
+                "total_tokens": data["tokens"],
+                "cost_usd_cents": self._micros_to_usd_cents(data["micros"]),
+                "cost_usd_micros": data["micros"],
+                "cost_brl_cents": self._micros_to_brl_cents(data["micros"], rate),
+            }
+            for uid, data in top_sorted
         ]
 
         return AITelemetryResponse(
@@ -937,8 +1021,14 @@ class AdminService:
             total_tokens=total_tokens,
             total_calls=total_calls,
             error_calls=error_calls,
-            cost_usd_cents=cost_usd_cents,
+            cost_usd_cents=self._micros_to_usd_cents(total_micros),
+            cost_usd_micros=total_micros,
+            cost_brl_cents=self._micros_to_brl_cents(total_micros, rate),
+            usd_brl_rate=rate,
+            rate_source=fx.source,
             agents=agents,
+            workflows=workflows,
+            models=models,
             daily=daily,
             top_users=top_users,
         )

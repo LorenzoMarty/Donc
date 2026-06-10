@@ -4,17 +4,8 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Badge } from "@/components/ui/badge";
-import type { AgentStats, AITelemetry } from "@/types/api";
-
-function centsToDollars(cents: number) {
-  return `$${(cents / 100).toFixed(4)}`;
-}
-
-function formatTokens(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
-}
+import { formatBRLCents, formatTokens, formatUSDMicros } from "@/lib/format";
+import type { AgentStats, AITelemetry, ModelStats, WorkflowStats } from "@/types/api";
 
 export function AITelemetryTab({
   telemetry,
@@ -43,43 +34,44 @@ export function AITelemetryTab({
   }
 
   const errorRate = telemetry.total_calls ? Math.round((telemetry.error_calls / telemetry.total_calls) * 100) : 0;
+  const avgCostBrlCents = telemetry.total_calls ? Math.round(telemetry.cost_brl_cents / telemetry.total_calls) : 0;
+  const rate = telemetry.usd_brl_rate || 0;
 
   return (
     <div className="space-y-6">
       {error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          {error}
-        </div>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error}</div>
       ) : null}
 
-      {/* Period selector */}
-      <div className="flex flex-wrap gap-2">
-        {[7, 14, 30, 60, 90].map((d) => (
-          <button
-            key={d}
-            type="button"
-            disabled={loading}
-            onClick={() => changePeriod(d)}
-            className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${period === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
-          >
-            {d} dias
-          </button>
-        ))}
+      {/* Header: período + cotação */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {[7, 14, 30, 60, 90].map((d) => (
+            <button
+              key={d}
+              type="button"
+              disabled={loading}
+              onClick={() => changePeriod(d)}
+              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${period === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+            >
+              {d} dias
+            </button>
+          ))}
+        </div>
+        {rate > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Cotação <span className="font-medium text-foreground">US$ 1 = R$ {rate.toFixed(2)}</span>
+            <span className="ml-1 opacity-70">({telemetry.rate_source || "—"})</span>
+          </p>
+        ) : null}
       </div>
 
-      {/* Summary cards */}
+      {/* Cards de topo — R$ em destaque, US$ pequeno */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Tokens totais", value: formatTokens(telemetry.total_tokens) },
-          { label: "Custo estimado", value: centsToDollars(telemetry.cost_usd_cents) },
-          { label: "Chamadas", value: telemetry.total_calls.toLocaleString("pt-BR") },
-          { label: "Taxa de erro", value: `${errorRate}%`, error: errorRate > 5 },
-        ].map((c) => (
-          <div key={c.label} className="rounded-lg border bg-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{c.label}</p>
-            <p className={`mt-2 text-2xl font-bold ${c.error ? "text-destructive" : ""}`}>{c.value}</p>
-          </div>
-        ))}
+        <BigCostCard label="Custo total no período" brlCents={telemetry.cost_brl_cents} usdMicros={telemetry.cost_usd_micros} highlight />
+        <BigCostCard label="Custo médio por chamada" brlCents={avgCostBrlCents} />
+        <SmallCard label="Chamadas" value={telemetry.total_calls.toLocaleString("pt-BR")} hint={`${formatTokens(telemetry.total_tokens)} tokens`} />
+        <SmallCard label="Taxa de erro" value={`${errorRate}%`} error={errorRate > 5} hint={`${telemetry.error_calls} com erro`} />
       </div>
 
       {!error && !telemetry.has_data ? (
@@ -88,27 +80,98 @@ export function AITelemetryTab({
         </div>
       ) : null}
 
-      {/* Daily chart */}
+      {/* Gasto por dia (R$) */}
       {telemetry.daily.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
-          <h2 className="mb-4 font-semibold">Tokens por dia</h2>
+          <h2 className="mb-4 font-semibold">Gasto por dia (R$)</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={telemetry.daily} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => formatTokens(v)} width={48} />
+              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${(v / 100).toFixed(0)}`} width={52} />
               <Tooltip
-                formatter={(v: number, name: string) => [name === "total_tokens" ? formatTokens(v) : v, name === "total_tokens" ? "Tokens" : "Erros"]}
+                formatter={(v: number) => [formatBRLCents(v), "Custo"]}
                 labelFormatter={(l: string) => `Data: ${l}`}
               />
-              <Bar dataKey="total_tokens" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="error_calls" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="cost_brl_cents" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* Per-agent table */}
+      {/* Por workflow — quanto cada fluxo gasta */}
+      {telemetry.workflows.length > 0 && (
+        <div className="rounded-lg border bg-card">
+          <div className="border-b p-4">
+            <h2 className="font-semibold">Por workflow</h2>
+            <p className="text-xs text-muted-foreground">Quanto cada fluxo de IA gasta no período</p>
+          </div>
+          <div className="mobile-scroll overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead className="text-left">
+                <tr className="border-b text-xs text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Workflow</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Chamadas</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Tokens</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Custo médio</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Custo total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {telemetry.workflows.map((w: WorkflowStats) => (
+                  <tr key={w.workflow} className="border-b last:border-b-0 hover:bg-muted/40">
+                    <td className="px-4 py-3 font-medium">{w.workflow}</td>
+                    <td className="px-4 py-3 tabular-nums">{w.total_calls}</td>
+                    <td className="px-4 py-3 tabular-nums">{formatTokens(w.total_tokens)}</td>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground">{formatBRLCents(w.avg_cost_brl_cents)}</td>
+                    <td className="px-4 py-3 tabular-nums font-semibold">
+                      {formatBRLCents(w.cost_brl_cents)}
+                      <span className="ml-1 text-[10px] font-normal text-muted-foreground">{formatUSDMicros(w.cost_usd_micros)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Por modelo — qual IA gasta mais / é mais chamada */}
+      {telemetry.models.length > 0 && (
+        <div className="rounded-lg border bg-card">
+          <div className="border-b p-4">
+            <h2 className="font-semibold">Por modelo de IA</h2>
+            <p className="text-xs text-muted-foreground">Qual IA gasta mais e qual é mais chamada</p>
+          </div>
+          <div className="mobile-scroll overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
+              <thead className="text-left">
+                <tr className="border-b text-xs text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Modelo</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Chamadas</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Tokens</th>
+                  <th className="px-4 py-3 font-medium tabular-nums">Custo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {telemetry.models.map((m: ModelStats) => (
+                  <tr key={m.model} className="border-b last:border-b-0 hover:bg-muted/40">
+                    <td className="px-4 py-3 font-medium font-mono text-xs">{m.model}</td>
+                    <td className="px-4 py-3 tabular-nums">{m.total_calls}</td>
+                    <td className="px-4 py-3 tabular-nums">{formatTokens(m.total_tokens)}</td>
+                    <td className="px-4 py-3 tabular-nums font-semibold">
+                      {formatBRLCents(m.cost_brl_cents)}
+                      <span className="ml-1 text-[10px] font-normal text-muted-foreground">{formatUSDMicros(m.cost_usd_micros)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Por agente */}
       <div className="rounded-lg border bg-card">
         <div className="border-b p-4">
           <h2 className="font-semibold">Por agente</h2>
@@ -141,7 +204,7 @@ export function AITelemetryTab({
                   </td>
                   <td className="px-4 py-3 tabular-nums">{formatTokens(agent.total_tokens)}</td>
                   <td className="px-4 py-3 tabular-nums">{agent.avg_latency_ms.toLocaleString("pt-BR")} ms</td>
-                  <td className="px-4 py-3 tabular-nums font-mono text-xs">{centsToDollars(agent.cost_usd_cents)}</td>
+                  <td className="px-4 py-3 tabular-nums font-medium">{formatBRLCents(agent.cost_brl_cents)}</td>
                 </tr>
               ))}
               {telemetry.agents.length === 0 && (
@@ -154,7 +217,7 @@ export function AITelemetryTab({
         </div>
       </div>
 
-      {/* Top users by cost */}
+      {/* Top consumidores */}
       {telemetry.top_users.length > 0 && (
         <div className="rounded-lg border bg-card">
           <div className="border-b p-4">
@@ -169,13 +232,33 @@ export function AITelemetryTab({
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <span className="tabular-nums text-muted-foreground">{formatTokens(u.total_tokens)} tokens</span>
-                  <span className="tabular-nums font-mono text-xs font-semibold">{centsToDollars(u.cost_usd_cents)}</span>
+                  <span className="tabular-nums font-semibold">{formatBRLCents(u.cost_brl_cents)}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function BigCostCard({ label, brlCents, usdMicros, highlight }: { label: string; brlCents: number; usdMicros?: number; highlight?: boolean }) {
+  return (
+    <div className={`rounded-lg border p-4 ${highlight ? "bg-primary/5 border-primary/30" : "bg-card"}`}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-bold">{formatBRLCents(brlCents)}</p>
+      {usdMicros !== undefined ? <p className="text-xs text-muted-foreground">{formatUSDMicros(usdMicros)}</p> : null}
+    </div>
+  );
+}
+
+function SmallCard({ label, value, hint, error }: { label: string; value: string; hint?: string; error?: boolean }) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={`mt-2 text-2xl font-bold ${error ? "text-destructive" : ""}`}>{value}</p>
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

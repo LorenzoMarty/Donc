@@ -39,6 +39,10 @@ def _ensure_runtime_columns() -> None:
         ("exercises", "base_lesson_ids", "base_lesson_ids JSON NOT NULL DEFAULT '[]'"),
         ("essay_corrections", "inline_annotations", "inline_annotations JSON"),
         ("essay_version_corrections", "inline_annotations", "inline_annotations JSON"),
+        ("ai_interaction_logs", "input_tokens", "input_tokens INTEGER NOT NULL DEFAULT 0"),
+        ("ai_interaction_logs", "output_tokens", "output_tokens INTEGER NOT NULL DEFAULT 0"),
+        ("ai_interaction_logs", "cost_micro_usd", "cost_micro_usd BIGINT NOT NULL DEFAULT 0"),
+        ("ai_interaction_logs", "model", "model VARCHAR(80)"),
     ]
     for table_name, column_name, ddl in column_guards:
         _ensure_column(table_name, column_name, ddl)

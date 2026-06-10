@@ -250,7 +250,27 @@ class AgentStats(BaseModel):
     error_calls: int
     total_tokens: int
     avg_latency_ms: int
-    cost_usd_cents: int
+    cost_usd_cents: int  # legado (compat)
+    cost_usd_micros: int = 0
+    cost_brl_cents: int = 0
+
+
+class WorkflowStats(BaseModel):
+    workflow: str
+    total_calls: int
+    error_calls: int
+    total_tokens: int
+    cost_usd_micros: int
+    cost_brl_cents: int
+    avg_cost_brl_cents: int  # custo médio por chamada
+
+
+class ModelStats(BaseModel):
+    model: str
+    total_calls: int
+    total_tokens: int
+    cost_usd_micros: int
+    cost_brl_cents: int
 
 
 class DailyUsage(BaseModel):
@@ -258,7 +278,9 @@ class DailyUsage(BaseModel):
     total_tokens: int
     total_calls: int
     error_calls: int
-    cost_usd_cents: int
+    cost_usd_cents: int  # legado (compat)
+    cost_usd_micros: int = 0
+    cost_brl_cents: int = 0
 
 
 class AITelemetryResponse(BaseModel):
@@ -267,8 +289,14 @@ class AITelemetryResponse(BaseModel):
     total_tokens: int
     total_calls: int
     error_calls: int
-    cost_usd_cents: int
+    cost_usd_cents: int  # legado (compat)
+    cost_usd_micros: int = 0
+    cost_brl_cents: int = 0
+    usd_brl_rate: float = 0.0
+    rate_source: str = ""
     agents: list[AgentStats]
+    workflows: list[WorkflowStats] = Field(default_factory=list)
+    models: list[ModelStats] = Field(default_factory=list)
     daily: list[DailyUsage]
     top_users: list[dict]
 
@@ -277,7 +305,11 @@ class AdminUserAIUsage(BaseModel):
     total_tokens: int
     total_calls: int
     error_calls: int
-    cost_usd_cents: int
+    cost_usd_cents: int  # legado (compat)
+    cost_usd_micros: int = 0
+    cost_brl_cents: int = 0
+    usd_brl_rate: float = 0.0
+    rate_source: str = ""
     agents: list[AgentStats]
     daily: list[DailyUsage]
 

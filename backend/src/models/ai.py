@@ -1,6 +1,6 @@
 ﻿from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.config.settings import settings
@@ -86,7 +86,11 @@ class AIInteractionLog(Base):
     status: Mapped[str] = mapped_column(String(24), nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     token_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    cost_estimate: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cost_estimate: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # legado: USD cents
+    cost_micro_usd: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    model: Mapped[str | None] = mapped_column(String(80), nullable=True)
     prompt_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)

@@ -16,6 +16,8 @@ T = TypeVar("T", bound=BaseModel)
 class AgnoAgentRunner:
     def __init__(self) -> None:
         self.last_token_count: int = 0
+        self.last_input_tokens: int = 0
+        self.last_output_tokens: int = 0
         self.last_latency_ms: int = 0
         self.last_status: str = "idle"
         self.last_error: str | None = None
@@ -85,7 +87,10 @@ class AgnoAgentRunner:
                     user_id=str(user_id) if user_id is not None else None,
                     session_id=session_id,
                 )
-                self.last_token_count = self._extract_token_count(getattr(run_output, "metrics", None))
+                metrics = getattr(run_output, "metrics", None)
+                self.last_input_tokens = self._metric_value(metrics, {"input_tokens", "prompt_tokens"})
+                self.last_output_tokens = self._metric_value(metrics, {"output_tokens", "completion_tokens"})
+                self.last_token_count = self._extract_token_count(metrics)
                 result = self._coerce_output(getattr(run_output, "content", run_output), output_schema, fallback)
                 return self._finish_run(result, start=start, span=span, used_fallback=result is fallback)
             except Exception as exc:
@@ -94,6 +99,8 @@ class AgnoAgentRunner:
 
     def _reset_run_state(self, prompt: str) -> None:
         self.last_token_count = 0
+        self.last_input_tokens = 0
+        self.last_output_tokens = 0
         self.last_latency_ms = 0
         self.last_status = "success"
         self.last_error = None
