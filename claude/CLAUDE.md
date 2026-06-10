@@ -168,6 +168,24 @@ Correção é assíncrona via Celery:
 5. Se `OPENAI_API_KEY` ausente ou agno falhar, agentes retornam valor `fallback` configurado (degradação graciosa)
 6. Após correção, `update_learning_profile()` atualiza `StudentLearningProfile` para rastrear competências fracas e erros recorrentes
 
+### Observabilidade de IA (Langfuse tracing)
+Tracing via **Langfuse SDK v4 + OpenLIT** (integração nativa do agno). `configure_ai_telemetry()`
+em `telemetry/langfuse.py` inicializa o `Langfuse` (com `mask`) e chama `openlit.init()` —
+**sem** `tracer=` (removido no OpenLIT 1.42; o `Langfuse()` v4 registra o TracerProvider global do
+OTel e o OpenLIT o herda). Sem `LANGFUSE_*`, vira no-op (degradação graciosa).
+- Cada correção = **um trace** (`essay_correction`) com os 5 agentes como spans-filhos. O OpenLIT
+  captura modelo/tokens/custo/latência/tool calls automaticamente.
+- `AgnoAgentRunner` (`agents/base.py`) abre o span `ai.{agent}` via `start_as_current_observation`
+  e propaga `user_id`/`session_id` (`essay:{id}`) com `propagate_attributes`. Os 3 agentes
+  paralelos aninham sob o trace raiz via propagação manual do contexto OTel aos threads (`_bind_ctx`
+  em `correction.py`).
+- **PII:** `capture_message_content=False` (texto da redação nunca sai do processo) + `mask` que
+  redige strings nos spans manuais. Métricas/modelo/custo permanecem visíveis.
+- **Flush:** `flush_ai_telemetry()` no fim da correção, no `finally` da task Celery e no shutdown.
+- Telemetria de **custo em banco** (próxima seção) é independente e continua valendo.
+- Skill oficial instalada em `~/.claude/skills/langfuse/`. Detalhes:
+  `claude/docs/2026-06-10-langfuse-tracing.md`.
+
 ### Custos de IA (telemetria)
 Cada chamada grava um `AIInteractionLog` (`ai_interaction_logs`) com `model`, `input_tokens`,
 `output_tokens` e `cost_micro_usd`. Custo é calculado em **micro-USD** (1 USD = 1M micros) pela
@@ -250,6 +268,9 @@ heurístico sem `OPENAI_API_KEY`), consumido pelo Text Surgery.
 | `INTERNAL_API_URL` | Destino do proxy server-side (padrão: `http://127.0.0.1:8000/api/v1`) |
 | `SEED_DEMO_DATA` | Popula usuários/conteúdo demo no startup (padrão: `true`) |
 | `ENABLE_PGVECTOR` | Habilita extensão vector + seed da base de conhecimento |
+| `LANGFUSE_PUBLIC_KEY` | Chave pública do Langfuse; tracing fica off se ausente |
+| `LANGFUSE_SECRET_KEY` | Chave secreta do Langfuse |
+| `LANGFUSE_HOST` | URL do Langfuse (`https://cloud.langfuse.com`, US, ou self-hosted) |
 | `USD_BRL_FALLBACK_RATE` | Cotação USD→BRL usada quando a PTAX/BCB falha (padrão: `5.40`) |
 | `USD_BRL_RATE_TTL_HOURS` | TTL do cache da cotação PTAX (padrão: `6`) |
 

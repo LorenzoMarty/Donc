@@ -63,21 +63,28 @@ def configure_ai_telemetry() -> bool:
         logger.warning("Falha ao inicializar Langfuse: %s", exc)
         return False
 
-    _instrument_agno(client)
+    # Ordem importa: Langfuse() ja registrou o TracerProvider global do OpenTelemetry;
+    # o OpenLIT usa esse provider global, entao instrumentamos depois do client pronto.
+    _instrument_agno()
     _client = client
     logger.info("Langfuse tracing ativo (environment=%s).", settings.environment)
     return True
 
 
-def _instrument_agno(client: Any) -> None:
-    """Auto-instrumenta o framework agno/OpenAI via OpenLIT, exportando para o
-    tracer do Langfuse. Captura modelo, tokens, custo, prompt/resposta e tool
-    calls automaticamente — best practice do skill (preferir integracao nativa).
+def _instrument_agno() -> None:
+    """Auto-instrumenta o framework agno/OpenAI via OpenLIT — best practice do skill
+    (preferir integracao nativa). O OpenLIT herda o TracerProvider global que o
+    Langfuse acabou de registrar, exportando modelo, tokens, custo, latencia e tool
+    calls automaticamente.
+
+    capture_message_content=False: nao captura prompt/resposta (texto da redacao do
+    aluno = PII). Garantia forte da decisao de mascaramento — o conteudo nunca sai do
+    processo. O mask do Langfuse cobre os spans manuais como defesa em profundidade.
     """
     try:
         import openlit
 
-        openlit.init(tracer=client._otel_tracer, disable_batch=False)
+        openlit.init(disable_metrics=True, capture_message_content=False)
     except Exception as exc:  # pragma: no cover - sem openlit, spans manuais ainda funcionam
         logger.warning("OpenLIT indisponivel; tracing automatico do agno desativado: %s", exc)
 
