@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -8,6 +9,29 @@ from sqlalchemy.orm import Session
 from src.agents.base import AgnoAgentRunner
 from src.config.ai_pricing import cost_micro_usd
 from src.models import AIInteractionLog
+
+logger = logging.getLogger("src.ai.telemetry")
+
+
+def safe_persist_interaction(db: Session, log: AIInteractionLog, *, commit: bool = False) -> None:
+    """Persiste um log de telemetria de forma NÃO-crítica.
+
+    A telemetria nunca pode quebrar nem dar rollback na operação do usuário (tema/correção).
+    O INSERT roda dentro de um SAVEPOINT (`begin_nested`): se falhar (ex.: coluna ausente),
+    desfaz só o savepoint, loga e segue — a transação do caller permanece íntegra."""
+
+    try:
+        with db.begin_nested():
+            db.add(log)
+            db.flush()
+        if commit:
+            db.commit()
+    except Exception:
+        logger.warning("Falha ao registrar telemetria de IA (ignorada).", exc_info=True)
+        try:
+            db.expunge(log)
+        except Exception:
+            pass
 
 
 def _split_tokens(input_tokens: int, output_tokens: int, total: int) -> tuple[int, int]:
@@ -98,23 +122,20 @@ def record_ai_interaction(
     commit: bool = False,
 ) -> None:
     try:
-        db.add(
-            build_interaction_log(
-                workflow=workflow,
-                agent=agent,
-                user_id=user_id,
-                job_id=job_id,
-                runner=runner,
-                prompt=prompt,
-                status=status,
-                latency_ms=latency_ms,
-                token_count=token_count,
-                error=error,
-                meta=meta,
-            )
+        log = build_interaction_log(
+            workflow=workflow,
+            agent=agent,
+            user_id=user_id,
+            job_id=job_id,
+            runner=runner,
+            prompt=prompt,
+            status=status,
+            latency_ms=latency_ms,
+            token_count=token_count,
+            error=error,
+            meta=meta,
         )
-        if commit:
-            db.commit()
     except Exception:
-        if commit:
-            db.rollback()
+        logger.warning("Falha ao montar log de telemetria de IA (ignorada).", exc_info=True)
+        return
+    safe_persist_interaction(db, log, commit=commit)

@@ -15,10 +15,10 @@ export default function TracksPage() {
           <Reveal>
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Trilhas</p>
             <h1 className="text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
-              Trilhas de Portugues com progressao clara.
+              Trilhas de Português com etapas desbloqueáveis.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
-              O aluno avanca por etapas curtas e revisoes guiadas, mantendo foco no proximo passo em vez de enfrentar uma lista infinita.
+              Avance uma etapa por vez — cada módulo concluído abre o próximo e dá bônus de XP.
             </p>
             <Button asChild size="lg" className="mt-7">
               <Link href="/games">
@@ -63,7 +63,7 @@ export default function TracksPage() {
               <Trophy className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-xl font-semibold tracking-normal">{track}</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Etapas progressivas, revisao curta e fechamento com pratica aplicada.
+                Etapas curtas com revisão e prática aplicada ao final de cada módulo.
               </p>
             </HoverGlowCard>
           ))}

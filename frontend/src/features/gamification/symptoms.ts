@@ -48,7 +48,7 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     title: "Seu texto parece robótico",
     label: "Texto artificial",
     description:
-      "Frases artificiais, conectivos colados e ar de fórmula pronta. Treine naturalidade e autenticidade.",
+      "Suas frases soam montadas — conectivos colados, construções padronizadas. Treine para escrever com voz própria.",
     icon: Bot,
     accent: "hsl(215 100% 61%)",
     tags: ["texto-robotico", "conectivo-artificial", "abstracao-excessiva"],
@@ -57,14 +57,14 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["diagnosis", "refinement"],
     missionEngines: ["duel", "artificiality", "text-surgery"],
     weaknessNarrative:
-      "Seu texto vem soando artificial. Continue treinando naturalidade e fluidez para apagar a cara de fórmula pronta.",
+      "Suas frases ainda soam montadas. Treine ritmo e naturalidade até sumir a cara de fórmula.",
   },
   "repete-ideias": {
     id: "repete-ideias",
     title: "Você repete ideias",
     label: "Repetição",
     description:
-      "O texto anda em círculos: mesma palavra, mesmo argumento. Treine progressão e variação lexical.",
+      "Mesma palavra, mesmo argumento em parágrafos diferentes. Treine progressão e variação para avançar o raciocínio.",
     icon: Repeat,
     accent: "hsl(134 61% 41%)",
     tags: ["repeticao-lexical", "progressao-fraca"],
@@ -73,14 +73,14 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["refinement", "reconstruction"],
     missionEngines: ["text-surgery", "essay-collapse"],
     weaknessNarrative:
-      "Seu texto vem repetindo ideias e palavras. Continue treinando variação lexical e progressão real.",
+      "Você repete palavras e ideias sem avançar. Treine variação lexical para cada parágrafo acrescentar algo novo.",
   },
   "repertorio-nao-encaixa": {
     id: "repertorio-nao-encaixa",
     title: "Seu repertório não encaixa",
     label: "Repertório forçado",
     description:
-      "Citações decorativas que não dialogam com o tema. Treine pertinência e articulação do repertório.",
+      "Você usa citações que não conectam com o argumento. Treine a integração do repertório ao raciocínio central.",
     icon: Library,
     accent: "hsl(0 0% 20%)",
     tags: ["repertorio-decorativo", "c2"],
@@ -89,14 +89,14 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["prioritization", "reconstruction"],
     missionEngines: ["text-surgery", "duel"],
     weaknessNarrative:
-      "Seu repertório vem entrando de forma forçada. Continue treinando integração orgânica e pertinência argumentativa.",
+      "Seu repertório entra sem conectar com o argumento. Treine a seleção e a articulação da referência com a tese.",
   },
   "nao-aprofunda": {
     id: "nao-aprofunda",
     title: "Seu texto não aprofunda",
     label: "Argumentação rasa",
     description:
-      "Argumentação rasa, presa na superfície. Treine a escalada do raciocínio até a complexidade.",
+      "Você apresenta a ideia mas não desdobra o raciocínio. Treine a escalada do argumento: causa, consequência, solução.",
     icon: Layers,
     accent: "hsl(262 60% 55%)",
     tags: ["argumentacao-rasa", "abstracao-excessiva"],
@@ -105,14 +105,14 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["progression", "diagnosis"],
     missionEngines: ["argument-escalation", "duel"],
     weaknessNarrative:
-      "Você vem apresentando argumentação superficial. Continue treinando densidade analítica e profundidade.",
+      "Seus argumentos ficam na superfície. Treine o encadeamento causa → consequência → evidência para aprofundar.",
   },
   "introducao-sem-tese": {
     id: "introducao-sem-tese",
     title: "Sua introdução não cria tese",
     label: "Tese vaga",
     description:
-      "Abre o texto sem ponto de vista delimitado. Treine a construção de teses defensáveis.",
+      "Você contextualiza o tema mas não delimita ponto de vista. Treine a construção de teses específicas e defensáveis.",
     icon: PenLine,
     accent: "hsl(354 70% 54%)",
     tags: ["introducao-sem-tese", "tese-vaga"],
@@ -121,14 +121,14 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["diagnosis", "prioritization"],
     missionEngines: ["argument-escalation", "duel"],
     weaknessNarrative:
-      "Suas introduções vêm sem tese delimitada. Continue treinando recortes e pontos de vista defensáveis.",
+      "Sua introdução não define posição clara. Treine a formulação de teses específicas — o avaliador precisa saber o que você defende.",
   },
   "perde-na-c3": {
     id: "perde-na-c3",
     title: "Você perde na Competência 3",
     label: "Progressão (C3)",
     description:
-      "Ideias sem projeto de texto nem progressão. Treine seleção, organização e encadeamento.",
+      "Seus parágrafos não encadeiam — cada um parece isolado. Treine seleção, ordem e conexão de ideias.",
     icon: Target,
     accent: "hsl(28 90% 52%)",
     tags: ["c3", "progressao-fraca", "argumentacao-rasa"],
@@ -137,14 +137,14 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["progression", "reconstruction"],
     missionEngines: ["essay-collapse", "argument-escalation"],
     weaknessNarrative:
-      "Sua progressão textual (C3) vem falhando. Continue treinando projeto de texto e encadeamento de ideias.",
+      "Seus parágrafos não encadeiam. Treine o projeto de texto: cada parágrafo deve continuar o raciocínio do anterior.",
   },
   "conclusao-formula": {
     id: "conclusao-formula",
     title: "Sua conclusão é fórmula pronta",
     label: "Conclusão clichê",
     description:
-      "Intervenção incompleta e fechamento clichê. Treine propostas completas (Competência 5).",
+      "Você fecha com proposta incompleta ou clichê de conscientização. Treine os 5 elementos da intervenção (C5).",
     icon: Flag,
     accent: "hsl(190 80% 40%)",
     tags: ["conclusao-formula", "intervencao-incompleta", "c5"],
@@ -153,7 +153,7 @@ export const HUBS: Record<SymptomHubId, SymptomHub> = {
     cognitiveFocus: ["reconstruction", "prioritization"],
     missionEngines: ["corrector", "essay-collapse"],
     weaknessNarrative:
-      "Suas conclusões vêm em fórmula pronta. Continue treinando propostas de intervenção completas (C5).",
+      "Sua conclusão fecha sem proposta completa. Treine os 5 elementos da C5: agente, ação, meio, finalidade e detalhamento.",
   },
 };
 

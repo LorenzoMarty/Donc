@@ -156,3 +156,129 @@ class StudyPlanResult(BaseModel):
     weekly_goal: str
     days: list[StudyPlanDay] = Field(min_length=1)
     review_strategy: str
+
+
+# ── v2 Pipeline Internal Schemas ─────────────────────────────────────────────
+
+
+class PreProcessorOutput(BaseModel):
+    word_count: int
+    paragraph_count: int
+    has_minimum_structure: bool
+    is_truncated: bool
+
+
+class EliminationStatus(str):
+    APPROVED = "APPROVED"
+    TANGENCIAMENTO = "TANGENCIAMENTO"
+    DESVIO_GRAVE = "DESVIO_GRAVE"
+    ZERO = "ZERO"
+
+
+ELIMINATION_STATUS_VALUES = {"APPROVED", "TANGENCIAMENTO", "DESVIO_GRAVE", "ZERO"}
+
+
+class EliminationGateOutput(BaseModel):
+    status: Literal["APPROVED", "TANGENCIAMENTO", "DESVIO_GRAVE", "ZERO"]
+    reason: str
+    zero_rule: str | None = None
+
+
+class ThemeAnalysisV2(BaseModel):
+    theme_alignment: int = Field(ge=0, le=100)
+    tangenciamento: bool
+    severity: Literal["low", "medium", "high"]
+    evidence: str = ""
+
+
+class ThesisAnalysisV2(BaseModel):
+    thesis_present: bool
+    thesis_text: str = ""
+    clarity: Literal["clear", "vague", "absent"]
+    is_generic: bool = False
+    is_template: bool = False
+    is_contradictory: bool = False
+    sustained_throughout: bool = False
+    score: int = Field(ge=0, le=100)
+
+
+class RepertoireQuality(str):
+    FORTE = "FORTE"
+    ACEITAVEL = "ACEITAVEL"
+    FRACO = "FRACO"
+    INVALIDO = "INVALIDO"
+
+
+class RepertoireAnalysisV2(BaseModel):
+    quality: Literal["FORTE", "ACEITAVEL", "FRACO", "INVALIDO"]
+    items_found: list[str] = Field(default_factory=list)
+    is_generic: bool = False
+    has_argumentative_connection: bool = False
+    false_citations: bool = False
+    score: int = Field(ge=0, le=100)
+
+
+class ParagraphAnalysis(BaseModel):
+    index: int = Field(ge=0)
+    has_topic_sentence: bool
+    development_score: int = Field(ge=0, le=100)
+    issues: list[str] = Field(default_factory=list)
+    sample_quote: str = ""
+
+
+class ArgumentationAnalysisV2(BaseModel):
+    paragraphs: list[ParagraphAnalysis] = Field(default_factory=list)
+    overall_score: int = Field(ge=0, le=100)
+    has_circular_reasoning: bool = False
+    has_progression: bool = True
+    filler_detected: bool = False
+
+
+class InterventionElements(BaseModel):
+    agente: bool = False
+    acao: bool = False
+    meio: bool = False
+    finalidade: bool = False
+    detalhamento: bool = False
+
+
+class InterventionAnalysisV2(BaseModel):
+    elements: InterventionElements = Field(default_factory=InterventionElements)
+    completeness_score: int = Field(ge=0, le=100)
+    is_generic: bool = False
+    absent: bool = False
+    has_human_rights_violation: bool = False
+    sample_quote: str = ""
+
+
+class GrammarSeverity(str):
+    LEVE = "LEVE"
+    MEDIA = "MEDIA"
+    GRAVE = "GRAVE"
+
+
+class GrammarErrorV2(BaseModel):
+    category: str
+    severity: Literal["LEVE", "MEDIA", "GRAVE"]
+    count: int = Field(ge=0)
+
+
+class GrammarAnalysisV2(BaseModel):
+    errors: list[GrammarErrorV2] = Field(default_factory=list)
+    orthography_score: int = Field(ge=0, le=100)
+    cohesion_score: int = Field(ge=0, le=100)
+    formality_score: int = Field(ge=0, le=100)
+    grave_count: int = Field(ge=0, default=0)
+    media_count: int = Field(ge=0, default=0)
+    leve_count: int = Field(ge=0, default=0)
+
+
+class PipelineAnalyses(BaseModel):
+    preprocessor: PreProcessorOutput
+    gate: EliminationGateOutput
+    theme: ThemeAnalysisV2
+    thesis: ThesisAnalysisV2
+    repertoire: RepertoireAnalysisV2
+    argumentation: ArgumentationAnalysisV2
+    intervention: InterventionAnalysisV2
+    grammar: GrammarAnalysisV2

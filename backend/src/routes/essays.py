@@ -84,14 +84,20 @@ def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), 
 
 @router.get("/{essay_id}/job", response_model=ApiResponse[JobStatusRead])
 def essay_job_status(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[JobStatusRead]:
-    job = (
+    # Filtra pelo essay_id guardado em request_payload — não basta o job mais recente do usuário,
+    # senão o polling de uma redação pode retornar o job (e a redação) de outra.
+    jobs = (
         db.query(AIJob)
         .filter(
             AIJob.user_id == current_user.id,
             AIJob.kind == "essay_correction",
         )
         .order_by(AIJob.created_at.desc())
-        .first()
+        .all()
+    )
+    job = next(
+        (j for j in jobs if int((j.request_payload or {}).get("essay_id", -1)) == essay_id),
+        None,
     )
     if not job:
         from src.middlewares.errors import AppError

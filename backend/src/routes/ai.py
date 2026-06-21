@@ -29,6 +29,7 @@ from src.schemas.ai import (
     AIJobResponse,
     AIRecommendRequest,
     AIStudyPlanRequest,
+    LearningProfileRead,
 )
 from src.agents.schemas import AnalyticsResult, ExerciseGenerationResult, RecommendationResult, RewriteEvaluationResult, StudyPlanResult
 from src.schemas.essays import EssayRead
@@ -201,6 +202,15 @@ def study_plan(
         commit=True,
     )
     return success_response(result)
+
+
+@router.get("/learning-profile", response_model=ApiResponse[LearningProfileRead])
+def learning_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[LearningProfileRead]:
+    payload = get_learning_profile_payload(db, current_user.id)
+    return success_response(LearningProfileRead.from_payload(payload))
 
 
 @router.get("/jobs/{job_id}", response_model=ApiResponse[AIJobResponse])
