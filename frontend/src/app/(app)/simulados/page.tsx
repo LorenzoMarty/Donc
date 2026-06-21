@@ -66,7 +66,7 @@ export default function ExamsPage() {
       <PageHeader
         eyebrow="Arena ENEM"
         title="Simulado cronometrado"
-        description="Blocos rápidos de Linguagens com desempenho por habilidade."
+        description="Questões de Linguagens em blocos rápidos. Veja seu desempenho por habilidade ao final."
         action={
           active ? (
             <div className="game-chip flex w-full items-center justify-center gap-2 bg-card/82 px-4 py-3 text-sm font-semibold md:w-auto">

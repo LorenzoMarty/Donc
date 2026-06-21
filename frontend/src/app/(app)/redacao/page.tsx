@@ -306,9 +306,9 @@ export default function EssayPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Laboratorio de redacao"
-        title="Escreva e revise por competencia."
-        description="Editor compacto para desenvolver sua redacao com clareza e acompanhar estrutura, linhas e paragrafos."
+        eyebrow="Laboratório de redação"
+        title="Escolha um tema, escreva e envie para correção."
+        description="Acompanhe linhas, parágrafos e estrutura enquanto escreve. Depois, veja a nota por competência ENEM."
       />
 
       <div className="grid gap-3 pt-3">
@@ -439,8 +439,8 @@ function StartEssayCard({
           <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proxima etapa</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-normal">Comece pelo tema escolhido.</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Próxima etapa</p>
+          <h2 className="mt-1 text-lg font-semibold tracking-normal">Escolha o tema e comece a escrever.</h2>
         </div>
       </div>
 
@@ -520,8 +520,8 @@ function CorrectionWaitingScreen({
             transition={{ repeat: Infinity, duration: 1.8 }}
           />
         </div>
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correcao em andamento</p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-normal md:text-3xl">IA analisando sua redacao</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correção em andamento</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-normal md:text-3xl">Analisando sua redação…</h1>
         <motion.p
           key={agentLabel}
           initial={{ opacity: 0, y: 6 }}
@@ -869,14 +869,14 @@ function AIFeedbackPanel({
             <ScoreRing score={score} />
             <div>
               <h3 className="text-lg font-semibold">
-                {score >= 800 ? "Ótimo trabalho!" : score >= 600 ? "Bom caminho." : "Vamos lapidar."}
+                {score >= 800 ? "Excelente redação." : score >= 600 ? "Boa base — dá para subir." : "Tem o que trabalhar aqui."}
               </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{correction.feedback}</p>
             </div>
           </div>
         ) : (
           <div className="game-tile bg-card p-4 text-sm text-muted-foreground">
-            Envie a redação para receber comentários por competência.
+            Envie a redação para ver a nota e os comentários por competência.
           </div>
         )}
 
@@ -1115,7 +1115,7 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correção</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-normal">Resumo da IA</h2>
+          <h2 className="mt-1 text-xl font-semibold tracking-normal">Resultado da correção</h2>
         </div>
         <Brain className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
@@ -1146,7 +1146,7 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
           </div>
         </div>
       ) : (
-        <p className="text-sm leading-6 text-muted-foreground">A nota e os comentários aparecem aqui quando a redação for corrigida.</p>
+        <p className="text-sm leading-6 text-muted-foreground">Envie a redação para ver a nota e os comentários por competência.</p>
       )}
       {error ? (
         <div className="game-tile mt-4 flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">

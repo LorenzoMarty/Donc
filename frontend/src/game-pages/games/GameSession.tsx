@@ -27,6 +27,11 @@ import { useGameStore } from "@/stores/game-store";
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { cn } from "@/utils";
 
+function useReturnTo(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return new URLSearchParams(window.location.search).get("returnTo") ?? undefined;
+}
+
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -37,6 +42,7 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export default function GameSession({ categorySlug, gameId }: { categorySlug: string; gameId: string }) {
+  const returnTo = useReturnTo();
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
   const remoteGames = useGameStore((state) => state.remoteGames);
@@ -171,9 +177,9 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
         description={game.description}
         action={
           <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
+            <Link href={returnTo ?? `/games/${category.slug}`}>
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Categoria
+              {returnTo ? "Treino" : "Categoria"}
             </Link>
           </Button>
         }
@@ -284,7 +290,9 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                     Repetir
                   </Button>
                   <Button asChild>
-                    <Link href={`/games/${category.slug}`}>Voltar para categoria</Link>
+                    <Link href={returnTo ?? `/games/${category.slug}`}>
+                      {returnTo ? "Próximo exercício" : "Voltar para categoria"}
+                    </Link>
                   </Button>
                 </div>
               </motion.section>

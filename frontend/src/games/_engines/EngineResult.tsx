@@ -9,6 +9,11 @@ import { GRADE_LABEL, GRADE_TONE } from "@/games/_engines/grade";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils";
 
+function readReturnTo(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return new URLSearchParams(window.location.search).get("returnTo") ?? undefined;
+}
+
 /** Modal de resultado padrão para os engines cognitivos (feedback por grade/impacto). */
 export function EngineResult({
   result,
@@ -27,6 +32,7 @@ export function EngineResult({
   onRestart: () => void;
   categorySlug: string;
 }) {
+  const returnTo = readReturnTo();
   return (
     <AnimatePresence>
       {result && (
@@ -84,7 +90,9 @@ export function EngineResult({
                 Jogar novamente
               </Button>
               <Button asChild variant="outline">
-                <Link href={`/games/${categorySlug}`}>Voltar à categoria</Link>
+                <Link href={returnTo ?? `/games/${categorySlug}`}>
+                  {returnTo ? "Próximo exercício" : "Voltar à categoria"}
+                </Link>
               </Button>
             </div>
           </motion.section>

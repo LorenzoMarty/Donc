@@ -132,14 +132,14 @@ export default function EssayHistoryPage() {
 
       {essays.length === 0 ? (
         <div className="mt-6">
-          <EmptyState title="Nenhuma redacao registrada" description="Comece pelo editor para criar seu historico." />
+          <EmptyState title="Nenhuma redação ainda" description="Escreva sua primeira redação no editor para começar o histórico." />
         </div>
       ) : (
         <section className="mt-5 overflow-hidden rounded-md border border-border bg-white">
           {filteredEssays.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <p className="text-base font-semibold">Nenhuma redacao encontrada.</p>
-              <p className="mt-1 text-sm text-muted-foreground">Ajuste a busca ou o filtro selecionado.</p>
+              <p className="text-base font-semibold">Nenhuma redação encontrada.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Tente outros termos de busca ou mude o filtro.</p>
             </div>
           ) : (
             <div className="divide-y divide-border">

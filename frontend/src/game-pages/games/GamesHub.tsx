@@ -70,7 +70,7 @@ export default function GamesHub() {
             </div>
             <h1 className="text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">Centro de Treinamento</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
-              Evolua sua escrita dominando cada habilidade do ENEM.
+              Treine o sintoma que mais derruba sua nota — uma sessão curta por vez.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -110,7 +110,7 @@ export default function GamesHub() {
               </div>
             </div>
             <p className="mt-4 text-sm leading-6 text-foreground/70">
-              {dailyGame?.description ?? "Uma sessao curta para manter a rotina e medir evolucao real."}
+              {dailyGame?.description ?? "Sessão curta para manter a sequência de treinos."}
             </p>
             {dailyGame && (
               <Button asChild variant="secondary" className="mt-auto w-full">
@@ -128,9 +128,9 @@ export default function GamesHub() {
       <section id="sintomas" className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Treine pelo seu sintoma</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">O que está travando sua redação?</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground md:text-3xl">Escolha o que travar sua redação</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Escolha o sintoma que você sente na própria escrita — o treinador monta a sequência de missões certa para ele.
+            Identifique o sintoma que aparece na sua escrita — o treinador monta a sequência de missões para ele.
           </p>
         </div>
         <div className="fluid-grid gap-3 [--grid-min:17rem]">

@@ -45,3 +45,26 @@ class AIEvaluateRewriteRequest(BaseModel):
     rewritten: str = Field(min_length=1, max_length=800, description="Reescrita do aluno.")
     criteria: str | None = Field(default=None, max_length=240, description="Criterio pedagogico avaliado.")
 
+
+class LearningProfileRead(BaseModel):
+    weak_competencies: dict[str, int] = Field(default_factory=dict)
+    recurring_errors: list[str] = Field(default_factory=list)
+    repertories_used: list[str] = Field(default_factory=list)
+    recommendations: list[str] = Field(default_factory=list)
+    has_data: bool = False
+
+    @classmethod
+    def from_payload(cls, payload: dict) -> "LearningProfileRead":
+        weak = payload.get("weak_competencies") or {}
+        errors = payload.get("recurring_errors") or []
+        repertories = payload.get("repertories_used") or []
+        recommendations = payload.get("recommendations") or []
+        has_data = bool(weak or errors or repertories or recommendations)
+        return cls(
+            weak_competencies=weak,
+            recurring_errors=errors,
+            repertories_used=repertories,
+            recommendations=recommendations,
+            has_data=has_data,
+        )
+

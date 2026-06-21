@@ -30,7 +30,7 @@ export function AdaptiveSpotlight({ adaptive, games }: { adaptive: AdaptiveProfi
         </span>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Treinador adaptativo</p>
-          <h2 className="text-2xl font-semibold tracking-normal text-foreground md:text-3xl">Continue evoluindo</h2>
+          <h2 className="text-2xl font-semibold tracking-normal text-foreground md:text-3xl">O que treinar agora</h2>
         </div>
       </div>
 
