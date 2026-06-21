@@ -205,7 +205,7 @@ export default function DashboardPage() {
             <span className="text-7xl font-bold leading-none tracking-normal">{streak}</span>
             <span className="mb-2 text-2xl font-semibold text-slate-600">dias</span>
           </div>
-          <p className="mt-3 text-base text-slate-500">{streak > 0 ? "Treino diario ativo" : "Uma acao hoje inicia sua sequencia"}</p>
+          <p className="mt-3 text-base text-slate-500">{streak > 0 ? "Sequência ativa" : "Faça uma atividade hoje para começar"}</p>
           <div className="mt-7 grid grid-cols-7 gap-2">
             {buildWeekProgress(streak).map((day) => (
               <div
@@ -258,8 +258,8 @@ export default function DashboardPage() {
 
       <section className="mt-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-normal">Suas redacoes</h2>
-          <p className="mt-1 text-base text-slate-500">Acompanhe correcoes, rascunhos e o historico do mes</p>
+          <h2 className="text-2xl font-bold tracking-normal">Suas redações</h2>
+          <p className="mt-1 text-base text-slate-500">Correções, rascunhos e histórico do mês</p>
         </div>
       </section>
 
@@ -288,8 +288,8 @@ export default function DashboardPage() {
           ) : (
             <div className="grid min-h-64 place-items-center px-6 py-10 text-center">
               <div>
-                <p className="text-lg font-bold">Nenhuma redacao ainda.</p>
-                <p className="mt-2 text-base text-slate-500">Comece uma redacao para acompanhar seu historico no painel.</p>
+                <p className="text-lg font-bold">Nenhuma redação ainda.</p>
+                <p className="mt-2 text-base text-slate-500">Escreva uma redação para começar seu histórico.</p>
                 <Button asChild className="mt-5">
                   <Link href="/redacao">
                     <PenLine className="h-4 w-4" aria-hidden="true" />
@@ -444,7 +444,7 @@ function WeeklyTasksCard({
         <Input
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="Defina um desafio para cumprir esta semana"
+          placeholder="Ex: escrever 2 redações esta semana"
           className="h-10"
         />
         <div className="grid grid-cols-[5rem_minmax(0,1fr)_auto] gap-2">
@@ -481,7 +481,7 @@ function WeeklyTasksCard({
           </div>
         )) : (
           <div className="rounded-xl border border-dashed border-border p-4 text-sm text-slate-500">
-            Nenhum desafio definido. Crie um objetivo semanal que voce quer tentar cumprir.
+            Sem desafios ainda. Crie um objetivo para a semana acima.
           </div>
         )}
       </div>
@@ -620,19 +620,19 @@ function buildLessonRows(data: Dashboard | null): LessonRow[] {
 function buildHeroCopy({ bestScore, latestDraft, progress }: { bestScore: number; latestDraft: boolean; progress: number }) {
   if (latestDraft) {
     return {
-      title: "Continue sua redacao.",
-      description: "Seu rascunho esta salvo. Retome o texto, conclua a tese e envie para correcao quando estiver pronto.",
+      title: "Seu rascunho está esperando.",
+      description: "Retome o texto, ajuste a tese e envie para correção quando estiver pronto.",
     };
   }
   if (bestScore) {
     return {
-      title: "Hoje e dia de afiar sua argumentacao.",
-      description: `Sua melhor redacao chegou a ${bestScore}/1000. Use o painel para revisar competencias, aulas e proximos treinos.`,
+      title: "Hora de superar seu melhor.",
+      description: `Sua redação mais alta chegou a ${bestScore}/1000. Escreva outra para subir as competências mais fracas.`,
     };
   }
   return {
-    title: "Comece sua rotina de escrita.",
-    description: `Seu percurso esta em ${progress}%. Escreva a primeira redacao para liberar analise por competencia e recomendacoes reais.`,
+    title: "Comece pela primeira redação.",
+    description: `Seu percurso está em ${progress}%. Escreva uma redação para receber nota por competência e saber o que treinar.`,
   };
 }
 

@@ -45,7 +45,7 @@ export default function LessonsPage() {
       <PageHeader
         eyebrow="Cursos"
         title="Trilha de aulas"
-        description="Cursos, módulos e atividades em uma sequência clara. Concluir aulas libera XP; fechar módulos e cursos libera bônus maiores."
+        description="Avance pelos módulos na ordem. Cada aula concluída dá XP; fechar um módulo dá bônus."
       />
 
       <div className="space-y-3">

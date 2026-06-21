@@ -197,3 +197,27 @@ def test_student_theme_generate_ignores_prompt_text_because_it_uses_database(cli
 
     assert response.status_code == 200
     assert response.json()["success"] is True
+
+
+def test_learning_profile_returns_shape_always(client):
+    data = api_data(client.get("/api/v1/ai/learning-profile"))
+    assert set(data) == {"weak_competencies", "recurring_errors", "repertories_used", "recommendations", "has_data"}
+    assert isinstance(data["weak_competencies"], dict)
+    assert isinstance(data["recurring_errors"], list)
+
+
+def test_learning_profile_empty_when_no_correction(client):
+    from src.models import StudentLearningProfile, User
+
+    db = SessionLocal()
+    try:
+        user = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        db.query(StudentLearningProfile).filter(StudentLearningProfile.user_id == user.id).delete()
+        db.commit()
+    finally:
+        db.close()
+
+    data = api_data(client.get("/api/v1/ai/learning-profile"))
+    assert data["has_data"] is False
+    assert data["weak_competencies"] == {}
+    assert data["recurring_errors"] == []

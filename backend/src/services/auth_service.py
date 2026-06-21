@@ -27,6 +27,18 @@ class AuthService:
             raise AppError("E-mail ou senha invalidos.", status_code=401, code="invalid_credentials")
         return touch_daily_streak(self.db, user)
 
+    def update_profile(self, user: User, *, name: str) -> User:
+        user.name = name.strip()
+        return self.users.save(user)
+
+    def change_password(self, user: User, *, current_password: str, new_password: str) -> None:
+        if not verify_password(current_password, user.hashed_password):
+            raise AppError("Senha atual incorreta.", status_code=400, code="invalid_current_password")
+        if verify_password(new_password, user.hashed_password):
+            raise AppError("A nova senha deve ser diferente da atual.", status_code=400, code="password_unchanged")
+        user.hashed_password = get_password_hash(new_password)
+        self.users.save(user)
+
     def token_for(self, user: User) -> str:
         expires = timedelta(minutes=settings.access_token_expire_minutes)
         return create_access_token(str(user.id), expires_delta=expires, extra={"role": user.role.value})
