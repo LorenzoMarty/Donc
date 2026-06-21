@@ -45,6 +45,15 @@ export type User = {
   level: number;
   streak_days: number;
   daily_goal_minutes: number;
+  created_at: string;
+};
+
+export type LearningProfile = {
+  weak_competencies: Record<string, number>;
+  recurring_errors: string[];
+  repertories_used: string[];
+  recommendations: string[];
+  has_data: boolean;
 };
 
 export type RankSummary = {

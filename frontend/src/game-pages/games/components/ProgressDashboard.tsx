@@ -58,7 +58,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/90">Barra de XP</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {rank.next ? `${rank.xpToNext} XP ate ${rank.next.name}.` : "Rank maximo alcancado."}
+                {rank.next ? `Faltam ${rank.xpToNext} XP para ${rank.next.name}.` : "Rank máximo alcançado."}
               </p>
             </div>
             <span className="game-chip bg-primary/12 px-3 py-1 text-xs font-semibold text-primary">{rank.progress}%</span>
@@ -75,7 +75,7 @@ export function ProgressDashboard({ overallProgress, weeklyProgress }: { overall
         </div>
 
         <div className="game-tile bg-background/58 px-4 py-3 text-left lg:text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Dominio geral</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Domínio geral</p>
           <p className="mt-1 text-2xl font-semibold text-foreground">{overallProgress}%</p>
         </div>
       </div>

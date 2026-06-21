@@ -10,63 +10,40 @@ Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar 
 
 ## Política de Trabalho do Claude
 
-Regras obrigatórias para trabalhar neste repositório:
+<!-- regras-claude v2026-06-12 -->
+Regras obrigatórias para trabalhar nos projetos:
 
-0. **Sempre responder em português (pt-BR).** Toda comunicação com o usuário deve ser em
-   português brasileiro, independentemente do idioma da pergunta.
+0. Idioma — usuário pt-BR; código/docs do projeto em inglês.
+1. Análise mínima — leia só o relevante à tarefa.
+2. Doc antes de código — dúvida? Leia o `claude/CLAUDE.md` e o contexto do projeto no Obsidian
+   (ponteiro em `## Contexto no Obsidian`) primeiro.
+   Porquê: doc condensa decisões que o código não explica; explorar código custa 10x mais.
+3. Doc sincronizada — ao concluir, registre o contexto no Obsidian (skill `claude-obsidian`) e
+   atualize o que for impactado.
+4. Escopo fechado — só o pedido; achado importante vira observação, não refactor.
+5. Sem dependência nova sem justificar.
+6. Sem presunção — doc incompleta + código não confirma = declare incerteza.
+7. Sem mudança silenciosa — fluxo/API/auth/persistência: avise explicitamente.
+8. Alerte antes de destruir — migração/reset/limpeza: impacto antes de executar.
 
-1. **Analisar o sistema só quando necessário.** Não rode análise completa (ex.: skill
-   `analyze-system`, varredura ampla do código, `SYSTEM_ANALYSIS.md`) para tarefas pequenas ou
-   localizadas. Análise ampla só quando a tarefa realmente exigir entender o sistema inteiro.
+> Nota sobre as duas camadas de CLAUDE.md: a raiz tem um `CLAUDE.md` curto que só faz
+> `@claude/CLAUDE.md` para reativar o auto-load. O arquivo real de instruções é
+> **`claude/CLAUDE.md`** — edite-o lá, não na raiz.
+<!-- /regras-claude -->
 
-2. **Resolver dúvidas pela documentação primeiro.** Qualquer dúvida sobre o sistema
-   (arquitetura, estrutura, comandos, decisões) deve ser respondida lendo **este `claude/CLAUDE.md`
-   e os documentos em `claude/docs/`** antes de explorar o código. Só investigue o código se a
-   resposta não estiver documentada.
+### Regras específicas deste projeto
 
-3. **Documentar ao concluir.** Após terminar uma tarefa, registre o que mudou em `claude/docs/`
-   (um arquivo por tarefa, ver `claude/docs/README.md`) e **atualize este `claude/CLAUDE.md`
-   sempre que necessário** — quando arquitetura, estrutura de pastas, comandos, rotas ou decisões
-   relevantes mudarem.
+- Não rodar a skill `analyze-system` (gera `SYSTEM_ANALYSIS.md` na raiz) para tarefas pequenas ou
+  localizadas — só quando a tarefa exigir entender o sistema inteiro.
 
-4. **Escopo fechado.** Altere só o necessário. Não refatore nem melhore fora do escopo. Se encontrar algo importante, registre como observação.
+---
 
-5. **Siga padrões existentes.** Observe como o projeto organiza arquivos, nomes, validações, testes e convenções. Siga o mesmo padrão.
+## Contexto no Obsidian
 
-6. **Explique decisões com tradeoff.** Toda decisão que envolva performance, segurança, arquitetura ou escalabilidade deve ter justificativa resumida.
-
-7. **Valide impacto antes de mudanças globais.** Auth, middlewares, banco, CI/CD, contratos de API, containers → identifique o que pode ser afetado antes de alterar.
-
-8. **Sem dependência nova sem justificativa.** Verifique se o problema já se resolve com o que existe. Se precisar de lib nova, justifique.
-
-9. **Sem presunção.** Se doc incompleta e código não confirma → declare incerteza. Nunca invente regras, fluxos ou arquitetura.
-
-10. **Simples e incremental.** Menor sistema que resolve o problema. Sem abstração prematura. Sem reescrita ampla quando mudança pequena resolve.
-
-11. **Sem mudança silenciosa.** Alterações em fluxo, contrato de API, autenticação, regra de negócio ou persistência → informe explicitamente ao usuário.
-
-12. **Valide antes de concluir.** Sintaxe, imports, tipagem, build ou testes disponíveis devem passar antes de declarar tarefa pronta.
-
-13. **Sem duplicação.** Antes de criar função, hook ou componente novo: verifique se já existe algo reutilizável. Prefira extensão.
-
-14. **Funções pequenas e separadas.** Parsing, validação, regra de negócio e persistência em camadas distintas. Sem mistura de responsabilidades.
-
-15. **Erros visíveis.** Sem except/pass, fallback silencioso ou log insuficiente. Erro relevante deve ser registrado ou propagado.
-
-16. **Valide entradas externas.** Dados de API, formulário, arquivo, env ou IA devem ser validados antes de uso. Nunca confie em formato implícito.
-
-17. **Alerte antes de destruir.** Migração destrutiva, reset, remoção de schema ou limpeza de dados → explique impacto antes de executar.
-
-18. **Comentário explica intenção, não repete código.** Só comente decisões, tradeoffs ou comportamento não óbvio. Sem comentário redundante.
-
-19. **Pergunte antes de implementar o errado.** Se o requisito for ambíguo e a implementação errada custar mais do que 1 pergunta: pergunte antes. Uma pergunta certeira vale mais que horas de retrabalho.
-
-20. **Sinalize dívida técnica, não a esconda.** Se precisar fazer algo não ideal por limitação de escopo, tempo ou contexto: registre como TODO com motivo claro. Dívida não registrada vira bug futuro.
-
-21. **Nenhum segredo no código.** Credenciais, tokens, chaves, senhas ou dados sensíveis nunca no código ou log. Sempre via variável de ambiente validada.
-
-> Nota: a raiz tem um `CLAUDE.md` curto que só faz `@claude/CLAUDE.md` — isso reativa o auto-load.
-> O arquivo real de instruções é **este** (`claude/CLAUDE.md`); edite-o aqui, não na raiz.
+O contexto que cresce (registros de tarefa, arquitetura, decisões) vive no vault **E_Mind**, em
+`02 - Projetos/Donc ENEM/` (hub `Donc ENEM.md` + `Arquitetura.md` + `Decisões.md` + `Registros/`).
+Gravado/atualizado pela skill `claude-obsidian` (regra 3). Para dúvidas sobre o sistema, leia este
+arquivo e o contexto lá antes de explorar código (regra 2). **Não** recriar `claude/docs/` no repo.
 
 ---
 
@@ -74,205 +51,96 @@ Regras obrigatórias para trabalhar neste repositório:
 
 ### Frontend (`frontend/`)
 ```bash
-npm run dev          # servidor de desenvolvimento em :3000
-npm run build        # build de produção
-npm run lint         # eslint --max-warnings=0
-npm run typecheck    # next typegen && tsc --noEmit
-npm run format       # prettier --write .
-npm run test         # Vitest (unit + stores)
-npm run test:coverage# Vitest com cobertura
-npm run test:e2e     # Playwright smoke (sobe backend+frontend isolados)
+npm run dev          # dev server :3000
+npm run build / lint / typecheck / format
+npm run test         # Vitest (unit + stores); test:coverage p/ cobertura
+npm run test:e2e     # Playwright smoke (antes: test:e2e:install uma vez)
 npm run quality      # lint + typecheck + test (gate local)
 ```
-> E2E: rodar `npm run test:e2e:install` uma vez (baixa o Chromium). Detalhes em `docs/testing.md`.
 
 ### Backend (`backend/`)
 ```bash
-# Ativar venv primeiro
-.venv\Scripts\activate          # Windows PowerShell
-
-uvicorn src.main:app --reload   # servidor de desenvolvimento em :8000
-celery -A src.queues.celery_app:celery_app worker --loglevel=INFO  # worker assíncrono
-alembic upgrade head            # executar migrações do banco
-pytest                          # rodar testes
-pytest --cov                    # testes com cobertura
-prospector                      # análise estática + bandit (segurança)
+.venv\Scripts\activate          # ativar venv (Windows PowerShell)
+uvicorn src.main:app --reload   # dev server :8000
+celery -A src.queues.celery_app:celery_app worker --loglevel=INFO
+alembic upgrade head            # migrações
+pytest / pytest --cov           # testes
 .\quality.ps1                   # prospector + pytest --cov (gate local)
 ```
 > Deps de qualidade/teste: `python -m pip install -r requirements-dev.txt`. Guia: `docs/testing.md`.
-> Testes em `tests/` (`unit/`, `integration/`, `fixtures/`). Config em `pyproject.toml` e `.prospector.yaml`.
+> Testes em `tests/` (`unit/`, `integration/`, `fixtures/`). Config: `pyproject.toml`, `.prospector.yaml`.
 
 ### Stack completa via Docker
-```bash
-docker compose up               # inicia db (pgvector), redis, backend, worker, frontend
-```
+`docker compose up` — db (pgvector), redis, backend, worker, frontend.
 
 ---
 
 ## Arquitetura
 
 ### Fluxo de Requisições
-No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz proxy de todas as chamadas de `/api/backend/*` → `http://backend:8000/api/v1/*`. Frontend nunca chama backend diretamente — passa sempre por esse handler que repassa headers de auth e cookies.
-
-Em dev local sem Docker, `.env` define `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` para acesso direto ao backend.
+No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz proxy de `/api/backend/*` → `http://backend:8000/api/v1/*`, repassando headers de auth e cookies — frontend nunca chama backend diretamente. Em dev local sem Docker, `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` dá acesso direto.
 
 ### Estrutura do Frontend
-- `src/app/(app)/` — rotas protegidas, envolvidas por `AppShell` via `(app)/layout.tsx`. Rotas:
-  `dashboard`, `redacao`, `redacoes`, `aulas`, `games`, `simulados`, `conquistas`, `trilhas`,
-  `perfil`, `onboarding`, `admin`.
-- `src/app/(auth)/` — páginas de login/cadastro/recuperação de senha
-- `src/app/` (raiz) — páginas de marketing (landing, `pricing`, `sobre`, `plataforma`, `trilhas`)
-- `src/features/gamification/` — XP, ranks, streaks dos jogos (apenas client-side, persistido em localStorage via Zustand)
-- `src/games/` — definições estáticas dos jogos por categoria (`connectives`, `grammar`,
-  `structure`, `repertoire`, `thesis`, `competencies`, `challenges`). Cada `index.ts` exporta
-  `GameDefinition[]`. `src/games/_engines/` contém os componentes de engine interativos
-  reutilizáveis (`TimedRushSession`, `ClassifyDragSession`, `OrderSession`, `FillBlankSession`).
-- `src/game-pages/` — componentes de UI de sessão de jogo (CategoryPage, GameSession, etc.).
-  `GameSession` roteia por `game.engine` para o componente certo.
-- `src/components/shared/` — componentes reutilizáveis (AppShell, EssayEditor, LessonPlayer, charts)
-  - `app-shell.tsx`: sidebar desktop. Nav **não** tem "Histórico" — a rota `/redacoes` existe mas é
-    acessada via Painel/Perfil. Quando recolhida, a logo comprimida vira a seta de expandir no hover
-    de qualquer ponto da sidebar (`group` no `<aside>` + `group-hover`). Estado persiste em
-    `localStorage` (`sidebar-collapsed`).
-- `src/components/ui/` — primitivos shadcn/radix (Badge, Button, Card, etc.). Formulários usam os
-  primitivos compartilhados `Input`/`Textarea`/`Select`/`Field` (label+hint+erro+contador) e o
-  `Modal` (props `icon`/`size`/`footer` + animação de entrada). Use-os nos formulários do admin
-  em vez de `<input>`/`<select>` crus.
-- `src/stores/game-store.ts` — Zustand store com persistência para XP/streak/progresso dos jogos
-- `src/lib/http-client.ts` — `apiFetch<T>()` adiciona Bearer token do localStorage + desempacota `ApiEnvelope<T>`
-- `src/services/api.ts` — re-exporta `apiFetch`, `authApi` e todos os tipos da API
+- `src/app/(app)/` — rotas protegidas via `AppShell` (`dashboard`, `redacao`, `redacoes`, `aulas`, `games`, `simulados`, `conquistas`, `trilhas`, `perfil`, `onboarding`, `admin`)
+- `src/app/(auth)/` — login/cadastro/recuperação; `src/app/` raiz — marketing
+- `src/features/gamification/` — XP, ranks, streaks (client-side, localStorage via Zustand)
+- `src/games/` — definições estáticas dos jogos; `src/games/_engines/` — engines interativos
+- `src/game-pages/` — UI de sessão de jogo (`GameSession` roteia por `game.engine`)
+- `src/components/shared/` — AppShell, EssayEditor, LessonPlayer, charts
+- `src/components/ui/` — primitivos shadcn/radix; formulários usam `Input`/`Textarea`/`Select`/`Field`/`Modal` compartilhados (nunca `<input>` cru)
+- `src/lib/http-client.ts` — `apiFetch<T>()` (Bearer token + desempacota `ApiEnvelope<T>`); `src/services/api.ts` re-exporta tudo
+
+Detalhes (sidebar, primitivos de formulário, categorias de jogos): registro `2026-06-11-enxugamento-claude-md` no Obsidian (`02 - Projetos/Donc ENEM/Registros/`).
 
 ### Autenticação
-Token armazenado em `localStorage` (`access_token`) e em cookie (para SSR/middleware). `AuthContext` + hook `useAuth()` (em `providers/app-providers.tsx`) gerencia login/cadastro/logout e hidrata o usuário no mount. `AppError` no backend usa códigos como `not_authenticated`, `invalid_token`.
+Token em `localStorage` (`access_token`) + cookie (SSR/middleware). `AuthContext` + `useAuth()` (com `refresh()`) em `providers/app-providers.tsx`. Backend: JWT (HS256) via `python-jose`; `get_current_user` lê header ou cookie; `require_admin` verifica `UserRole.ADMIN`. `AppError` usa códigos como `not_authenticated`, `invalid_token`. Conta: `PATCH /auth/me` (editar nome) e `POST /auth/change-password` (senha atual + nova; erros `invalid_current_password`/`password_unchanged`). `UserRead` expõe `created_at`.
+
+### Página de Perfil (`/perfil`)
+Híbrido "Raio-X do escritor" + conta. Diagnóstico: notas por competência + evolução (charts de `components/shared/charts.tsx`), pontos fracos, erros recorrentes, recomendações e repertórios via `GET /ai/learning-profile` (expõe `StudentLearningProfile`; vazio com `has_data=false` para aluno sem redação) fundidos com `GET /dashboard` pelo transformador puro `features/profile/writer-xray.ts`. Grid dos 7 hubs cognitivos (`useGameStore.adaptive`). Conta editável (nome/senha via Modais). Aparência mantida. NÃO duplica o dashboard (sem lista de tarefas/metas).
 
 ### Estrutura do Backend
-Segue padrão **Routes → Services → Repositories**:
+Padrão **Routes → Services → Repositories**:
 - `src/routes/` — routers FastAPI (auth, dashboard, lessons, exercises, essays, exams, ai, admin, games)
-- `src/services/` — lógica de negócio (EssayService, AuthService, AIService, GameService,
-  DashboardService, ExamService, ExerciseService, LessonService, RankService, StreakService,
-  `ai_telemetry` p/ custo/uso de IA, `seed` p/ dados demo)
-- `src/repositories/` — queries SQLAlchemy (UserRepository, EssayRepository, etc.)
-- `src/models/` — modelos ORM SQLAlchemy
-- `src/schemas/` — schemas Pydantic de request/response
+- `src/services/` — lógica de negócio (EssayService, AuthService, AIService, GameService, DashboardService, ExamService, ExerciseService, LessonService, RankService, StreakService, `ai_telemetry`, `seed`)
+- `src/repositories/` — queries SQLAlchemy; `src/models/` — ORM; `src/schemas/` — Pydantic
 
-Todas respostas usam formato `ApiEnvelope<T>`: `{ success, message, data, error? }` via `src/schemas/common.py`.
-
-Auth: JWT (HS256) via `python-jose`. Dependência `get_current_user` lê token do header `Authorization` ou cookie `access_token`. `require_admin` depende de `get_current_user` e verifica `UserRole.ADMIN`.
+Todas respostas usam `ApiEnvelope<T>`: `{ success, message, data, error? }` via `src/schemas/common.py`.
 
 ### Pipeline de IA (Correção de Redações)
-Correção é assíncrona via Celery:
-1. Frontend faz polling em `/api/v1/essays/{id}/job` para verificar status
-2. Task Celery `correct_essay` chama `CorrectionOrchestratorWorkflow.correct()`
-3. Workflow executa 5 agentes em sequência: `ThesisAgent` → `GrammarAgent` → `RepertoireAgent` → `ENEMCompetencyAgent` → `EssayCorrectionAgent`
-4. Todos agentes estendem `AgnoAgentRunner` (`src/agents/base.py`) que usa framework `agno` + OpenAI
-5. Se `OPENAI_API_KEY` ausente ou agno falhar, agentes retornam valor `fallback` configurado (degradação graciosa)
-6. Após correção, `update_learning_profile()` atualiza `StudentLearningProfile` para rastrear competências fracas e erros recorrentes
+Assíncrona via Celery:
+1. Frontend faz polling em `/api/v1/essays/{id}/job`
+2. Task `correct_essay` chama `CorrectionOrchestratorWorkflow.correct()`
+3. 5 agentes em sequência: `ThesisAgent` → `GrammarAgent` → `RepertoireAgent` → `ENEMCompetencyAgent` → `EssayCorrectionAgent`
+4. Todos estendem `AgnoAgentRunner` (`src/agents/base.py`), framework `agno` + OpenAI
+5. Sem `OPENAI_API_KEY` ou falha do agno → valor `fallback` configurado (degradação graciosa)
+6. Após correção, `update_learning_profile()` atualiza `StudentLearningProfile`
 
 ### Observabilidade de IA (Langfuse tracing)
-Tracing via **Langfuse SDK v4 + OpenLIT** (integração nativa do agno). `configure_ai_telemetry()`
-em `telemetry/langfuse.py` inicializa o `Langfuse` (com `mask`) e chama `openlit.init()` —
-**sem** `tracer=` (removido no OpenLIT 1.42; o `Langfuse()` v4 registra o TracerProvider global do
-OTel e o OpenLIT o herda). Sem `LANGFUSE_*`, vira no-op (degradação graciosa).
-- Cada correção = **um trace** (`essay_correction`) com os 5 agentes como spans-filhos. O OpenLIT
-  captura modelo/tokens/custo/latência/tool calls automaticamente.
-- `AgnoAgentRunner` (`agents/base.py`) abre o span `ai.{agent}` via `start_as_current_observation`
-  e propaga `user_id`/`session_id` (`essay:{id}`) com `propagate_attributes`. Os 3 agentes
-  paralelos aninham sob o trace raiz via propagação manual do contexto OTel aos threads (`_bind_ctx`
-  em `correction.py`).
-- **PII:** `capture_message_content=False` (texto da redação nunca sai do processo) + `mask` que
-  redige strings nos spans manuais. Métricas/modelo/custo permanecem visíveis.
-- **Flush:** `flush_ai_telemetry()` no fim da correção, no `finally` da task Celery e no shutdown.
-- Telemetria de **custo em banco** (próxima seção) é independente e continua valendo.
-- Skill oficial instalada em `~/.claude/skills/langfuse/`. Detalhes:
-  `claude/docs/2026-06-10-langfuse-tracing.md`.
+Langfuse SDK v4 + OpenLIT (integração nativa do agno), inicializado por `configure_ai_telemetry()` em `telemetry/langfuse.py`. Sem `LANGFUSE_*`, vira no-op. Cada correção = um trace (`essay_correction`) com os 5 agentes como spans-filhos; PII protegida (`capture_message_content=False` + `mask`). Detalhes (gotcha do `tracer=`, propagação OTel, flush): registros `2026-06-10-langfuse-tracing` e `2026-06-11-enxugamento-claude-md` no Obsidian.
 
 ### Custos de IA (telemetria)
-Cada chamada grava um `AIInteractionLog` (`ai_interaction_logs`) com `model`, `input_tokens`,
-`output_tokens` e `cost_micro_usd`. Custo é calculado em **micro-USD** (1 USD = 1M micros) pela
-tabela de preço oficial OpenAI por modelo em `src/config/ai_pricing.py` (`cost_micro_usd()`).
-`build_interaction_log()` em `services/ai_telemetry.py` é a fonte única do cálculo (usada por
-`record_ai_interaction` e pelo `CorrectionOrchestratorWorkflow`). A conversão para **R$** usa a
-cotação **PTAX/BCB** em `services/fx_rate.py` (`get_usd_brl()`, cache TTL + fallback). O painel admin
-(`AdminService.ai_telemetry`) agrega por workflow, por modelo, diário e top-users, expondo custo em
-USD e BRL — exibido em `admin/_tabs/ai-telemetry.tsx`.
+Cada chamada grava `AIInteractionLog` (`ai_interaction_logs`) com `model`, tokens e `cost_micro_usd` (micro-USD; tabela de preços em `src/config/ai_pricing.py`, fonte única `build_interaction_log()` em `services/ai_telemetry.py`). Conversão R$ via PTAX/BCB (`services/fx_rate.py`). Painel admin agrega por workflow/modelo/dia/top-users. Detalhes: registro `2026-06-10-custos-ia-brl` no Obsidian.
 
 ### Jogos (Client-side)
-XP, streaks e progresso dos jogos são **totalmente client-side** — sem chamadas ao backend. `useGameStore` (Zustand + chave localStorage `donk.games.v1`) rastreia tudo. Definições dos jogos ficam como TypeScript estático em `src/games/`.
+XP, streaks e progresso **totalmente client-side** — `useGameStore` (Zustand, localStorage `donk.games.v1`). Definições estáticas em `src/games/`; campo `engine` roteia no `GameSession` (13 engines: quiz, timed-rush, classify, order, fill-blank, sequence, text-surgery, essay-collapse, artificiality, argument-escalation, duel, corrector, survival).
 
-**Engines** (campo `engine` em `GameDefinition`, roteado por `GameSession` via switch; componentes
-em `src/games/_engines/`):
-- `quiz`/`choice` — múltipla escolha (render inline no `GameSession`).
-- `timed-rush` — rodada infinita cronometrada (combo/strike/timer); usa `questions`.
-- `classify` — arrastar itens para baldes (dnd-kit); usa `classify`.
-- `order` — ordenar frases por rodada (dnd-kit sortable); usa `order.rounds`.
-- `fill-blank` — digitar resposta com normalização tolerante; usa `fillBlank.rounds`.
-- `sequence` — montagem da redação (`EssayAssemblySession`, específico do `essay-assembly`).
-- `text-surgery` — restaurar texto degradado (escolha curada + reescrita avaliada por IA); usa `textSurgery`.
-- `essay-collapse` — reconstruir redação (reordenar + reconectar); usa `essayCollapse`.
-- `artificiality` — detectar trecho autêntico × artificial; usa `artificiality`.
-- `argument-escalation` — escada da tese; usa `escalation`.
-- `duel` — duas versões, escolher a melhor; usa `duel`.
-- `corrector` — multi-seleção de problemas presentes; usa `corrector`.
-- `survival` — maratona agregada (timer/vidas/combo); usa `survival` (agrega via `getAllGames`).
+Fonte cognitiva principal: `useGameStore.adaptive` (EWMA por **7 hubs**; registro `HUBS` em `features/gamification/symptoms.ts`, núcleo puro em `adaptive.ts`). Engines emitem via `recordCognitiveOutcome`; nota qualitativa S/A/B/C (nunca "% de acerto"). Navegação hub-first: "Atividades" → `GamesHub` (7 hubs) → `games/treino/[symptomId]`. `useGameStore.skills` é legado (só compat). IA de reescrita: `POST /ai/evaluate-rewrite` (fallback heurístico).
 
-Alternativas de `quiz`/`timed-rush` são embaralhadas em runtime (`_engines/shuffleOptions.ts`).
-Feedback qualitativo S/A/B/C via `_engines/grade.ts`.
-
-**Núcleo cognitivo orientado a eventos (fonte principal):** `useGameStore.adaptive`
-(`AdaptiveProfile` = `weaknessSignals`/`mastery`/`recentEvents`, por **7 hubs**). Registro único
-`HUBS: Record<SymptomHubId, SymptomHub>` em `features/gamification/symptoms.ts` — fonte de verdade
-com UI (título/ícone/cor) **e** contrato cognitivo (`tags`, `negativeEvents`, `positiveEvents`,
-`cognitiveFocus`, `missionEngines`, `weaknessNarrative`). `SymptomHubId` = ids pt-BR
-(`texto-robotico`, `repete-ideias`, `repertorio-nao-encaixa`, `nao-aprofunda`,
-`introducao-sem-tese`, `perde-na-c3`, `conclusao-formula`).
-
-Núcleo puro em `features/gamification/adaptive.ts`: `applyEvent` (EWMA contínua, **nunca**
-acerto/% simples), `dominantWeakness`, `recommendHub` (treinador: próxima missão), `masteryForHub`,
-`eventsForOutcome`/`gradeToSeverity` (decisão → eventos via nota S/A/B/C), `deriveHubsFromTags`/
-`possibleEventsForHubs` (usados por `enrichGame`). Store: ação `recordCognitiveOutcome(game,
-{tags,grade?,correct?})` é o caminho principal dos engines; persistido em `donk.games.v1`
-(`version: 2`, `migrate` reinicia `adaptive`).
-
-**Contrato de missão:** toda `GameDefinition` tem `hubs`/`skills`/`cognitiveFocus`/`difficulty`/
-`possibleEvents` — garantido por `enrichGame` em `catalog.ts` (preenche das `tags` quando ausente;
-as 6 missões profundas têm anotação curada). Os **6 engines profundos** (`duel`,
-`argument-escalation`, `artificiality`, `corrector`, `essay-collapse`, `text-surgery`) emitem
-eventos via `recordCognitiveOutcome` e exibem nota qualitativa **S/A/B/C** no `EngineResult`
-(nunca "% de acerto").
-
-**Skill system legado (só compat):** `useGameStore.skills` (`Record<SkillTag,{attempts,errors}>`)
-via `recordSkillOutcomes` (drills `quiz`/`timed-rush`/`classify`/`order`/`fill-blank`). Não é a
-fonte principal. Seletores legados em `symptoms.ts` (`masteryFor`, `topWeaknesses`,
-`recommendTrainings`).
-
-**Navegação hub-first:** entrada única "Atividades" → `GamesHub` = treinador no topo
-(`AdaptiveSpotlight`, "Continue evoluindo") + grade dos **7 hubs** (sem seção de categorias).
-`SymptomPage` (rota `games/treino/[symptomId]`) é o browse de missões do hub (profundas à frente).
-Categorias (coesão, gramática…) viram só tags/agrupamento interno; rotas `/games/[categorySlug]`
-seguem vivas para back-compat. URLs de jogo: `/games/{category}/{gameId}` (inalteradas).
-Para criar missão nova, adicione `GameDefinition` ao `index.ts` do engine com `engine`, payload e
-`tags` (hubs/skills/possibleEvents vêm do `enrichGame`), e registre em `catalog.ts`.
-
-**IA de reescrita:** `POST /ai/evaluate-rewrite` (backend `agents/rewrite_evaluator`, com fallback
-heurístico sem `OPENAI_API_KEY`), consumido pelo Text Surgery.
+Detalhe completo (engines, payloads, contrato de missão, como criar missão nova): registro `2026-06-11-enxugamento-claude-md` + `Arquitetura.md` no Obsidian.
 
 ### Variáveis de Ambiente
 | Variável | Finalidade |
 |---|---|
-| `DATABASE_URL` | Conexão PostgreSQL (normalizada automaticamente do prefixo `postgres://`) |
-| `JWT_SECRET_KEY` | Chave de assinatura JWT |
-| `OPENAI_API_KEY` | Necessária para features de IA; app funciona sem ela |
-| `OPENAI_MODEL` | Padrão: `gpt-5.5` |
+| `DATABASE_URL` | PostgreSQL (normaliza prefixo `postgres://`) |
+| `JWT_SECRET_KEY` | Assinatura JWT |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` | Features de IA (app funciona sem); modelo padrão `gpt-5.5` |
 | `REDIS_URL` | Broker do Celery |
-| `NEXT_PUBLIC_API_URL` | URL base da API no frontend (`/api/backend` no Docker, URL direta em dev local) |
-| `INTERNAL_API_URL` | Destino do proxy server-side (padrão: `http://127.0.0.1:8000/api/v1`) |
-| `SEED_DEMO_DATA` | Popula usuários/conteúdo demo no startup (padrão: `true`) |
-| `ENABLE_PGVECTOR` | Habilita extensão vector + seed da base de conhecimento |
-| `LANGFUSE_PUBLIC_KEY` | Chave pública do Langfuse; tracing fica off se ausente |
-| `LANGFUSE_SECRET_KEY` | Chave secreta do Langfuse |
-| `LANGFUSE_HOST` | URL do Langfuse (`https://cloud.langfuse.com`, US, ou self-hosted) |
-| `USD_BRL_FALLBACK_RATE` | Cotação USD→BRL usada quando a PTAX/BCB falha (padrão: `5.40`) |
-| `USD_BRL_RATE_TTL_HOURS` | TTL do cache da cotação PTAX (padrão: `6`) |
+| `NEXT_PUBLIC_API_URL` | Base da API no frontend (`/api/backend` no Docker, direta em dev) |
+| `INTERNAL_API_URL` | Destino do proxy server-side (padrão `http://127.0.0.1:8000/api/v1`) |
+| `SEED_DEMO_DATA` | Seed demo no startup (padrão `true`) |
+| `ENABLE_PGVECTOR` | Extensão vector + seed da base de conhecimento |
+| `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_HOST` | Tracing Langfuse (off se ausentes) |
+| `USD_BRL_FALLBACK_RATE` / `USD_BRL_RATE_TTL_HOURS` | Cotação USD→BRL quando PTAX falha (padrão `5.40`) / TTL do cache (padrão `6`) |
 
 ### Migrações do Banco
-Backend cria tabelas automaticamente via `Base.metadata.create_all()` no startup. Alembic (`alembic.ini`) gerencia migrações de schema em produção. Função `_ensure_paragraph_count_columns()` no startup é guarda de migração manual para coluna `paragraph_count`.
+`Base.metadata.create_all()` no startup cria tabelas; Alembic gerencia schema em produção. `_ensure_paragraph_count_columns()` no startup é guarda manual da coluna `paragraph_count`.

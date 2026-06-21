@@ -13,6 +13,7 @@ export type {
   EssayVersion,
   Exercise,
   JobStatus,
+  LearningProfile,
   Lesson,
   MockExam,
   TokenResponse,

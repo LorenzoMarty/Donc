@@ -66,7 +66,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{games.length} jogos disponiveis</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-normal">Treino livre, sem trilha linear</h2>
+              <h2 className="mt-1 text-2xl font-semibold tracking-normal">Escolha qualquer jogo desta categoria</h2>
             </div>
           </div>
           <div className="relative w-full lg:max-w-sm">

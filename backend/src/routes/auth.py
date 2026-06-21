@@ -5,7 +5,15 @@ from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
 from src.models import User
-from src.schemas.auth import LoginRequest, PasswordRecoveryRequest, RegisterRequest, TokenResponse, UserRead
+from src.schemas.auth import (
+    ChangePasswordRequest,
+    LoginRequest,
+    PasswordRecoveryRequest,
+    RegisterRequest,
+    TokenResponse,
+    UpdateMeRequest,
+    UserRead,
+)
 from src.schemas.common import ApiResponse, MessageResponse, success_response
 from src.services.auth_service import AuthService
 
@@ -30,6 +38,30 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> ApiResponse[T
 @router.get("/me", response_model=ApiResponse[UserRead])
 def me(current_user: User = Depends(get_current_user)) -> ApiResponse[UserRead]:
     return success_response(UserRead.model_validate(current_user))
+
+
+@router.patch("/me", response_model=ApiResponse[UserRead])
+def update_me(
+    payload: UpdateMeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[UserRead]:
+    user = AuthService(db).update_profile(current_user, name=payload.name)
+    return success_response(UserRead.model_validate(user), "Perfil atualizado com sucesso.")
+
+
+@router.post("/change-password", response_model=ApiResponse[MessageResponse])
+def change_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[MessageResponse]:
+    AuthService(db).change_password(
+        current_user,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
+    return success_response(MessageResponse(message="Senha alterada com sucesso."), "Senha alterada com sucesso.")
 
 
 @router.post("/logout", response_model=ApiResponse[MessageResponse])

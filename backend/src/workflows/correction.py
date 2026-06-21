@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import time
 from collections.abc import Callable
@@ -9,13 +9,19 @@ from typing import TypeVar
 from opentelemetry import context as otel_context
 from sqlalchemy.orm import Session
 
+from src.agents.argumentation import ArgumentationAnalyzerAgent
 from src.agents.base import AgnoAgentRunner
-from src.agents.correction import EssayCorrectionAgent
-from src.agents.enem import ENEMCompetencyAgent
-from src.agents.grammar import GrammarAgent
-from src.agents.repertoire import RepertoireAgent
-from src.agents.schemas import EssayCorrectionResult, GrammarAnalysis, RepertoireAnalysis, ThesisAnalysis
-from src.agents.thesis import ThesisAgent
+from src.agents.competency_scorer import CompetencyScorer
+from src.agents.elimination_gate import EliminationGateAgent
+from src.agents.grammar_v2 import GrammarAnalyzerV2Agent
+from src.agents.intervention import InterventionAnalyzerAgent
+from src.agents.output_mapper import OutputMapper
+from src.agents.preprocessor import PreProcessor
+from src.agents.repertoire_v2 import RepertoireAnalyzerV2Agent
+from src.agents.schemas import EssayCorrectionResult, PipelineAnalyses
+from src.agents.score_auditor import ScoreAuditor
+from src.agents.theme_analyzer import ThemeAnalyzerAgent
+from src.agents.thesis_v2 import ThesisAnalyzerAgent
 from src.memory import update_learning_profile
 from src.services.ai_telemetry import build_interaction_log, safe_persist_interaction
 from src.telemetry import flush_ai_telemetry, get_ai_telemetry_client
@@ -30,11 +36,21 @@ class CorrectionOrchestratorWorkflow:
 
     def __init__(self, db: Session | None = None) -> None:
         self.db = db
-        self.thesis_agent = ThesisAgent()
-        self.grammar_agent = GrammarAgent()
-        self.repertoire_agent = RepertoireAgent()
-        self.enem_agent = ENEMCompetencyAgent()
-        self.correction_agent = EssayCorrectionAgent()
+        # Shared runner — all LLM agents use the same AgnoAgentRunner instance
+        runner = AgnoAgentRunner()
+        # Python pure
+        self.preprocessor = PreProcessor()
+        self.scorer = CompetencyScorer()
+        self.auditor = ScoreAuditor()
+        self.mapper = OutputMapper()
+        # LLM agents
+        self.gate_agent = EliminationGateAgent(runner)
+        self.theme_agent = ThemeAnalyzerAgent(runner)
+        self.thesis_agent = ThesisAnalyzerAgent(runner)
+        self.repertoire_agent = RepertoireAnalyzerV2Agent(runner)
+        self.arg_agent = ArgumentationAnalyzerAgent(runner)
+        self.intervention_agent = InterventionAnalyzerAgent(runner)
+        self.grammar_agent = GrammarAnalyzerV2Agent(runner)
 
     def correct(
         self,
@@ -47,17 +63,14 @@ class CorrectionOrchestratorWorkflow:
         job_id: str | None = None,
     ) -> EssayCorrectionResult:
         safe_theme = sanitize_ai_text(theme, max_chars=500)
-        safe_context = sanitize_ai_text(context, max_chars=5000)
         safe_content = guarded_student_text(content, max_chars=20000)
         session_id = f"essay:{essay_id}" if essay_id is not None else None
 
-        # Trace raiz Langfuse: um trace por correção, com os 5 agentes como spans-filhos.
         trace_stack, parent_ctx = self._start_trace(user_id=user_id, session_id=session_id, essay_id=essay_id)
         with trace_stack:
             try:
                 return self._run_pipeline(
                     safe_theme=safe_theme,
-                    safe_context=safe_context,
                     safe_content=safe_content,
                     session_id=session_id,
                     user_id=user_id,
@@ -71,75 +84,81 @@ class CorrectionOrchestratorWorkflow:
         self,
         *,
         safe_theme: str,
-        safe_context: str,
         safe_content: str,
         session_id: str | None,
         user_id: int | None,
         job_id: str | None,
-        parent_ctx,
+        parent_ctx: object,
     ) -> EssayCorrectionResult:
-        # ThesisAgent, GrammarAgent e RepertoireAgent são independentes — rodam em paralelo.
-        # _bind_ctx propaga o contexto OTel do trace raiz para os threads, mantendo o
-        # aninhamento dos spans (best practice: hierarquia de spans).
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            t_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.thesis_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id)))
-            g_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.grammar_agent.analyze(content=safe_content, user_id=user_id, session_id=session_id)))
-            r_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.repertoire_agent.analyze(theme=safe_theme, content=safe_content, user_id=user_id, session_id=session_id)))
-            wait([t_fut, g_fut, r_fut])
+        # Stage 1: PreProcessor (Python, instant)
+        pre = self.preprocessor.process(safe_content)
 
-        thesis, t_ms, t_status, t_err = t_fut.result()
-        grammar, g_ms, g_status, g_err = g_fut.result()
-        repertoire, r_ms, r_status, r_err = r_fut.result()
+        # Stage 2: EliminationGate (LLM) — early stop on ZERO
+        gate = self._step(
+            "EliminationGateAgent",
+            self._bind_ctx(parent_ctx, lambda: self.gate_agent.evaluate(safe_theme, safe_content, pre, user_id=user_id, session_id=session_id)),
+            runner=self.gate_agent.runner,
+            user_id=user_id,
+            job_id=job_id,
+            prompt=safe_content,
+        )
+        if gate.status == "ZERO":
+            return self.mapper.map(self._zero_analyses(pre, gate), {"c1": 0, "c2": 0, "c3": 0, "c4": 0, "c5": 0})
 
-        # Log paralelos do thread principal (SQLAlchemy Session não é thread-safe).
+        # Stage 3: 6 analyzers in parallel (all independent — theme + content only)
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            th_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.theme_agent.analyze(safe_theme, safe_content, user_id=user_id, session_id=session_id)))
+            ts_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.thesis_agent.analyze(safe_theme, safe_content, user_id=user_id, session_id=session_id)))
+            rp_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.repertoire_agent.analyze(safe_theme, safe_content, user_id=user_id, session_id=session_id)))
+            ar_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.arg_agent.analyze(safe_theme, safe_content, user_id=user_id, session_id=session_id)))
+            iv_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.intervention_agent.analyze(safe_theme, safe_content, user_id=user_id, session_id=session_id)))
+            gr_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.grammar_agent.analyze(safe_content, user_id=user_id, session_id=session_id)))
+            wait([th_fut, ts_fut, rp_fut, ar_fut, iv_fut, gr_fut])
+
+        theme_a, th_ms, th_st, th_err = th_fut.result()
+        thesis_a, ts_ms, ts_st, ts_err = ts_fut.result()
+        rep_a, rp_ms, rp_st, rp_err = rp_fut.result()
+        arg_a, ar_ms, ar_st, ar_err = ar_fut.result()
+        iv_a, iv_ms, iv_st, iv_err = iv_fut.result()
+        grammar_a, gr_ms, gr_st, gr_err = gr_fut.result()
+
+        # Log telemetry from main thread (SQLAlchemy Session not thread-safe)
         for name, ms, status, err, runner in [
-            ("ThesisAgent", t_ms, t_status, t_err, self.thesis_agent.runner),
-            ("GrammarAgent", g_ms, g_status, g_err, self.grammar_agent.runner),
-            ("RepertoireAgent", r_ms, r_status, r_err, self.repertoire_agent.runner),
+            ("ThemeAnalyzerAgent", th_ms, th_st, th_err, self.theme_agent.runner),
+            ("ThesisAnalyzerAgent", ts_ms, ts_st, ts_err, self.thesis_agent.runner),
+            ("RepertoireAnalyzerV2Agent", rp_ms, rp_st, rp_err, self.repertoire_agent.runner),
+            ("ArgumentationAnalyzerAgent", ar_ms, ar_st, ar_err, self.arg_agent.runner),
+            ("InterventionAnalyzerAgent", iv_ms, iv_st, iv_err, self.intervention_agent.runner),
+            ("GrammarAnalyzerV2Agent", gr_ms, gr_st, gr_err, self.grammar_agent.runner),
         ]:
             self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, runner=runner)
 
-        competencies = self._step(
-            "ENEMCompetencyAgent",
-            lambda: self.enem_agent.evaluate(
-                theme=safe_theme,
-                content=safe_content,
-                thesis=thesis,
-                grammar=grammar,
-                repertoire=repertoire,
-                user_id=user_id,
-                session_id=session_id,
-            ),
-            runner=self.enem_agent.runner,
-            user_id=user_id,
-            job_id=job_id,
-            prompt=safe_content,
+        analyses = PipelineAnalyses(
+            preprocessor=pre,
+            gate=gate,
+            theme=theme_a,
+            thesis=thesis_a,
+            repertoire=rep_a,
+            argumentation=arg_a,
+            intervention=iv_a,
+            grammar=grammar_a,
         )
-        correction = self._step(
-            "EssayCorrectionAgent",
-            lambda: self.correction_agent.consolidate(
-                theme=safe_theme,
-                context=safe_context,
-                content=safe_content,
-                thesis=thesis,
-                grammar=grammar,
-                repertoire=repertoire,
-                competencies=competencies,
-                user_id=user_id,
-                session_id=session_id,
-            ),
-            runner=self.correction_agent.runner,
-            user_id=user_id,
-            job_id=job_id,
-            prompt=safe_content,
-        )
+
+        # Stage 4: CompetencyScorer (Python)
+        raw_scores = self.scorer.score(analyses)
+
+        # Stage 5: ScoreAuditor (Python — only reduces, never raises)
+        audited = self.auditor.audit(raw_scores, analyses)
+
+        # Stage 6: OutputMapper (Python → EssayCorrectionResult)
+        correction = self.mapper.map(analyses, audited)
+
         if self.db is not None and user_id is not None:
             update_learning_profile(self.db, user_id=user_id, correction=correction)
+
         return correction
 
     def _start_trace(self, *, user_id: int | None, session_id: str | None, essay_id: int | None) -> tuple[ExitStack, object]:
-        """Abre o span raiz do trace e devolve o contexto OTel para propagar aos threads.
-        No-op silencioso quando o tracing está desligado."""
         stack = ExitStack()
         client = get_ai_telemetry_client()
         if client is None:
@@ -160,22 +179,19 @@ class CorrectionOrchestratorWorkflow:
                     metadata={"workflow": self.workflow_name, "essay_id": essay_id},
                 )
             )
-        except Exception:  # pragma: no cover - telemetria nunca bloqueia a correção
+        except Exception:  # pragma: no cover
             stack.close()
             return ExitStack(), otel_context.get_current()
         return stack, otel_context.get_current()
 
     @staticmethod
     def _bind_ctx(parent_ctx: object, run: Callable[[], T]) -> Callable[[], T]:
-        """Anexa o contexto OTel do trace raiz dentro do thread worker."""
-
         def runner() -> T:
             token = otel_context.attach(parent_ctx)
             try:
                 return run()
             finally:
                 otel_context.detach(token)
-
         return runner
 
     def _timed_call(self, run: Callable[[], T]) -> tuple[T, int, str, str | None]:
@@ -215,6 +231,29 @@ class CorrectionOrchestratorWorkflow:
             latency_ms = int((time.perf_counter() - start) * 1000)
             self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error, runner=runner)
 
+    @staticmethod
+    def _zero_analyses(pre: "PreProcessorOutput", gate: "EliminationGateOutput") -> "PipelineAnalyses":
+        from src.agents.schemas import (
+            ArgumentationAnalysisV2,
+            EliminationGateOutput as _Gate,
+            GrammarAnalysisV2,
+            InterventionAnalysisV2,
+            InterventionElements,
+            RepertoireAnalysisV2,
+            ThemeAnalysisV2,
+            ThesisAnalysisV2,
+        )
+        return PipelineAnalyses(
+            preprocessor=pre,
+            gate=gate,
+            theme=ThemeAnalysisV2(theme_alignment=0, tangenciamento=True, severity="high"),
+            thesis=ThesisAnalysisV2(thesis_present=False, clarity="absent", score=0),
+            repertoire=RepertoireAnalysisV2(quality="INVALIDO", score=0),
+            argumentation=ArgumentationAnalysisV2(overall_score=0),
+            intervention=InterventionAnalysisV2(elements=InterventionElements(), completeness_score=0, absent=True),
+            grammar=GrammarAnalysisV2(orthography_score=0, cohesion_score=0, formality_score=0),
+        )
+
     def _log(
         self,
         *,
@@ -243,6 +282,4 @@ class CorrectionOrchestratorWorkflow:
             )
         except Exception:
             return
-        # Telemetria é não-crítica: SAVEPOINT isola um INSERT ruim do commit da correção.
         safe_persist_interaction(self.db, log)
-

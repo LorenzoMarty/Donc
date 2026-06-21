@@ -11,23 +11,23 @@ import { cn } from "@/utils";
 const STORAGE_KEY = "donc.onboarding.v1";
 
 const GOALS = [
-  { id: "900+", label: "Nota 900+", description: "Meta máxima no ENEM" },
-  { id: "850-900", label: "850 – 900", description: "Alto desempenho" },
-  { id: "800-850", label: "800 – 850", description: "Acima da média" },
-  { id: "consistencia", label: "Estudar consistência", description: "Hábito diário" },
+  { id: "900+", label: "Nota 900+", description: "Mira no topo do ranking" },
+  { id: "850-900", label: "850 – 900", description: "Acima da maioria dos candidatos" },
+  { id: "800-850", label: "800 – 850", description: "Nota sólida para maioria das cotas" },
+  { id: "consistencia", label: "Criar hábito", description: "Escrever com regularidade primeiro" },
 ];
 
 const LEVELS = [
   { id: "iniciante", label: "Iniciante", description: "Ainda não escrevi redações para o ENEM" },
-  { id: "intermediario", label: "Intermediário", description: "Já pratiquei, mas quero melhorar" },
-  { id: "avancado", label: "Avançado", description: "Treino regularmente, quero otimizar" },
+  { id: "intermediario", label: "Intermediário", description: "Já escrevi algumas, quero subir a nota" },
+  { id: "avancado", label: "Avançado", description: "Escrevo com regularidade, quero afinar" },
 ];
 
 const TOUR_SLIDES = [
   {
     icon: Map,
     title: "Jogos de Prática",
-    description: "Exercícios curtos de gramática, conectivos e argumentação para treinar todo dia.",
+    description: "Treine gramática, conectivos e argumentação em sessões curtas — um sintoma por vez.",
     href: "/games",
     color: "text-emerald-600",
     bg: "bg-emerald-50 border-emerald-200",
@@ -35,7 +35,7 @@ const TOUR_SLIDES = [
   {
     icon: PenLine,
     title: "Editor de Redação",
-    description: "Escreva com foco, envie para a IA corrigir e veja sua nota por competência ENEM.",
+    description: "Escolha um tema, escreva e envie para correção. A IA devolve nota por competência ENEM.",
     href: "/redacao",
     color: "text-primary",
     bg: "bg-primary/10 border-primary/30",
@@ -43,7 +43,7 @@ const TOUR_SLIDES = [
   {
     icon: BarChart3,
     title: "Painel de Evolução",
-    description: "Acompanhe notas, sequências, competências e veja exatamente onde melhorar.",
+    description: "Acompanhe notas, sequência de treinos e quais competências ainda estão perdendo pontos.",
     href: "/dashboard",
     color: "text-primary",
     bg: "bg-primary/10 border-primary/30",
@@ -200,7 +200,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.2, duration: 0.4 }}
         className="mt-3 text-muted-foreground"
       >
-        Vamos configurar sua experiência em 3 passos rápidos.
+        3 perguntas rápidas para personalizar seu treino.
       </motion.p>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8">
         <Button onClick={onNext} size="lg" className="w-full">
@@ -297,7 +297,7 @@ function TourStep({
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Passo 3 de 3 · Tour rápido</p>
-      <h2 className="mt-2 text-2xl font-bold tracking-tight">O que você pode fazer</h2>
+      <h2 className="mt-2 text-2xl font-bold tracking-tight">Conheça as três áreas principais</h2>
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -373,8 +373,8 @@ function CTAStep({
         <Target className="h-10 w-10 text-primary" aria-hidden="true" />
       </motion.div>
 
-      <h2 className="text-2xl font-bold tracking-tight">Tudo pronto!</h2>
-      <p className="mt-2 text-muted-foreground">Sua experiência foi configurada.</p>
+      <h2 className="text-2xl font-bold tracking-tight">Configuração salva.</h2>
+      <p className="mt-2 text-muted-foreground">Seu treino está pronto para começar.</p>
 
       <div className="mt-6 grid gap-2 text-left">
         <div className="flex items-center justify-between rounded-[var(--radius)] border border-border bg-card p-3">

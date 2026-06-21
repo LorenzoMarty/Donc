@@ -35,7 +35,7 @@ export function AppearanceSettings() {
         <div>
           <h2 className="text-xl font-semibold tracking-normal">Aparência</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Ajuste o tamanho da letra e o espaçamento — vale para toda a plataforma.
+            Muda tamanho da letra e espaçamento em toda a plataforma.
           </p>
         </div>
       </div>
@@ -58,8 +58,7 @@ export function AppearanceSettings() {
       <div className="mt-5 rounded-md border border-border bg-background/64 p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prévia</p>
         <p className="mt-2 text-foreground" style={{ lineHeight: pref.lineHeight }}>
-          A leitura crítica e a escrita clara caminham juntas: ajuste a letra até ficar confortável
-          para você estudar por mais tempo, sem cansar a vista.
+          "A proposta de intervenção deve ser completa: agente, ação, meio, finalidade e detalhamento." — ajuste até esse tipo de frase ficar confortável de ler.
         </p>
       </div>
 

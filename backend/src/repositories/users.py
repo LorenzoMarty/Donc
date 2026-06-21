@@ -21,6 +21,12 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
+    def save(self, user: User) -> User:
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
     def list_users(self) -> list[User]:
         return list(self.db.scalars(select(User).order_by(User.created_at.desc())))
 

@@ -207,6 +207,71 @@ export function tagOutcomeToEvents(
   return events;
 }
 
+/**
+ * Selects games for a training session targeting a hub.
+ *
+ * Adapts to the student's mastery level: lower mastery → easier games first; higher → harder.
+ * Randomizes within each difficulty tier so the plan varies between sessions.
+ * Returns games ordered easy→hard for within-session progression.
+ */
+export function selectGamesForHub(
+  hubId: SymptomHubId,
+  games: GameDefinition[],
+  profile: AdaptiveProfile,
+  count = 4,
+): GameDefinition[] {
+  const hub = HUBS[hubId];
+  if (!hub) return [];
+
+  const wanted = new Set(hub.tags);
+  const hubGames = games.filter((g) => gameTags(g).some((t) => wanted.has(t)));
+  if (!hubGames.length) return [];
+
+  const mastery = masteryForHub(profile, hubId);
+  const preferred = mastery >= 65 ? "Avancado" : mastery >= 30 ? "Intermediario" : "Essencial";
+
+  const deepEngines = new Set(hub.missionEngines);
+  const relevanceScore = (g: GameDefinition) => (deepEngines.has(g.engine) ? 2 : 0) + (g.xpReward > 60 ? 1 : 0);
+
+  const byDiff: Record<string, GameDefinition[]> = { Essencial: [], Intermediario: [], Avancado: [] };
+  for (const g of hubGames) {
+    (byDiff[g.difficulty] ?? (byDiff[g.difficulty] = [])).push(g);
+  }
+
+  // Sort each tier by relevance, then shuffle tail for variety (keep best match at front)
+  for (const pool of Object.values(byDiff)) {
+    pool.sort((a, b) => relevanceScore(b) - relevanceScore(a));
+    for (let i = pool.length - 1; i > 1; i--) {
+      const j = 1 + Math.floor(Math.random() * i);
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+  }
+
+  const tierOrder =
+    preferred === "Essencial"
+      ? ["Essencial", "Intermediario", "Avancado"]
+      : preferred === "Avancado"
+        ? ["Avancado", "Intermediario", "Essencial"]
+        : ["Intermediario", "Essencial", "Avancado"];
+
+  const selected: GameDefinition[] = [];
+  const used = new Set<string>();
+  for (const tier of tierOrder) {
+    for (const game of byDiff[tier] ?? []) {
+      if (selected.length >= count) break;
+      if (!used.has(game.id)) {
+        selected.push(game);
+        used.add(game.id);
+      }
+    }
+    if (selected.length >= count) break;
+  }
+
+  // Order for session: easier → harder (gradual difficulty progression)
+  const diffOrder: Record<string, number> = { Essencial: 0, Intermediario: 1, Avancado: 2 };
+  return selected.sort((a, b) => (diffOrder[a.difficulty] ?? 0) - (diffOrder[b.difficulty] ?? 0));
+}
+
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
