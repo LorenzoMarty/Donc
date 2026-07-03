@@ -7,7 +7,9 @@ import { ArrowRight, BookOpen, Clock3, FileText, PenLine, Plus, Sparkles, Trash2
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
+import { Rail } from "@/components/shared/rail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type Dashboard, type Essay } from "@/services/api";
@@ -86,6 +88,7 @@ export default function DashboardPage() {
 
   const essays = useMemo(() => buildEssayRows(data), [data]);
   const lessons = useMemo(() => buildLessonRows(data), [data]);
+  const suggestedLessons = useMemo(() => buildSuggestedLessonRows(data), [data]);
   const competencies = useMemo(() => buildCompetencyRows(data), [data]);
   const tasks = useMemo(() => buildTaskRows(data), [data]);
   const latestDraft = essays.find((essay) => essay.status === "draft");
@@ -302,7 +305,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-5">
-          <LessonsCard lessons={lessons} />
+          <LessonsRailCard title="Continuar assistindo" emptyLabel="Nenhuma aula acessada ainda." lessons={lessons} />
+          {suggestedLessons.length ? (
+            <LessonsRailCard title="Recomendados pra você" emptyLabel="" lessons={suggestedLessons} />
+          ) : null}
           <CompetenciesCard items={competencies} />
           <WeeklyTasksCard
             tasks={tasks}
@@ -323,53 +329,52 @@ export default function DashboardPage() {
   );
 }
 
-function LessonsCard({ lessons }: { lessons: LessonRow[] }) {
+function LessonsRailCard({
+  title,
+  emptyLabel,
+  lessons,
+}: {
+  title: string;
+  emptyLabel: string;
+  lessons: LessonRow[];
+}) {
   return (
     <div className="rounded-[22px] border border-border bg-white p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-normal">Aulas recentes</h2>
-        <Link href="/aulas" className="text-sm font-semibold text-slate-500 hover:text-primary">
-          ver todas
-        </Link>
-      </div>
-
-      {lessons.length ? (
-        <div className="mt-6 grid gap-4">
-          {lessons.map((lesson) => (
-            <div
+      <Rail
+        title={title}
+        action={
+          <Link href="/aulas" className="text-sm font-semibold text-slate-500 hover:text-primary">
+            ver todas
+          </Link>
+        }
+      >
+        {lessons.length ? (
+          lessons.map((lesson) => (
+            <LessonPosterCard
               key={lesson.id}
-              className="grid grid-cols-[3.8rem_minmax(0,1fr)] items-start gap-4 border-b border-dashed border-border pb-4 last:border-b-0 last:pb-0 sm:grid-cols-[3.8rem_minmax(0,1fr)_auto]"
-            >
-              <div className="grid h-14 place-items-center rounded-xl border border-border bg-white text-center text-primary">
-                <span className="block text-xl font-bold leading-none">{String(lesson.index).padStart(2, "0")}</span>
-                <span className="mt-1 block text-xs font-semibold uppercase">AULA</span>
-              </div>
-              <div className="min-w-0">
-                <p className="text-base font-bold leading-snug">{lesson.title}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {lesson.module} - {lesson.progressPercent}% concluida
-                </p>
-              </div>
-              <Button asChild size="sm" className="col-span-2 h-9 rounded-xl sm:col-span-1">
-                <Link href={lesson.href}>
-                  <Video className="h-4 w-4" aria-hidden="true" />
-                  {lesson.progressPercent > 0 ? "Rever" : "Assistir"}
-                </Link>
-              </Button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="mt-6 rounded-xl border border-dashed border-border p-4 text-sm text-slate-500">
-          Nenhuma aula acessada ainda.
-          <Button asChild size="sm" className="mt-4 w-full rounded-xl">
-            <Link href="/aulas">
-              <BookOpen className="h-4 w-4" aria-hidden="true" />
-              Abrir aulas
-            </Link>
-          </Button>
-        </div>
-      )}
+              lesson={{
+                id: lesson.id,
+                title: lesson.title,
+                href: lesson.href,
+                moduleLabel: lesson.module,
+                progressPercent: lesson.progressPercent,
+                completed: lesson.progressPercent >= 100,
+                fallbackSeed: lesson.module,
+              }}
+            />
+          ))
+        ) : (
+          <div className="w-full rounded-xl border border-dashed border-border p-4 text-sm text-slate-500">
+            {emptyLabel}
+            <Button asChild size="sm" className="mt-4 w-full rounded-xl">
+              <Link href="/aulas">
+                <BookOpen className="h-4 w-4" aria-hidden="true" />
+                Abrir aulas
+              </Link>
+            </Button>
+          </div>
+        )}
+      </Rail>
     </div>
   );
 }
@@ -607,7 +612,18 @@ function buildTaskRows(data: Dashboard | null): TaskRow[] {
 }
 
 function buildLessonRows(data: Dashboard | null): LessonRow[] {
-  return (data?.recent_lessons ?? []).slice(0, 3).map((lesson, index) => ({
+  return (data?.recent_lessons ?? []).slice(0, 8).map((lesson, index) => ({
+    id: lesson.id,
+    index: index + 1,
+    title: lesson.title,
+    module: lesson.module,
+    progressPercent: lesson.progress_percent,
+    href: `/aulas/${lesson.id}`,
+  }));
+}
+
+function buildSuggestedLessonRows(data: Dashboard | null): LessonRow[] {
+  return (data?.suggested_lessons ?? []).slice(0, 8).map((lesson, index) => ({
     id: lesson.id,
     index: index + 1,
     title: lesson.title,

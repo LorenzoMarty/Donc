@@ -136,12 +136,16 @@ export type SkillTag =
   | "c4"
   | "c5";
 
+/** Dificuldade por item (pergunta/rodada), independente da dificuldade do GameDefinition inteiro. */
+export type ItemDifficulty = "facil" | "media" | "dificil";
+
 export type GameQuestion = {
   id: string;
   prompt: string;
   options: string[];
   answerIndex: number;
   explanation: string;
+  difficulty?: ItemDifficulty;
 };
 
 /** Payload do engine `classify`: arrastar cada item para o balde correto. */
@@ -156,6 +160,7 @@ export type ClassifyItem = {
   text: string;
   bucketId: string;
   explanation?: string;
+  difficulty?: ItemDifficulty;
 };
 
 export type ClassifyPayload = {
@@ -171,6 +176,7 @@ export type OrderRound = {
   /** Itens ja na ordem correta; a UI embaralha para o aluno. */
   items: string[];
   explanation: string;
+  difficulty?: ItemDifficulty;
 };
 
 export type OrderPayload = {
@@ -185,6 +191,7 @@ export type FillBlankRound = {
   /** Respostas aceitas (normalizadas: minusculas, sem acento, espacos colapsados). */
   accepted: string[];
   explanation: string;
+  difficulty?: ItemDifficulty;
 };
 
 export type FillBlankPayload = {

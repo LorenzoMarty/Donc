@@ -5,10 +5,24 @@ import type {
   CognitiveEventRecord,
   GameDefinition,
   Grade,
+  ItemDifficulty,
   Recommendation,
   SkillTag,
   SymptomHubId,
 } from "@/features/gamification/types";
+
+/** Limiares de maestria (0..100) que separam os tiers fácil/médio/difícil em toda a adaptação. */
+export const MASTERY_TIER_THRESHOLDS = { low: 30, high: 65 } as const;
+
+/** Embaralha a cauda de um array in-place (mantém o melhor item na frente). Pura sobre cópia. */
+function shuffleTail<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 1; i--) {
+    const j = 1 + Math.floor(Math.random() * i);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
 
 /**
  * Núcleo cognitivo orientado a eventos (client-side). Fonte de verdade do treino adaptativo.
@@ -73,18 +87,21 @@ export function masteryForHub(profile: AdaptiveProfile, hub: SymptomHubId): numb
   return profile.mastery[hub] ?? 0;
 }
 
+const WEAKNESS_RELEVANCE_THRESHOLD = 0.05;
+
+/** Todos os hubs ordenados do mais fraco ao mais forte (desempate por menor maestria). */
+export function rankHubsByWeakness(profile: AdaptiveProfile): SymptomHubId[] {
+  return [...HUB_IDS].sort((a, b) => {
+    const diff = (profile.weaknessSignals[b] ?? 0) - (profile.weaknessSignals[a] ?? 0);
+    if (diff !== 0) return diff;
+    return (profile.mastery[a] ?? 0) - (profile.mastery[b] ?? 0);
+  });
+}
+
 /** Hub com maior sinal de fraqueza recente; null se não há sinal relevante. */
 export function dominantWeakness(profile: AdaptiveProfile): SymptomHubId | null {
-  let best: SymptomHubId | null = null;
-  let bestVal = 0.05; // limiar mínimo para considerar relevante
-  for (const hub of HUB_IDS) {
-    const val = profile.weaknessSignals[hub] ?? 0;
-    if (val > bestVal) {
-      best = hub;
-      bestVal = val;
-    }
-  }
-  return best;
+  const [top] = rankHubsByWeakness(profile);
+  return top && (profile.weaknessSignals[top] ?? 0) > WEAKNESS_RELEVANCE_THRESHOLD ? top : null;
 }
 
 /**
@@ -228,7 +245,12 @@ export function selectGamesForHub(
   if (!hubGames.length) return [];
 
   const mastery = masteryForHub(profile, hubId);
-  const preferred = mastery >= 65 ? "Avancado" : mastery >= 30 ? "Intermediario" : "Essencial";
+  const preferred =
+    mastery >= MASTERY_TIER_THRESHOLDS.high
+      ? "Avancado"
+      : mastery >= MASTERY_TIER_THRESHOLDS.low
+        ? "Intermediario"
+        : "Essencial";
 
   const deepEngines = new Set(hub.missionEngines);
   const relevanceScore = (g: GameDefinition) => (deepEngines.has(g.engine) ? 2 : 0) + (g.xpReward > 60 ? 1 : 0);
@@ -239,12 +261,9 @@ export function selectGamesForHub(
   }
 
   // Sort each tier by relevance, then shuffle tail for variety (keep best match at front)
-  for (const pool of Object.values(byDiff)) {
+  for (const [tier, pool] of Object.entries(byDiff)) {
     pool.sort((a, b) => relevanceScore(b) - relevanceScore(a));
-    for (let i = pool.length - 1; i > 1; i--) {
-      const j = 1 + Math.floor(Math.random() * i);
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
+    byDiff[tier] = shuffleTail(pool);
   }
 
   const tierOrder =
@@ -270,6 +289,95 @@ export function selectGamesForHub(
   // Order for session: easier → harder (gradual difficulty progression)
   const diffOrder: Record<string, number> = { Essencial: 0, Intermediario: 1, Avancado: 2 };
   return selected.sort((a, b) => (diffOrder[a.difficulty] ?? 0) - (diffOrder[b.difficulty] ?? 0));
+}
+
+/**
+ * Seleciona itens (perguntas/rodadas) de um único jogo, priorizando o tier de dificuldade
+ * compatível com a maestria do aluno no hub (mesmos limiares de `selectGamesForHub`), embaralha
+ * dentro do tier e retorna em ordem fácil→difícil (progressão dentro da sessão).
+ * Itens sem `difficulty` (não deveria ocorrer após `enrichGame`, mas por segurança) contam como "media".
+ */
+export function selectItemsBySkill<T extends { difficulty?: ItemDifficulty }>(
+  items: T[],
+  mastery: number,
+  count: number,
+): T[] {
+  if (!items.length) return [];
+
+  const preferred: ItemDifficulty =
+    mastery >= MASTERY_TIER_THRESHOLDS.high ? "dificil" : mastery >= MASTERY_TIER_THRESHOLDS.low ? "media" : "facil";
+
+  const byDiff: Record<ItemDifficulty, T[]> = { facil: [], media: [], dificil: [] };
+  for (const item of items) {
+    byDiff[item.difficulty ?? "media"].push(item);
+  }
+  for (const tier of Object.keys(byDiff) as ItemDifficulty[]) {
+    byDiff[tier] = shuffleTail(byDiff[tier]);
+  }
+
+  const tierOrder: ItemDifficulty[] =
+    preferred === "facil"
+      ? ["facil", "media", "dificil"]
+      : preferred === "dificil"
+        ? ["dificil", "media", "facil"]
+        : ["media", "facil", "dificil"];
+
+  const selected: T[] = [];
+  const used = new Set<T>();
+  for (const tier of tierOrder) {
+    for (const item of byDiff[tier]) {
+      if (selected.length >= count) break;
+      if (!used.has(item)) {
+        selected.push(item);
+        used.add(item);
+      }
+    }
+    if (selected.length >= count) break;
+  }
+
+  const diffOrder: Record<ItemDifficulty, number> = { facil: 0, media: 1, dificil: 2 };
+  return selected.sort((a, b) => diffOrder[a.difficulty ?? "media"] - diffOrder[b.difficulty ?? "media"]);
+}
+
+/** Um bloco do simulado: um jogo (com seus itens já recortados) representando um hub. */
+export type SimuladoBlock = {
+  hub: SymptomHubId;
+  game: GameDefinition;
+  items: unknown[];
+};
+
+/** Pool de itens "atômicos" (pergunta única) de um jogo, na primeira fonte disponível. */
+function itemPoolForGame(game: GameDefinition): { difficulty?: ItemDifficulty }[] {
+  return game.questions ?? game.classify?.items ?? game.order?.rounds ?? game.fillBlank?.rounds ?? [];
+}
+
+/**
+ * Simulado adaptativo cross-sintoma: prioriza os hubs mais fracos do aluno (via
+ * `rankHubsByWeakness`), escolhe 1 jogo por hub (`missionForHub`, com fallback em
+ * `selectGamesForHub`) e recorta os itens de cada jogo por `selectItemsBySkill` — mistura
+ * ponderada pela fraqueza + progressão de dificuldade dentro de cada bloco.
+ */
+export function buildAdaptiveSimulado(
+  games: GameDefinition[],
+  profile: AdaptiveProfile,
+  opts?: { hubCount?: number; itemsPerHub?: number },
+): SimuladoBlock[] {
+  const hubCount = opts?.hubCount ?? 4;
+  const itemsPerHub = opts?.itemsPerHub ?? 5;
+
+  const ranked = rankHubsByWeakness(profile);
+  const hasSignal = ranked.some((hub) => (profile.weaknessSignals[hub] ?? 0) > WEAKNESS_RELEVANCE_THRESHOLD);
+  const hubs = hasSignal ? ranked.slice(0, hubCount) : shuffleTail([...HUB_IDS]).slice(0, hubCount);
+
+  const blocks: SimuladoBlock[] = [];
+  for (const hub of hubs) {
+    const game = missionForHub(hub, games) ?? selectGamesForHub(hub, games, profile, 1)[0];
+    if (!game) continue;
+    const items = itemPoolForGame(game);
+    if (!items.length) continue;
+    blocks.push({ hub, game, items: selectItemsBySkill(items, masteryForHub(profile, hub), itemsPerHub) });
+  }
+  return blocks;
 }
 
 function clamp(n: number, min: number, max: number): number {

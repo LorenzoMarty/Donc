@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   applyEvent,
+  buildAdaptiveSimulado,
   deriveHubsFromTags,
   dominantWeakness,
   emptyAdaptiveProfile,
@@ -10,11 +11,13 @@ import {
   isNegativeEvent,
   masteryForHub,
   possibleEventsForHubs,
+  rankHubsByWeakness,
   recommendHub,
+  selectItemsBySkill,
   tagOutcomeToEvents,
 } from "@/features/gamification/adaptive";
 import { HUBS, HUB_IDS } from "@/features/gamification/symptoms";
-import type { CognitiveEventRecord, GameDefinition } from "@/features/gamification/types";
+import type { CognitiveEventRecord, GameDefinition, ItemDifficulty } from "@/features/gamification/types";
 
 const AT = "2026-06-07T00:00:00.000Z";
 
@@ -186,5 +189,107 @@ describe("dominantWeakness / recommendHub / masteryForHub", () => {
   it("masteryForHub lê a maestria contínua do hub", () => {
     const p = applyEvent(emptyAdaptiveProfile(), { type: "NATURAL_FLOW", severity: 1, hub: "texto-robotico", at: AT });
     expect(masteryForHub(p, "texto-robotico")).toBeGreaterThan(0);
+  });
+});
+
+/** Item mínimo tipado para os testes de selectItemsBySkill. */
+function fakeItem(id: string, difficulty?: ItemDifficulty): { id: string; difficulty?: ItemDifficulty } {
+  return { id, difficulty };
+}
+
+describe("rankHubsByWeakness", () => {
+  it("ordena todos os hubs, mais fraco primeiro", () => {
+    let p = emptyAdaptiveProfile();
+    p = applyEvent(p, { type: "SHALLOW_ARGUMENT", severity: 0.9, hub: "nao-aprofunda", at: AT });
+    const ranked = rankHubsByWeakness(p);
+    expect(ranked).toHaveLength(HUB_IDS.length);
+    expect(ranked[0]).toBe("nao-aprofunda");
+  });
+
+  it("perfil vazio ainda retorna todos os hubs (ordem estável por desempate de mastery)", () => {
+    const ranked = rankHubsByWeakness(emptyAdaptiveProfile());
+    expect(ranked.sort()).toEqual([...HUB_IDS].sort());
+  });
+});
+
+describe("selectItemsBySkill", () => {
+  const items = [
+    fakeItem("f1", "facil"),
+    fakeItem("f2", "facil"),
+    fakeItem("m1", "media"),
+    fakeItem("m2", "media"),
+    fakeItem("d1", "dificil"),
+    fakeItem("d2", "dificil"),
+  ];
+
+  it("prioriza itens fáceis quando mastery é baixa", () => {
+    const picked = selectItemsBySkill(items, 10, 2);
+    expect(picked).toHaveLength(2);
+    expect(picked.every((i) => i.difficulty === "facil")).toBe(true);
+  });
+
+  it("prioriza itens difíceis quando mastery é alta", () => {
+    const picked = selectItemsBySkill(items, 90, 2);
+    expect(picked.every((i) => i.difficulty === "dificil")).toBe(true);
+  });
+
+  it("retorna em ordem fácil→difícil (progressão dentro da sessão)", () => {
+    const picked = selectItemsBySkill(items, 90, 6);
+    const order = { facil: 0, media: 1, dificil: 2 } as const;
+    const diffs = picked.map((i) => order[i.difficulty ?? "media"]);
+    expect(diffs).toEqual([...diffs].sort((a, b) => a - b));
+  });
+
+  it("faz clamp quando count excede o pool", () => {
+    const picked = selectItemsBySkill(items, 50, 100);
+    expect(picked).toHaveLength(items.length);
+  });
+
+  it("array vazio retorna vazio", () => {
+    expect(selectItemsBySkill([], 50, 4)).toEqual([]);
+  });
+});
+
+function fakeQuestion(id: string, difficulty: ItemDifficulty) {
+  return { id, prompt: id, options: ["a", "b"], answerIndex: 0, explanation: "", difficulty };
+}
+
+describe("buildAdaptiveSimulado", () => {
+  const games: GameDefinition[] = [
+    fakeGame({
+      id: "g-robotico",
+      hubs: ["texto-robotico"],
+      questions: [fakeQuestion("q1", "facil"), fakeQuestion("q2", "media")],
+    }),
+    fakeGame({
+      id: "g-aprofunda",
+      hubs: ["nao-aprofunda"],
+      questions: [fakeQuestion("q3", "facil"), fakeQuestion("q4", "media")],
+    }),
+  ];
+
+  it("prioriza os hubs mais fracos do perfil", () => {
+    let p = emptyAdaptiveProfile();
+    p = applyEvent(p, { type: "SHALLOW_ARGUMENT", severity: 0.9, hub: "nao-aprofunda", at: AT });
+    const blocks = buildAdaptiveSimulado(games, p, { hubCount: 2, itemsPerHub: 2 });
+    expect(blocks[0]?.hub).toBe("nao-aprofunda");
+  });
+
+  it("sem sinal, ainda retorna blocos (fallback aleatório)", () => {
+    const blocks = buildAdaptiveSimulado(games, emptyAdaptiveProfile(), { hubCount: 2, itemsPerHub: 2 });
+    expect(blocks.length).toBeGreaterThan(0);
+  });
+
+  it("não repete hub entre blocos", () => {
+    const blocks = buildAdaptiveSimulado(games, emptyAdaptiveProfile(), { hubCount: 7, itemsPerHub: 2 });
+    const hubs = blocks.map((b) => b.hub);
+    expect(new Set(hubs).size).toBe(hubs.length);
+  });
+
+  it("respeita itemsPerHub", () => {
+    let p = emptyAdaptiveProfile();
+    p = applyEvent(p, { type: "SHALLOW_ARGUMENT", severity: 0.9, hub: "nao-aprofunda", at: AT });
+    const blocks = buildAdaptiveSimulado(games, p, { hubCount: 1, itemsPerHub: 1 });
+    expect(blocks[0]?.items).toHaveLength(1);
   });
 });

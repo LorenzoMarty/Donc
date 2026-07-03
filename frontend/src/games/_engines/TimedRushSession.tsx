@@ -7,6 +7,7 @@ import useSound from "use-sound";
 import { ArrowLeft, Check, Clock, Flame, RotateCcw, Target, Trophy, X, Zap } from "lucide-react";
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
+import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -29,6 +30,7 @@ type AnswerLog = {
 export function TimedRushSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const xp = useGameStore((state) => state.xp);
+  const adaptive = useGameStore((state) => state.adaptive);
   const [round, setRound] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
@@ -44,7 +46,13 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const [leveledUp, setLeveledUp] = useState(false);
   const { playCorrect, playWrong } = useGameSounds();
 
-  const questionPool = useMemo(() => (game.questions ?? []).map(shuffleQuestionOptions), [game.questions]);
+  const questionPool = useMemo(() => {
+    const pool = game.questions ?? [];
+    const hub = game.hubs?.[0];
+    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
+    const ordered = hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : pool;
+    return ordered.map(shuffleQuestionOptions);
+  }, [game.questions, game.hubs, adaptive]);
   const question = questionPool.length ? questionPool[round % questionPool.length] : undefined;
   const difficultyStage = Math.min(5, Math.floor(round / 5));
   const roundDuration = getRoundDuration(round);

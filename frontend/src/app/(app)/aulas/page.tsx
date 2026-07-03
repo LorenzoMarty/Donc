@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, CheckCircle2, ChevronDown, CirclePlay, ClipboardList, Flame, LockKeyhole, type LucideIcon } from "lucide-react";
+import { ChevronDown, ClipboardList, Flame, LockKeyhole, type LucideIcon } from "lucide-react";
 
+import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
+import { Rail } from "@/components/shared/rail";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { apiFetch, type Course, type Lesson } from "@/services/api";
@@ -71,11 +72,16 @@ function CoursePanel({ course }: { course: Course }) {
 
   return (
     <section className="space-y-2.5">
-      <Surface className="p-4 lg:p-4">
+      <Surface className="relative overflow-hidden p-4 lg:p-4">
+        <div
+          className="absolute inset-x-0 top-0 h-1"
+          style={{ backgroundColor: course.color || "hsl(var(--primary))" }}
+          aria-hidden="true"
+        />
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,23rem)] xl:items-center">
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Curso</Badge>
+              <Badge variant="secondary">Trilha</Badge>
               <Badge variant="outline">{course.xp_reward ?? 200}xp bonus</Badge>
               {course.completed ? <Badge variant="success">concluido</Badge> : null}
             </div>
@@ -159,44 +165,36 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
               {completedLessons}/{lessons.length} aulas
             </span>
           </div>
-          <div className="grid gap-1.5">
-            {items.map((item) => (
+          <Rail>
+            {items.map((item) =>
               item.kind === "lesson" && item.lesson ? (
-                <LessonRow key={`lesson-${item.id}`} lesson={item.lesson} moduleOrder={module.order} itemOrder={item.order} />
-              ) : item.activity ? (
+                <LessonPosterCard
+                  key={`lesson-${item.id}`}
+                  lesson={{
+                    id: item.lesson.id,
+                    title: item.lesson.title,
+                    href: `/aulas/${item.lesson.id}`,
+                    thumbnailUrl: item.lesson.thumbnail_url,
+                    durationMinutes: item.lesson.duration_minutes,
+                    xpReward: item.lesson.xp_reward,
+                    progressPercent: item.lesson.progress?.progress_percent ?? 0,
+                    completed: item.lesson.progress?.completed ?? false,
+                    fallbackSeed: item.lesson.title,
+                  }}
+                />
+              ) : null,
+            )}
+          </Rail>
+          <div className="mt-3 grid gap-1.5">
+            {items.map((item) =>
+              item.kind !== "lesson" && item.activity ? (
                 <ActivityRow key={`activity-${item.id}`} item={item} moduleOrder={module.order} />
-              ) : null
-            ))}
+              ) : null,
+            )}
           </div>
         </div>
       ) : null}
     </Surface>
-  );
-}
-
-function LessonRow({ lesson, moduleOrder, itemOrder }: { lesson: Lesson; moduleOrder: number; itemOrder: number }) {
-  const completed = lesson.progress.completed;
-
-  return (
-    <Link
-      href={`/aulas/${lesson.id}`}
-      className="group flex min-h-11 items-center gap-3 rounded-md border border-transparent bg-background/35 px-2.5 py-1.5 transition-colors hover:border-primary/25 hover:bg-primary/8"
-    >
-      <span className="grid h-8 w-8 shrink-0 place-items-center text-primary">
-        {completed ? <CheckCircle2 className="h-5 w-5" aria-hidden="true" /> : <CirclePlay className="h-5 w-5" aria-hidden="true" />}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="text-safe block text-sm font-semibold">
-          {moduleOrder}.{itemOrder} - {lesson.title}
-        </span>
-        <span className="text-xs text-muted-foreground">{lesson.duration_minutes} min</span>
-      </span>
-      <span className="game-chip shrink-0 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{lesson.xp_reward ?? 25}xp</span>
-      <BookOpen
-        className="hidden h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary sm:block"
-        aria-hidden="true"
-      />
-    </Link>
   );
 }
 

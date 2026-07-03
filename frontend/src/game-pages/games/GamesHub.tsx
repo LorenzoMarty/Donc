@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarCheck, ChevronRight, Dumbbell } from "lucide-react";
+import { ArrowRight, CalendarCheck, ChevronRight, Dumbbell, Sparkles } from "lucide-react";
 
 import { getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
 import { masteryForHub } from "@/features/gamification/adaptive";
@@ -122,6 +122,22 @@ export default function GamesHub() {
       </motion.header>
 
       <ProgressDashboard overallProgress={overallProgress} weeklyProgress={weeklyProgress} />
+
+      <Link
+        href="/games/simulado"
+        className="game-surface flex items-center gap-4 bg-card p-4 transition-colors hover:border-primary/40 hover:bg-primary/5 md:p-5"
+      >
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
+          <Sparkles className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Simulado inteligente</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Sua sequência adaptativa de hoje, priorizando seus pontos mais fracos entre os sintomas.
+          </p>
+        </div>
+        <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </Link>
 
       <AdaptiveSpotlight adaptive={adaptive} games={games} />
 

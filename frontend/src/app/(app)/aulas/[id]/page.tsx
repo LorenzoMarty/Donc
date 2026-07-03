@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, ClipboardList, FileText, NotebookPen, Trophy, Zap } from "lucide-react";
 
 import { LessonPlayer } from "@/components/shared/lesson-player";
+import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { Surface } from "@/components/shared/premium-ui";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/providers/app-providers";
 import { useTrackEvent } from "@/hooks/use-track-event";
-import { apiFetch, type Lesson } from "@/services/api";
+import { apiFetch, type Course, type Lesson } from "@/services/api";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>() ?? { id: "" };
@@ -21,11 +22,24 @@ export default function LessonPage() {
   const trackEvent = useTrackEvent();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [completion, setCompletion] = useState<Lesson["progress"] | null>(null);
+  const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
     apiFetch<Lesson>(`/lessons/${params.id}`).then(setLesson);
     trackEvent({ event_type: "lesson_opened", entity_id: String(params.id), entity_type: "lesson" });
   }, [params.id, trackEvent]);
+
+  useEffect(() => {
+    apiFetch<Course[]>("/lessons/courses").then((courses) => {
+      const flatLessons = courses
+        .flatMap((course) => course.modules ?? [])
+        .flatMap((module) => module.items ?? [])
+        .filter((item) => item.kind === "lesson" && item.lesson)
+        .map((item) => item.lesson as Lesson);
+      const idx = flatLessons.findIndex((item) => String(item.id) === String(params.id));
+      setNextLesson(idx >= 0 ? (flatLessons[idx + 1] ?? null) : null);
+    });
+  }, [params.id]);
 
   async function complete() {
     if (!lesson) return;
@@ -148,6 +162,25 @@ export default function LessonPage() {
           </Surface>
         </aside>
       </div>
+
+      {nextLesson ? (
+        <Surface>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">A seguir</p>
+          <LessonPosterCard
+            lesson={{
+              id: nextLesson.id,
+              title: nextLesson.title,
+              href: `/aulas/${nextLesson.id}`,
+              thumbnailUrl: nextLesson.thumbnail_url,
+              durationMinutes: nextLesson.duration_minutes,
+              xpReward: nextLesson.xp_reward,
+              progressPercent: nextLesson.progress?.progress_percent ?? 0,
+              completed: nextLesson.progress?.completed ?? false,
+              fallbackSeed: nextLesson.title,
+            }}
+          />
+        </Surface>
+      ) : null}
     </MotionShell>
   );
 }
