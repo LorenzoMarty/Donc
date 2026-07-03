@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 import { getCategoryBySlug, getGameById } from "@/features/gamification/catalog";
+import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import { EssayAssemblySession } from "@/games/structure/EssayAssemblySession";
 import { TimedRushSession } from "@/games/_engines/TimedRushSession";
 import { ClassifyDragSession } from "@/games/_engines/ClassifyDragSession";
@@ -45,6 +46,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const returnTo = useReturnTo();
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
+  const adaptive = useGameStore((state) => state.adaptive);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const remoteGamesHydrated = useGameStore((state) => state.remoteGamesHydrated);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
@@ -58,11 +60,17 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const game = getGameById(gameId, remoteGames);
   const category = getCategoryBySlug(categorySlug);
 
-  // Questoes sorteadas aleatoriamente a cada carga do jogo.
-  const questions = useMemo(
-    () => (game?.questions ? shuffle(game.questions).map(shuffleQuestionOptions) : []),
-    [game],
-  );
+  // Questoes selecionadas por dificuldade compativel com a maestria do aluno no hub (quando ha
+  // sinal); sem sinal, cai no sorteio puro de sempre.
+  const questions = useMemo(() => {
+    if (!game?.questions) return [];
+    const hub = game.hubs?.[0];
+    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
+    const ordered = hasSignal
+      ? selectItemsBySkill(game.questions, masteryForHub(adaptive, hub!), game.questions.length)
+      : shuffle(game.questions);
+    return ordered.map(shuffleQuestionOptions);
+  }, [game, adaptive]);
 
   useEffect(() => {
     hydrateRemoteGames();

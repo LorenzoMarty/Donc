@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { getAllGames } from "@/features/gamification/catalog";
 import { masteryForHub, selectGamesForHub } from "@/features/gamification/adaptive";
@@ -12,7 +12,6 @@ import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
-import { cn } from "@/utils";
 
 function isDoneToday(lastPlayedAt?: string): boolean {
   const today = new Date().toISOString().slice(0, 10);
@@ -51,7 +50,6 @@ export default function SymptomPage({ symptomId }: { symptomId: string }) {
   const hasSignal = hub ? (adaptive.weaknessSignals[hub.id] ?? 0) > 0 || mastery > 0 : false;
 
   const completedCount = trainingPlan.filter((g) => isDoneToday(progress[g.id]?.lastPlayedAt)).length;
-  const firstIncomplete = trainingPlan.find((g) => !isDoneToday(progress[g.id]?.lastPlayedAt));
   const allDone = trainingPlan.length > 0 && completedCount === trainingPlan.length;
 
   if (!hub) {
@@ -66,7 +64,6 @@ export default function SymptomPage({ symptomId }: { symptomId: string }) {
   }
 
   const Icon = hub.icon;
-  const returnTo = `/games/treino/${hub.id}`;
 
   return (
     <div className="space-y-4">
@@ -108,10 +105,10 @@ export default function SymptomPage({ symptomId }: { symptomId: string }) {
         </div>
       </Surface>
 
-      {/* Adaptive training plan */}
+      {/* Adaptive training plan: sessão contínua encadeada, sem checklist de página em página */}
       {trainingPlan.length > 0 && (
         <Surface>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Treino intensivo</p>
               <h2 className="mt-1 text-xl font-semibold tracking-normal">
@@ -119,58 +116,21 @@ export default function SymptomPage({ symptomId }: { symptomId: string }) {
                   ? "Treino de hoje concluído!"
                   : completedCount > 0
                     ? `${completedCount} de ${trainingPlan.length} concluídos`
-                    : "Sua sequência de hoje"}
+                    : `Sessão de hoje: ${trainingPlan.length} micro-desafios`}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {allDone
                   ? "Volte amanhã para um novo plano adaptativo."
-                  : "Exercícios ordenados pela sua maestria atual. A sequência muda a cada sessão."}
+                  : "Exercícios encadeados sem interrupção, ordenados pela sua maestria atual. A sequência muda a cada sessão."}
               </p>
             </div>
-            {firstIncomplete && (
-              <Button asChild className="shrink-0">
-                <Link
-                  href={`/games/${firstIncomplete.category}/${firstIncomplete.id}?returnTo=${encodeURIComponent(returnTo)}`}
-                >
-                  {completedCount > 0 ? "Próximo exercício" : "Iniciar treino"}
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            )}
+            <Button asChild className="shrink-0">
+              <Link href={`/games/treino/${hub.id}/sessao?step=${allDone ? 0 : completedCount}`}>
+                {allDone ? "Repetir sessão" : completedCount > 0 ? "Continuar sessão" : "Iniciar sessão"}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
-
-          <ol className="space-y-2">
-            {trainingPlan.map((game, index) => {
-              const done = isDoneToday(progress[game.id]?.lastPlayedAt);
-              return (
-                <li key={game.id}>
-                  <Link
-                    href={`/games/${game.category}/${game.id}?returnTo=${encodeURIComponent(returnTo)}`}
-                    className={cn(
-                      "game-tile flex items-center gap-3 bg-background/64 p-3 transition-colors hover:border-primary/40 hover:bg-primary/5",
-                      done && "opacity-55",
-                    )}
-                  >
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-card text-xs font-semibold text-muted-foreground">
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold leading-snug">{game.name}</p>
-                      <p className="text-xs text-muted-foreground">{game.estimatedTime}</p>
-                    </div>
-                    <Badge variant="outline" className="shrink-0 text-xs">
-                      {game.difficulty}
-                    </Badge>
-                    {done ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-label="Concluído hoje" />
-                    ) : (
-                      <Circle className="h-4 w-4 shrink-0 text-muted-foreground/35" aria-hidden="true" />
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
         </Surface>
       )}
 

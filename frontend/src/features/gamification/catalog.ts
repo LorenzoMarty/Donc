@@ -2,6 +2,7 @@ import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuot
 
 import type { GameCategory, GameCategoryId, GameDefinition, GameDifficulty, GameProgress } from "@/features/gamification/types";
 import { deriveHubsFromTags, possibleEventsForHubs } from "@/features/gamification/adaptive";
+import { tagPositionalDifficulty } from "@/features/gamification/item-difficulty";
 import { gameTags } from "@/features/gamification/symptoms";
 import { challengeGames } from "@/games/challenges";
 import { competencyGames } from "@/games/competencies";
@@ -45,7 +46,20 @@ export function enrichGame(game: GameDefinition): GameDefinition {
   const skills = game.skills ?? gameTags(game);
   const hubs = game.hubs ?? deriveHubsFromTags(skills);
   const possibleEvents = game.possibleEvents ?? possibleEventsForHubs(hubs);
-  return { ...game, skills, hubs, possibleEvents };
+  const questions = game.questions && tagPositionalDifficulty(game.questions);
+  const classify = game.classify && { ...game.classify, items: tagPositionalDifficulty(game.classify.items) };
+  const order = game.order && { ...game.order, rounds: tagPositionalDifficulty(game.order.rounds) };
+  const fillBlank = game.fillBlank && { ...game.fillBlank, rounds: tagPositionalDifficulty(game.fillBlank.rounds) };
+  return {
+    ...game,
+    skills,
+    hubs,
+    possibleEvents,
+    ...(questions && { questions }),
+    ...(classify && { classify }),
+    ...(order && { order }),
+    ...(fillBlank && { fillBlank }),
+  };
 }
 
 const VALID_CATEGORIES: GameCategoryId[] = [
