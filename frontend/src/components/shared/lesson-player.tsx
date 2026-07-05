@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, PlayCircle } from "lucide-react";
+import { CheckCircle2, Download, PlayCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,14 +22,24 @@ export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplet
             </div>
             <h1 className="text-2xl font-semibold leading-tight tracking-normal">{lesson.title}</h1>
           </div>
-          <Button onClick={onComplete} variant={lesson.progress.completed ? "secondary" : "default"} className="w-full md:w-auto">
-            {lesson.progress.completed ? (
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <PlayCircle className="h-4 w-4" aria-hidden="true" />
-            )}
-            {lesson.progress.completed ? "Concluida" : "Marcar concluida"}
-          </Button>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            {lesson.pdf_url ? (
+              <Button asChild variant="outline" className="w-full md:w-auto">
+                <a href={lesson.pdf_url} download target="_blank" rel="noopener">
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  Baixar PDF
+                </a>
+              </Button>
+            ) : null}
+            <Button onClick={onComplete} variant={lesson.progress.completed ? "secondary" : "default"} className="w-full md:w-auto">
+              {lesson.progress.completed ? (
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <PlayCircle className="h-4 w-4" aria-hidden="true" />
+              )}
+              {lesson.progress.completed ? "Concluida" : "Marcar concluida"}
+            </Button>
+          </div>
         </div>
         <Progress value={lesson.progress.progress_percent} />
       </div>
