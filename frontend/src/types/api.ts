@@ -121,6 +121,7 @@ export type Lesson = {
   thumbnail_url: string;
   video_url: string;
   summary: string;
+  pdf_url: string | null;
   duration_minutes: number;
   order: number;
   xp_reward: number;
@@ -307,6 +308,7 @@ export type AdminLesson = {
   thumbnail_url: string;
   video_url: string;
   summary: string;
+  pdf_url: string | null;
   duration_minutes: number;
   order: number;
 };

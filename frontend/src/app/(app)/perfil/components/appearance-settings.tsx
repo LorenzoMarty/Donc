@@ -58,7 +58,7 @@ export function AppearanceSettings() {
       <div className="mt-5 rounded-md border border-border bg-background/64 p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prévia</p>
         <p className="mt-2 text-foreground" style={{ lineHeight: pref.lineHeight }}>
-          "A proposta de intervenção deve ser completa: agente, ação, meio, finalidade e detalhamento." — ajuste até esse tipo de frase ficar confortável de ler.
+          &ldquo;A proposta de intervenção deve ser completa: agente, ação, meio, finalidade e detalhamento.&rdquo; — ajuste até esse tipo de frase ficar confortável de ler.
         </p>
       </div>
 

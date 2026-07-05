@@ -469,6 +469,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [durationMinutes, setDurationMinutes] = useState(String(editing?.duration_minutes ?? 15));
   const [videoUrl, setVideoUrl] = useState(editing?.video_url ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState(editing?.thumbnail_url ?? "");
+  const [pdfUrl, setPdfUrl] = useState(editing?.pdf_url ?? "");
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -480,7 +481,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
     setSubmitted(true);
     if (!title.trim() || !description.trim() || !summary.trim()) return toast.error("Preencha título, descrição e resumo.");
     setBusy(true);
-    const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl };
+    const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl, pdf_url: pdfUrl.trim() || null };
     try {
       if (editing) {
         const course = await apiFetch<AdminCourse>(`/admin/lessons/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) });
@@ -526,9 +527,14 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
             <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://..." />
           </Field>
         </div>
-        <Field label="Thumbnail URL">
-          <Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." />
-        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Thumbnail URL">
+            <Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." />
+          </Field>
+          <Field label="PDF (URL)">
+            <Input value={pdfUrl} onChange={(e) => setPdfUrl(e.target.value)} placeholder="https://..." />
+          </Field>
+        </div>
       </div>
     </Modal>
   );
