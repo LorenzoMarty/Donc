@@ -44,12 +44,23 @@ class AdminUserActionResponse(BaseModel):
     user_id: int
 
 
-SupportingTextType = Literal["motivador", "perspectiva", "dados", "repertorio", "imagem"]
+SupportingTextType = Literal[
+    "motivador",
+    "dados",
+    "repertorio",
+    "imagem",
+    "grafico",
+    "infografico",
+    "postagem",
+    "manchete",
+    "tirinha",
+    "charge",
+]
 
 
 class AdminSupportingTextRequest(BaseModel):
     title: str = Field(min_length=4, max_length=120)
-    content: str = Field(min_length=40, max_length=1200)
+    content: str = Field(min_length=20, max_length=1200)
     type: SupportingTextType = "motivador"
 
 
@@ -87,6 +98,7 @@ class AdminLessonRead(BaseModel):
     description: str
     thumbnail_url: str
     video_url: str
+    pdf_url: str | None = None
     summary: str
     duration_minutes: int
     order: int
@@ -149,6 +161,7 @@ class AdminLessonCreateRequest(BaseModel):
     description: str = Field(min_length=10, max_length=1200)
     thumbnail_url: str = Field(default="", max_length=500)
     video_url: str = Field(default="", max_length=500)
+    pdf_url: str = Field(default="", max_length=500)
     summary: str = Field(min_length=10, max_length=5000)
     duration_minutes: int = Field(default=15, ge=1, le=600)
     order: int | None = Field(default=None, ge=1, le=999)
@@ -189,6 +202,7 @@ class AdminLessonUpdateRequest(BaseModel):
     description: str | None = Field(default=None, min_length=10, max_length=1200)
     thumbnail_url: str | None = Field(default=None, max_length=500)
     video_url: str | None = Field(default=None, max_length=500)
+    pdf_url: str | None = Field(default=None, max_length=500)
     summary: str | None = Field(default=None, min_length=10, max_length=5000)
     duration_minutes: int | None = Field(default=None, ge=1, le=600)
 

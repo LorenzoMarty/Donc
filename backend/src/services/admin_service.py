@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session, selectinload
 
 from src.agents.exercise import ExerciseGeneratorAgent
 from src.agents.game_generator import GameGeneratorAgent
+from src.agents.image_generator import generate_supporting_image
 from src.agents.theme_generator import ThemeGeneratorAgent
+from src.config.ai_pricing import image_generation_cost_micro_usd
 from src.config.settings import settings
 from src.middlewares.errors import AppError
 from src.models import AIInteractionLog, Course, Difficulty, Essay, EssayCorrection, EssayTheme, Exercise, Lesson, Module, ModuleItem, User
@@ -40,7 +42,7 @@ from src.schemas.admin import (
     WorkflowStats,
 )
 from src.memory.profile import get_learning_profile_payload
-from src.services.ai_telemetry import record_ai_interaction
+from src.services.ai_telemetry import record_ai_interaction, safe_persist_interaction
 from src.services.dashboard_service import DashboardService
 from src.services.fx_rate import get_usd_brl
 
@@ -108,6 +110,8 @@ class AdminService:
         if self._normalize_theme_title(title) in {self._normalize_theme_title(item) for item in existing_titles}:
             raise AppError("A IA retornou um tema ja existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
 
+        self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+
         theme = EssayTheme(
             title=title,
             context=generated.context,
@@ -164,8 +168,60 @@ class AdminService:
         self.db.refresh(theme)
         return theme
 
+    def _generate_supporting_images(self, supporting_texts: list, *, admin_user_id: int) -> None:
+        """Gera imagem real (charge/tirinha) para os textos de apoio que pedirem, in-place.
+
+        Falha ou ausencia de API key mantem image_url=None (fallback textual no frontend);
+        telemetria de custo/latencia sempre e registrada, mesmo em falha."""
+
+        for supporting_text in supporting_texts:
+            supporting_text.image_url = None
+            if supporting_text.type not in {"charge", "tirinha"} or not supporting_text.image_prompt:
+                continue
+            image_url, meta = generate_supporting_image(supporting_text.image_prompt)
+            supporting_text.image_url = image_url
+            safe_persist_interaction(
+                self.db,
+                AIInteractionLog(
+                    user_id=admin_user_id,
+                    workflow="admin_theme_generation",
+                    agent="image_generator",
+                    status=meta.status,
+                    latency_ms=meta.latency_ms,
+                    token_count=0,
+                    input_tokens=0,
+                    output_tokens=0,
+                    cost_micro_usd=image_generation_cost_micro_usd(meta.model) if meta.status == "success" else 0,
+                    model=meta.model,
+                    error=meta.error,
+                    meta={"supporting_text_type": supporting_text.type},
+                ),
+            )
+
     def _normalize_supporting_texts(self, texts: list[dict], requirements: dict[str, int] | None = None) -> list[dict]:
-        allowed = {"motivador", "perspectiva", "dados", "repertorio", "imagem"}
+        allowed = {
+            "motivador",
+            "dados",
+            "repertorio",
+            "imagem",
+            "grafico",
+            "infografico",
+            "postagem",
+            "manchete",
+            "tirinha",
+            "charge",
+        }
+        structured_keys = (
+            "chart_points",
+            "stat_items",
+            "comic_panels",
+            "post_author",
+            "post_handle",
+            "headline_subtitle",
+            "headline_source",
+            "image_prompt",
+            "image_url",
+        )
         cleaned: list[dict] = []
         for item in texts:
             kind = str(item.get("type") or "motivador").strip()
@@ -175,9 +231,13 @@ class AdminService:
                 raise AppError("Tipo de texto motivador invalido.", status_code=422, code="invalid_supporting_text_type")
             if len(title) < 4:
                 raise AppError("Titulo do texto motivador precisa ter pelo menos 4 caracteres.", status_code=422, code="invalid_supporting_text")
-            if len(content) < 40:
-                raise AppError("Texto motivador precisa ter pelo menos 40 caracteres.", status_code=422, code="invalid_supporting_text")
-            cleaned.append({"title": title, "content": content, "type": kind})
+            if len(content) < 20:
+                raise AppError("Texto motivador precisa ter pelo menos 20 caracteres.", status_code=422, code="invalid_supporting_text")
+            normalized = {"title": title, "content": content, "type": kind}
+            for key in structured_keys:
+                if item.get(key) is not None:
+                    normalized[key] = item[key]
+            cleaned.append(normalized)
         if not cleaned:
             raise AppError("Adicione pelo menos um texto motivador.", status_code=422, code="missing_supporting_texts")
         if len(cleaned) > 8:
@@ -443,6 +503,7 @@ class AdminService:
         description: str,
         thumbnail_url: str,
         video_url: str,
+        pdf_url: str | None = None,
         summary: str,
         duration_minutes: int,
         order: int | None,
@@ -458,6 +519,7 @@ class AdminService:
             description=description.strip(),
             thumbnail_url=thumbnail_url.strip() or "/images/lessons/default.jpg",
             video_url=video_url.strip() or "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            pdf_url=(pdf_url or "").strip() or None,
             summary=summary.strip(),
             duration_minutes=duration_minutes,
             order=lesson_order,

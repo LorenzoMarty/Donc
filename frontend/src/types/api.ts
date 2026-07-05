@@ -22,10 +22,34 @@ export type PublishedGame = {
   questions: PublishedGameQuestion[];
 };
 
+export type ChartPoint = {
+  label: string;
+  value: number;
+};
+
 export type SupportingText = {
   title: string;
   content: string;
-  type: "motivador" | "perspectiva" | "dados" | "repertorio" | "imagem";
+  type:
+    | "motivador"
+    | "dados"
+    | "repertorio"
+    | "imagem"
+    | "grafico"
+    | "infografico"
+    | "postagem"
+    | "manchete"
+    | "tirinha"
+    | "charge";
+  chart_points?: ChartPoint[] | null;
+  stat_items?: ChartPoint[] | null;
+  comic_panels?: string[] | null;
+  post_author?: string | null;
+  post_handle?: string | null;
+  headline_subtitle?: string | null;
+  headline_source?: string | null;
+  image_prompt?: string | null;
+  image_url?: string | null;
 };
 
 export type InlineAnnotation = {

@@ -167,6 +167,7 @@ def create_lesson(
             description=payload.description,
             thumbnail_url=payload.thumbnail_url,
             video_url=payload.video_url,
+            pdf_url=payload.pdf_url,
             summary=payload.summary,
             duration_minutes=payload.duration_minutes,
             order=payload.order,
