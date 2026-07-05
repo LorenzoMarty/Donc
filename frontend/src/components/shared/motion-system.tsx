@@ -1,12 +1,25 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, CheckCircle2, Eye, Lightbulb, Target, Trophy } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
+  ImageIcon,
+  Lightbulb,
+  Megaphone,
+  MessageCircle,
+  Newspaper,
+  Target,
+  Trophy,
+  X,
+} from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
-import type { EssayTheme } from "@/types/api";
+import type { EssayTheme, SupportingText } from "@/types/api";
+import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
 import { cn } from "@/utils";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -231,6 +244,7 @@ export function WritingSidebar({
                 ]}
               />
             </div>
+            <HighlightsSummary themeId={theme?.id} />
           </motion.div>
         ) : (
           <motion.div
@@ -264,18 +278,14 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
   return (
     <div className="space-y-1.5">
       {theme.supporting_texts.map((text, index) => (
-        <div key={index} className={cn("overflow-hidden border-b border-border/55", text.type === "perspectiva" && "bg-primary/5")}>
+        <div key={index} className="overflow-hidden border-b border-border/55">
           <button
             type="button"
             onClick={() => setExpanded(expanded === index ? null : index)}
             className="flex w-full items-center justify-between gap-2 p-3 text-left"
           >
             <div className="flex items-center gap-2 min-w-0">
-              {text.type === "perspectiva" ? (
-                <Eye className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-              ) : (
-                <Lightbulb className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-              )}
+              <SupportingTextIcon type={text.type} />
               <span className="text-xs font-semibold leading-snug">{text.title}</span>
             </div>
             <span className="shrink-0 text-xs text-muted-foreground">{expanded === index ? "−" : "+"}</span>
@@ -289,12 +299,262 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
                 transition={{ duration: 0.22, ease: easeOut }}
                 className="overflow-hidden"
               >
-                <p className="px-3 pb-3 text-xs leading-5 text-muted-foreground">{text.content}</p>
+                <div className="px-3 pb-3">
+                  <SupportingTextBody text={text} themeId={theme.id} textIndex={index} />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       ))}
+    </div>
+  );
+}
+
+function SupportingTextIcon({ type }: { type: SupportingText["type"] }) {
+  const className = "h-3.5 w-3.5 shrink-0 text-primary";
+  switch (type) {
+    case "grafico":
+    case "dados":
+      return <BarChart3 className={className} aria-hidden="true" />;
+    case "infografico":
+      return <Megaphone className={className} aria-hidden="true" />;
+    case "postagem":
+      return <MessageCircle className={className} aria-hidden="true" />;
+    case "manchete":
+      return <Newspaper className={className} aria-hidden="true" />;
+    case "charge":
+    case "tirinha":
+    case "imagem":
+      return <ImageIcon className={className} aria-hidden="true" />;
+    default:
+      return <Lightbulb className={className} aria-hidden="true" />;
+  }
+}
+
+function MiniBarChart({ points }: { points: { label: string; value: number }[] }) {
+  const max = Math.max(1, ...points.map((point) => Math.abs(point.value)));
+  return (
+    <div className="space-y-1.5">
+      {points.map((point, index) => (
+        <div key={index} className="space-y-0.5">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>{point.label}</span>
+            <span className="font-semibold text-foreground">{point.value}</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.max(4, (Math.abs(point.value) / max) * 100)}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SupportingTextBody({
+  text,
+  themeId,
+  textIndex,
+}: {
+  text: SupportingText;
+  themeId?: number;
+  textIndex?: number;
+}) {
+  switch (text.type) {
+    case "grafico":
+      return text.chart_points?.length ? (
+        <div className="space-y-2">
+          <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+          <MiniBarChart points={text.chart_points} />
+        </div>
+      ) : (
+        <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+      );
+
+    case "infografico":
+      return text.stat_items?.length ? (
+        <div className="grid grid-cols-2 gap-2">
+          {text.stat_items.map((stat, index) => (
+            <div key={index} className="rounded-md border border-border/55 bg-muted/30 p-2 text-center">
+              <p className="text-sm font-bold text-primary">{stat.value}</p>
+              <p className="text-[11px] leading-tight text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+      );
+
+    case "postagem":
+      return (
+        <div className="rounded-md border border-border/55 bg-muted/30 p-2.5">
+          <div className="mb-1 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+              {(text.post_author ?? "?").charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold">{text.post_author ?? "Perfil"}</p>
+              {text.post_handle ? <p className="truncate text-[11px] text-muted-foreground">@{text.post_handle}</p> : null}
+            </div>
+          </div>
+          <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+        </div>
+      );
+
+    case "manchete":
+      return (
+        <div className="border-l-2 border-primary pl-2.5">
+          {text.headline_subtitle ? (
+            <p className="text-xs leading-5 text-muted-foreground">{text.headline_subtitle}</p>
+          ) : null}
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{text.content}</p>
+          {text.headline_source ? (
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-primary">{text.headline_source}</p>
+          ) : null}
+        </div>
+      );
+
+    case "charge":
+    case "tirinha":
+      return (
+        <div className="space-y-2">
+          {text.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={text.image_url} alt={text.title} className="w-full rounded-md border border-border/55" />
+          ) : (
+            <div className="rounded-md border border-dashed border-border/60 bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
+              Ilustração indisponível — descrição: {text.image_prompt ?? text.content}
+            </div>
+          )}
+          {text.type === "tirinha" && text.comic_panels?.length ? (
+            <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-muted-foreground">
+              {text.comic_panels.map((panel, index) => (
+                <li key={index}>{panel}</li>
+              ))}
+            </ol>
+          ) : null}
+        </div>
+      );
+
+    default:
+      if (text.type === "motivador" && themeId != null && textIndex != null) {
+        return (
+          <HighlightableText
+            themeId={themeId}
+            textIndex={textIndex}
+            textTitle={text.title}
+            content={text.content}
+          />
+        );
+      }
+      return <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>;
+  }
+}
+
+function buildHighlightedSegments(content: string, highlights: MotivadorHighlight[]) {
+  type Segment = { text: string; highlightId: string | null };
+  const segments: Segment[] = [{ text: content, highlightId: null }];
+  for (const highlight of highlights) {
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      if (segment.highlightId || !highlight.quote) continue;
+      const idx = segment.text.indexOf(highlight.quote);
+      if (idx === -1) continue;
+      const before = segment.text.slice(0, idx);
+      const match = segment.text.slice(idx, idx + highlight.quote.length);
+      const after = segment.text.slice(idx + highlight.quote.length);
+      const replacement: Segment[] = [];
+      if (before) replacement.push({ text: before, highlightId: null });
+      replacement.push({ text: match, highlightId: highlight.id });
+      if (after) replacement.push({ text: after, highlightId: null });
+      segments.splice(i, 1, ...replacement);
+      break;
+    }
+  }
+  return segments;
+}
+
+function HighlightableText({
+  themeId,
+  textIndex,
+  textTitle,
+  content,
+}: {
+  themeId: number;
+  textIndex: number;
+  textTitle: string;
+  content: string;
+}) {
+  const containerRef = useRef<HTMLParagraphElement>(null);
+  const highlights = useHighlightsStore((state) => state.highlightsByTheme[themeId] ?? []);
+  const addHighlight = useHighlightsStore((state) => state.addHighlight);
+  const removeHighlight = useHighlightsStore((state) => state.removeHighlight);
+  const textHighlights = highlights.filter((h) => h.textIndex === textIndex);
+
+  function handleMouseUp() {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !containerRef.current) return;
+    if (!containerRef.current.contains(selection.anchorNode)) return;
+    const quote = selection.toString().trim();
+    if (quote.length < 3 || !content.includes(quote)) return;
+    addHighlight(themeId, textIndex, textTitle, quote);
+    selection.removeAllRanges();
+  }
+
+  const segments = buildHighlightedSegments(content, textHighlights);
+
+  return (
+    <p ref={containerRef} onMouseUp={handleMouseUp} className="text-xs leading-5 text-muted-foreground">
+      {segments.map((segment, index) =>
+        segment.highlightId ? (
+          <mark
+            key={index}
+            role="button"
+            tabIndex={0}
+            title="Clique para remover o grifo"
+            onClick={() => removeHighlight(themeId, segment.highlightId as string)}
+            className="cursor-pointer rounded bg-amber-300/60 px-0.5 text-foreground"
+          >
+            {segment.text}
+          </mark>
+        ) : (
+          <span key={index}>{segment.text}</span>
+        ),
+      )}
+    </p>
+  );
+}
+
+function HighlightsSummary({ themeId }: { themeId?: number }) {
+  const highlights = useHighlightsStore((state) => (themeId != null ? (state.highlightsByTheme[themeId] ?? []) : []));
+  const removeHighlight = useHighlightsStore((state) => state.removeHighlight);
+
+  if (themeId == null || !highlights.length) return null;
+
+  return (
+    <div className="mt-2.5 border-t border-border/55 pt-2.5">
+      <p className="mb-2 text-sm font-semibold">Meus grifos</p>
+      <div className="space-y-1.5">
+        {highlights.map((highlight) => (
+          <div
+            key={highlight.id}
+            className="flex items-start gap-1.5 rounded-md border border-border/55 bg-amber-300/10 p-2 text-[11px]"
+          >
+            <span className="flex-1 leading-4 text-muted-foreground">&ldquo;{highlight.quote}&rdquo;</span>
+            <button
+              type="button"
+              onClick={() => removeHighlight(themeId, highlight.id)}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+              aria-label="Remover grifo"
+            >
+              <X className="h-3 w-3" aria-hidden="true" />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

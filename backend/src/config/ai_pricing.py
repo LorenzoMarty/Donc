@@ -60,3 +60,21 @@ def cost_micro_usd(model: str | None, input_tokens: int, output_tokens: int) -> 
     input_cost = (max(0, input_tokens) / 1_000_000) * price.input_per_1m
     output_cost = (max(0, output_tokens) / 1_000_000) * price.output_per_1m
     return int(round((input_cost + output_cost) * MICROS_PER_USD))
+
+
+# Preço flat por imagem gerada (USD) — geração de imagem não é cobrada por token.
+IMAGE_MODEL_PRICING: dict[str, float] = {
+    "gpt-image-1": 0.04,
+}
+
+DEFAULT_IMAGE_PRICE_USD = 0.04
+
+
+def image_generation_cost_micro_usd(model: str | None) -> int:
+    """Custo de uma chamada de geração de imagem, em micro-USD."""
+
+    if not model:
+        return int(round(DEFAULT_IMAGE_PRICE_USD * MICROS_PER_USD))
+    key = model.strip().lower()
+    price_usd = IMAGE_MODEL_PRICING.get(key, DEFAULT_IMAGE_PRICE_USD)
+    return int(round(price_usd * MICROS_PER_USD))

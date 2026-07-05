@@ -84,13 +84,42 @@ class ExerciseGenerationResult(BaseModel):
     adaptation_reason: str
 
 
-SupportingTextType = Literal["motivador", "perspectiva", "dados", "repertorio", "imagem"]
+SupportingTextType = Literal[
+    "motivador",
+    "dados",
+    "repertorio",
+    "imagem",
+    "grafico",
+    "infografico",
+    "postagem",
+    "manchete",
+    "tirinha",
+    "charge",
+]
+
+
+class ChartPoint(BaseModel):
+    label: str = Field(min_length=1, max_length=60)
+    value: float
 
 
 class GeneratedSupportingText(BaseModel):
     title: str = Field(min_length=4, max_length=120)
-    content: str = Field(min_length=80, max_length=900)
+    content: str = Field(min_length=20, max_length=900)
     type: SupportingTextType = "motivador"
+    chart_points: list[ChartPoint] | None = Field(default=None, description="Pontos do grafico (tipo grafico).")
+    stat_items: list[ChartPoint] | None = Field(default=None, description="Itens do infografico (tipo infografico).")
+    comic_panels: list[str] | None = Field(default=None, description="Falas/quadros da tirinha (tipo tirinha).")
+    post_author: str | None = Field(default=None, max_length=80, description="Autor da postagem (tipo postagem).")
+    post_handle: str | None = Field(default=None, max_length=40, description="Usuario/handle da postagem (tipo postagem).")
+    headline_subtitle: str | None = Field(default=None, max_length=220, description="Linha fina da manchete (tipo manchete).")
+    headline_source: str | None = Field(default=None, max_length=80, description="Veiculo/fonte da manchete (tipo manchete).")
+    image_prompt: str | None = Field(
+        default=None, max_length=500, description="Descricao visual para gerar a imagem (tipo charge/tirinha)."
+    )
+    image_url: str | None = Field(
+        default=None, description="Preenchido apos geracao da imagem; nunca gerado pelo LLM de texto."
+    )
 
 
 class EssayThemeGenerationResult(BaseModel):

@@ -715,11 +715,6 @@ def seed_missing_themes(db: Session) -> None:
                     "content": "Segundo o IBGE, em 2022, cerca de 22% dos domicilios brasileiros ainda nao tinham acesso a internet, concentrados majoritariamente nas regioes Norte e Nordeste e em comunidades rurais. Especialistas alertam que a exclusao digital aprofunda desigualdades educacionais ja existentes, prejudicando especialmente criancas em idade escolar que dependem de conexao para acessar conteudos pedagogicos.",
                     "type": "motivador",
                 },
-                {
-                    "title": "Perspectiva do avaliador",
-                    "content": "O avaliador espera que o texto identifique causas estruturais (infraestrutura precaria, renda, formacao docente insuficiente), mobilize repertorio sociocultural pertinente (legislacao, dados, autores) e apresente proposta de intervencao com agente, acao, meio, finalidade e detalhamento. Evite apenas descrever o problema — argumente sobre suas raizes. A Competencia 5 exige solucao concreta e respeitosa aos direitos humanos.",
-                    "type": "perspectiva",
-                },
             ],
         },
         {
@@ -731,11 +726,6 @@ def seed_missing_themes(db: Session) -> None:
                     "title": "Texto motivador I — Trabalho invisivel e economia",
                     "content": "O economista Guy Standing classifica o trabalho de cuidado — realizado majoritariamente por mulheres — como trabalho precario invisivel ao sistema economico formal. No Brasil, pesquisas do IPEA indicam que mulheres dedicam, em media, o dobro do tempo dos homens a atividades domesticas e de cuidado nao remuneradas, o que impacta diretamente sua participacao no mercado de trabalho e na vida publica.",
                     "type": "motivador",
-                },
-                {
-                    "title": "Perspectiva do avaliador",
-                    "content": "Espera-se que o texto articule dimensoes de genero, economia e politica publica. O ponto de vista deve superar o senso comum e mobilizar dados ou pensadores para sustentar argumentos. A proposta de intervencao deve indicar clareza juridica ou de politica social — nao apenas 'conscientizar'. Teses sobre 'igualdade de genero' sem recorte especifico tendem a perder pontos em C2 e C3.",
-                    "type": "perspectiva",
                 },
             ],
         },
@@ -749,11 +739,6 @@ def seed_missing_themes(db: Session) -> None:
                     "content": "Um relatorio do Reuters Institute (2023) indica que 62% dos jovens entre 18 e 24 anos acessam noticias principalmente por redes sociais, ambiente em que algoritmos priorizam engajamento em detrimento de veracidade. Especialistas alertam que a ausencia de letramento midiatico critico alimenta a circulacao de desinformacao e dificulta a formacao de cidadaos capazes de tomar decisoes autonomas.",
                     "type": "motivador",
                 },
-                {
-                    "title": "Perspectiva do avaliador",
-                    "content": "O avaliador valoriza textos que relacionem escola, familia e tecnologia como agentes formativos, sem cair em solucoes simplistas como 'proibir celular'. A tese deve apontar uma causa especifica para o problema — nao apenas 'falta de incentivo'. A proposta de intervencao deve detalhar como promover leitura critica de forma concreta, com agente e meio claros.",
-                    "type": "perspectiva",
-                },
             ],
         },
         {
@@ -765,11 +750,6 @@ def seed_missing_themes(db: Session) -> None:
                     "title": "Texto motivador I — Acesso desigual a alimentos saudaveis",
                     "content": "A seguranca alimentar envolve disponibilidade, renda, qualidade nutricional e regularidade de acesso. Em grandes cidades, familias vulneraveis podem viver longe de feiras, mercados populares e equipamentos publicos de abastecimento, o que limita escolhas alimentares e amplia a dependencia de produtos baratos e pouco nutritivos.",
                     "type": "motivador",
-                },
-                {
-                    "title": "Perspectiva do avaliador",
-                    "content": "O texto deve relacionar renda, territorio, educacao alimentar e responsabilidade estatal sem reduzir o problema a escolhas individuais. Boas propostas articulam programas de abastecimento, escolas, assistencia social e agricultura familiar, com agente, meio e finalidade claros.",
-                    "type": "perspectiva",
                 },
             ],
         },

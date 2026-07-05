@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     openai_fallback_model: str = "gpt-4o-mini"
+    openai_image_model: str = "gpt-image-1"
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
     enable_pgvector: bool = False

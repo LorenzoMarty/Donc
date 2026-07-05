@@ -52,6 +52,7 @@ class LessonRead(BaseModel):
     description: str
     thumbnail_url: str
     video_url: str
+    pdf_url: str | None = None
     summary: str
     duration_minutes: int
     order: int

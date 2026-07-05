@@ -23,10 +23,15 @@ type ThemeDraft = {
 
 const TEXT_TYPES: { value: TextType; label: string }[] = [
   { value: "motivador", label: "Texto motivador" },
-  { value: "perspectiva", label: "Perspectiva" },
   { value: "dados", label: "Dados" },
   { value: "repertorio", label: "Repertório" },
   { value: "imagem", label: "Imagem ou descrição visual" },
+  { value: "grafico", label: "Gráfico" },
+  { value: "infografico", label: "Infográfico" },
+  { value: "postagem", label: "Postagem (rede social)" },
+  { value: "manchete", label: "Manchete" },
+  { value: "tirinha", label: "Tirinha (IA gera imagem)" },
+  { value: "charge", label: "Charge (IA gera imagem)" },
 ];
 
 function draftFromTheme(theme: EssayTheme): ThemeDraft {
@@ -51,7 +56,18 @@ export function ThemesTab({
   onDeleted: (themeId: number) => void;
 }) {
   const [focus, setFocus] = useState("");
-  const [requirements, setRequirements] = useState<Record<TextType, number>>({ motivador: 2, perspectiva: 1, dados: 0, repertorio: 0, imagem: 0 });
+  const [requirements, setRequirements] = useState<Record<TextType, number>>({
+    motivador: 3,
+    dados: 0,
+    repertorio: 0,
+    imagem: 0,
+    grafico: 0,
+    infografico: 0,
+    postagem: 0,
+    manchete: 0,
+    tirinha: 0,
+    charge: 0,
+  });
   const [generating, setGenerating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<ThemeDraft | null>(null);

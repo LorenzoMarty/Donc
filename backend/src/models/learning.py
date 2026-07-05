@@ -65,6 +65,7 @@ class Lesson(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     thumbnail_url: Mapped[str] = mapped_column(String(500), nullable=False)
     video_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    pdf_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     duration_minutes: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0)
