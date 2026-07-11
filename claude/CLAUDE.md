@@ -35,6 +35,11 @@ Regras obrigatórias para trabalhar nos projetos:
 
 - Não rodar a skill `analyze-system` (gera `SYSTEM_ANALYSIS.md` na raiz) para tarefas pequenas ou
   localizadas — só quando a tarefa exigir entender o sistema inteiro.
+- Gate de verificação antes de declarar concluído: frontend → `npm run quality` (lint + typecheck
+  + test, rodar de dentro de `frontend/` com caminho absoluto, o cwd não persiste entre comandos);
+  backend → `.\quality.ps1`. Não rodar tsc/lint/vitest avulsos em série — o gate já cobre tudo.
+- Mudança com superfície de runtime (tela, rota, pipeline): verificar no browser/chamada real
+  antes de encerrar, não apenas por leitura de código.
 
 ---
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Download, PlayCircle } from "lucide-react";
+import { CheckCircle2, Download, FileText, PlayCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,14 @@ export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplet
   return (
     <div className="game-surface overflow-hidden bg-card">
       <div className="aspect-video border-b border-border bg-foreground">
-        <iframe className="h-full w-full" src={lesson.video_url} title={lesson.title} allowFullScreen />
+        {lesson.video_url ? (
+          <iframe className="h-full w-full" src={lesson.video_url} title={lesson.title} allowFullScreen />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-background/70">
+            <FileText className="h-8 w-8" aria-hidden="true" />
+            <p className="text-sm font-semibold">Esta aula é em PDF, sem vídeo</p>
+          </div>
+        )}
       </div>
       <div className="space-y-4 p-4 xs:p-5">
         <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">

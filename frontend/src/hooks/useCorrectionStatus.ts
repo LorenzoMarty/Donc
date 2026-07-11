@@ -6,12 +6,11 @@ import { apiFetch, type Essay, type JobStatus } from "@/services/api";
 
 const AGENT_LABELS = [
   "Preparando análise...",
-  "Agente 1/5 — Verificando tese e estrutura",
-  "Agente 2/5 — Analisando gramática (C1)",
-  "Agente 3/5 — Identificando repertório (C3)",
-  "Agente 4/5 — Avaliando competências ENEM",
-  "Agente 5/5 — Calculando nota final",
+  "Verificando aderência ao tema",
+  "Analisando os critérios do ENEM em paralelo",
+  "Calculando nota final",
 ];
+const LAST_PHASE = AGENT_LABELS.length - 1;
 
 export type CorrectionPhase = "idle" | "queued" | "running" | "completed" | "failed";
 
@@ -46,7 +45,7 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
     agentIndexRef.current = 1;
     setAgentIndex(1);
     agentTickRef.current = setInterval(() => {
-      agentIndexRef.current = Math.min(agentIndexRef.current + 1, 5);
+      agentIndexRef.current = Math.min(agentIndexRef.current + 1, LAST_PHASE);
       setAgentIndex(agentIndexRef.current);
     }, 4000);
   }, []);
@@ -72,7 +71,7 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
         } else if (status.status === "completed") {
           stopAll();
           setPhase("completed");
-          setAgentIndex(5);
+          setAgentIndex(LAST_PHASE);
           setEssay(status.essay ?? null);
         } else if (status.status === "failed") {
           stopAll();
@@ -94,7 +93,7 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   }, [essayId, startAgentTick, stopAll]);
 
   const label = phase === "idle" ? "" : AGENT_LABELS[agentIndex] ?? AGENT_LABELS[0];
-  const progressPercent = phase === "completed" ? 100 : Math.round((agentIndex / 5) * 100);
+  const progressPercent = phase === "completed" ? 100 : Math.round((agentIndex / LAST_PHASE) * 100);
 
   return { phase, agentIndex, agentLabel: label, progressPercent, essay, error };
 }

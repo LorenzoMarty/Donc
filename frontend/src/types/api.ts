@@ -276,6 +276,38 @@ export type MockExam = {
   questions: { id: number; statement: string; options: string[]; skill: string }[];
 };
 
+export type MockExamQuestionReview = {
+  id: number;
+  statement: string;
+  options: string[];
+  skill: string;
+  correct_answer: string;
+  explanation: string;
+  user_answer: string | null;
+  correct: boolean;
+};
+
+export type MockExamSubmitResult = {
+  attempt_id: number;
+  exam_id: number;
+  score: number;
+  total_questions: number;
+  correct_answers: number;
+  finished_at: string;
+  performance_by_skill: Record<string, number>;
+  questions: MockExamQuestionReview[];
+};
+
+export type MockExamAttemptSummary = {
+  attempt_id: number;
+  exam_id: number;
+  exam_title: string;
+  score: number;
+  total_questions: number;
+  correct_answers: number;
+  finished_at: string | null;
+};
+
 export type AdminMetrics = {
   users: number;
   essays: number;
