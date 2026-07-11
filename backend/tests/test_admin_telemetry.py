@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from src.config.settings import settings
 from src.database.session import SessionLocal
 from src.models import AIInteractionLog
-from src.services.admin_service import AdminService
+from src.services.admin_telemetry_service import AdminTelemetryService
 
 
 def test_admin_ai_telemetry_uses_configured_token_cost(client, monkeypatch):  # noqa: ARG001
@@ -23,7 +23,7 @@ def test_admin_ai_telemetry_uses_configured_token_cost(client, monkeypatch):  # 
         )
         db.commit()
 
-        telemetry = AdminService(db).ai_telemetry(period_days=1)
+        telemetry = AdminTelemetryService(db).ai_telemetry(period_days=1)
     finally:
         db.close()
 

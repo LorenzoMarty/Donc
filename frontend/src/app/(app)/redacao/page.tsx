@@ -1,257 +1,69 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import {
-  AlertCircle,
-  BarChart3,
-  Brain,
-  Check,
-  CheckCircle2,
-  ChevronRight,
-  Download,
-  Link2,
-  MoreHorizontal,
-  Share2,
-  Sparkles,
-  WandSparkles,
-  X,
-} from "lucide-react";
+import { useEffect } from "react";
+import { AlertCircle, Brain, Check, CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
 
 import { EssayEditor } from "@/components/writing/essay-editor";
+import { CompetencyLabel, EssayAnalysisWorkspace, ScoreRing } from "@/components/writing/essay-analysis";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useTrackEvent } from "@/hooks/use-track-event";
 import { useCorrectionStatus } from "@/hooks/useCorrectionStatus";
-import { apiFetch, type Essay, type EssaySubmitResponse, type EssayTheme } from "@/services/api";
-import type { InlineAnnotation } from "@/types/api";
+import { useEssayDraft } from "@/hooks/useEssayDraft";
+import { useEssaySubmission } from "@/hooks/useEssaySubmission";
+import { type Essay, type EssayTheme } from "@/services/api";
 import { cn } from "@/utils";
 
-type EssayViewMode = "editor" | "analysis";
-
-const THEME_CHOICES_LIMIT = 4;
-
 export default function EssayPage() {
-  const [themes, setThemes] = useState<EssayTheme[]>([]);
-  const [selectedTheme, setSelectedTheme] = useState<EssayTheme | null>(null);
-  const [essay, setEssay] = useState<Essay | null>(null);
-  const [title, setTitle] = useState("Minha redação ENEM");
-  const [content, setContent] = useState("");
-  const [draftStarted, setDraftStarted] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [generatingTheme, setGeneratingTheme] = useState(false);
-  const [mode, setMode] = useState<EssayViewMode>("editor");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const saveRequestRef = useRef(0);
-  const submittingRef = useRef(false);
-  const trackEvent = useTrackEvent();
-  const essayId = essay?.id;
-  const essayStatus = essay?.status;
-  const selectedThemeId = selectedTheme?.id;
-  const wordCount = countWords(content);
-  const paragraphCount = countParagraphs(content);
+  const draft = useEssayDraft();
+  const {
+    themes,
+    selectedTheme,
+    setSelectedTheme,
+    essay,
+    title,
+    content,
+    setTitle,
+    setContent,
+    draftStarted,
+    saving,
+    submitting,
+    setSubmitting,
+    generatingTheme,
+    mode,
+    error,
+    loading,
+    saveRequestRef,
+    submittingRef,
+    wordCount,
+    paragraphCount,
+    createDraft,
+    generateTheme,
+    backToStart,
+  } = draft;
+
+  const { submit, handleCorrectionCompleted, handleCorrectionFailed } = useEssaySubmission({
+    essay,
+    title,
+    content,
+    wordCount,
+    setEssay: draft.setEssay,
+    setTitle: draft.setTitle,
+    setContent: draft.setContent,
+    setMode: draft.setMode,
+    setError: draft.setError,
+    setSaving: draft.setSaving,
+    setSubmitting,
+    saveRequestRef,
+    submittingRef,
+  });
+
   const analysisCorrection = essay?.correction ?? null;
   const analysisTitle = essay?.title ?? title;
   const analysisContent = essay?.content ?? content;
   const analysisTheme = essay?.theme ?? selectedTheme;
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadInitialState() {
-      try {
-        const items = await fetchThemeChoices();
-        if (!mounted) return;
-        setThemes(items);
-
-        const params = new URLSearchParams(window.location.search);
-        const essayId = params.get("essayId");
-        if (essayId) {
-          const openedEssay = await apiFetch<Essay>(`/essays/${essayId}`);
-          if (!mounted) return;
-          setEssay(openedEssay);
-          setTitle(openedEssay.title);
-          setContent(openedEssay.content);
-          setSelectedTheme(openedEssay.theme);
-          setDraftStarted(true);
-          setMode(params.get("view") === "analise" || openedEssay.status === "corrected" ? "analysis" : "editor");
-          return;
-        }
-
-        setSelectedTheme(items[0] ?? null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Nao foi possivel abrir a redacao.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-
-    loadInitialState();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (mode !== "editor" || submitting || essayStatus === "corrected") return;
-
-    const id = window.setTimeout(() => {
-      const hasContent = content.trim().length > 0;
-
-      if (essayId === undefined) {
-        if (!draftStarted || selectedThemeId === undefined || !hasContent) return;
-        const requestId = ++saveRequestRef.current;
-        setSaving(true);
-        apiFetch<Essay>("/essays", {
-          method: "POST",
-          body: JSON.stringify({ theme_id: selectedThemeId, title, content }),
-        })
-          .then((saved) => {
-            if (requestId === saveRequestRef.current && !submittingRef.current) setEssay(saved);
-          })
-          .catch((err) => {
-            if (requestId === saveRequestRef.current && !submittingRef.current) {
-              setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho.");
-            }
-          })
-          .finally(() => {
-            if (requestId === saveRequestRef.current && !submittingRef.current) setSaving(false);
-          });
-        return;
-      }
-
-      if (!hasContent) {
-        const requestId = ++saveRequestRef.current;
-        setSaving(true);
-        apiFetch<{ message: string }>(`/essays/${essayId}`, { method: "DELETE" })
-          .then(() => {
-            if (requestId === saveRequestRef.current && !submittingRef.current) {
-              setEssay(null);
-              setDraftStarted(true);
-            }
-          })
-          .catch((err) => {
-            if (requestId === saveRequestRef.current && !submittingRef.current) {
-              setError(err instanceof Error ? err.message : "Nao foi possivel remover o rascunho vazio.");
-            }
-          })
-          .finally(() => {
-            if (requestId === saveRequestRef.current && !submittingRef.current) setSaving(false);
-          });
-        return;
-      }
-
-      const requestId = ++saveRequestRef.current;
-      setSaving(true);
-      apiFetch<Essay>(`/essays/${essayId}/autosave`, {
-        method: "PUT",
-        body: JSON.stringify({ title, content }),
-      })
-        .then((saved) => {
-          if (requestId === saveRequestRef.current && !submittingRef.current) setEssay(saved);
-        })
-        .catch((err) => {
-          if (requestId === saveRequestRef.current && !submittingRef.current) {
-            setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho.");
-          }
-        })
-        .finally(() => {
-          if (requestId === saveRequestRef.current && !submittingRef.current) setSaving(false);
-        });
-    }, 900);
-
-    return () => window.clearTimeout(id);
-  }, [content, draftStarted, essayId, essayStatus, mode, selectedThemeId, submitting, title]);
-
-  function createDraft(theme = selectedTheme) {
-    if (!theme) return;
-    setError("");
-    setSelectedTheme(theme);
-    setEssay(null);
-    setMode("editor");
-    setDraftStarted(true);
-    setTitle(`Redacao - ${theme.title.slice(0, 70)}`);
-    setContent("");
-    replaceEssayUrl();
-  }
-
-  async function generateTheme() {
-    if (generatingTheme) return;
-    setGeneratingTheme(true);
-    setError("");
-    try {
-      const sampledThemes = await fetchThemeChoices();
-      setThemes(sampledThemes);
-      setSelectedTheme(sampledThemes[0] ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel sortear temas do banco.");
-    } finally {
-      setGeneratingTheme(false);
-    }
-  }
-
-  async function submit() {
-    if (!essay || submittingRef.current) return;
-    setError("");
-    if (wordCount < 80) {
-      setError("A redacao precisa ter pelo menos 80 palavras para ser enviada para correcao.");
-      return;
-    }
-
-    submittingRef.current = true;
-    saveRequestRef.current += 1;
-    setSaving(false);
-    setSubmitting(true);
-    try {
-      const saved = await apiFetch<Essay>(`/essays/${essay.id}/autosave`, {
-        method: "PUT",
-        body: JSON.stringify({ title, content }),
-      });
-      setEssay(saved);
-      await apiFetch<EssaySubmitResponse>(`/essays/${saved.id}/submit`, { method: "POST" });
-      trackEvent({ event_type: "essay_submitted", entity_id: String(saved.id), entity_type: "essay", meta: { word_count: wordCount } });
-      // submitting stays true — CorrectionWaitingScreen polls via useCorrectionStatus
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel iniciar a correcao.");
-      setMode("editor");
-      submittingRef.current = false;
-      saveRequestRef.current += 1;
-      setSubmitting(false);
-      setSaving(false);
-    }
-  }
-
-  function handleCorrectionCompleted(corrected: Essay) {
-    setEssay(corrected);
-    setTitle(corrected.title);
-    setContent(corrected.content);
-    setMode("analysis");
-    replaceEssayUrl(corrected.id, "analysis");
-    submittingRef.current = false;
-    saveRequestRef.current += 1;
-    setSubmitting(false);
-    setSaving(false);
-  }
-
-  function handleCorrectionFailed(errorMsg: string) {
-    setError(errorMsg);
-    setMode("editor");
-    submittingRef.current = false;
-    saveRequestRef.current += 1;
-    setSubmitting(false);
-    setSaving(false);
-  }
-
-  function backToStart() {
-    setMode("editor");
-    setDraftStarted(false);
-    replaceEssayUrl(essay?.id);
-  }
 
   if (loading) return <LoadingCard />;
 
@@ -356,14 +168,6 @@ export default function EssayPage() {
       </div>
     </div>
   );
-}
-
-async function fetchThemeChoices() {
-  const themes = await apiFetch<EssayTheme[]>("/essays/themes/generate", {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
-  return themes.slice(0, THEME_CHOICES_LIMIT);
 }
 
 function ThemePicker({
@@ -566,549 +370,6 @@ function CorrectionWaitingScreen({
   );
 }
 
-function splitParagraphs(content: string): string[] {
-  const stripped = content.trim();
-  if (!stripped) return [];
-  if (/\n\s*\n/.test(stripped)) return stripped.split(/\n\s*\n+/).filter((p) => p.trim());
-  return stripped.split(/\n+/).filter((l) => l.trim());
-}
-
-type TextSegment = { text: string; annotation?: InlineAnnotation; index: number };
-
-function buildSegments(paragraph: string, annotations: InlineAnnotation[]): TextSegment[] {
-  const ranges: { start: number; end: number; annotation: InlineAnnotation }[] = [];
-  for (const annotation of annotations) {
-    const range = findQuoteRange(paragraph, annotation.quote);
-    if (!range) continue;
-    const overlaps = ranges.some((r) => !(range.end <= r.start || range.start >= r.end));
-    if (!overlaps) ranges.push({ start: range.start, end: range.end, annotation });
-  }
-  ranges.sort((a, b) => a.start - b.start);
-
-  const segments: TextSegment[] = [];
-  let cursor = 0;
-  let segIdx = 0;
-  for (const { start, end, annotation } of ranges) {
-    if (start > cursor) segments.push({ text: paragraph.slice(cursor, start), index: segIdx++ });
-    segments.push({ text: paragraph.slice(start, end), annotation, index: segIdx++ });
-    cursor = end;
-  }
-  if (cursor < paragraph.length) segments.push({ text: paragraph.slice(cursor), index: segIdx++ });
-  return segments;
-}
-
-function findQuoteRange(paragraph: string, quote: string) {
-  const exact = paragraph.indexOf(quote);
-  if (exact !== -1) return { start: exact, end: exact + quote.length };
-  const trimmed = quote.trim();
-  const trimmedExact = paragraph.indexOf(trimmed);
-  if (trimmedExact !== -1) return { start: trimmedExact, end: trimmedExact + trimmed.length };
-  const pattern = trimmed.split(/\s+/).map(escapeRegExp).join("\\s+");
-  const match = new RegExp(pattern, "i").exec(paragraph);
-  return match?.index === undefined ? null : { start: match.index, end: match.index + match[0].length };
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function annotationKey(annotation: InlineAnnotation) {
-  return `${annotation.paragraph_index}:${annotation.competency}:${annotation.type}:${annotation.quote}:${annotation.comment}`;
-}
-
-function annotationNumber(annotations: InlineAnnotation[], annotation: InlineAnnotation) {
-  const key = annotationKey(annotation);
-  const index = annotations.findIndex((item) => annotationKey(item) === key);
-  return index === -1 ? 0 : index + 1;
-}
-
-function EssayAnalysisWorkspace({
-  title,
-  content,
-  theme,
-  correction,
-  error,
-}: {
-  title: string;
-  content: string;
-  theme: EssayTheme | null;
-  correction: Essay["correction"];
-  error: string;
-}) {
-  const [activeAnnotationKey, setActiveAnnotationKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"geral" | "estrutura" | "clareza" | "estilo" | "fontes">("geral");
-  const annotations = correction?.inline_annotations ?? [];
-  const activeAnnotation = annotations.find((annotation) => annotationKey(annotation) === activeAnnotationKey) ?? null;
-  const words = countWords(content);
-  const selectAnnotation = (annotation: InlineAnnotation | null) => setActiveAnnotationKey(annotation ? annotationKey(annotation) : null);
-
-  async function shareEssay() {
-    const url = window.location.href;
-    if (navigator.share) {
-      await navigator.share({ title, text: theme?.title ?? title, url }).catch(() => undefined);
-      return;
-    }
-    await navigator.clipboard?.writeText(url);
-  }
-
-  function exportEssay() {
-    const lines = [
-      title,
-      "",
-      theme ? `Tema: ${theme.title}` : "",
-      correction ? `Nota: ${correction.total_score}` : "",
-      "",
-      content,
-      "",
-      "Comentarios da IA",
-      ...(correction?.suggestions ?? []).map((item, index) => `${index + 1}. ${item}`),
-    ].filter(Boolean);
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `${slugify(title)}.txt`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return (
-    <div className="grid h-[calc(100dvh-8.75rem)] min-h-[620px] grid-rows-[minmax(0,1fr)_minmax(19rem,42dvh)] overflow-hidden rounded-md border border-border bg-card md:h-dvh md:rounded-none md:border-0 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:grid-rows-none">
-      <div className="flex min-h-0 flex-col">
-        <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="min-w-0">
-              <h1 className="text-safe text-lg font-semibold leading-tight text-foreground lg:text-xl">{title}</h1>
-              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5 font-medium text-accent">
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                  Salvo
-                </span>
-                <span>
-                  <strong className="text-foreground">{words.toLocaleString("pt-BR")}</strong> palavras
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={shareEssay}>
-              <Share2 className="h-4 w-4" aria-hidden="true" />
-              Compartilhar
-            </Button>
-            <Button onClick={exportEssay}>
-              <Download className="h-4 w-4" aria-hidden="true" />
-              Exportar
-            </Button>
-          </div>
-        </header>
-
-        <EssayDocumentPanel
-          title={title}
-          content={content}
-          annotations={annotations}
-          activeAnnotation={activeAnnotation}
-          onSelectAnnotation={selectAnnotation}
-        />
-      </div>
-      <AIFeedbackPanel
-        correction={correction}
-        error={error}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        annotations={annotations}
-        activeAnnotation={activeAnnotation}
-        onSelectAnnotation={selectAnnotation}
-      />
-    </div>
-  );
-}
-
-function EssayDocumentPanel({
-  title,
-  content,
-  annotations,
-  activeAnnotation,
-  onSelectAnnotation,
-}: {
-  title: string;
-  content: string;
-  annotations: InlineAnnotation[];
-  activeAnnotation: InlineAnnotation | null;
-  onSelectAnnotation: (annotation: InlineAnnotation | null) => void;
-}) {
-  const paragraphs = splitParagraphs(content);
-  const annotationsByParagraph = (pIndex: number) => annotations.filter((a) => a.paragraph_index === pIndex);
-
-  return (
-    <article className="mobile-scroll min-h-0 flex-1 overflow-y-auto bg-card px-5 py-8 md:px-10 lg:px-12">
-      <div className="mx-auto max-w-[860px]">
-        <h2 className="text-safe text-4xl font-bold leading-tight tracking-normal text-foreground md:text-5xl [font-family:var(--font-merriweather,Georgia,serif)]">
-          {title}
-        </h2>
-
-        <div className="mt-8 space-y-8 text-[1.28rem] leading-[2.05] text-foreground [font-family:var(--font-merriweather,Georgia,serif)]">
-          {paragraphs.length ? (
-            paragraphs.map((paragraph, pIndex) => {
-              const paragraphAnnotations = annotationsByParagraph(pIndex);
-              const segments = buildSegments(paragraph, paragraphAnnotations);
-              return (
-                <p key={pIndex} className="relative pr-14">
-                  {segments.map((seg) =>
-                    seg.annotation ? (
-                      <button
-                        key={seg.index}
-                        type="button"
-                        onClick={() =>
-                          onSelectAnnotation(
-                            activeAnnotation && annotationKey(activeAnnotation) === annotationKey(seg.annotation!) ? null : (seg.annotation ?? null),
-                          )
-                        }
-                        className={cn(
-                          "relative rounded-sm px-1 text-left underline decoration-2 underline-offset-[6px] transition-colors",
-                          annotationTone(seg.annotation).mark,
-                          activeAnnotation && annotationKey(activeAnnotation) === annotationKey(seg.annotation!) && "ring-2 ring-primary/45",
-                        )}
-                      >
-                        {seg.text}
-                        <sup className={cn("ml-1 inline-grid h-5 min-w-5 place-items-center rounded-full px-1 text-[0.62rem] font-bold leading-none no-underline", annotationTone(seg.annotation).number)}>
-                          {annotationNumber(annotations, seg.annotation)}
-                        </sup>
-                      </button>
-                    ) : (
-                      <span key={seg.index}>{seg.text}</span>
-                    ),
-                  )}
-                  {paragraphAnnotations.map((annotation, index) => (
-                    <button
-                      key={`${annotation.quote}-${index}`}
-                      type="button"
-                      onClick={() => onSelectAnnotation(annotation)}
-                      className={cn(
-                        "absolute right-0 inline-grid h-8 w-8 place-items-center rounded-full border text-xs font-bold shadow-sm transition-colors hover:scale-105",
-                        annotationTone(annotation).marker,
-                        index > 0 && "translate-y-10",
-                        activeAnnotation && annotationKey(activeAnnotation) === annotationKey(annotation) && "ring-2 ring-primary/50",
-                      )}
-                      aria-label={`Comentario ${annotationNumber(annotations, annotation)}`}
-                    >
-                      {annotationNumber(annotations, annotation)}
-                    </button>
-                  ))}
-                </p>
-              );
-            })
-          ) : (
-            <p className="whitespace-pre-wrap">{content}</p>
-          )}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-type AnalysisTab = "geral" | "estrutura" | "clareza" | "estilo" | "fontes";
-
-function AIFeedbackPanel({
-  correction,
-  error,
-  activeTab,
-  onTabChange,
-  annotations,
-  activeAnnotation,
-  onSelectAnnotation,
-}: {
-  correction: Essay["correction"];
-  error: string;
-  activeTab: AnalysisTab;
-  onTabChange: (tab: AnalysisTab) => void;
-  annotations: InlineAnnotation[];
-  activeAnnotation: InlineAnnotation | null;
-  onSelectAnnotation: (annotation: InlineAnnotation | null) => void;
-}) {
-  const suggestions = buildSuggestionCards(correction, annotations, activeTab);
-  const score = correction?.total_score ?? 0;
-
-  return (
-    <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border bg-background lg:border-l lg:border-t-0">
-      <div className="sticky top-0 z-10 border-b border-border bg-background px-5 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground">
-              <WandSparkles className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <h2 className="text-xl font-semibold">IA Donc</h2>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => onSelectAnnotation(null)} aria-label="Limpar comentario selecionado">
-            <X className="h-5 w-5" aria-hidden="true" />
-          </Button>
-        </div>
-        <div className="mt-5 flex gap-5 overflow-x-auto text-sm font-semibold text-muted-foreground no-scrollbar">
-          {[
-            ["geral", "Geral"],
-            ["estrutura", "Estrutura"],
-            ["clareza", "Clareza"],
-            ["estilo", "Estilo"],
-            ["fontes", "Fontes"],
-          ].map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onTabChange(key as AnalysisTab)}
-              className={cn("border-b-2 border-transparent pb-3 transition-colors", activeTab === key && "border-primary text-foreground")}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-5 p-5">
-        {correction ? (
-          <div className="grid gap-5 border-b border-border pb-5 sm:grid-cols-[7rem_1fr] sm:items-center">
-            <ScoreRing score={score} />
-            <div>
-              <h3 className="text-lg font-semibold">
-                {score >= 800 ? "Excelente redação." : score >= 600 ? "Boa base — dá para subir." : "Tem o que trabalhar aqui."}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{correction.feedback}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="game-tile bg-card p-4 text-sm text-muted-foreground">
-            Envie a redação para ver a nota e os comentários por competência.
-          </div>
-        )}
-
-        {activeAnnotation ? (
-          <div className={cn("rounded-md border p-4", annotationTone(activeAnnotation).panel)}>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="outline">#{annotationNumber(annotations, activeAnnotation)}</Badge>
-              <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"}>
-                {activeAnnotation.type === "error" ? "Ajuste" : "Força"}
-              </Badge>
-              <Badge variant="outline">{competencyLabel(activeAnnotation.competency)}</Badge>
-            </div>
-            <p className="text-sm font-semibold italic text-muted-foreground">&quot;{activeAnnotation.quote}&quot;</p>
-            <p className="mt-2 text-sm leading-6">{activeAnnotation.comment}</p>
-          </div>
-        ) : null}
-
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h3 className="font-semibold">Sugestões ({suggestions.length})</h3>
-            <button type="button" onClick={() => onSelectAnnotation(null)} className="text-sm font-semibold text-primary">
-              Limpar tudo
-            </button>
-          </div>
-          <div className="space-y-3">
-            {suggestions.map((suggestion) => (
-              <SuggestionCard
-                key={`${suggestion.index}-${suggestion.title}`}
-                suggestion={suggestion}
-                active={Boolean(activeAnnotation && suggestion.annotation && annotationKey(activeAnnotation) === annotationKey(suggestion.annotation))}
-                onClick={() => onSelectAnnotation(suggestion.annotation ?? null)}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-md border border-border bg-card p-4">
-          <div className="mb-3 flex items-center gap-2 font-semibold">
-            <BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
-            Competências
-          </div>
-          {correction ? (
-            <div className="grid gap-2">
-              {[
-                ["C1", correction.competency_1],
-                ["C2", correction.competency_2],
-                ["C3", correction.competency_3],
-                ["C4", correction.competency_4],
-                ["C5", correction.competency_5],
-              ].map(([label, value]) => (
-                <div key={label} className="grid grid-cols-[2rem_1fr_3rem] items-center gap-2 text-sm">
-                  <span className="font-semibold">{label}</span>
-                  <Progress value={(Number(value) / 200) * 100} className="h-2" />
-                  <span className="text-right font-semibold">{value}</span>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </section>
-
-        {error ? (
-          <div className="game-tile flex gap-2 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {error}
-          </div>
-        ) : null}
-      </div>
-    </aside>
-  );
-}
-
-function ScoreRing({ score }: { score: number }) {
-  const display = Math.round(score / 10);
-  const degrees = Math.max(0, Math.min(360, (score / 1000) * 360));
-  return (
-    <div
-      className="grid h-24 w-24 place-items-center rounded-full"
-      style={{ background: `conic-gradient(hsl(var(--primary)) ${degrees}deg, hsl(var(--muted)) 0deg)` }}
-    >
-      <div className="grid h-[4.5rem] w-[4.5rem] place-items-center rounded-full bg-background text-3xl font-semibold">{display}</div>
-    </div>
-  );
-}
-
-type Suggestion = {
-  index: number;
-  title: string;
-  text: string;
-  action: string;
-  impact: "Alto impacto" | "Médio impacto" | "Baixo impacto";
-  annotation?: InlineAnnotation;
-};
-
-function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestion; active: boolean; onClick: () => void }) {
-  const impactTone =
-    suggestion.impact === "Alto impacto"
-      ? "bg-primary/12 text-primary"
-      : suggestion.impact === "Médio impacto"
-        ? "bg-secondary text-foreground"
-        : "bg-accent/12 text-accent";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "w-full rounded-md border border-border bg-card p-4 text-left transition-colors hover:border-primary/45",
-        active && "border-primary bg-primary/10",
-      )}
-    >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span
-            className={cn(
-              "grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-semibold",
-              annotationTone(suggestion.annotation).number,
-            )}
-          >
-            {suggestion.index}
-          </span>
-          <div>
-            <p className="font-semibold">{suggestion.title}</p>
-            {suggestion.annotation ? (
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">{competencyLabel(suggestion.annotation.competency)}</p>
-            ) : null}
-          </div>
-        </div>
-        <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold", impactTone)}>{suggestion.impact}</span>
-      </div>
-      <p className="text-sm leading-6 text-foreground/85">{suggestion.text}</p>
-      <div className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-primary">
-        <span className="inline-flex items-center gap-2">
-          {suggestion.action.includes("citação") ? (
-            <Link2 className="h-4 w-4" aria-hidden="true" />
-          ) : (
-            <WandSparkles className="h-4 w-4" aria-hidden="true" />
-          )}
-          {suggestion.action}
-        </span>
-        <MoreHorizontal className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-      </div>
-    </button>
-  );
-}
-
-function buildSuggestionCards(correction: Essay["correction"], annotations: InlineAnnotation[], tab: AnalysisTab): Suggestion[] {
-  const base = annotations.map((annotation, index) => ({
-    index: index + 1,
-    title: suggestionTitle(annotation, index),
-    text: annotation.comment,
-    action: annotation.competency === "c2" || annotation.competency === "c3" ? "Adicionar citação" : "Reforçar com IA",
-    impact: index === 0 ? "Alto impacto" : index === 1 ? "Médio impacto" : "Baixo impacto",
-    annotation,
-  })) satisfies Suggestion[];
-
-  const filtered = base.filter((item) => {
-    if (tab === "geral") return true;
-    if (tab === "estrutura") return ["c2", "c3", "c5"].includes(item.annotation.competency);
-    if (tab === "clareza") return ["c1", "c4"].includes(item.annotation.competency);
-    if (tab === "estilo") return item.annotation.type === "strength" || item.annotation.competency === "c4";
-    return ["c2", "c3"].includes(item.annotation.competency);
-  });
-
-  if (filtered.length) return filtered;
-  return (correction?.suggestions ?? []).slice(0, 4).map((text, index) => ({
-    index: index + 1,
-    title: ["Força da tese", "Evidência", "Transições", "Conclusão"][index] ?? "Ajuste fino",
-    text,
-    action: index === 1 ? "Adicionar citação" : "Reforçar com IA",
-    impact: index === 0 ? "Alto impacto" : index === 1 ? "Médio impacto" : "Baixo impacto",
-  }));
-}
-
-function annotationTone(annotation?: InlineAnnotation | null) {
-  if (!annotation) {
-    return {
-      mark: "bg-primary/20 decoration-primary",
-      marker: "border-primary bg-primary/10 text-primary-foreground",
-      panel: "border-primary/30 bg-primary/10",
-      number: "bg-primary/20 text-primary-foreground",
-    };
-  }
-  if (annotation.type === "strength") {
-    return {
-      mark: "bg-emerald-100 decoration-emerald-500",
-      marker: "border-emerald-300 bg-emerald-50 text-emerald-700",
-      panel: "border-emerald-200 bg-emerald-50",
-      number: "bg-emerald-100 text-emerald-700",
-    };
-  }
-  return {
-    mark: "bg-primary/25 decoration-primary",
-    marker: "border-primary bg-primary/10 text-primary-foreground",
-    panel: "border-primary/30 bg-primary/10",
-    number: "bg-primary/25 text-primary-foreground",
-  };
-}
-
-function suggestionTitle(annotation: InlineAnnotation, index: number) {
-  const labels: Record<string, string> = {
-    c1: "Norma e precisão",
-    c2: "Força da tese",
-    c3: "Evidência",
-    c4: "Transições",
-    c5: "Intervenção",
-  };
-  return labels[annotation.competency] ?? ["Comentário", "Ajuste", "Destaque"][index] ?? "Comentário";
-}
-
-function competencyLabel(value: string) {
-  const labels: Record<string, string> = {
-    c1: "Competência 1 · Norma-padrão",
-    c2: "Competência 2 · Tema e gênero",
-    c3: "Competência 3 · Argumentação",
-    c4: "Competência 4 · Coesão",
-    c5: "Competência 5 · Intervenção",
-  };
-  return labels[value] ?? value.toUpperCase();
-}
-
-function slugify(value: string) {
-  return (
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "")
-      .slice(0, 70) || "redacao"
-  );
-}
-
 function CorrectionPanel({ correction, error }: { correction: Essay["correction"]; error: string }) {
   return (
     <Surface>
@@ -1138,7 +399,7 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
               ["C5", correction.competency_5],
             ].map(([label, value]) => (
               <div key={label} className="grid grid-cols-[2rem_1fr_3rem] items-center gap-2 text-sm">
-                <span className="font-semibold">{label}</span>
+                <CompetencyLabel code={String(label)} />
                 <Progress value={(Number(value) / 200) * 100} className="h-2" />
                 <span className="text-right font-semibold">{value}</span>
               </div>
@@ -1156,27 +417,4 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
       ) : null}
     </Surface>
   );
-}
-
-function countWords(value: string) {
-  return value.trim() ? value.trim().split(/\s+/).length : 0;
-}
-
-function countParagraphs(value: string) {
-  const stripped = value.trim();
-  if (!stripped) return 0;
-  if (/\n\s*\n/.test(stripped)) return stripped.split(/\n\s*\n+/).filter((paragraph) => paragraph.trim()).length;
-  return stripped.split(/\n+/).filter((line) => line.trim()).length;
-}
-
-function replaceEssayUrl(essayId?: number, mode?: EssayViewMode) {
-  if (typeof window === "undefined") return;
-  if (!essayId) {
-    window.history.replaceState(null, "", "/redacao");
-    return;
-  }
-
-  const params = new URLSearchParams({ essayId: String(essayId) });
-  if (mode === "analysis") params.set("view", "analise");
-  window.history.replaceState(null, "", `/redacao?${params.toString()}`);
 }

@@ -133,9 +133,18 @@ def rewrite_from_version(essay_id: int, version_id: int, current_user: User = De
     )
 
 
-@router.post("/{essay_id}/reprocess", response_model=ApiResponse[EssayRead])
-def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssayRead]:
-    return success_response(EssayService(db).reprocess(essay_id=essay_id, user=current_user), "Correcao reprocessada.")
+@router.post("/{essay_id}/reprocess", response_model=ApiResponse[EssaySubmitResponse])
+def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
+    essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
+    job = AIJobService(db).create(
+        user_id=current_user.id,
+        kind="essay_correction",
+        request_payload={"essay_id": essay_id, "award_points": False},
+    )
+    enqueued = enqueue_correct_essay(job.id)
+    if not enqueued:
+        run_correct_essay_job(job.id)
+    return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Reprocessamento iniciado.")
 
 
 @router.delete("/{essay_id}", response_model=ApiResponse[MessageResponse])
