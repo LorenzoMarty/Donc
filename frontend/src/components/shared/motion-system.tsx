@@ -24,6 +24,10 @@ import { cn } from "@/utils";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
 
+// Referencia estavel: um novo `[]` a cada render faz o seletor do zustand achar que o
+// estado mudou (comparacao por referencia) e re-renderizar em loop infinito.
+const EMPTY_HIGHLIGHTS: MotivadorHighlight[] = [];
+
 export function AnimatedGameCard({
   children,
   className,
@@ -118,7 +122,7 @@ export function InteractiveMascot({ mood = "ready", size = "md" }: { mood?: "rea
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, ease: easeOut }}
       className={cn(
-        "grid shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary",
+        "grid shrink-0 place-items-center rounded-control bg-primary/12 text-primary",
         size === "sm" ? "h-10 w-10" : "h-16 w-16",
       )}
       aria-label="Indicador de progresso"
@@ -173,11 +177,13 @@ export function WritingSidebar({
   paragraphs,
   structureProgress,
   theme,
+  personalizedTip,
 }: {
   lines: number;
   paragraphs: number;
   structureProgress: number;
   theme?: EssayTheme | null;
+  personalizedTip?: { title: string; text: string } | null;
 }) {
   const [tab, setTab] = useState<"guia" | "motivadores">("guia");
   const hasMotivadores = Boolean(theme?.supporting_texts?.length);
@@ -234,6 +240,15 @@ export function WritingSidebar({
                 <WriterMetric label="Paragrafos" value={`${paragraphs}`} progress={Math.min(100, (paragraphs / 4) * 100)} />
               </div>
             </div>
+            {personalizedTip ? (
+              <div className="rounded-md bg-highlight-tint p-2.5">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-highlight">
+                  Seu ponto de atenção
+                </p>
+                <p className="text-xs font-bold leading-5">{personalizedTip.title}</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{personalizedTip.text}</p>
+              </div>
+            ) : null}
             <div className="pt-1">
               <p className="mb-2 text-sm font-semibold">Sugestoes rapidas</p>
               <SmartSuggestions
@@ -489,7 +504,7 @@ function HighlightableText({
   content: string;
 }) {
   const containerRef = useRef<HTMLParagraphElement>(null);
-  const highlights = useHighlightsStore((state) => state.highlightsByTheme[themeId] ?? []);
+  const highlights = useHighlightsStore((state) => state.highlightsByTheme[themeId] ?? EMPTY_HIGHLIGHTS);
   const addHighlight = useHighlightsStore((state) => state.addHighlight);
   const removeHighlight = useHighlightsStore((state) => state.removeHighlight);
   const textHighlights = highlights.filter((h) => h.textIndex === textIndex);
@@ -529,7 +544,9 @@ function HighlightableText({
 }
 
 function HighlightsSummary({ themeId }: { themeId?: number }) {
-  const highlights = useHighlightsStore((state) => (themeId != null ? (state.highlightsByTheme[themeId] ?? []) : []));
+  const highlights = useHighlightsStore((state) =>
+    themeId != null ? state.highlightsByTheme[themeId] ?? EMPTY_HIGHLIGHTS : EMPTY_HIGHLIGHTS,
+  );
   const removeHighlight = useHighlightsStore((state) => state.removeHighlight);
 
   if (themeId == null || !highlights.length) return null;
@@ -559,34 +576,6 @@ function HighlightsSummary({ themeId }: { themeId?: number }) {
   );
 }
 
-export function ENEMWritingSheet({
-  value,
-  disabled,
-  autoFocus,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  disabled?: boolean;
-  autoFocus?: boolean;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <EssayPaper>
-      <textarea
-        value={value}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        onChange={(event) => onChange(event.target.value)}
-        spellCheck
-        className="relative z-10 h-full w-full resize-none bg-transparent px-[9%] py-[8%] text-base leading-8 text-[#333333] caret-primary outline-none selection:bg-primary/22 placeholder:text-muted-foreground/65 [font-family:var(--font-merriweather,Georgia,serif)]"
-        placeholder={placeholder}
-      />
-    </EssayPaper>
-  );
-}
-
 function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
   return (
     <div className="space-y-2">
@@ -605,25 +594,6 @@ function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
         </motion.button>
       ))}
     </div>
-  );
-}
-
-function EssayPaper({ children }: { children: ReactNode }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.985, y: 12 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.42, ease: easeOut }}
-      className="relative mx-auto aspect-[210/297] w-full max-w-[720px] overflow-hidden rounded-md border border-border bg-card text-[#333333] shadow-[0_20px_60px_rgba(20,30,55,.10)]"
-    >
-      <div className="pointer-events-none absolute inset-y-[7%] left-[7%] w-px bg-primary/30" />
-      <div className="pointer-events-none absolute left-[3%] top-[8%] grid gap-[13px] font-mono text-[10px] font-semibold text-muted-foreground/70">
-        {Array.from({ length: 30 }, (_, index) => (
-          <span key={index}>{String(index + 1).padStart(2, "0")}</span>
-        ))}
-      </div>
-      {children}
-    </motion.div>
   );
 }
 

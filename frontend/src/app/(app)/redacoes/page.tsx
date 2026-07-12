@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Plus, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Clock3, PenLine, Plus, Search, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
+import { EssayStatusPill } from "@/components/shared/essay-status-pill";
 import { LoadingCard } from "@/components/shared/loading-card";
+import { PageHeader } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch, type Essay, type EssayHistory } from "@/services/api";
@@ -13,28 +16,30 @@ import { cn } from "@/utils";
 
 type StatusFilter = "all" | "draft" | "submitted" | "corrected";
 
-const statusLabel: Record<Essay["status"], string> = {
-  draft: "Rascunho",
-  submitted: "Em analise",
-  corrected: "Corrigida",
-};
-
 const filters: { id: StatusFilter; label: string }[] = [
   { id: "all", label: "Todas" },
   { id: "draft", label: "Rascunhos" },
-  { id: "submitted", label: "Em analise" },
+  { id: "submitted", label: "Em análise" },
   { id: "corrected", label: "Corrigidas" },
 ];
 
 export default function EssayHistoryPage() {
   const [history, setHistory] = useState<EssayHistory | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [busyAction, setBusyAction] = useState("");
   const [actionError, setActionError] = useState("");
 
   const loadHistory = useCallback(() => {
-    return apiFetch<EssayHistory>("/essays/history").then(setHistory);
+    return apiFetch<EssayHistory>("/essays/history")
+      .then((data) => {
+        setHistory(data);
+        setLoadError("");
+      })
+      .catch((error: unknown) => {
+        setLoadError(error instanceof Error ? error.message : "Não foi possível carregar suas redações.");
+      });
   }, []);
 
   useEffect(() => {
@@ -70,25 +75,24 @@ export default function EssayHistoryPage() {
     }
   }
 
+  if (loadError && !history) return <ErrorState description={loadError} onRetry={loadHistory} />;
   if (!history) return <LoadingCard />;
 
   return (
     <div className="text-foreground">
-      <header className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Historico</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-normal">Redacoes escritas</h1>
-          <p className="mt-1 text-base text-muted-foreground">
-            {essays.length} redacao{essays.length === 1 ? "" : "es"} registradas
-          </p>
-        </div>
-        <Button asChild className="w-full md:w-auto">
-          <Link href="/redacao">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Nova redacao
-          </Link>
-        </Button>
-      </header>
+      <PageHeader
+        eyebrow="Histórico"
+        title="Redações escritas"
+        description={`${essays.length} ${essays.length === 1 ? "redação" : "redações"} registradas`}
+        action={
+          <Button asChild className="w-full md:w-auto">
+            <Link href="/redacao">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nova redacao
+            </Link>
+          </Button>
+        }
+      />
 
       <section className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-sm">
@@ -111,10 +115,10 @@ export default function EssayHistoryPage() {
               type="button"
               onClick={() => setFilter(item.id)}
               className={cn(
-                "min-h-9 rounded-md border px-3 text-sm font-semibold transition-colors",
+                "min-h-11 rounded-control px-3 text-sm font-semibold transition-colors",
                 filter === item.id
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-white text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {item.label}
@@ -135,7 +139,7 @@ export default function EssayHistoryPage() {
           <EmptyState title="Nenhuma redação ainda" description="Escreva sua primeira redação no editor para começar o histórico." />
         </div>
       ) : (
-        <section className="mt-5 overflow-hidden rounded-md border border-border bg-white">
+        <section className="mt-5 overflow-hidden rounded-card bg-card shadow-soft">
           {filteredEssays.length === 0 ? (
             <div className="px-5 py-10 text-center">
               <p className="text-base font-semibold">Nenhuma redação encontrada.</p>
@@ -150,7 +154,7 @@ export default function EssayHistoryPage() {
                   busy={busyAction === `delete-${essay.id}`}
                   onDelete={() =>
                     runAction(`delete-${essay.id}`, async () => {
-                      if (!window.confirm(essay.status === "draft" ? "Excluir este rascunho?" : "Excluir esta redacao e sua correcao?"))
+                      if (!window.confirm(essay.status === "draft" ? "Excluir este rascunho?" : "Excluir esta redação e sua correção?"))
                         return;
                       await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
                       await loadHistory();
@@ -171,34 +175,51 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
 
   return (
     <article className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-primary/5 md:px-5">
-      <Link href={href} className="grid min-w-0 gap-1 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5">
+      <Link href={href} className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-center gap-3 md:grid-cols-[3rem_minmax(0,1fr)_auto] md:gap-5">
+        <EssayScoreMark status={essay.status} score={essay.score} />
+
         <div className="min-w-0">
           <h2 className="truncate text-lg font-semibold tracking-normal">{essay.title}</h2>
           <p className="mt-1 truncate text-sm text-muted-foreground">{essay.theme.title}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          {essay.score ? <span className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-bold text-primary">{essay.score}</span> : null}
-          <span
-            className={cn(
-              "rounded-md px-2.5 py-1 text-sm font-semibold",
-              essay.status === "corrected" && "bg-primary/10 text-primary",
-              essay.status === "submitted" && "bg-primary/10 text-primary",
-              essay.status === "draft" && "bg-muted text-muted-foreground",
-            )}
-          >
-            {statusLabel[essay.status]}
-          </span>
+        <div className="col-span-2 flex flex-wrap items-center gap-2 pt-2 md:col-span-1 md:justify-end md:pt-0">
+          <EssayStatusPill status={essay.status} className="rounded-full" />
           <span className="text-sm text-muted-foreground">{formatDate(essay.updated_at)}</span>
           <span className="hidden text-sm text-muted-foreground sm:inline">{essay.word_count} palavras</span>
           <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         </div>
       </Link>
 
-      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redacao" className="h-9 w-9">
+      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redacao" className="h-11 w-11">
         <Trash2 className="h-4 w-4" aria-hidden="true" />
       </Button>
     </article>
+  );
+}
+
+function EssayScoreMark({ status, score }: { status: Essay["status"]; score: number | null }) {
+  if (status === "corrected" && score !== null) {
+    return (
+      <div className="grid h-12 w-12 place-items-center rounded-control bg-primary/12 text-center text-primary">
+        <span className="block text-lg font-bold leading-none tabular-nums">{score}</span>
+        <span className="mt-0.5 block text-[0.6rem] font-semibold text-primary/70">/1000</span>
+      </div>
+    );
+  }
+
+  if (status === "submitted") {
+    return (
+      <div className="grid h-12 w-12 place-items-center rounded-control bg-info-tint text-info">
+        <Clock3 className="h-5 w-5" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid h-12 w-12 place-items-center rounded-control bg-muted text-muted-foreground">
+      <PenLine className="h-5 w-5" aria-hidden="true" />
+    </div>
   );
 }
 

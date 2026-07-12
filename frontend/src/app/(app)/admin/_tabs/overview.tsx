@@ -55,7 +55,7 @@ export function AdminOverviewTab({ metrics, activity }: { metrics: AdminMetrics;
         </div>
       ) : null}
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-card bg-card shadow-soft">
         <div className="border-b p-4">
           <h2 className="font-semibold">Uso por funcionalidade</h2>
           <p className="mt-1 text-xs text-muted-foreground">Últimos {activity.period_days} dias</p>
@@ -87,9 +87,9 @@ export function AdminOverviewTab({ metrics, activity }: { metrics: AdminMetrics;
 function HighlightCard({ tone, title, label, count }: { tone: "up" | "down"; title: string; label: string; count: number }) {
   const Icon = tone === "up" ? ArrowUpRight : ArrowDownRight;
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-card bg-card p-4 shadow-soft">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className={tone === "up" ? "h-4 w-4 text-emerald-500" : "h-4 w-4 text-amber-500"} />
+        <Icon className={tone === "up" ? "h-4 w-4 text-success" : "h-4 w-4 text-streak"} />
         {title}
       </div>
       <p className="mt-2 text-lg font-semibold">{label}</p>

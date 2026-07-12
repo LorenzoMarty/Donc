@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Trophy } from "lucide-react";
 
+import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -14,13 +15,29 @@ import { apiFetch, type MockExamAttemptSummary } from "@/services/api";
 export default function ExamHistoryPage() {
   const [attempts, setAttempts] = useState<MockExamAttemptSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  useEffect(() => {
-    apiFetch<MockExamAttemptSummary[]>("/exams/attempts")
-      .then(setAttempts)
+  const loadAttempts = useCallback(() => {
+    return apiFetch<MockExamAttemptSummary[]>("/exams/attempts")
+      .then((data) => {
+        setAttempts(data);
+        setLoadError("");
+      })
+      .catch((err: unknown) => setLoadError(err instanceof Error ? err.message : "Não foi possível carregar o histórico."))
       .finally(() => setLoading(false));
   }, []);
 
+  function retryLoadAttempts() {
+    setLoading(true);
+    setLoadError("");
+    loadAttempts();
+  }
+
+  useEffect(() => {
+    loadAttempts();
+  }, [loadAttempts]);
+
+  if (loadError) return <ErrorState description={loadError} onRetry={retryLoadAttempts} />;
   if (loading) return <LoadingCard />;
 
   return (

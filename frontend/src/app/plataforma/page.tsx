@@ -43,7 +43,7 @@ export default function PlatformPage() {
                   const Icon = pillar.icon;
                   return (
                     <div key={pillar.title} className="game-tile flex gap-4 bg-card/80 p-4">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-primary/12 text-primary">
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </div>
                       <div>

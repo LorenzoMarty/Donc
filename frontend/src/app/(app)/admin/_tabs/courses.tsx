@@ -139,7 +139,7 @@ export function CoursesTab({
             onMoveItem={moveItem}
           />
         ))}
-        {!courses.length ? <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">Nenhum curso cadastrado.</p> : null}
+        {!courses.length ? <p className="rounded-card bg-card p-6 text-sm text-muted-foreground shadow-soft">Nenhum curso cadastrado.</p> : null}
       </div>
 
       {modal?.kind === "course" ? (
@@ -268,7 +268,7 @@ function ModuleNode({
   const items = normalizedItems(module);
 
   return (
-    <div className="rounded-md border bg-background/40 p-3">
+    <div className="rounded-control bg-background/40 p-3 shadow-soft">
       <div className="flex items-start gap-2">
         <Folder className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <div className="min-w-0 flex-1">
@@ -281,8 +281,8 @@ function ModuleNode({
 
       <div className="mt-2 grid gap-1 pl-6">
         {items.map((item, index) => (
-          <div key={`${item.kind}-${item.id}`} className="flex items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/50">
-            {item.kind === "lesson" ? <BookOpen className="h-3.5 w-3.5 shrink-0 text-primary" /> : <ClipboardList className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
+          <div key={`${item.kind}-${item.id}`} className="flex items-center gap-2 rounded-control px-1 py-1 hover:bg-muted/50">
+            {item.kind === "lesson" ? <BookOpen className="h-3.5 w-3.5 shrink-0 text-primary" /> : <ClipboardList className="h-3.5 w-3.5 shrink-0 text-streak" />}
             <span className="min-w-0 flex-1 truncate text-xs">
               {item.order}. {item.kind === "lesson" ? item.lesson?.title : item.activity?.statement}
             </span>
@@ -624,13 +624,13 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
       footer={<ModalActions busy={busy} onClose={onClose} onSubmit={submit} />}
     >
       <div className="grid gap-4">
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
+        <div className="rounded-card bg-primary/5 p-3.5 shadow-soft">
           <div className="mb-2 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
             <p className="text-sm font-semibold">Gerar com IA</p>
           </div>
           <Field label="Aulas usadas como base" hint="Selecione ao menos uma aula para a IA se basear.">
-            <div className="grid gap-1 rounded-md border bg-card p-2">
+            <div className="grid gap-1 rounded-control bg-card p-2 shadow-soft">
               {courseModule.lessons.length ? (
                 courseModule.lessons.map((lesson) => {
                   const checked = draft.base_lesson_ids.includes(lesson.id);
@@ -638,7 +638,7 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
                     <label
                       key={lesson.id}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-muted/60",
+                        "flex cursor-pointer items-center gap-2 rounded-control px-2 py-1.5 text-xs transition-colors hover:bg-muted/60",
                         checked && "bg-primary/8 font-medium",
                       )}
                     >

@@ -20,7 +20,7 @@ export function AccountCard() {
 
   return (
     <Surface className="bg-primary text-primary-foreground">
-      <div className="flex flex-col gap-4 xs:flex-row xs:items-center xs:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
         <div className="grid h-20 w-20 shrink-0 place-items-center rounded-md border border-foreground/20 bg-foreground/10 text-2xl font-semibold text-foreground">
           {initials(user?.name ?? "Aluno")}
         </div>
@@ -32,11 +32,19 @@ export function AccountCard() {
             <p className="mt-1 text-xs text-foreground/55">Membro desde {formatMemberSince(user.created_at)}</p>
           ) : null}
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setEditingName(true)}>
+            <Button
+              size="sm"
+              className="border-white/20 bg-white/15 text-primary-foreground hover:bg-white/25"
+              onClick={() => setEditingName(true)}
+            >
               <Pencil className="h-4 w-4" aria-hidden="true" />
               Editar nome
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setChangingPassword(true)}>
+            <Button
+              size="sm"
+              className="border-white/20 bg-white/15 text-primary-foreground hover:bg-white/25"
+              onClick={() => setChangingPassword(true)}
+            >
               <KeyRound className="h-4 w-4" aria-hidden="true" />
               Alterar senha
             </Button>

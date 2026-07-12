@@ -118,7 +118,7 @@ function GameCard({
   }
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="rounded-card bg-card shadow-soft">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 p-4 text-left"
@@ -140,7 +140,7 @@ function GameCard({
         <div className="collapse-in border-t p-4 space-y-4">
           <div className="space-y-4">
             {questions.map((q, qi) => (
-              <div key={qi} className="rounded-md border bg-background/60 p-3 space-y-2.5">
+              <div key={qi} className="rounded-control bg-background/60 p-3 shadow-soft space-y-2.5">
                 <div className="flex items-start gap-2">
                   <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[0.65rem] font-bold text-primary">Q{qi + 1}</span>
                   <Textarea
@@ -176,7 +176,7 @@ function GameCard({
           </div>
 
           {editingQ && game.status === "pending" && (
-            <p className="text-xs text-amber-600">Questões editadas. As alterações serão salvas ao aprovar/rejeitar.</p>
+            <p className="text-xs text-streak">Questões editadas. As alterações serão salvas ao aprovar/rejeitar.</p>
           )}
 
           {game.status === "pending" ? (
@@ -283,7 +283,7 @@ export function AIGamesTab({
   return (
     <div className="space-y-6">
       {/* Generator panel */}
-      <div className="rounded-lg border bg-card p-5 space-y-4">
+      <div className="rounded-card bg-card p-5 shadow-soft space-y-4">
         <div className="flex items-center gap-2">
           <Wand2 className="h-4 w-4 text-primary" />
           <h2 className="font-semibold">Gerar novo jogo com IA</h2>
@@ -323,7 +323,7 @@ export function AIGamesTab({
             type="button"
             onClick={() => setStatusFilter(s)}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-control border px-3 py-1.5 text-xs font-medium transition-colors",
               statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted",
             )}
           >
@@ -337,7 +337,7 @@ export function AIGamesTab({
           <GameCard key={game.id} game={game} onReviewed={onReviewed} onDeleted={onDeleted} />
         ))}
         {filtered.length === 0 && (
-          <div className="rounded-lg border bg-card p-8 text-center">
+          <div className="rounded-card bg-card p-8 text-center shadow-soft">
             <p className="text-sm text-muted-foreground">
               {statusFilter === "pending" ? "Sem jogos pendentes de revisão." : "Nenhum jogo encontrado."}
             </p>

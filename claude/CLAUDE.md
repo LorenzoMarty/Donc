@@ -10,26 +10,13 @@ Este arquivo fornece orientações ao Claude Code (claude.ai/code) ao trabalhar 
 
 ## Política de Trabalho do Claude
 
-<!-- regras-claude v2026-06-12 -->
-Regras obrigatórias para trabalhar nos projetos:
-
-0. Idioma — usuário pt-BR; código/docs do projeto em inglês.
-1. Análise mínima — leia só o relevante à tarefa.
-2. Doc antes de código — dúvida? Leia o `claude/CLAUDE.md` e o contexto do projeto no Obsidian
-   (ponteiro em `## Contexto no Obsidian`) primeiro.
-   Porquê: doc condensa decisões que o código não explica; explorar código custa 10x mais.
-3. Doc sincronizada — ao concluir, registre o contexto no Obsidian (skill `claude-obsidian`) e
-   atualize o que for impactado.
-4. Escopo fechado — só o pedido; achado importante vira observação, não refactor.
-5. Sem dependência nova sem justificar.
-6. Sem presunção — doc incompleta + código não confirma = declare incerteza.
-7. Sem mudança silenciosa — fluxo/API/auth/persistência: avise explicitamente.
-8. Alerte antes de destruir — migração/reset/limpeza: impacto antes de executar.
+Regras 0-8 vivem no global (`~/.claude/CLAUDE.md`, seção "Política de Trabalho do Claude"). Regra 3
+usa skill `claude-obsidian` neste projeto (corrigido de `knowledge-manager`, que é camada de contexto
+por projeto, não registro de decisões/arquitetura).
 
 > Nota sobre as duas camadas de CLAUDE.md: a raiz tem um `CLAUDE.md` curto que só faz
 > `@claude/CLAUDE.md` para reativar o auto-load. O arquivo real de instruções é
 > **`claude/CLAUDE.md`** — edite-o lá, não na raiz.
-<!-- /regras-claude -->
 
 ### Regras específicas deste projeto
 
@@ -47,7 +34,7 @@ Regras obrigatórias para trabalhar nos projetos:
 
 O contexto que cresce (registros de tarefa, arquitetura, decisões) vive no vault **E_Mind**, em
 `02 - Projetos/Donc ENEM/` (hub `Donc ENEM.md` + `Arquitetura.md` + `Decisões.md` + `Registros/`).
-Gravado/atualizado pela skill `claude-obsidian` (regra 3). Para dúvidas sobre o sistema, leia este
+Gravado/atualizado pela skill `knowledge-manager` (regra 3). Para dúvidas sobre o sistema, leia este
 arquivo e o contexto lá antes de explorar código (regra 2). **Não** recriar `claude/docs/` no repo.
 
 ---

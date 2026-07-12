@@ -72,7 +72,7 @@ export default function LoginPage() {
           </Card>
         </MotionShell>
       </section>
-      <section className="hidden border-l border-border bg-card lg:block">
+      <section className="hidden bg-card lg:block">
         <div className="flex h-full items-end bg-cover bg-center p-10" style={{ backgroundImage: "url('/study-collaboration.jpg')" }}>
           <div className="game-surface max-w-lg bg-background/90 p-5">
             <p className="mb-3 text-sm font-semibold text-primary">Redação, dados e IA</p>

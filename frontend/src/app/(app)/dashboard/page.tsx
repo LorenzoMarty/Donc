@@ -6,7 +6,8 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BookOpen, Clock3, FileText, PenLine, Plus, Sparkles, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 
-import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
+import { EssayStatusPill } from "@/components/shared/essay-status-pill";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { Rail } from "@/components/shared/rail";
@@ -51,12 +52,6 @@ type TaskRow = {
   unit: string;
 };
 
-const statusLabel: Record<Essay["status"], string> = {
-  draft: "Rascunho",
-  submitted: "IA analisando",
-  corrected: "Corrigida",
-};
-
 export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Dashboard | null>(null);
@@ -95,11 +90,7 @@ export default function DashboardPage() {
   const latestEssay = essays[0];
 
   if (error) {
-    return (
-      <div>
-        <EmptyState title="Dados indisponiveis" description={error} />
-      </div>
-    );
+    return <ErrorState title="Dados indisponíveis" description={error} />;
   }
 
   if (!data) {
@@ -180,15 +171,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="text-[#0f172a]">
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,1fr)]">
-        <div className="relative overflow-hidden rounded-[28px] border border-primary/20 bg-primary/10 p-8 md:p-10">
-          <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/38" />
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary/80">Bom dia, {studentName}</p>
+    <div className="text-foreground">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,1fr)]">
+        <div className="relative overflow-hidden rounded-card bg-primary p-8 text-primary-foreground md:p-10">
+          <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/12" />
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary-foreground/80">Bom dia, {studentName}</p>
           <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-tight tracking-normal md:text-5xl">{heroCopy.title}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">{heroCopy.description}</p>
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-primary-foreground/90">{heroCopy.description}</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Button asChild className="h-12 rounded-xl px-5 text-base">
+            <Button
+              asChild
+              className="h-12 rounded-control bg-white px-5 text-base text-primary hover:bg-white/90"
+            >
               <Link href={heroHref}>
                 <PenLine className="h-4 w-4" aria-hidden="true" />
                 {latestDraft ? "Continuar redacao" : "Comecar redacao"}
@@ -197,26 +191,28 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-border bg-white p-7">
+        <div className="rounded-card bg-streak-tint p-7">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-lg font-semibold text-slate-500">Sequencia</p>
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+            <p className="text-lg font-semibold text-muted-foreground">Sequência</p>
+            <span className="rounded-full bg-streak px-3 py-1 text-sm font-bold text-streak-foreground">
               {streak > 0 ? "+1 hoje" : "comece hoje"}
             </span>
           </div>
           <div className="mt-5 flex items-end gap-3">
-            <span className="text-7xl font-bold leading-none tracking-normal">{streak}</span>
-            <span className="mb-2 text-2xl font-semibold text-slate-600">dias</span>
+            <span className="text-7xl font-bold leading-none tracking-normal tabular-nums">{streak}</span>
+            <span className="mb-2 text-2xl font-semibold text-muted-foreground">dias</span>
           </div>
-          <p className="mt-3 text-base text-slate-500">{streak > 0 ? "Sequência ativa" : "Faça uma atividade hoje para começar"}</p>
+          <p className="mt-3 text-base text-muted-foreground">{streak > 0 ? "Sequência ativa" : "Faça uma atividade hoje para começar"}</p>
           <div className="mt-7 grid grid-cols-7 gap-2">
             {buildWeekProgress(streak).map((day) => (
               <div
                 key={day.key}
                 className={cn(
-                  "grid h-9 place-items-center rounded-xl text-sm font-bold",
-                  day.active ? "bg-primary text-primary-foreground" : "bg-slate-100 text-slate-400",
-                  day.today && "ring-2 ring-primary ring-offset-2",
+                  "grid aspect-square place-items-center rounded-full border-2 text-sm font-bold",
+                  day.active
+                    ? "border-streak bg-streak text-streak-foreground"
+                    : "border-border bg-transparent text-muted-foreground",
+                  day.today && "ring-2 ring-streak ring-offset-2 ring-offset-streak-tint",
                 )}
               >
                 {day.label}
@@ -226,8 +222,9 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          tone="g"
           icon={Sparkles}
           label="Nota media"
           value={average ? String(average) : "--"}
@@ -236,6 +233,7 @@ export default function DashboardPage() {
           href="/redacoes"
         />
         <StatCard
+          tone="b"
           icon={FileText}
           label="Redacoes enviadas"
           value={String(essaysWritten)}
@@ -243,6 +241,7 @@ export default function DashboardPage() {
           href="/redacoes"
         />
         <StatCard
+          tone="a"
           icon={Clock3}
           label="Tempo de estudo"
           value={studyValue}
@@ -251,6 +250,7 @@ export default function DashboardPage() {
           href="/aulas"
         />
         <StatCard
+          tone="v"
           icon={Video}
           label="Aulas assistidas"
           value={String(completedLessons)}
@@ -259,15 +259,15 @@ export default function DashboardPage() {
         />
       </section>
 
-      <section className="mt-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <section className="mt-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-normal">Suas redações</h2>
-          <p className="mt-1 text-base text-slate-500">Correções, rascunhos e histórico do mês</p>
+          <p className="mt-1 text-base text-muted-foreground">Correções, rascunhos e histórico do mês</p>
         </div>
       </section>
 
-      <section className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,1fr)]">
-        <div className="overflow-hidden rounded-[22px] border border-border bg-white">
+      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,1fr)]">
+        <div className="overflow-hidden rounded-card bg-card shadow-soft">
           {essays.length ? (
             <div>
               {essays.map((essay) => (
@@ -279,11 +279,11 @@ export default function DashboardPage() {
                   <ScoreBadge score={essay.score} />
                   <div className="min-w-0">
                     <p className="truncate text-lg font-bold">{essay.title}</p>
-                    <p className="mt-1 truncate text-base text-slate-500">{essay.meta}</p>
+                    <p className="mt-1 truncate text-base text-muted-foreground">{essay.meta}</p>
                   </div>
                   <div className="col-span-2 flex items-center justify-between gap-4 sm:col-span-1 sm:justify-end">
-                    <StatusPill status={essay.status} />
-                    <ArrowRight className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                    <EssayStatusPill status={essay.status} />
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                   </div>
                 </Link>
               ))}
@@ -292,7 +292,7 @@ export default function DashboardPage() {
             <div className="grid min-h-64 place-items-center px-6 py-10 text-center">
               <div>
                 <p className="text-lg font-bold">Nenhuma redação ainda.</p>
-                <p className="mt-2 text-base text-slate-500">Escreva uma redação para começar seu histórico.</p>
+                <p className="mt-2 text-base text-muted-foreground">Escreva uma redação para começar seu histórico.</p>
                 <Button asChild className="mt-5">
                   <Link href="/redacao">
                     <PenLine className="h-4 w-4" aria-hidden="true" />
@@ -304,7 +304,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="grid gap-5">
+        <div className="grid min-w-0 gap-4">
           <LessonsRailCard title="Continuar assistindo" emptyLabel="Nenhuma aula acessada ainda." lessons={lessons} />
           {suggestedLessons.length ? (
             <LessonsRailCard title="Recomendados pra você" emptyLabel="" lessons={suggestedLessons} />
@@ -339,11 +339,11 @@ function LessonsRailCard({
   lessons: LessonRow[];
 }) {
   return (
-    <div className="rounded-[22px] border border-border bg-white p-6">
+    <div className="min-w-0 rounded-card bg-card shadow-soft p-6">
       <Rail
         title={title}
         action={
-          <Link href="/aulas" className="text-sm font-semibold text-slate-500 hover:text-primary">
+          <Link href="/aulas" className="text-sm font-semibold text-muted-foreground hover:text-primary">
             ver todas
           </Link>
         }
@@ -364,9 +364,9 @@ function LessonsRailCard({
             />
           ))
         ) : (
-          <div className="w-full rounded-xl border border-dashed border-border p-4 text-sm text-slate-500">
+          <div className="w-full rounded-control border border-dashed border-border p-4 text-sm text-muted-foreground">
             {emptyLabel}
-            <Button asChild size="sm" className="mt-4 w-full rounded-xl">
+            <Button asChild size="sm" className="mt-4 w-full rounded-control">
               <Link href="/aulas">
                 <BookOpen className="h-4 w-4" aria-hidden="true" />
                 Abrir aulas
@@ -381,28 +381,28 @@ function LessonsRailCard({
 
 function CompetenciesCard({ items }: { items: CompetencyRow[] }) {
   return (
-    <div className="rounded-[22px] border border-border bg-white p-6">
+    <div className="min-w-0 rounded-card bg-card shadow-soft p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-normal">Competencias ENEM</h2>
-        <Link href="/redacoes" className="text-sm font-semibold text-slate-500 hover:text-primary">
+        <Link href="/redacoes" className="text-sm font-semibold text-muted-foreground hover:text-primary">
           ultima redacao
         </Link>
       </div>
       <div className="mt-5 grid gap-3">
         {items.map((item) => (
           <div key={item.competency} className="grid grid-cols-[2.3rem_minmax(0,1fr)_4.8rem] items-center gap-3">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-xs font-bold leading-none text-primary">
+            <div className="grid h-8 w-8 place-items-center rounded-control bg-primary/10 text-xs font-bold leading-none text-primary">
               <span>{item.competency.slice(0, 1)}</span>
               <span>{item.competency.slice(1)}</span>
             </div>
             <div className="min-w-0">
-              <div className="mb-1.5 truncate text-base text-slate-700">{item.label}</div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="mb-1.5 truncate text-base text-foreground/80">{item.label}</div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.value / 200) * 100)}%` }} />
               </div>
             </div>
             <div className="text-right text-base font-bold">
-              {item.value} <span className="font-medium text-slate-500">/200</span>
+              {item.value} <span className="font-medium text-muted-foreground">/200</span>
             </div>
           </div>
         ))}
@@ -439,13 +439,13 @@ function WeeklyTasksCard({
   const pending = tasks.filter((task) => !task.done).length;
 
   return (
-    <div className="rounded-[22px] border border-border bg-white p-6">
+    <div className="min-w-0 rounded-card bg-card shadow-soft p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-normal">Desafios da semana</h2>
-        <span className="text-sm font-semibold text-slate-500">{pending} pendentes</span>
+        <span className="text-sm font-semibold text-muted-foreground">{pending} pendentes</span>
       </div>
 
-      <div className="mt-4 grid gap-2 rounded-xl border border-dashed border-border p-3">
+      <div className="mt-4 grid gap-2 rounded-control border border-dashed border-border p-3">
         <Input
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
@@ -466,26 +466,28 @@ function WeeklyTasksCard({
         {tasks.length ? tasks.map((task) => (
           <div
             key={task.id}
-            className="grid grid-cols-[1.8rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-3 transition-colors hover:border-primary/25 hover:bg-primary/5"
+            className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-1 rounded-control border border-border px-1.5 py-2 transition-colors hover:border-primary/25 hover:bg-primary/5"
           >
-            <input
-              type="checkbox"
-              checked={Boolean(task.done)}
-              onChange={() => onToggle(task)}
-              disabled={busy}
-              aria-label={task.title}
-              className="h-5 w-5 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
-            />
+            <label className="touch-target grid shrink-0 place-items-center">
+              <input
+                type="checkbox"
+                checked={Boolean(task.done)}
+                onChange={() => onToggle(task)}
+                disabled={busy}
+                aria-label={task.title}
+                className="h-5 w-5 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
+              />
+            </label>
             <div className="min-w-0">
-              <p className={cn("truncate text-base font-semibold", task.done && "text-slate-500 line-through")}>{task.title}</p>
-              <p className="mt-1 text-xs font-medium text-slate-500">{task.due}</p>
+              <p className={cn("truncate text-base font-semibold", task.done && "text-muted-foreground line-through")}>{task.title}</p>
+              <p className="mt-1 text-xs font-medium text-muted-foreground">{task.due}</p>
             </div>
-            <Button type="button" size="icon" variant="ghost" onClick={() => onDelete(task)} disabled={busy} aria-label="Excluir desafio" className="h-9 w-9">
+            <Button type="button" size="icon" variant="ghost" onClick={() => onDelete(task)} disabled={busy} aria-label="Excluir desafio" className="h-11 w-11">
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         )) : (
-          <div className="rounded-xl border border-dashed border-border p-4 text-sm text-slate-500">
+          <div className="rounded-control border border-dashed border-border p-4 text-sm text-muted-foreground">
             Sem desafios ainda. Crie um objetivo para a semana acima.
           </div>
         )}
@@ -494,7 +496,15 @@ function WeeklyTasksCard({
   );
 }
 
+const STAT_TONE = {
+  g: { icon: "bg-primary/12 text-primary" },
+  b: { icon: "bg-info-tint text-info" },
+  a: { icon: "bg-streak-tint text-streak" },
+  v: { icon: "bg-highlight-tint text-highlight" },
+} as const;
+
 function StatCard({
+  tone,
   icon: Icon,
   label,
   value,
@@ -502,6 +512,7 @@ function StatCard({
   detail,
   href,
 }: {
+  tone: keyof typeof STAT_TONE;
   icon: LucideIcon;
   label: string;
   value: string;
@@ -510,50 +521,38 @@ function StatCard({
   href: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="rounded-[22px] border border-border bg-white p-6 transition-colors hover:border-primary/25 hover:bg-primary/5"
-    >
-      <div className="flex items-center gap-2 text-base font-semibold text-slate-500">
-        <Icon className="h-4 w-4" aria-hidden="true" />
-        {label}
+    <Link href={href} className="rounded-card bg-card p-6 shadow-soft transition-transform hover:-translate-y-0.5">
+      <div className={cn("grid h-10 w-10 place-items-center rounded-control", STAT_TONE[tone].icon)}>
+        <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
-      <div className="mt-4 flex items-end gap-1">
-        <span className="text-4xl font-bold leading-none tracking-normal">{value}</span>
-        {suffix ? <span className="mb-1 text-lg font-semibold text-slate-500">{suffix}</span> : null}
+      <div className="mt-3 text-base font-semibold text-muted-foreground">{label}</div>
+      <div className="mt-1 flex items-end gap-1">
+        <span className="text-4xl font-bold leading-none tracking-normal tabular-nums">{value}</span>
+        {suffix ? <span className="mb-1 text-lg font-semibold text-muted-foreground">{suffix}</span> : null}
       </div>
-      <p className="mt-3 text-base text-slate-500">{detail}</p>
+      <p className="mt-3 text-base text-muted-foreground">{detail}</p>
     </Link>
   );
 }
 
 function ScoreBadge({ score }: { score: number | null }) {
   if (score === null) {
-    return <div className="h-16 w-16 rounded-2xl bg-[repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9_8px,#ffffff_8px,#ffffff_16px)]" />;
+    return (
+      <div
+        className="h-16 w-16 rounded-control bg-muted"
+        style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, hsl(var(--border)) 8px, hsl(var(--border)) 9px)" }}
+      />
+    );
   }
 
   return (
-    <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-center text-primary">
-      <span className="block text-xl font-bold leading-none">{score}</span>
+    <div className="grid h-16 w-16 place-items-center rounded-control bg-primary/12 text-center text-primary">
+      <span className="block text-xl font-bold leading-none tabular-nums">{score}</span>
       <span className="mt-1 block text-xs font-semibold text-primary/70">/1000</span>
     </div>
   );
 }
 
-function StatusPill({ status }: { status: Essay["status"] }) {
-  return (
-    <span
-      className={cn(
-        "rounded-full px-3 py-1 text-sm font-bold",
-        status === "corrected" && "bg-primary/10 text-primary",
-        status === "submitted" && "bg-primary/10 text-primary",
-        status === "draft" && "bg-slate-100 text-slate-600",
-      )}
-    >
-      {statusLabel[status]}
-    </span>
-  );
-}
 
 function buildEssayRows(data: Dashboard | null): EssayRow[] {
   return [...(data?.recent_essays ?? [])]

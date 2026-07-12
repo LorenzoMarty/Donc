@@ -20,5 +20,7 @@ test-results/
 *.db
 *.tsbuildinfo
 docker/postgres-data/
+.serena/
 CLAUDE.md
 claude/
+.claude/

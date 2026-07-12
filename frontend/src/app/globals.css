@@ -3,29 +3,84 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 224 28% 16%;
+  /* ---- Primitive scale: brand green (hue ~88, matches #65be02) ---- */
+  --green-50: 88 70% 96%;
+  --green-100: 88 65% 91%;
+  --green-200: 88 60% 82%;
+  --green-300: 88 60% 70%;
+  --green-400: 88 70% 55%;
+  --green-500: 88.4 97.9% 37.6%; /* #65be02 — brand primary */
+  --green-600: 88 90% 32%;
+  --green-700: 90 85% 26%;
+  --green-800: 92 70% 21%;
+  --green-900: 94 60% 16%;
+
+  /* ---- Primitive scale: neutrals (hue ~224-226, matches existing grays) ---- */
+  --neutral-50: 220 40% 98%;
+  --neutral-100: 224 30% 95%;
+  --neutral-200: 224 30% 92%;
+  --neutral-300: 224 20% 84%;
+  --neutral-400: 226 16% 65%;
+  --neutral-500: 226 16% 46%;
+  --neutral-600: 225 20% 32%;
+  --neutral-700: 224 25% 24%;
+  --neutral-800: 224 28% 16%;
+  --neutral-900: 224 30% 10%;
+
+  /* ---- Primitive scale: gamification accents (streak/info/highlight — never the brand primary) ---- */
+  --streak-500: 32 85% 47%; /* warm amber, exclusive to streak/gamification */
+  --streak-tint: 32 85% 94%;
+  --info-500: 221 82% 56%; /* blue, exclusive to secondary stat tiles */
+  --info-tint: 221 82% 95%;
+  --highlight-500: 253 91% 71%; /* violet, exclusive to secondary stat tiles */
+  --highlight-tint: 253 91% 96%;
+
+  /* ---- Semantic layer (components should reference these, not primitives) ---- */
+  --background: 93 20% 96%; /* soft paper tint, not pure white — cards read as raised without borders */
+  --foreground: var(--neutral-800);
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 88.4 97.9% 37.6%;
+  --primary: var(--green-500);
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 40% 98%;
-  --secondary-foreground: 224 28% 16%;
+  --secondary: var(--neutral-50);
+  --secondary-foreground: var(--neutral-800);
   --muted: 220 44% 97%;
-  --muted-foreground: 226 16% 46%;
+  --muted-foreground: var(--neutral-500);
   --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
+  --success: var(--green-600);
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --streak: var(--streak-500);
+  --streak-foreground: 0 0% 100%;
+  --info: var(--info-500);
+  --info-foreground: 0 0% 100%;
+  --highlight: var(--highlight-500);
+  --highlight-foreground: 0 0% 100%;
   --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 224 30% 92%;
-  --input: 224 30% 92%;
-  --ring: 88.4 97.9% 37.6%;
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--green-500);
+
+  /* ---- Radius scale: bento cards larger, controls tighter ---- */
   --radius: 8px;
+  --radius-card: 20px;
+  --radius-control: 10px;
+
   --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04);
   --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
   --shadow-control: 0 10px 24px rgba(101, 190, 2, 0.16);
+
+  /* ---- Motion tokens ---- */
+  --duration-micro: 180ms;
+  --duration-standard: 260ms;
+  --ease-out-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --stagger-step: 40ms;
+
   --app-container: 1760px;
   --app-gutter: clamp(1rem, 2.7vw, 2.25rem);
   --app-page-gap: clamp(1rem, 2.1vw, 1.65rem);
@@ -36,25 +91,35 @@
 }
 
 .dark {
-  --background: 0 0% 100%;
-  --foreground: 224 28% 16%;
+  --background: 93 20% 96%;
+  --foreground: var(--neutral-800);
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: 88.4 97.9% 37.6%;
+  --primary: var(--green-500);
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 40% 98%;
-  --secondary-foreground: 224 28% 16%;
+  --secondary: var(--neutral-50);
+  --secondary-foreground: var(--neutral-800);
   --muted: 220 44% 97%;
-  --muted-foreground: 226 16% 46%;
+  --muted-foreground: var(--neutral-500);
   --accent: 134 61% 41%;
   --accent-foreground: 0 0% 100%;
+  --success: var(--green-600);
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --streak: var(--streak-500);
+  --streak-foreground: 0 0% 100%;
+  --info: var(--info-500);
+  --info-foreground: 0 0% 100%;
+  --highlight: var(--highlight-500);
+  --highlight-foreground: 0 0% 100%;
   --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
-  --border: 224 30% 92%;
-  --input: 224 30% 92%;
-  --ring: 88.4 97.9% 37.6%;
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--green-500);
 }
 
 * {
@@ -207,10 +272,11 @@ li {
 
   .glass-surface,
   .game-surface {
+    /* Sem `background` aqui de proposito: todo consumidor ja traz seu proprio bg-*
+       (bg-card/bg-primary/etc) ao lado desta classe. Definir aqui forcaria essa cor
+       e quebraria qualquer override (ordem de cascata gera empate de especificidade). */
     min-width: 0;
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-soft);
     backdrop-filter: none;
   }
@@ -256,7 +322,7 @@ li {
 
   .game-focus-card {
     border: 1px solid hsl(var(--primary) / 0.42);
-    border-radius: var(--radius);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-control);
   }
 

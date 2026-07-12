@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock, History, Play, Trophy, XCircle } from "lucide-react";
 
+import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -20,13 +21,28 @@ export default function ExamsPage() {
   const [result, setResult] = useState<MockExamSubmitResult | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const trackEvent = useTrackEvent();
 
-  useEffect(() => {
-    apiFetch<MockExam[]>("/exams")
-      .then(setExams)
+  const loadExams = useCallback(() => {
+    return apiFetch<MockExam[]>("/exams")
+      .then((data) => {
+        setExams(data);
+        setLoadError("");
+      })
+      .catch((err: unknown) => setLoadError(err instanceof Error ? err.message : "Não foi possível carregar os simulados."))
       .finally(() => setLoading(false));
   }, []);
+
+  function retryLoadExams() {
+    setLoading(true);
+    setLoadError("");
+    loadExams();
+  }
+
+  useEffect(() => {
+    loadExams();
+  }, [loadExams]);
 
   useEffect(() => {
     if (!active || result) return;
@@ -52,6 +68,7 @@ export default function ExamsPage() {
     });
   }
 
+  if (loadError) return <ErrorState description={loadError} onRetry={retryLoadExams} />;
   if (loading) return <LoadingCard />;
 
   return (
@@ -123,7 +140,7 @@ export default function ExamsPage() {
                     </div>
                     {review ? (
                       review.correct ? (
-                        <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" aria-hidden="true" />
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-success" aria-hidden="true" />
                       ) : (
                         <XCircle className="h-5 w-5 shrink-0 text-destructive" aria-hidden="true" />
                       )
@@ -143,7 +160,7 @@ export default function ExamsPage() {
                           onClick={() => setAnswers((current) => ({ ...current, [String(question.id)]: letter }))}
                           className={`game-tile min-h-11 w-full bg-background/58 p-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 ${
                             isCorrectOption
-                              ? "bg-emerald-500/20"
+                              ? "bg-success/20"
                               : isWrongSelected
                                 ? "bg-destructive/20"
                                 : isSelected

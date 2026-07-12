@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { WriterXray } from "@/features/profile/writer-xray";
+import { cn } from "@/utils";
 
 export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; loading: boolean }) {
   if (loading) {
@@ -62,7 +63,7 @@ export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; 
 
       {xray.weakCompetencies.length ? (
         <Surface>
-          <SectionTitle eyebrow="Pontos fracos" title="Competências com mais perda de nota" icon={TriangleAlert} />
+          <SectionTitle eyebrow="Pontos fracos" title="Competências com mais perda de nota" icon={TriangleAlert} tone="warning" />
           <div className="mt-4 grid gap-3">
             {xray.weakCompetencies.map((weak) => (
               <div key={weak.code} className="game-tile bg-background/56 p-3">
@@ -85,11 +86,18 @@ export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; 
             eyebrow="Erros recorrentes"
             title="O que aparece em mais de uma redação"
             icon={TriangleAlert}
+            tone="warning"
             items={xray.recurringErrors}
           />
         ) : null}
         {xray.recommendations.length ? (
-          <ListSurface eyebrow="Recomendações" title="Próximos passos de treino" icon={Lightbulb} items={xray.recommendations} />
+          <ListSurface
+            eyebrow="Recomendações"
+            title="Próximos passos de treino"
+            icon={Lightbulb}
+            tone="highlight"
+            items={xray.recommendations}
+          />
         ) : null}
       </section>
 
@@ -109,23 +117,31 @@ export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; 
   );
 }
 
+const SECTION_TONE = {
+  primary: "text-primary",
+  warning: "text-destructive",
+  highlight: "text-highlight",
+} as const;
+
 function ListSurface({
   eyebrow,
   title,
   icon,
+  tone = "primary",
   items,
 }: {
   eyebrow: string;
   title: string;
   icon: typeof Lightbulb;
+  tone?: keyof typeof SECTION_TONE;
   items: string[];
 }) {
   return (
     <Surface>
-      <SectionTitle eyebrow={eyebrow} title={title} icon={icon} />
+      <SectionTitle eyebrow={eyebrow} title={title} icon={icon} tone={tone} />
       <ul className="mt-4 grid gap-2">
         {items.map((item) => (
-          <li key={item} className="flex gap-2 rounded-md border border-border bg-background/56 p-3 text-sm leading-6">
+          <li key={item} className="flex gap-2 rounded-control bg-muted/60 p-3 text-sm leading-6">
             <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             <span className="min-w-0">{item}</span>
           </li>
@@ -135,14 +151,24 @@ function ListSurface({
   );
 }
 
-function SectionTitle({ eyebrow, title, icon: Icon }: { eyebrow: string; title: string; icon?: typeof Lightbulb }) {
+function SectionTitle({
+  eyebrow,
+  title,
+  icon: Icon,
+  tone = "primary",
+}: {
+  eyebrow: string;
+  title: string;
+  icon?: typeof Lightbulb;
+  tone?: keyof typeof SECTION_TONE;
+}) {
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</p>
         <h2 className="mt-1 text-xl font-semibold tracking-normal">{title}</h2>
       </div>
-      {Icon ? <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" /> : null}
+      {Icon ? <Icon className={cn("h-5 w-5 shrink-0", SECTION_TONE[tone])} aria-hidden="true" /> : null}
     </div>
   );
 }
