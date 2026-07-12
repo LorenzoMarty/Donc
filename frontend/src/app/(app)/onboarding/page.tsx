@@ -166,7 +166,7 @@ function StepDots({ total, current }: { total: number; current: number }) {
       {Array.from({ length: total }).map((_, i) => (
         <motion.div
           key={i}
-          animate={{ width: i === current ? 24 : 8, backgroundColor: i === current ? "#65be02" : "hsl(224 24% 90%)" }}
+          animate={{ width: i === current ? 24 : 8, backgroundColor: i === current ? "hsl(88.4 97.9% 37.6%)" : "hsl(224 30% 92%)" }}
           transition={{ duration: 0.3 }}
           className="h-2 rounded-full"
         />

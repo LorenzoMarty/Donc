@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { LoadingCard } from "@/components/shared/loading-card";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/shared/premium-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch, type AdminMetrics } from "@/services/api";
 import type { AdminCourse, AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
@@ -72,13 +72,7 @@ export default function AdminPage() {
   }, []);
 
   if (error) {
-    return (
-      <div className="rounded-lg border p-6 md:p-8">
-        <Badge variant="outline">Admin</Badge>
-        <h1 className="mt-3 text-2xl font-bold">Painel indisponível</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error}</p>
-      </div>
-    );
+    return <PageHeader eyebrow="Admin" title="Painel indisponível" description={error} />;
   }
 
   if (!metrics || !telemetry || !activity) {
@@ -87,13 +81,11 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Badge variant="secondary">Painel administrativo</Badge>
-        <h1 className="mt-3 text-3xl font-bold tracking-normal md:text-4xl">Operação e dados</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Acompanhe uso da plataforma, custos de IA, alunos e conteúdo pedagógico em um só lugar.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Painel administrativo"
+        title="Operação e dados"
+        description="Acompanhe uso da plataforma, custos de IA, alunos e conteúdo pedagógico em um só lugar."
+      />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">

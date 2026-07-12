@@ -162,7 +162,7 @@ export function ThemesTab({
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-card bg-card shadow-soft">
         <div className="border-b px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">Banco de temas</Badge>
@@ -174,7 +174,7 @@ export function ThemesTab({
             const isEditing = editingId === theme.id;
             const isBusy = busyId === theme.id;
             return (
-              <article key={theme.id} className={isEditing ? "rounded-md border border-primary/30 bg-card p-4" : "game-tile bg-card p-4"}>
+              <article key={theme.id} className={isEditing ? "rounded-card bg-card p-4 shadow-soft ring-1 ring-primary/30" : "game-tile bg-card p-4"}>
                 {isEditing && draft ? (
                   <ThemeEditor
                     draft={draft}
@@ -217,7 +217,7 @@ export function ThemesTab({
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card p-4">
+      <div className="rounded-card bg-card p-4 shadow-soft">
         <div className="mb-3 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
           <h3 className="text-sm font-semibold">Gerar tema com IA</h3>
@@ -229,7 +229,7 @@ export function ThemesTab({
           <div className="grid gap-2">
             <p className="text-xs font-semibold text-muted-foreground">Textos de apoio</p>
             {TEXT_TYPES.map((item) => (
-              <label key={item.value} className="flex items-center justify-between gap-3 rounded-md border bg-background/50 px-3 py-2 text-xs">
+              <label key={item.value} className="flex items-center justify-between gap-3 rounded-control bg-background/50 px-3 py-2 text-xs shadow-soft">
                 <span className="font-medium">{item.label}</span>
                 <Input
                   type="number"
@@ -300,7 +300,7 @@ function ThemeEditor({
           </Button>
         </div>
         {draft.supporting_texts.map((text, index) => (
-          <div key={`${text.title}-${index}`} className="grid gap-2 rounded-md border bg-background/50 p-3">
+          <div key={`${text.title}-${index}`} className="grid gap-2 rounded-control bg-background/50 p-3 shadow-soft">
             <div className="flex items-center gap-2">
               <Select
                 value={text.type}

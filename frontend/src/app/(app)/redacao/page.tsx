@@ -16,6 +16,13 @@ import { useEssaySubmission } from "@/hooks/useEssaySubmission";
 import { type Essay, type EssayTheme } from "@/services/api";
 import { cn } from "@/utils";
 
+const THEME_TONE = [
+  { card: "bg-primary/8", ring: "ring-primary", check: "bg-primary text-primary-foreground" },
+  { card: "bg-info-tint/60", ring: "ring-info", check: "bg-info text-info-foreground" },
+  { card: "bg-streak-tint/60", ring: "ring-streak", check: "bg-streak text-streak-foreground" },
+  { card: "bg-highlight-tint/60", ring: "ring-highlight", check: "bg-highlight text-highlight-foreground" },
+] as const;
+
 export default function EssayPage() {
   const draft = useEssayDraft();
   const {
@@ -183,6 +190,8 @@ function ThemePicker({
   onGenerate: () => void;
   onSelect: (theme: EssayTheme) => void;
 }) {
+  const uniqueThemes = themes.filter((theme, index) => themes.findIndex((other) => other.title === theme.title) === index);
+
   return (
     <Surface className="p-4 lg:p-5">
       <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -192,38 +201,43 @@ function ThemePicker({
         </div>
         <Button type="button" variant="outline" size="sm" onClick={onGenerate} disabled={generating} className="w-full sm:w-auto">
           <Sparkles className="h-4 w-4" aria-hidden="true" />
-          {generating ? "Sorteando..." : "Sortear 4 temas"}
+          {generating ? "Sorteando..." : "Sortear temas"}
         </Button>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        {themes.map((theme) => (
-          <button
-            type="button"
-            key={theme.id}
-            onClick={() => onSelect(theme)}
-            className={cn(
-              "group grid min-h-[9.5rem] w-full content-start rounded-md border border-border/80 bg-white p-4 text-left transition-all hover:border-primary/35 hover:bg-primary/5",
-              selectedTheme?.id === theme.id && "border-primary/45 bg-primary/10 ring-2 ring-primary/10",
-            )}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-semibold leading-5">{theme.title}</p>
-              <span
-                className={cn(
-                  "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border text-primary transition-colors",
-                  selectedTheme?.id === theme.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white",
-                )}
-              >
-                {selectedTheme?.id === theme.id ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : null}
-              </span>
-            </div>
-            <p className="text-safe mt-3 line-clamp-3 text-xs leading-5 text-muted-foreground">{theme.context}</p>
-            <div className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
-              Selecionar
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
-          </button>
-        ))}
+        {uniqueThemes.map((theme, index) => {
+          const tone = THEME_TONE[index % THEME_TONE.length];
+          const isSelected = selectedTheme?.id === theme.id;
+          return (
+            <button
+              type="button"
+              key={theme.id}
+              onClick={() => onSelect(theme)}
+              className={cn(
+                "group grid min-h-[9.5rem] w-full content-start rounded-control p-4 text-left shadow-soft transition-transform hover:-translate-y-0.5",
+                tone.card,
+                isSelected && cn("ring-2", tone.ring),
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-semibold leading-5">{theme.title}</p>
+                <span
+                  className={cn(
+                    "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-card text-transparent transition-colors",
+                    isSelected && tone.check,
+                  )}
+                >
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+              </div>
+              <p className="text-safe mt-3 line-clamp-3 text-xs leading-5 text-muted-foreground">{theme.context}</p>
+              <div className="mt-auto flex items-center gap-1 pt-3 text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                Selecionar
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </div>
+            </button>
+          );
+        })}
       </div>
     </Surface>
   );
@@ -237,33 +251,41 @@ function StartEssayCard({
   onCreateDraft: () => void;
 }) {
   return (
-    <Surface className="p-4 lg:p-5 xl:sticky xl:top-4">
+    <Surface className={cn("p-4 lg:p-5 xl:sticky xl:top-4", selectedTheme && "bg-primary text-primary-foreground")}>
       <div className="flex items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
-          <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
+        <div
+          className={cn(
+            "grid h-11 w-11 shrink-0 place-items-center rounded-control",
+            selectedTheme ? "bg-white/15" : "bg-primary/12 text-primary",
+          )}
+        >
+          <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Próxima etapa</p>
-          <h2 className="mt-1 text-lg font-semibold tracking-normal">Escolha o tema e comece a escrever.</h2>
+          <p className={cn("text-xs font-semibold uppercase tracking-[0.14em]", selectedTheme ? "text-primary-foreground/70" : "text-muted-foreground")}>
+            {selectedTheme ? "Tudo pronto" : "Próxima etapa"}
+          </p>
+          <h2 className="mt-1 text-lg font-semibold tracking-normal">
+            {selectedTheme ? "Comece a escrever agora." : "Escolha o tema ao lado."}
+          </h2>
         </div>
       </div>
 
-      <div className="mt-5 rounded-md border border-border/80 bg-background/60 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Tema selecionado</p>
+      <div className={cn("mt-5 rounded-control p-4", selectedTheme ? "bg-white/10" : "bg-background/60")}>
+        <p className={cn("text-xs font-semibold uppercase tracking-[0.12em]", selectedTheme ? "text-primary-foreground/70" : "text-muted-foreground")}>
+          Tema selecionado
+        </p>
         <p className="text-safe mt-2 text-sm font-semibold leading-5">{selectedTheme?.title ?? "Selecione um tema no banco ao lado."}</p>
-        {selectedTheme ? <p className="text-safe mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">{selectedTheme.context}</p> : null}
+        {selectedTheme ? (
+          <p className="text-safe mt-2 line-clamp-3 text-xs leading-5 text-primary-foreground/80">{selectedTheme.context}</p>
+        ) : null}
       </div>
 
-      <div className="mt-5 grid gap-3 text-sm">
-        {["Editor limpo para rascunho", "Acompanhamento de estrutura", "Correcao por competencia"].map((item) => (
-          <div key={item} className="flex items-center gap-2 font-medium text-muted-foreground">
-            <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span>{item}</span>
-          </div>
-        ))}
-      </div>
-
-      <Button className="mt-6 w-full" onClick={onCreateDraft} disabled={!selectedTheme}>
+      <Button
+        className={cn("mt-6 w-full", selectedTheme && "bg-white text-primary hover:bg-white/90")}
+        onClick={onCreateDraft}
+        disabled={!selectedTheme}
+      >
         Comecar redacao
       </Button>
     </Surface>
@@ -285,7 +307,7 @@ function CorrectionWaitingScreen({
   onCompleted: (essay: Essay) => void;
   onFailed: (error: string) => void;
 }) {
-  const { phase, agentLabel, agentIndex, progressPercent, essay, error } = useCorrectionStatus(essayId);
+  const { phase, agentLabel, agentIndex, progressPercent, essay, error, elapsedSeconds, isSlow } = useCorrectionStatus(essayId);
 
   useEffect(() => {
     if (phase === "completed" && essay) onCompleted(essay);
@@ -365,6 +387,23 @@ function CorrectionWaitingScreen({
             <p className="mt-1 text-sm font-semibold">{paragraphCount}</p>
           </div>
         </div>
+
+        {isSlow ? (
+          <p className="mt-4 text-sm font-medium text-muted-foreground">
+            Isso está demorando mais que o normal ({elapsedSeconds}s). Pode continuar esperando ou voltar e conferir depois em
+            &ldquo;Redações&rdquo;.
+          </p>
+        ) : null}
+
+        <Button
+          type="button"
+          variant={isSlow ? "outline" : "ghost"}
+          size="sm"
+          className="mt-4"
+          onClick={() => onFailed("Correção em andamento em segundo plano. Confira o resultado em alguns minutos na aba Redações.")}
+        >
+          Voltar para o editor
+        </Button>
       </Surface>
     </div>
   );

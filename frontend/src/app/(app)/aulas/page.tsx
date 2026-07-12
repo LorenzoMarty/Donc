@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ClipboardList, Flame, LockKeyhole, type LucideIcon } from "lucide-react";
 
+import { ErrorState } from "@/components/shared/error-state";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
@@ -25,12 +26,29 @@ const difficultyLabel: Record<string, string> = {
 export default function LessonsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    apiFetch<Course[]>("/lessons/courses")
-      .then(setCourses)
+  const loadCourses = useCallback(() => {
+    return apiFetch<Course[]>("/lessons/courses")
+      .then((data) => {
+        setCourses(data);
+        setError("");
+      })
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Não foi possível carregar as aulas."))
       .finally(() => setLoading(false));
   }, []);
+
+  function retryLoadCourses() {
+    setLoading(true);
+    setError("");
+    loadCourses();
+  }
+
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
+
+  if (error) return <ErrorState description={error} onRetry={retryLoadCourses} />;
 
   if (loading) {
     return (
@@ -101,11 +119,12 @@ function CoursePanel({ course }: { course: Course }) {
               </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <CompactMetric icon={Flame} label="Rank" value={rank?.name ?? "Aprendiz"} />
+              <CompactMetric icon={Flame} label="Rank" value={rank?.name ?? "Aprendiz"} tone="streak" />
               <CompactMetric
                 icon={LockKeyhole}
                 label="Exercicios"
                 value={difficultyLabel[rank?.exercise_difficulty ?? "easy"] ?? "essencial"}
+                tone="highlight"
               />
             </div>
           </div>
@@ -136,7 +155,7 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
   return (
     <Surface className="p-4 lg:p-4">
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 text-left" aria-expanded={open}>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border bg-background/58 text-sm font-semibold">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-primary/12 text-sm font-semibold text-primary">
           {index + 1}
         </span>
         <div className="min-w-0 flex-1">
@@ -147,6 +166,7 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
           </div>
           <p className="mt-1 text-sm leading-5 text-muted-foreground">{module.description}</p>
         </div>
+        <span className="shrink-0 rounded-full bg-primary/12 px-2 py-1 text-xs font-semibold text-primary md:hidden">{moduleProgress}%</span>
         <div className="hidden min-w-[12rem] items-center gap-3 md:flex">
           <Progress value={moduleProgress} className="h-1.5" />
           <span className="w-10 text-right text-sm font-semibold">{moduleProgress}%</span>
@@ -202,8 +222,8 @@ function ActivityRow({ item, moduleOrder }: { item: ModuleItem; moduleOrder: num
   const activity = item.activity;
   if (!activity) return null;
   return (
-    <div className="flex min-h-11 items-center gap-3 rounded-md border border-border bg-background/35 px-2.5 py-1.5">
-      <span className="grid h-8 w-8 shrink-0 place-items-center text-amber-600">
+    <div className="flex min-h-11 items-center gap-3 rounded-control bg-streak-tint/60 px-2.5 py-1.5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center text-streak">
         <ClipboardList className="h-5 w-5" aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
@@ -217,11 +237,26 @@ function ActivityRow({ item, moduleOrder }: { item: ModuleItem; moduleOrder: num
   );
 }
 
-function CompactMetric({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+const METRIC_TONE = {
+  streak: "text-streak",
+  highlight: "text-highlight",
+} as const;
+
+function CompactMetric({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone: keyof typeof METRIC_TONE;
+}) {
   return (
-    <div className="rounded-md border border-border bg-background/58 p-2.5">
-      <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+    <div className="rounded-control bg-muted/60 p-2.5">
+      <div className={cn("mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground")}>
+        <Icon className={cn("h-3.5 w-3.5", METRIC_TONE[tone])} aria-hidden="true" />
         {label}
       </div>
       <p className="text-safe text-sm font-semibold">{value}</p>

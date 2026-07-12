@@ -242,7 +242,7 @@ export function LandingPage() {
 function HeroConsole() {
   return (
     <div className="relative">
-      <div className="game-surface bg-background p-4 text-foreground">
+      <div className="game-surface bg-card p-4 text-foreground">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <InteractiveMascot size="sm" mood="happy" />
@@ -255,9 +255,9 @@ function HeroConsole() {
         </div>
 
         <div className="grid gap-3">
-          <PreviewTile icon={Flame} label="Sequência" value="12 dias" progress={86} />
-          <PreviewTile icon={Award} label="Marcos" value="18/32" progress={56} />
-          <PreviewTile icon={BookOpenCheck} label="Trilha ativa" value="Coesão" progress={68} />
+          <PreviewTile icon={Flame} label="Sequência" value="12 dias" progress={86} tone="streak" />
+          <PreviewTile icon={Award} label="Marcos" value="18/32" progress={56} tone="highlight" />
+          <PreviewTile icon={BookOpenCheck} label="Trilha ativa" value="Coesão" progress={68} tone="info" />
         </div>
 
         <div className="mt-3">
@@ -276,11 +276,29 @@ function HeroConsole() {
   );
 }
 
-function PreviewTile({ icon: Icon, label, value, progress }: { icon: LucideIcon; label: string; value: string; progress: number }) {
+const PREVIEW_TONE = {
+  streak: "bg-streak-tint text-streak",
+  highlight: "bg-highlight-tint text-highlight",
+  info: "bg-info-tint text-info",
+} as const;
+
+function PreviewTile({
+  icon: Icon,
+  label,
+  value,
+  progress,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  progress: number;
+  tone: keyof typeof PREVIEW_TONE;
+}) {
   return (
-    <AnimatedGameCard className="bg-card p-3">
+    <AnimatedGameCard className="bg-background/60 p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+        <div className={cn("grid h-9 w-9 place-items-center rounded-control", PREVIEW_TONE[tone])}>
           <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
         <p className="text-lg font-semibold tracking-normal">{value}</p>
@@ -319,7 +337,7 @@ function CampaignCard({ step, index }: { step: { label: string; title: string; s
 function EssaySheetPreview() {
   return (
     <div className="mx-auto w-full max-w-[280px]">
-      <div className="aspect-[210/297] rounded-md border border-border bg-card p-5 text-[#333333] shadow-[0_18px_40px_rgba(20,30,55,.14)]">
+      <div className="aspect-[210/297] rounded-card border border-border bg-card p-5 text-foreground shadow-elevated">
         <div className="mb-4 h-3 w-2/3 rounded-full bg-primary/40" />
         <div className="space-y-2">
           <div className="h-2 rounded-full bg-muted" />

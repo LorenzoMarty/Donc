@@ -16,6 +16,7 @@ import { buildWriterXray, type WriterXray } from "@/features/profile/writer-xray
 import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type Dashboard, type LearningProfile } from "@/services/api";
+import { cn } from "@/utils";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -69,9 +70,9 @@ export default function ProfilePage() {
         <AccountCard />
 
         <div className="fluid-grid gap-4 [--grid-min:13rem]">
-          <Metric icon={Zap} label="Pontos" value={String(xp)} />
-          <Metric icon={GraduationCap} label="Rank" value={rank.current.name} />
-          <Metric icon={Flame} label="Sequência" value={`${user?.streak_days ?? 0} dias`} />
+          <Metric tone="g" icon={Zap} label="Pontos" value={String(xp)} />
+          <Metric tone="v" icon={GraduationCap} label="Rank" value={rank.current.name} />
+          <Metric tone="a" icon={Flame} label="Sequência" value={`${user?.streak_days ?? 0} dias`} />
         </div>
       </section>
 
@@ -98,14 +99,30 @@ export default function ProfilePage() {
   );
 }
 
-function Metric({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+const METRIC_TONE = {
+  g: "bg-primary/12 text-primary",
+  a: "bg-streak-tint text-streak",
+  v: "bg-highlight-tint text-highlight",
+} as const;
+
+function Metric({
+  tone,
+  icon: Icon,
+  label,
+  value,
+}: {
+  tone: keyof typeof METRIC_TONE;
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
   return (
     <Surface>
-      <div className="mb-4 grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+      <div className={cn("mb-4 grid h-10 w-10 place-items-center rounded-control", METRIC_TONE[tone])}>
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tracking-normal">{value}</p>
+      <p className="mt-2 text-3xl font-semibold tracking-normal tabular-nums">{value}</p>
     </Surface>
   );
 }

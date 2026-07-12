@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  ClipboardList,
   FilePenLine,
   Gamepad2,
+  History,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -15,6 +17,7 @@ import {
   Plus,
   ShieldCheck,
   Sparkles,
+  User,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -36,8 +39,11 @@ type WorkspaceNavItem = {
 const workspaceNav: WorkspaceNavItem[] = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/redacao", label: "Redação", icon: FilePenLine },
+  { href: "/redacoes", label: "Redações", icon: History },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
+  { href: "/simulados", label: "Simulados", icon: ClipboardList },
   { href: "/games", label: "Atividades", icon: Gamepad2 },
+  { href: "/perfil", label: "Perfil", icon: User },
 ];
 
 const SIDEBAR_WIDTH_EXPANDED = 224;
@@ -59,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
 
-  const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administracao", icon: ShieldCheck }] : workspaceNav;
+  const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administração", icon: ShieldCheck }] : workspaceNav;
 
   useEffect(() => {
     if (user) hydrateFromBackend();
@@ -111,7 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-dvh overflow-hidden bg-white text-foreground">
+    <div className="h-dvh overflow-hidden bg-background text-foreground">
       <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
       <DesktopSidebar
         items={navItems}
@@ -138,7 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         className="h-full overflow-y-auto overscroll-contain transition-[padding-left] duration-200 ease-in-out md:pl-[var(--sidebar-width)]"
         style={{ "--sidebar-width": `${collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px` } as CSSProperties}
       >
-        <main className="min-h-dvh w-full bg-white px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
+        <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
           {children}
         </main>
       </div>
@@ -148,7 +154,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-card/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
+    <header className="fixed inset-x-0 top-0 z-50 bg-card/95 pt-[env(safe-area-inset-top)] shadow-soft backdrop-blur-xl md:hidden">
       <div className="flex min-h-16 items-center justify-between gap-3 px-3 xs:px-4">
         <BrandLink compact href="/dashboard" />
         <Button variant="outline" size="icon" aria-label="Abrir menu" onClick={onMenuClick}>
@@ -181,7 +187,7 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/80 bg-white transition-[width,padding] duration-200 ease-in-out md:flex",
+        "group fixed inset-y-0 left-0 z-40 hidden flex-col bg-card shadow-soft transition-[width,padding] duration-200 ease-in-out md:flex",
         collapsed ? "py-4" : "py-5",
       )}
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
@@ -196,7 +202,7 @@ function DesktopSidebar({
             <button
               onClick={onToggle}
               aria-label="Expandir menu"
-              className="absolute inset-0 grid place-items-center rounded-md border border-border/80 bg-white text-muted-foreground opacity-0 transition-opacity duration-150 pointer-events-none hover:bg-primary/7 hover:text-primary group-hover:pointer-events-auto group-hover:opacity-100"
+              className="absolute inset-0 grid place-items-center rounded-control bg-muted text-muted-foreground opacity-0 transition-opacity duration-150 pointer-events-none hover:bg-primary/10 hover:text-primary group-hover:pointer-events-auto group-hover:opacity-100"
             >
               <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -234,7 +240,7 @@ function DesktopSidebar({
 
       <nav
         className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-1.5 px-4")}
-        aria-label="Navegacao principal"
+        aria-label="Navegação principal"
       >
         {items.map((item) => (
           <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
@@ -242,27 +248,27 @@ function DesktopSidebar({
       </nav>
 
       {!collapsed ? (
-        <div className="mx-4 mb-3 rounded-md border border-primary/15 bg-primary/5 p-3">
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
+        <div className="mx-4 mb-3 rounded-control bg-streak-tint p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-streak">
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             Aproveite melhor o Donc
           </div>
           <p className="text-sm leading-5 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
-          <Button asChild variant="outline" size="sm" className="mt-3 w-full justify-between">
+          <Button asChild variant="outline" size="sm" className="mt-3 w-full justify-between border-transparent bg-card">
             <Link href="/onboarding">Ver tour</Link>
           </Button>
         </div>
       ) : null}
 
-      <div className={cn("mt-2 overflow-hidden", collapsed ? "grid gap-2 px-3" : "px-4")}>
+      <div className={cn("mt-2 overflow-hidden", collapsed ? "px-3" : "px-4")}>
         {!collapsed ? (
-          <div className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border/80 bg-white px-2 py-2 text-base font-semibold transition-colors">
+          <div className="flex min-h-11 items-center justify-between gap-2 rounded-control bg-muted/60 px-2 py-2 text-base font-semibold transition-colors">
             <Link
               href="/perfil"
               className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary"
               aria-label={`Perfil de ${userName}`}
             >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
                 {initials(userName)}
               </span>
               <span className="min-w-0 leading-tight">
@@ -272,36 +278,34 @@ function DesktopSidebar({
             </Link>
             <button
               type="button"
+              aria-label="Sair"
               onClick={onLogout}
-              className="inline-flex shrink-0 items-center gap-2 rounded-sm text-foreground transition-colors hover:text-primary"
+              className="inline-flex shrink-0 items-center gap-2 rounded-control p-2 text-foreground transition-colors hover:bg-card hover:text-primary"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
-              Sair
             </button>
           </div>
-        ) : null}
-        <button
-          type="button"
-          aria-label="Sair"
-          onClick={onLogout}
-          className={cn(
-            "min-h-11 rounded-md border border-border/80 bg-white text-sm font-semibold transition-colors hover:bg-muted/60 hover:text-primary",
-            collapsed ? "flex h-10 w-full items-center justify-center" : "hidden",
-          )}
-        >
-          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-        </button>
-        {collapsed ? (
-          <Link
-            href="/perfil"
-            className="grid h-10 w-full place-items-center rounded-md border border-border/80 bg-white transition-colors hover:bg-muted/60"
-            aria-label={`Perfil de ${userName}`}
-          >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
-              {initials(userName)}
-            </span>
-          </Link>
-        ) : null}
+        ) : (
+          <div className="grid gap-2">
+            <Link
+              href="/perfil"
+              className="grid h-10 w-full place-items-center rounded-control bg-muted/60 transition-colors hover:bg-primary/10"
+              aria-label={`Perfil de ${userName}`}
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
+                {initials(userName)}
+              </span>
+            </Link>
+            <button
+              type="button"
+              aria-label="Sair"
+              onClick={onLogout}
+              className="flex h-10 w-full items-center justify-center rounded-control bg-muted/60 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+            >
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -333,7 +337,7 @@ function MobileDrawer({
             role="dialog"
             aria-modal="true"
             aria-label="Menu de navegacao"
-            className="safe-bottom mobile-scroll absolute inset-y-0 left-0 flex w-[min(86vw,22.5rem)] flex-col overflow-y-auto border-r border-border bg-background p-4 shadow-2xl"
+            className="safe-bottom mobile-scroll absolute inset-y-0 left-0 flex w-[min(86vw,22.5rem)] flex-col overflow-y-auto bg-card p-4 shadow-2xl"
           >
             <div className="mb-5 flex items-center justify-between gap-3">
               <BrandLink />
@@ -342,15 +346,15 @@ function MobileDrawer({
               </Button>
             </div>
 
-            <nav className="grid gap-1.5" aria-label="Navegacao principal">
+            <nav className="grid gap-1.5" aria-label="Navegação principal">
               {items.map((item) => (
                 <ShellNavLink key={item.href} item={item} pathname={pathname} expanded onNavigate={onClose} />
               ))}
             </nav>
 
             <div className="mt-auto grid gap-3 pt-8">
-              <Link href="/perfil" className="game-surface flex items-center gap-3 bg-card p-3" onClick={onClose}>
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-primary/20 bg-primary/10 font-semibold text-primary">
+              <Link href="/perfil" className="flex items-center gap-3 rounded-control bg-muted/60 p-3" onClick={onClose}>
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/12 font-semibold text-primary">
                   {initials(userName)}
                 </span>
                 <span className="min-w-0 leading-tight">
@@ -393,10 +397,10 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 rounded-md border border-transparent text-base font-semibold text-muted-foreground transition-colors hover:bg-primary/6 hover:text-primary",
-        collapsed ? "h-10 justify-center px-0" : "min-h-10 px-3",
+        "flex items-center gap-3 rounded-control text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground",
+        collapsed ? "h-11 justify-center px-0" : "min-h-11 px-3",
         showLabel ? "justify-start" : "justify-center",
-        active && "bg-primary/8 text-primary hover:bg-primary/10 hover:text-primary",
+        active && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
       )}
     >
       <Icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-5 w-5")} aria-hidden="true" />

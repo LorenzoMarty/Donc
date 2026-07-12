@@ -6,9 +6,11 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { FriendlyErrorFeedback, RewardAnimation, WritingSidebar } from "@/components/shared/motion-system";
+import { dominantWeakness } from "@/features/gamification/adaptive";
+import { HUBS } from "@/features/gamification/symptoms";
 import type { Essay, EssayTheme } from "@/services/api";
+import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 export function EssayEditor({
@@ -49,7 +51,9 @@ export function EssayEditor({
   const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
-  const headerTitle = activeTheme?.title ?? title;
+  const adaptive = useGameStore((state) => state.adaptive);
+  const weakHubId = dominantWeakness(adaptive);
+  const personalizedTip = weakHubId ? { title: HUBS[weakHubId].title, text: HUBS[weakHubId].weaknessNarrative } : null;
 
   useEffect(() => {
     const shouldShowSaved = wasSavingRef.current && !saving && Boolean(essay) && essay?.status !== "corrected";
@@ -69,20 +73,27 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="grid h-[calc(100dvh-5.5rem)] min-h-[560px] overflow-hidden rounded-md border border-border/70 bg-white shadow-sm md:h-dvh md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] md:rounded-none md:border-0 md:shadow-none"
+      className="flex flex-col rounded-card bg-card shadow-soft md:grid md:h-dvh md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] md:overflow-hidden md:rounded-none md:shadow-none"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
-      <div className="flex min-h-0 flex-col bg-white">
-        <header className="grid min-h-[4.75rem] gap-3 border-b border-border/70 bg-white px-4 py-3 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
+      <div className="flex min-h-0 flex-col bg-card">
+        <header className="grid min-h-[4.75rem] gap-3 bg-card px-4 py-3 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2.5">
             {onBack ? (
-              <Button type="button" variant="ghost" size="icon" onClick={onBack} aria-label="Voltar" className="h-8 w-8 shrink-0">
+              <Button type="button" variant="ghost" size="icon" onClick={onBack} aria-label="Voltar" className="h-11 w-11 shrink-0">
                 <ArrowLeft className="h-5 w-5" aria-hidden="true" />
               </Button>
             ) : null}
-            <h1 className="text-safe min-w-0 text-xl font-semibold leading-tight tracking-normal lg:text-2xl">{headerTitle}</h1>
+            <input
+              value={title}
+              disabled={locked}
+              onChange={(event) => onTitleChange(event.target.value)}
+              placeholder="Nomeie sua redação"
+              aria-label="Título da redação"
+              className="text-safe min-w-0 flex-1 rounded-sm border-none bg-transparent text-xl font-semibold leading-tight tracking-normal text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/30 lg:text-2xl"
+            />
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 font-medium text-accent">
@@ -95,7 +106,6 @@ export function EssayEditor({
             <span>{paragraphCount} parágrafos</span>
             <span>{lines} linhas</span>
           </div>
-          <Input value={title} disabled={locked} onChange={(event) => onTitleChange(event.target.value)} className="sr-only" aria-label="Titulo da redacao" tabIndex={-1} />
         </div>
 
         <div className="flex items-center justify-end self-center">
@@ -106,8 +116,8 @@ export function EssayEditor({
         </div>
         </header>
 
-        <article className="mobile-scroll min-h-0 overflow-y-auto bg-slate-50/60 px-5 py-8 md:px-9 lg:py-10">
-          <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-2xl border border-border/80 bg-white px-5 py-6 shadow-sm md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
+        <article className="mobile-scroll min-h-0 overflow-y-auto bg-background px-5 py-8 md:px-9 lg:py-10">
+          <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-card px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
             <div
               aria-hidden="true"
               className="select-none pt-1 text-right font-mono text-[0.82rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.88rem]"
@@ -130,7 +140,7 @@ export function EssayEditor({
         </article>
       </div>
 
-      <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border/55 bg-white p-4 md:border-l md:border-t-0">
+      <aside className="mobile-scroll min-h-0 overflow-y-auto bg-card p-4 shadow-soft">
           <div className="mb-2 flex items-center justify-between gap-2">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio</p>
@@ -141,13 +151,19 @@ export function EssayEditor({
 
           <div className="space-y-2.5">
             {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
-            <WritingSidebar lines={lines} paragraphs={paragraphCount} structureProgress={structureProgress} theme={activeTheme} />
+            <WritingSidebar
+              lines={lines}
+              paragraphs={paragraphCount}
+              structureProgress={structureProgress}
+              theme={activeTheme}
+              personalizedTip={personalizedTip}
+            />
             <FriendlyErrorFeedback
               show={wordCount > 0 && wordCount < 80}
               message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
             />
             {locked ? (
-              <div className="rounded-md border border-primary/20 bg-primary/10 p-3 text-sm font-semibold text-primary">
+              <div className="rounded-control bg-primary/10 p-3 text-sm font-semibold text-primary">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                   Versão corrigida e bloqueada.
@@ -155,7 +171,7 @@ export function EssayEditor({
               </div>
             ) : null}
             {error ? (
-              <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+              <div className="rounded-control bg-destructive/10 p-3 text-sm font-semibold text-destructive">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {error}

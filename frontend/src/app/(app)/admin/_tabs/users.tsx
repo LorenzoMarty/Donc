@@ -159,7 +159,7 @@ export function UsersTab({
         <Badge variant="outline">{users.length} usuários</Badge>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-card bg-card shadow-soft">
         <div className="mobile-scroll overflow-x-auto">
           <table className="w-full min-w-[980px] text-sm">
             <thead>
@@ -187,7 +187,7 @@ export function UsersTab({
                     <tr className="border-b last:border-b-0 hover:bg-muted/40">
                       <td className="px-4 py-3 font-medium">
                         <div className="flex items-center gap-2">
-                          {isOnline && <span className="h-2 w-2 rounded-full bg-emerald-500" title="Online" />}
+                          {isOnline && <span className="h-2 w-2 rounded-full bg-success" title="Online" />}
                           {user.name}
                         </div>
                       </td>
@@ -325,7 +325,7 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
         {ai.agents.length ? (
           <div className="mt-3 space-y-1">
             {ai.agents.slice(0, 6).map((agent) => (
-              <div key={`${agent.workflow}-${agent.agent}`} className="flex items-center justify-between gap-2 rounded-md border bg-background/40 px-3 py-1.5 text-xs">
+              <div key={`${agent.workflow}-${agent.agent}`} className="flex items-center justify-between gap-2 rounded-control bg-background/40 px-3 py-1.5 text-xs shadow-soft">
                 <span className="min-w-0 truncate font-medium">{agent.agent}</span>
                 <span className="shrink-0 text-muted-foreground">
                   {formatTokens(agent.total_tokens)} tok · {formatBRLCents(agent.cost_brl_cents)}
@@ -350,7 +350,7 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border bg-background/40 px-3 py-2">
+    <div className="rounded-control bg-background/40 px-3 py-2 shadow-soft">
       <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-base font-semibold tabular-nums">{value}</p>
     </div>
@@ -364,7 +364,7 @@ function DetailList({ title, items }: { title: string; items: string[] }) {
       {items.length ? (
         <ul className="space-y-1 text-xs">
           {items.map((item, index) => (
-            <li key={index} className="rounded-md border bg-background/40 px-2.5 py-1.5">{item}</li>
+            <li key={index} className="rounded-control bg-background/40 px-2.5 py-1.5 shadow-soft">{item}</li>
           ))}
         </ul>
       ) : (

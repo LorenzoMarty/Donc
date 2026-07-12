@@ -5,10 +5,35 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+SUPPORTING_TEXT_TYPES = (
+    "motivador",
+    "dados",
+    "repertorio",
+    "imagem",
+    "grafico",
+    "infografico",
+    "postagem",
+    "manchete",
+    "tirinha",
+    "charge",
+)
+
+
 class SupportingTextRead(BaseModel):
     title: str
     content: str
-    type: Literal["motivador", "dados", "repertorio", "imagem"]
+    type: Literal[
+        "motivador", "dados", "repertorio", "imagem", "grafico", "infografico", "postagem", "manchete", "tirinha", "charge"
+    ]
+
+    @field_validator("type", mode="before")
+    @classmethod
+    def _coerce_unknown_type(cls, value: object) -> object:
+        # O agente de geracao de temas usa um LLM; categorias fora do enum (alucinacao)
+        # nao devem derrubar a resposta da API — caem para "motivador" como padrao seguro.
+        if value not in SUPPORTING_TEXT_TYPES:
+            return "motivador"
+        return value
 
 
 class InlineAnnotationRead(BaseModel):

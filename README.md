@@ -1,6 +1,17 @@
 # Donc ENEM
 
-Aplicacao fullstack para estudo de Redacao ENEM com frontend Next.js, backend FastAPI, PostgreSQL/pgvector, Redis, Celery e agentes de IA.
+Plataforma de preparacao para Portugues e Redacao do ENEM. Frontend em Next.js 16 (App Router),
+backend em FastAPI + PostgreSQL/pgvector, fila assincrona via Celery/Redis e pipeline de correcao
+de redacoes com agentes de IA (framework `agno` + OpenAI).
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Frontend | Next.js 16, TypeScript, Tailwind CSS, Zustand, Vitest, Playwright |
+| Backend | FastAPI, SQLAlchemy, Pydantic, Alembic, Celery |
+| Dados | PostgreSQL (extensao `pgvector`), Redis |
+| IA | `agno` (agentes), OpenAI, Langfuse (tracing opcional) |
 
 ## Estrutura
 
@@ -43,6 +54,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
+`docker-compose.yml` sobe 4 servicos: `db` (Postgres 16 + pgvector), `backend` (FastAPI/Python
+3.13), `worker` (Celery) e `frontend` (Next.js/Node 22).
+
 Servicos:
 
 - Frontend: `http://localhost:3000`
@@ -74,13 +88,11 @@ npm run start:backend
 npm run start:frontend
 ```
 
-Validações por serviço:
+Gate de qualidade por servico (lint + typecheck + testes):
 
 ```bash
-npm --prefix frontend run lint
-npm --prefix frontend run typecheck
-npm --prefix frontend run build
-cd backend && python -m pytest
+npm --prefix frontend run quality   # eslint + typegen/tsc + vitest
+cd backend && .\quality.ps1         # prospector + pytest --cov
 ```
 
 ## Contrato da API

@@ -40,7 +40,7 @@ export function AITelemetryTab({
   return (
     <div className="space-y-6">
       {error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error}</div>
+        <div className="rounded-card border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{error}</div>
       ) : null}
 
       {/* Header: período + cotação */}
@@ -52,7 +52,7 @@ export function AITelemetryTab({
               type="button"
               disabled={loading}
               onClick={() => changePeriod(d)}
-              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${period === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+              className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-colors ${period === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
             >
               {d} dias
             </button>
@@ -75,14 +75,14 @@ export function AITelemetryTab({
       </div>
 
       {!error && !telemetry.has_data ? (
-        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-card bg-card p-6 text-sm text-muted-foreground shadow-soft">
           Ainda não há chamadas de IA registradas neste período. Quando alunos ou administradores usarem recursos com IA, os custos aparecerão aqui.
         </div>
       ) : null}
 
       {/* Gasto por dia (R$) */}
       {telemetry.daily.length > 0 && (
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-card bg-card p-4 shadow-soft">
           <h2 className="mb-4 font-semibold">Gasto por dia (R$)</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={telemetry.daily} margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
@@ -101,7 +101,7 @@ export function AITelemetryTab({
 
       {/* Por workflow — quanto cada fluxo gasta */}
       {telemetry.workflows.length > 0 && (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-card bg-card shadow-soft">
           <div className="border-b p-4">
             <h2 className="font-semibold">Por workflow</h2>
             <p className="text-xs text-muted-foreground">Quanto cada fluxo de IA gasta no período</p>
@@ -138,7 +138,7 @@ export function AITelemetryTab({
 
       {/* Por modelo — qual IA gasta mais / é mais chamada */}
       {telemetry.models.length > 0 && (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-card bg-card shadow-soft">
           <div className="border-b p-4">
             <h2 className="font-semibold">Por modelo de IA</h2>
             <p className="text-xs text-muted-foreground">Qual IA gasta mais e qual é mais chamada</p>
@@ -172,7 +172,7 @@ export function AITelemetryTab({
       )}
 
       {/* Por agente */}
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-card bg-card shadow-soft">
         <div className="border-b p-4">
           <h2 className="font-semibold">Por agente</h2>
         </div>
@@ -219,7 +219,7 @@ export function AITelemetryTab({
 
       {/* Top consumidores */}
       {telemetry.top_users.length > 0 && (
-        <div className="rounded-lg border bg-card">
+        <div className="rounded-card bg-card shadow-soft">
           <div className="border-b p-4">
             <h2 className="font-semibold">Maiores consumidores de IA</h2>
           </div>
@@ -245,7 +245,7 @@ export function AITelemetryTab({
 
 function BigCostCard({ label, brlCents, usdMicros, highlight }: { label: string; brlCents: number; usdMicros?: number; highlight?: boolean }) {
   return (
-    <div className={`rounded-lg border p-4 ${highlight ? "bg-primary/5 border-primary/30" : "bg-card"}`}>
+    <div className={`rounded-card p-4 shadow-soft ${highlight ? "bg-primary/5" : "bg-card"}`}>
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-2 text-2xl font-bold">{formatBRLCents(brlCents)}</p>
       {usdMicros !== undefined ? <p className="text-xs text-muted-foreground">{formatUSDMicros(usdMicros)}</p> : null}
@@ -255,7 +255,7 @@ function BigCostCard({ label, brlCents, usdMicros, highlight }: { label: string;
 
 function SmallCard({ label, value, hint, error }: { label: string; value: string; hint?: string; error?: boolean }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-card bg-card p-4 shadow-soft">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className={`mt-2 text-2xl font-bold ${error ? "text-destructive" : ""}`}>{value}</p>
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}

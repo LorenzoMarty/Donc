@@ -29,7 +29,7 @@ export function AppearanceSettings() {
   return (
     <Surface>
       <div className="flex items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-primary/12 text-primary">
           <Type className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
@@ -55,7 +55,7 @@ export function AppearanceSettings() {
         />
       </div>
 
-      <div className="mt-5 rounded-md border border-border bg-background/64 p-4">
+      <div className="mt-5 rounded-control bg-muted/60 p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Prévia</p>
         <p className="mt-2 text-foreground" style={{ lineHeight: pref.lineHeight }}>
           &ldquo;A proposta de intervenção deve ser completa: agente, ação, meio, finalidade e detalhamento.&rdquo; — ajuste até esse tipo de frase ficar confortável de ler.
@@ -99,10 +99,10 @@ function Control({
               aria-pressed={selected}
               onClick={() => onSelect(opt.value)}
               className={cn(
-                "rounded-md border px-4 py-2 text-sm font-semibold transition-colors",
+                "rounded-control px-4 py-2 text-sm font-semibold transition-colors",
                 selected
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {opt.label}

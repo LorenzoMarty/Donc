@@ -7,6 +7,14 @@ import { Surface } from "@/components/shared/premium-ui";
 import { masteryForHub } from "@/features/gamification/adaptive";
 import { symptomHubs } from "@/features/gamification/symptoms";
 import { useGameStore } from "@/stores/game-store";
+import { cn } from "@/utils";
+
+const HUB_TONE = [
+  { tile: "bg-primary/8", icon: "bg-primary/12 text-primary" },
+  { tile: "bg-info-tint/60", icon: "bg-info-tint text-info" },
+  { tile: "bg-streak-tint/60", icon: "bg-streak-tint text-streak" },
+  { tile: "bg-highlight-tint/60", icon: "bg-highlight-tint text-highlight" },
+] as const;
 
 export function HubMastery() {
   const adaptive = useGameStore((state) => state.adaptive);
@@ -19,20 +27,21 @@ export function HubMastery() {
         <p className="mt-1 text-sm text-muted-foreground">Toque no hub com nota mais baixa para treinar o que está te travando.</p>
       </div>
       <div className="mt-4 fluid-grid gap-3 [--grid-min:15rem]">
-        {symptomHubs.map((hub) => {
+        {symptomHubs.map((hub, index) => {
           const HubIcon = hub.icon;
           const mastery = masteryForHub(adaptive, hub.id);
+          const tone = HUB_TONE[index % HUB_TONE.length];
           return (
             <Link
               key={hub.id}
               href={`/games/treino/${hub.id}`}
-              className="game-tile group flex flex-col gap-2 bg-background/64 p-4 transition-colors hover:border-primary/50 hover:bg-primary/5"
+              className={cn("group flex flex-col gap-2 rounded-control p-4 shadow-soft transition-transform hover:-translate-y-0.5", tone.tile)}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
+                <span className={cn("grid h-10 w-10 place-items-center rounded-control", tone.icon)}>
                   <HubIcon className="h-5 w-5" aria-hidden="true" />
                 </span>
-                <span className="rounded-full border border-border bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground shadow-soft">
                   {mastery}/100
                 </span>
               </div>

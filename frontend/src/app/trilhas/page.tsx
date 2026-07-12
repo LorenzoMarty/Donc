@@ -28,7 +28,7 @@ export default function TracksPage() {
             </Button>
           </Reveal>
           <Reveal delay={0.08}>
-            <div className="relative rounded-[2rem] border bg-card p-4 shadow-sm xs:p-6">
+            <div className="relative rounded-card bg-card p-4 shadow-elevated xs:p-6">
               <div className="absolute bottom-10 left-10 top-10 w-1 rounded-full bg-border">
                 <div className="h-2/3 rounded-full bg-primary shadow-sm" />
               </div>
@@ -75,8 +75,8 @@ export default function TracksPage() {
 
 function stateClass(state: string) {
   if (state === "completed")
-    return "relative z-10 grid h-14 w-14 place-items-center rounded-lg border border-accent/40 bg-accent text-accent-foreground shadow-sm";
+    return "relative z-10 grid h-14 w-14 place-items-center rounded-control bg-accent text-accent-foreground shadow-soft";
   if (state === "available")
-    return "relative z-10 grid h-16 w-16 place-items-center rounded-lg border border-primary/55 bg-primary text-primary-foreground shadow-sm";
-  return "relative z-10 grid h-12 w-12 place-items-center rounded-lg border bg-muted text-muted-foreground";
+    return "relative z-10 grid h-16 w-16 place-items-center rounded-control bg-primary text-primary-foreground shadow-control";
+  return "relative z-10 grid h-12 w-12 place-items-center rounded-control bg-muted text-muted-foreground";
 }

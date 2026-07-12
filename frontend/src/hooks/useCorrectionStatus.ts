@@ -21,23 +21,31 @@ export type CorrectionStatus = {
   progressPercent: number;
   essay: Essay | null;
   error: string | null;
+  elapsedSeconds: number;
+  isSlow: boolean;
 };
+
+const SLOW_THRESHOLD_SECONDS = 25;
 
 export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   const [phase, setPhase] = useState<CorrectionPhase>("idle");
   const [agentIndex, setAgentIndex] = useState(0);
   const [essay, setEssay] = useState<Essay | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const agentTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const agentIndexRef = useRef(0);
 
   const stopAll = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (agentTickRef.current) clearInterval(agentTickRef.current);
+    if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
     pollRef.current = null;
     agentTickRef.current = null;
+    elapsedTickRef.current = null;
   }, []);
 
   const startAgentTick = useCallback(() => {
@@ -85,6 +93,7 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
 
     poll();
     pollRef.current = setInterval(poll, 2000);
+    elapsedTickRef.current = setInterval(() => setElapsedSeconds((value) => value + 1), 1000);
 
     return () => {
       window.clearTimeout(resetId);
@@ -93,7 +102,10 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   }, [essayId, startAgentTick, stopAll]);
 
   const label = phase === "idle" ? "" : AGENT_LABELS[agentIndex] ?? AGENT_LABELS[0];
-  const progressPercent = phase === "completed" ? 100 : Math.round((agentIndex / LAST_PHASE) * 100);
+  // Nunca mostra 100% por um ticker cosmetico antes da correcao realmente terminar —
+  // so a fase "completed" (sinal real do backend) pode fechar a barra.
+  const progressPercent = phase === "completed" ? 100 : Math.min(92, Math.round((agentIndex / LAST_PHASE) * 100));
+  const isSlow = phase !== "completed" && elapsedSeconds >= SLOW_THRESHOLD_SECONDS;
 
-  return { phase, agentIndex, agentLabel: label, progressPercent, essay, error };
+  return { phase, agentIndex, agentLabel: label, progressPercent, essay, error, elapsedSeconds, isSlow };
 }
