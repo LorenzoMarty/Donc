@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronDown, ClipboardList, Flame, LockKeyhole, type LucideIcon } from "lucide-react";
+import { ChevronDown, ClipboardList, Flame, Lock, LockKeyhole, type LucideIcon } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
@@ -151,20 +151,34 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
   const items = module.items?.length ? module.items : lessons.map((lesson) => ({ id: -lesson.id, kind: "lesson" as const, order: lesson.order, lesson, activity: null }));
   const completedLessons = lessons.filter((lesson) => lesson.progress.completed).length;
   const moduleProgress = module.progress_percent ?? progressFromLessons(lessons);
+  const locked = Boolean(module.locked);
+  const requirements = module.unlock_requirements ?? [];
 
   return (
     <Surface className="p-4 lg:p-4">
       <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 text-left" aria-expanded={open}>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-primary/12 text-sm font-semibold text-primary">
-          {index + 1}
+        <span
+          className={cn(
+            "grid h-8 w-8 shrink-0 place-items-center rounded-control text-sm font-semibold",
+            locked ? "bg-muted text-muted-foreground" : "bg-primary/12 text-primary",
+          )}
+        >
+          {locked ? <Lock className="h-4 w-4" aria-hidden="true" /> : index + 1}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-safe text-lg font-semibold tracking-normal">{module.title}</h3>
-            {module.completed ? <Badge variant="success">módulo concluído</Badge> : null}
+            {locked ? (
+              <Badge variant="outline">bloqueado</Badge>
+            ) : module.completed ? (
+              <Badge variant="success">módulo concluído</Badge>
+            ) : null}
             <Badge variant="outline">{module.xp_reward ?? 75}xp bonus</Badge>
           </div>
           <p className="mt-1 text-sm leading-5 text-muted-foreground">{module.description}</p>
+          {locked && requirements.length ? (
+            <p className="mt-1 text-xs font-medium text-muted-foreground">Bloqueado — {requirements.join(" · ")}</p>
+          ) : null}
         </div>
         <span className="shrink-0 rounded-full bg-primary/12 px-2 py-1 text-xs font-semibold text-primary md:hidden">{moduleProgress}%</span>
         <div className="hidden min-w-[12rem] items-center gap-3 md:flex">
@@ -200,6 +214,7 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
                     progressPercent: item.lesson.progress?.progress_percent ?? 0,
                     completed: item.lesson.progress?.completed ?? false,
                     fallbackSeed: item.lesson.title,
+                    locked,
                   }}
                 />
               ) : null,

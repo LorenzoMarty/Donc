@@ -137,6 +137,7 @@ export type Lesson = {
     exercise_difficulty?: string | null;
   };
   exercises: { id: number; statement: string; skill: string; difficulty: string }[];
+  locked?: boolean;
 };
 
 export type Course = {
@@ -159,6 +160,10 @@ export type Course = {
     xp_reward: number;
     lessons: Lesson[];
     items?: ModuleItem[];
+    locked?: boolean;
+    mastered?: boolean;
+    unlock_requirements?: string[];
+    target_competencies?: string[];
   }[];
 };
 

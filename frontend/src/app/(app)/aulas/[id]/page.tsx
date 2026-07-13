@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, ClipboardList, FileText, NotebookPen, Trophy, Zap } from "lucide-react";
+import { CheckCircle2, ClipboardList, FileText, Lock, NotebookPen, Trophy, Zap } from "lucide-react";
 
+import { ApiClientError } from "@/lib/http-client";
 import { LessonPlayer } from "@/components/shared/lesson-player";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -23,9 +25,18 @@ export default function LessonPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [completion, setCompletion] = useState<Lesson["progress"] | null>(null);
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
+  const [lockedMessage, setLockedMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<Lesson>(`/lessons/${params.id}`).then(setLesson);
+    apiFetch<Lesson>(`/lessons/${params.id}`)
+      .then(setLesson)
+      .catch((err: unknown) => {
+        if (err instanceof ApiClientError && err.code === "lesson_locked") {
+          setLockedMessage(err.message);
+          return;
+        }
+        throw err;
+      });
     trackEvent({ event_type: "lesson_opened", entity_id: String(params.id), entity_type: "lesson" });
   }, [params.id, trackEvent]);
 
@@ -53,6 +64,21 @@ export default function LessonPage() {
     if ((progress.xp_earned ?? 0) > 0) {
       await refresh();
     }
+  }
+
+  if (lockedMessage) {
+    return (
+      <MotionShell className="space-y-4">
+        <Surface className="flex flex-col items-center gap-3 py-12 text-center">
+          <Lock className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+          <h1 className="text-xl font-semibold tracking-normal">Aula bloqueada</h1>
+          <p className="max-w-md text-sm leading-6 text-muted-foreground">{lockedMessage}</p>
+          <Button asChild className="mt-2">
+            <Link href="/aulas">Voltar para as aulas</Link>
+          </Button>
+        </Surface>
+      </MotionShell>
+    );
   }
 
   if (!lesson) return <LoadingCard />;
