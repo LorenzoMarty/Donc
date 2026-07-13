@@ -95,11 +95,16 @@ class AgnoAgentRunner:
                     user_id=str(user_id) if user_id is not None else None,
                     session_id=session_id,
                 )
-                metrics = getattr(run_output, "metrics", None)
-                self.last_input_tokens = self._metric_value(metrics, {"input_tokens", "prompt_tokens"})
-                self.last_output_tokens = self._metric_value(metrics, {"output_tokens", "completion_tokens"})
-                self.last_token_count = self._extract_token_count(metrics)
-                result = self._coerce_output(getattr(run_output, "content", run_output), output_schema, fallback)
+                raw_content = getattr(run_output, "content", None)
+                if raw_content:
+                    # Only trust metrics when agno actually returned content: on a swallowed API
+                    # failure (e.g. auth error logged internally, no exception raised) run_output.metrics
+                    # can report bogus token counts even though nothing real happened.
+                    metrics = getattr(run_output, "metrics", None)
+                    self.last_input_tokens = self._metric_value(metrics, {"input_tokens", "prompt_tokens"})
+                    self.last_output_tokens = self._metric_value(metrics, {"output_tokens", "completion_tokens"})
+                    self.last_token_count = self._extract_token_count(metrics)
+                result = self._coerce_output(raw_content, output_schema, fallback)
                 return self._finish_run(result, start=start, span=span, used_fallback=result is fallback)
             except Exception as exc:
                 self._mark_span_error(span, str(exc))

@@ -23,4 +23,4 @@ docker/postgres-data/
 .serena/
 CLAUDE.md
 claude/
-.claude/
+.claude/knowledge/

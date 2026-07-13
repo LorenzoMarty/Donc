@@ -613,25 +613,28 @@ def ensure_course_catalog(db: Session) -> tuple[Course, list[Module], list[Lesso
     course.color = "#C9A227"
     db.flush()
 
+    # Alvo de competencia (C1-C5) usado pelo gate de dominio (progression_service): define
+    # em qual criterio da matriz ENEM o modulo precisa mostrar melhora antes de liberar o proximo.
     module_specs = [
-        ("Fundamentos da Redacao", "Da compreensao do tema ao projeto de texto.", 1),
-        ("Competencias do ENEM", "Como a banca enxerga cada criterio da matriz.", 2),
-        ("Norma-padrao Essencial", "Concordancia, regencia, crase e pontuacao aplicadas.", 3),
-        ("Leitura Estrategica", "Inferencia, intencionalidade e efeitos de sentido.", 4),
-        ("Repertorio Literario", "Autores, escolas e conexoes para argumentar melhor.", 5),
+        ("Fundamentos da Redacao", "Da compreensao do tema ao projeto de texto.", 1, ["c2", "c3"]),
+        ("Competencias do ENEM", "Como a banca enxerga cada criterio da matriz.", 2, ["c5"]),
+        ("Norma-padrao Essencial", "Concordancia, regencia, crase e pontuacao aplicadas.", 3, ["c1"]),
+        ("Leitura Estrategica", "Inferencia, intencionalidade e efeitos de sentido.", 4, ["c2"]),
+        ("Repertorio Literario", "Autores, escolas e conexoes para argumentar melhor.", 5, ["c2"]),
     ]
     existing_modules = {
         module.title: module
         for module in db.scalars(select(Module).where(Module.course_id == course.id))
     }
     modules: list[Module] = []
-    for title, description, order in module_specs:
+    for title, description, order, target_competencies in module_specs:
         module = existing_modules.get(title)
         if not module:
             module = Module(course_id=course.id, title=title)
             db.add(module)
         module.description = description
         module.order = order
+        module.target_competencies = target_competencies
         modules.append(module)
     db.flush()
 

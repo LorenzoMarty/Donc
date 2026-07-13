@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, Clock, PlayCircle, Zap } from "lucide-react";
+import { CheckCircle2, Clock, Lock, PlayCircle, Zap } from "lucide-react";
 
 import { cn } from "@/utils";
 
@@ -20,6 +20,8 @@ export type LessonPosterInfo = {
   moduleLabel?: string;
   /** Semente pro fallback ilustrado quando não há imagem real (título/módulo, algo estável). */
   fallbackSeed?: string;
+  /** Aula pertence a um módulo ainda bloqueado pelo gate de domínio — sem link, sem navegação. */
+  locked?: boolean;
 };
 
 const FALLBACK_ACCENTS = [
@@ -46,12 +48,15 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
   const withImage = hasRealThumbnail(lesson.thumbnailUrl);
   const accent = accentForSeed(lesson.fallbackSeed ?? lesson.title);
   const progress = Math.max(0, Math.min(100, lesson.progressPercent ?? 0));
+  const locked = Boolean(lesson.locked);
+  const wrapperClassName = cn(
+    "game-tile group relative w-60 shrink-0 snap-start overflow-hidden bg-card sm:w-72",
+    locked && "cursor-not-allowed opacity-60",
+    className,
+  );
 
-  return (
-    <Link
-      href={lesson.href}
-      className={cn("game-tile group relative w-60 shrink-0 snap-start overflow-hidden bg-card sm:w-72", className)}
-    >
+  const content = (
+    <>
       <div className="relative aspect-video overflow-hidden">
         {withImage ? (
           <Image
@@ -59,7 +64,7 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
             alt=""
             fill
             sizes="(min-width: 640px) 18rem, 15rem"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn("object-cover transition-transform duration-300", !locked && "group-hover:scale-105", locked && "grayscale")}
           />
         ) : (
           <div className="absolute inset-0" style={{ backgroundColor: accent }} aria-hidden="true">
@@ -76,13 +81,23 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
         <span
           className={cn(
             "absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full transition-opacity",
-            lesson.completed ? "bg-primary text-primary-foreground" : "bg-background/80 text-foreground opacity-0 group-hover:opacity-100",
+            locked
+              ? "bg-background/80 text-foreground"
+              : lesson.completed
+                ? "bg-primary text-primary-foreground"
+                : "bg-background/80 text-foreground opacity-0 group-hover:opacity-100",
           )}
         >
-          {lesson.completed ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <PlayCircle className="h-4 w-4" aria-hidden="true" />}
+          {locked ? (
+            <Lock className="h-4 w-4" aria-hidden="true" />
+          ) : lesson.completed ? (
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <PlayCircle className="h-4 w-4" aria-hidden="true" />
+          )}
         </span>
 
-        {progress > 0 && !lesson.completed ? (
+        {progress > 0 && !lesson.completed && !locked ? (
           <div className="absolute inset-x-0 bottom-0 h-1 bg-background/40" aria-hidden="true">
             <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
           </div>
@@ -105,6 +120,20 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
           ) : null}
         </div>
       )}
+    </>
+  );
+
+  if (locked) {
+    return (
+      <div className={wrapperClassName} aria-label={`${lesson.title} (bloqueada)`}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link href={lesson.href} className={wrapperClassName}>
+      {content}
     </Link>
   );
 }

@@ -59,6 +59,7 @@ class LessonRead(BaseModel):
     xp_reward: int = 25
     progress: LessonProgressRead = Field(default_factory=LessonProgressRead)
     exercises: list[ExercisePreview] = []
+    locked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -73,6 +74,10 @@ class ModuleRead(BaseModel):
     xp_reward: int = 75
     lessons: list[LessonRead] = []
     items: list[ModuleItemRead] = []
+    locked: bool = False
+    mastered: bool = False
+    unlock_requirements: list[str] = Field(default_factory=list)
+    target_competencies: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

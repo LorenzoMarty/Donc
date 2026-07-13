@@ -5,6 +5,7 @@ from src.middlewares.errors import AppError
 from src.models import LearningReward, Lesson, LessonProgress, Module, User
 from src.repositories.learning import LearningRepository
 from src.schemas.lessons import CourseRead, ExercisePreview, LessonProgressRead, LessonRead, ModuleActivityRead, ModuleItemRead, ModuleRead, RankRead
+from src.services.progression_service import ProgressionService
 from src.services.rank_service import allowed_difficulties_for_user, level_for_xp, next_rank_for_xp, rank_for_xp
 
 
@@ -17,34 +18,44 @@ class LessonService:
     def __init__(self, db: Session) -> None:
         self.db = db
         self.repo = LearningRepository(db)
+        self.progression = ProgressionService(db)
 
     def list_courses(self, user_id: int) -> list[CourseRead]:
         courses = self.repo.list_courses()
         user = self._get_user(user_id)
-        return [
-            CourseRead(
-                id=course.id,
-                title=course.title,
-                slug=course.slug,
-                description=course.description,
-                color=course.color,
-                progress_percent=self._course_progress(course, user_id),
-                completed=self._course_completed(course.id, user_id),
-                xp_reward=COURSE_XP,
-                user_rank=self._rank_schema(user),
-                modules=[
-                    self._module_schema(module, user_id)
-                    for module in sorted(course.modules, key=lambda item: item.order)
-                ],
-            )
-            for course in courses
-        ]
+        return [self._course_schema(course, user_id, user=user) for course in courses]
+
+    def _course_schema(self, course, user_id: int, *, user: User) -> CourseRead:
+        unlock_map = self.progression.unlock_map(course, user_id)
+        return CourseRead(
+            id=course.id,
+            title=course.title,
+            slug=course.slug,
+            description=course.description,
+            color=course.color,
+            progress_percent=self._course_progress(course, user_id),
+            completed=self._course_completed(course.id, user_id),
+            xp_reward=COURSE_XP,
+            user_rank=self._rank_schema(user),
+            modules=[
+                self._module_schema(module, user_id, unlock_map=unlock_map)
+                for module in sorted(course.modules, key=lambda item: item.order)
+            ],
+        )
 
     def get_lesson(self, lesson_id: int, user_id: int) -> LessonRead:
         lesson = self.repo.get_lesson(lesson_id)
         if not lesson:
             raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
-        return self._lesson_schema(lesson, user_id)
+        module = lesson.module
+        unlock_map = self.progression.unlock_map(module.course, user_id)
+        if not unlock_map.get(module.id, True):
+            raise AppError(
+                "Este modulo ainda esta bloqueado. Conclua o modulo anterior para liberar esta aula.",
+                status_code=403,
+                code="lesson_locked",
+            )
+        return self._lesson_schema(lesson, user_id, locked=False)
 
     def update_progress(self, lesson_id: int, user_id: int, *, progress_percent: int, last_position_seconds: int, completed: bool) -> LessonProgressRead:
         lesson = self.repo.get_lesson(lesson_id)
@@ -85,7 +96,9 @@ class LessonService:
             exercise_difficulty=rank.max_difficulty.value,
         )
 
-    def _module_schema(self, module, user_id: int) -> ModuleRead:
+    def _module_schema(self, module, user_id: int, *, unlock_map: dict[int, bool]) -> ModuleRead:
+        locked = not unlock_map.get(module.id, True)
+        mastery = self.progression.module_mastery(module, user_id)
         return ModuleRead(
             id=module.id,
             title=module.title,
@@ -94,11 +107,18 @@ class LessonService:
             progress_percent=self._module_progress(module, user_id),
             completed=self._module_completed(module.id, user_id),
             xp_reward=MODULE_XP,
-            lessons=[self._lesson_schema(lesson, user_id) for lesson in sorted(module.lessons, key=lambda item: item.order)],
-            items=self._module_items(module, user_id),
+            lessons=[
+                self._lesson_schema(lesson, user_id, locked=locked)
+                for lesson in sorted(module.lessons, key=lambda item: item.order)
+            ],
+            items=self._module_items(module, user_id, locked=locked),
+            locked=locked,
+            mastered=mastery.mastered,
+            unlock_requirements=self.progression.pending_requirements(mastery) if locked else [],
+            target_competencies=module.target_competencies or [],
         )
 
-    def _lesson_schema(self, lesson, user_id: int) -> LessonRead:
+    def _lesson_schema(self, lesson, user_id: int, *, locked: bool = False) -> LessonRead:
         progress = self.repo.get_progress(user_id, lesson.id)
         user = self._get_user(user_id)
         allowed_difficulties = set(allowed_difficulties_for_user(user))
@@ -122,6 +142,7 @@ class LessonService:
                 for ex in lesson.exercises
                 if ex.difficulty in allowed_difficulties
             ],
+            locked=locked,
         )
 
     def _rank_schema(self, user: User) -> RankRead:
@@ -134,7 +155,7 @@ class LessonService:
             exercise_difficulty=rank.max_difficulty.value,
         )
 
-    def _module_items(self, module, user_id: int) -> list[ModuleItemRead]:
+    def _module_items(self, module, user_id: int, *, locked: bool = False) -> list[ModuleItemRead]:
         items = [
             item
             for item in getattr(module, "items", [])
@@ -142,7 +163,12 @@ class LessonService:
         ]
         if not items:
             return [
-                ModuleItemRead(id=0 - lesson.id, kind="lesson", order=lesson.order, lesson=self._lesson_schema(lesson, user_id))
+                ModuleItemRead(
+                    id=0 - lesson.id,
+                    kind="lesson",
+                    order=lesson.order,
+                    lesson=self._lesson_schema(lesson, user_id, locked=locked),
+                )
                 for lesson in sorted(module.lessons, key=lambda item: (item.order, item.id))
             ]
         user = self._get_user(user_id)
@@ -150,7 +176,14 @@ class LessonService:
         result: list[ModuleItemRead] = []
         for item in sorted(items, key=lambda entry: (entry.order, entry.id)):
             if item.kind == "lesson" and item.lesson:
-                result.append(ModuleItemRead(id=item.id, kind="lesson", order=item.order, lesson=self._lesson_schema(item.lesson, user_id)))
+                result.append(
+                    ModuleItemRead(
+                        id=item.id,
+                        kind="lesson",
+                        order=item.order,
+                        lesson=self._lesson_schema(item.lesson, user_id, locked=locked),
+                    )
+                )
             elif item.kind == "activity" and item.exercise and item.exercise.difficulty in allowed_difficulties:
                 result.append(
                     ModuleItemRead(

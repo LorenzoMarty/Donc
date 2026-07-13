@@ -1,1 +1,17 @@
-{}
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"LEMBRETE OBRIGATORIO (regra 1 da Politica de Trabalho): antes de gastar esta chamada de Agent explorando codigo/docs do zero, confirme que ja checou .claude/knowledge/index/concepts.json (skill knowledge-manager) por conceitos ja cacheados. Se ainda nao chamou a skill knowledge-manager nesta tarefa, pare e chame agora antes de prosseguir.\"}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+
