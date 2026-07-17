@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, CornerDownLeft, RotateCcw, X } from "lucide-react";
 
+import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, FillBlankRound } from "@/features/gamification/types";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -40,7 +41,13 @@ function normalize(value: string): string {
 export function FillBlankSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
-  const rounds = useMemo<FillBlankRound[]>(() => shuffle(game.fillBlank?.rounds ?? []), [game.fillBlank]);
+  const adaptive = useGameStore((state) => state.adaptive);
+  const rounds = useMemo<FillBlankRound[]>(() => {
+    const pool = game.fillBlank?.rounds ?? [];
+    const hub = game.hubs?.[0];
+    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
+    return hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : shuffle(pool);
+  }, [game, adaptive]);
 
   const [step, setStep] = useState(0);
   const [value, setValue] = useState("");

@@ -22,6 +22,32 @@ _CONNECTION_TERMS = re.compile(
     r"permite\s+compreender|ajuda\s+a\s+entender|prova\s+que|mostra\s+que)\b",
     re.I,
 )
+_AUTHORITY_ATTRIBUTION = re.compile(
+    r"\b(?:segundo|conforme|de\s+acordo\s+com)\s+(?:o|a)\s+"
+    r"(?:renomad[oa]|famos[oa]|grande|ilustre|celebre|c[eé]lebre)?\s*"
+    r"(?:filosofo|fil[oó]sofo|sociologo|soci[oó]logo|historiador|cientista|escritor|"
+    r"pensador|psicologo|psic[oó]logo|economista|autor)\s+"
+    r"([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[A-ZÀ-Ý][a-zà-ÿ]+){0,2})",
+    re.I,
+)
+_UNSOURCED_STAT = re.compile(r"\b\d{1,3}%\s+d[aoe]s?\b")
+_SOURCE_MARKERS = re.compile(
+    r"\b(segundo|conforme|de\s+acordo\s+com|pesquisa|estudo|ibge|onu|unesco|dados\s+d[eo])\b",
+    re.I,
+)
+
+
+def _has_suspicious_citation(content: str) -> bool:
+    for match in _AUTHORITY_ATTRIBUTION.finditer(content):
+        name = match.group(1)
+        if not _REPERTOIRE_TERMS.search(name):
+            return True
+    for match in _UNSOURCED_STAT.finditer(content):
+        window_start = max(0, match.start() - 60)
+        window = content[window_start:match.end() + 10]
+        if not _SOURCE_MARKERS.search(window):
+            return True
+    return False
 
 
 class RepertoireAnalyzerV2Agent:
@@ -56,8 +82,12 @@ Redacao:
         has_connection = bool(_CONNECTION_TERMS.search(content))
         items = list({m.lower() for m in _REPERTOIRE_TERMS.findall(content)})
         is_generic = generic_count > rep_count or (rep_count == 0 and generic_count > 0)
-        if rep_count == 0 and generic_count == 0:
-            quality: str = "FRACO"
+        false_citations = _has_suspicious_citation(content)
+        if false_citations:
+            quality: str = "INVALIDO"
+            score = 15
+        elif rep_count == 0 and generic_count == 0:
+            quality = "FRACO"
             score = 20
         elif generic_count > 0 and rep_count == 0:
             quality = "FRACO"
@@ -76,6 +106,6 @@ Redacao:
             items_found=items[:5],
             is_generic=is_generic,
             has_argumentative_connection=has_connection,
-            false_citations=False,
+            false_citations=false_citations,
             score=score,
         )

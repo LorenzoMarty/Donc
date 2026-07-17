@@ -19,6 +19,7 @@ import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, GripVertical, RotateCcw, Trophy, X } from "lucide-react";
 
+import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import type { ClassifyItem, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader } from "@/components/shared/premium-ui";
@@ -45,8 +46,14 @@ function shuffle<T>(items: T[]): T[] {
 export function ClassifyDragSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
+  const adaptive = useGameStore((state) => state.adaptive);
   const payload = game.classify;
-  const items = useMemo(() => shuffle(payload?.items ?? []), [payload]);
+  const items = useMemo(() => {
+    const pool = payload?.items ?? [];
+    const hub = game.hubs?.[0];
+    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
+    return hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : shuffle(pool);
+  }, [payload, game, adaptive]);
   const buckets = payload?.buckets ?? [];
 
   const [placement, setPlacement] = useState<Placement>(() => Object.fromEntries(items.map((item) => [item.id, "bank"])));

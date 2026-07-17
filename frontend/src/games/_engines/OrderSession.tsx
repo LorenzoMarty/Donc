@@ -22,6 +22,7 @@ import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, GripVertical, RotateCcw, X } from "lucide-react";
 
+import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, OrderRound } from "@/features/gamification/types";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -60,7 +61,13 @@ function shuffleCells(cells: OrderCell[]): OrderCell[] {
 export function OrderSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
-  const rounds = useMemo<OrderRound[]>(() => shuffle(game.order?.rounds ?? []), [game.order]);
+  const adaptive = useGameStore((state) => state.adaptive);
+  const rounds = useMemo<OrderRound[]>(() => {
+    const pool = game.order?.rounds ?? [];
+    const hub = game.hubs?.[0];
+    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
+    return hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : shuffle(pool);
+  }, [game, adaptive]);
 
   const [step, setStep] = useState(0);
   const [score, setScore] = useState(0);
