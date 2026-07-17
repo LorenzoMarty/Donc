@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type WheelEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   BookOpen,
   ClipboardList,
@@ -187,7 +188,7 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "group fixed inset-y-0 left-0 z-40 hidden flex-col bg-card shadow-soft transition-[width,padding] duration-200 ease-in-out md:flex",
+        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 bg-card/85 shadow-soft backdrop-blur-xl transition-[width,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
         collapsed ? "py-4" : "py-5",
       )}
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
@@ -223,13 +224,21 @@ function DesktopSidebar({
 
       <div className={cn("mb-6 overflow-hidden", collapsed ? "px-3" : "px-4")}>
         {collapsed ? (
-          <Button asChild size="icon" aria-label="Nova redação" className="h-10 w-full">
+          <Button
+            asChild
+            size="icon"
+            aria-label="Nova redação"
+            className="h-10 w-full bg-gradient-to-b from-primary to-primary/85 shadow-control transition-transform hover:scale-[1.03] active:scale-[0.97]"
+          >
             <Link href="/redacao">
               <Plus className="h-6 w-6" aria-hidden="true" />
             </Link>
           </Button>
         ) : (
-          <Button asChild className="h-10 w-full justify-start text-base">
+          <Button
+            asChild
+            className="h-10 w-full justify-start bg-gradient-to-b from-primary to-primary/85 text-base shadow-control transition-transform hover:scale-[1.015] active:scale-[0.98]"
+          >
             <Link href="/redacao">
               <Plus className="h-5 w-5" aria-hidden="true" />
               Nova redação
@@ -262,13 +271,13 @@ function DesktopSidebar({
 
       <div className={cn("mt-2 overflow-hidden", collapsed ? "px-3" : "px-4")}>
         {!collapsed ? (
-          <div className="flex min-h-11 items-center justify-between gap-2 rounded-control bg-muted/60 px-2 py-2 text-base font-semibold transition-colors">
+          <div className="flex min-h-11 items-center justify-between gap-2 rounded-control bg-muted/60 px-2 py-2 text-base font-semibold transition-colors hover:bg-muted">
             <Link
               href="/perfil"
               className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary"
               aria-label={`Perfil de ${userName}`}
             >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-xs font-semibold text-primary ring-1 ring-primary/20 transition-all hover:ring-2 hover:ring-primary/40">
                 {initials(userName)}
               </span>
               <span className="min-w-0 leading-tight">
@@ -397,16 +406,29 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-3 rounded-control text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground",
+        "group/nav relative flex items-center gap-3 rounded-control text-base font-semibold text-muted-foreground transition-colors hover:text-foreground",
         collapsed ? "h-11 justify-center px-0" : "min-h-11 px-3",
         showLabel ? "justify-start" : "justify-center",
-        active && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+        active ? "text-primary-foreground" : "hover:bg-muted/70",
       )}
     >
-      <Icon className={cn("shrink-0", collapsed ? "h-5 w-5" : "h-5 w-5")} aria-hidden="true" />
+      {active ? (
+        <motion.span
+          layoutId="sidebar-active-pill"
+          className="absolute inset-0 rounded-control bg-primary shadow-control"
+          transition={{ type: "spring", stiffness: 420, damping: 34 }}
+        />
+      ) : null}
+      <Icon
+        className={cn(
+          "relative z-10 shrink-0 transition-transform duration-150 group-hover/nav:scale-110",
+          collapsed ? "h-5 w-5" : "h-5 w-5",
+        )}
+        aria-hidden="true"
+      />
       <span
         className={cn(
-          "min-w-0 overflow-hidden whitespace-nowrap text-safe transition-opacity duration-150",
+          "relative z-10 min-w-0 overflow-hidden whitespace-nowrap text-safe transition-opacity duration-150",
           showLabel ? "opacity-100" : "w-0 opacity-0",
         )}
       >
