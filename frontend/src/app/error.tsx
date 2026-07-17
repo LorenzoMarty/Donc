@@ -12,7 +12,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
         <button
           type="button"
           onClick={reset}
-          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+          className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-soft transition hover:opacity-90"
         >
           Tentar novamente
         </button>

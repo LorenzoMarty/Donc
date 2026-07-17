@@ -30,7 +30,7 @@ export default function TracksPage() {
           <Reveal delay={0.08}>
             <div className="relative rounded-card bg-card p-4 shadow-elevated xs:p-6">
               <div className="absolute bottom-10 left-10 top-10 w-1 rounded-full bg-border">
-                <div className="h-2/3 rounded-full bg-primary shadow-sm" />
+                <div className="h-2/3 rounded-full bg-primary shadow-soft" />
               </div>
               <div className="space-y-6 pl-14">
                 {["completed", "completed", "available", "locked", "locked"].map((state, index) => (

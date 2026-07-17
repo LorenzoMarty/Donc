@@ -182,7 +182,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5, type: "spring" }}
-        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-primary/30 bg-primary/10"
+        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-control border-2 border-primary/30 bg-primary/10"
       >
         <Sparkles className="h-10 w-10 text-primary" aria-hidden="true" />
       </motion.div>
@@ -368,7 +368,7 @@ function CTAStep({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.4, type: "spring" }}
-        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-primary/30 bg-primary/10"
+        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-control border-2 border-primary/30 bg-primary/10"
       >
         <Target className="h-10 w-10 text-primary" aria-hidden="true" />
       </motion.div>
