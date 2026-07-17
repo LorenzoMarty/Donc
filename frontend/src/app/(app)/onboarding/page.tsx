@@ -26,24 +26,24 @@ const LEVELS = [
 const TOUR_SLIDES = [
   {
     icon: Map,
-    title: "Jogos de Prática",
-    description: "Treine gramática, conectivos e argumentação em sessões curtas — um sintoma por vez.",
+    title: "Aqui você treina seus sintomas",
+    description: "Argumentação, repertório, conectivos — cada um vira um treino curto, direto no que está te travando.",
     href: "/games",
     color: "text-emerald-600",
     bg: "bg-emerald-50 border-emerald-200",
   },
   {
     icon: PenLine,
-    title: "Editor de Redação",
-    description: "Escolha um tema, escreva e envie para correção. A IA devolve nota por competência ENEM.",
+    title: "Aqui você escreve e recebe nota real",
+    description: "Escolha um tema, escreva, envie. A IA corrige como o ENEM corrige: nota por competência, não só um número solto.",
     href: "/redacao",
     color: "text-primary",
     bg: "bg-primary/10 border-primary/30",
   },
   {
     icon: BarChart3,
-    title: "Painel de Evolução",
-    description: "Acompanhe notas, sequência de treinos e quais competências ainda estão perdendo pontos.",
+    title: "Aqui você acompanha sua evolução",
+    description: "Sequência de treino, notas e quais competências ainda travam sua nota — tudo num só lugar.",
     href: "/dashboard",
     color: "text-primary",
     bg: "bg-primary/10 border-primary/30",
@@ -297,7 +297,7 @@ function TourStep({
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Passo 3 de 3 · Tour rápido</p>
-      <h2 className="mt-2 text-2xl font-bold tracking-tight">Conheça as três áreas principais</h2>
+      <h2 className="mt-2 text-2xl font-bold tracking-tight">É assim que você evolui aqui</h2>
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -373,8 +373,10 @@ function CTAStep({
         <Target className="h-10 w-10 text-primary" aria-hidden="true" />
       </motion.div>
 
-      <h2 className="text-2xl font-bold tracking-tight">Configuração salva.</h2>
-      <p className="mt-2 text-muted-foreground">Seu treino está pronto para começar.</p>
+      <h2 className="text-2xl font-bold tracking-tight">Prontinho.</h2>
+      <p className="mt-2 text-muted-foreground">
+        A partir da sua primeira redação a gente já sabe por onde focar. Bora escrever?
+      </p>
 
       <div className="mt-6 grid gap-2 text-left">
         <div className="flex items-center justify-between rounded-[var(--radius)] border border-border bg-card p-3">

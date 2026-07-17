@@ -7,6 +7,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FriendlyErrorFeedback, RewardAnimation, WritingSidebar } from "@/components/shared/motion-system";
+import { EssayTimer } from "@/components/writing/essay-timer";
 import { dominantWeakness } from "@/features/gamification/adaptive";
 import { HUBS } from "@/features/gamification/symptoms";
 import type { Essay, EssayTheme } from "@/services/api";
@@ -108,7 +109,8 @@ export function EssayEditor({
           </div>
         </div>
 
-        <div className="flex items-center justify-end self-center">
+        <div className="flex items-center justify-end gap-3 self-center">
+          {!locked ? <EssayTimer /> : null}
           <Button size="sm" onClick={onSubmit} disabled={!canSubmit} className="h-9">
             <Send className="h-4 w-4" aria-hidden="true" />
             {submitting ? "Corrigindo..." : "Corrigir"}

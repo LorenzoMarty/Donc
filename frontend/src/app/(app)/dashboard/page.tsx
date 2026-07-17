@@ -292,7 +292,9 @@ export default function DashboardPage() {
             <div className="grid min-h-64 place-items-center px-6 py-10 text-center">
               <div>
                 <p className="text-lg font-bold">Nenhuma redação ainda.</p>
-                <p className="mt-2 text-base text-muted-foreground">Escreva uma redação para começar seu histórico.</p>
+                <p className="mt-2 text-base text-muted-foreground">
+                  Sua primeira redação vira o ponto de partida — a IA aponta exatamente o que ajustar primeiro.
+                </p>
                 <Button asChild className="mt-5">
                   <Link href="/redacao">
                     <PenLine className="h-4 w-4" aria-hidden="true" />
