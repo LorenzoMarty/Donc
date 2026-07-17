@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ChevronDown, ClipboardList, Flame, Lock, LockKeyhole, type LucideIcon } from "lucide-react";
+import { ArrowRight, ChevronDown, ClipboardList, Flame, Lock, LockKeyhole, PlayCircle, Sparkles, type LucideIcon } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
@@ -10,8 +11,9 @@ import { MotionShell } from "@/components/shared/motion-shell";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Rail } from "@/components/shared/rail";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { apiFetch, type Course, type Lesson } from "@/services/api";
+import { apiFetch, type Course, type Dashboard, type Lesson } from "@/services/api";
 import type { ModuleItem } from "@/types/api";
 import { cn } from "@/utils";
 
@@ -25,13 +27,15 @@ const difficultyLabel: Record<string, string> = {
 
 export default function LessonsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const loadCourses = useCallback(() => {
-    return apiFetch<Course[]>("/lessons/courses")
-      .then((data) => {
-        setCourses(data);
+    return Promise.all([apiFetch<Course[]>("/lessons/courses"), apiFetch<Dashboard>("/dashboard").catch(() => null)])
+      .then(([coursesData, dashboardData]) => {
+        setCourses(coursesData);
+        setDashboard(dashboardData);
         setError("");
       })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Não foi possível carregar as aulas."))
@@ -59,20 +63,115 @@ export default function LessonsPage() {
     );
   }
 
+  const lessonById = new Map(courses.flatMap((course) => course.modules ?? []).flatMap((module) => module.lessons ?? []).map((lesson) => [lesson.id, lesson]));
+  const featuredCourse = courses.find((course) => !course.completed) ?? courses[0] ?? null;
+  const continueWatching = (dashboard?.recent_lessons ?? []).filter((entry) => entry.progress_percent > 0 && entry.progress_percent < 100);
+  const recommended = dashboard?.suggested_lessons ?? [];
+
   return (
-    <MotionShell className="space-y-3">
+    <MotionShell className="space-y-6">
       <PageHeader
         eyebrow="Cursos"
-        title="Trilha de aulas"
-        description="Avance pelos módulos na ordem. Cada aula concluída dá XP; fechar um módulo dá bônus."
+        title="Sua trilha de aulas"
+        description="Continue de onde parou, veja o que a gente recomenda pra você e avance pelos módulos na ordem certa."
       />
 
-      <div className="space-y-3">
-        {courses.map((course) => (
-          <CoursePanel key={course.id} course={course} />
-        ))}
+      {featuredCourse ? <CourseHero course={featuredCourse} /> : null}
+
+      {continueWatching.length ? (
+        <Rail title="Continuar assistindo">
+          {continueWatching.map((entry) => (
+            <LessonPosterCard
+              key={`continue-${entry.id}`}
+              lesson={{
+                id: entry.id,
+                title: entry.title,
+                href: `/aulas/${entry.id}`,
+                moduleLabel: entry.module,
+                progressPercent: entry.progress_percent,
+                fallbackSeed: entry.title,
+                durationMinutes: lessonById.get(entry.id)?.duration_minutes,
+                xpReward: lessonById.get(entry.id)?.xp_reward,
+              }}
+            />
+          ))}
+        </Rail>
+      ) : null}
+
+      {recommended.length ? (
+        <Rail
+          title="Recomendado pra você"
+          action={<Sparkles className="h-4 w-4 text-highlight" aria-hidden="true" />}
+        >
+          {recommended.map((entry) => (
+            <LessonPosterCard
+              key={`suggested-${entry.id}`}
+              lesson={{
+                id: entry.id,
+                title: entry.title,
+                href: `/aulas/${entry.id}`,
+                moduleLabel: entry.module,
+                progressPercent: entry.progress_percent,
+                fallbackSeed: entry.title,
+                durationMinutes: lessonById.get(entry.id)?.duration_minutes,
+                xpReward: lessonById.get(entry.id)?.xp_reward,
+              }}
+            />
+          ))}
+        </Rail>
+      ) : null}
+
+      <div>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Todos os cursos</p>
+        <div className="space-y-3">
+          {courses.map((course) => (
+            <CoursePanel key={course.id} course={course} />
+          ))}
+        </div>
       </div>
     </MotionShell>
+  );
+}
+
+/** Banner de destaque: primeiro curso não concluído, com CTA direto pra próxima aula disponível. */
+function CourseHero({ course }: { course: Course }) {
+  const modules = course.modules ?? [];
+  const nextLesson = modules
+    .filter((module) => !module.locked)
+    .flatMap((module) => module.lessons ?? [])
+    .find((lesson) => !lesson.progress.completed);
+  const progress = course.progress_percent ?? 0;
+
+  return (
+    <Surface className="relative overflow-hidden p-5 lg:p-7">
+      <div
+        className="absolute inset-0 opacity-90"
+        style={{ background: `linear-gradient(120deg, ${course.color || "hsl(var(--primary))"} 0%, transparent 65%)` }}
+        aria-hidden="true"
+      />
+      <div className="relative grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="min-w-0">
+          <Badge variant="secondary" className="mb-3">
+            Continue sua trilha
+          </Badge>
+          <h2 className="text-safe text-2xl font-semibold tracking-normal lg:text-3xl">{course.title}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground lg:text-base">{course.description}</p>
+          <div className="mt-4 flex max-w-xs items-center gap-3">
+            <Progress value={progress} className="h-2" />
+            <span className="shrink-0 text-sm font-semibold">{progress}%</span>
+          </div>
+        </div>
+        {nextLesson ? (
+          <Button asChild size="lg" className="shrink-0">
+            <Link href={`/aulas/${nextLesson.id}`}>
+              <PlayCircle className="h-4 w-4" aria-hidden="true" />
+              {nextLesson.progress.progress_percent > 0 ? "Continuar aula" : "Começar aula"}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        ) : null}
+      </div>
+    </Surface>
   );
 }
 
