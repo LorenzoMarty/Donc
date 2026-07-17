@@ -7,12 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import type { Lesson } from "@/services/api";
 
+/**
+ * YouTube deixa a marca vermelho/branco do próprio player vazar pro iframe por padrão. Esses
+ * parâmetros reduzem isso: sem logo do YouTube, sem sugestões de outros canais ao pausar/terminar,
+ * barra de progresso branca (neutra) em vez de vermelha.
+ */
+function withPlayerParams(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("youtube.com") && !parsed.hostname.includes("youtu.be")) return url;
+    parsed.searchParams.set("modestbranding", "1");
+    parsed.searchParams.set("rel", "0");
+    parsed.searchParams.set("color", "white");
+    parsed.searchParams.set("iv_load_policy", "3");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplete: () => void }) {
   return (
     <div className="game-surface overflow-hidden bg-card">
-      <div className="aspect-video border-b border-border bg-foreground">
+      <div className="aspect-video overflow-hidden rounded-card border-b border-border bg-foreground">
         {lesson.video_url ? (
-          <iframe className="h-full w-full" src={lesson.video_url} title={lesson.title} allowFullScreen />
+          <iframe className="h-full w-full" src={withPlayerParams(lesson.video_url)} title={lesson.title} allowFullScreen />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-background/70">
             <FileText className="h-8 w-8" aria-hidden="true" />
