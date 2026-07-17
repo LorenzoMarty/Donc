@@ -7,12 +7,15 @@ export type MotivadorHighlight = {
   textTitle: string;
   quote: string;
   createdAt: number;
+  /** Anotação do aluno (post-it) sobre o trecho grifado — opcional, editável depois do grifo. */
+  note?: string;
 };
 
 type HighlightsStore = {
   highlightsByTheme: Record<number, MotivadorHighlight[]>;
   addHighlight: (themeId: number, textIndex: number, textTitle: string, quote: string) => void;
   removeHighlight: (themeId: number, highlightId: string) => void;
+  setHighlightNote: (themeId: number, highlightId: string, note: string) => void;
 };
 
 export const useHighlightsStore = create<HighlightsStore>()(
@@ -42,6 +45,15 @@ export const useHighlightsStore = create<HighlightsStore>()(
           highlightsByTheme: {
             ...state.highlightsByTheme,
             [themeId]: (state.highlightsByTheme[themeId] ?? []).filter((h) => h.id !== highlightId),
+          },
+        })),
+      setHighlightNote: (themeId, highlightId, note) =>
+        set((state) => ({
+          highlightsByTheme: {
+            ...state.highlightsByTheme,
+            [themeId]: (state.highlightsByTheme[themeId] ?? []).map((h) =>
+              h.id === highlightId ? { ...h, note } : h,
+            ),
           },
         })),
     }),
