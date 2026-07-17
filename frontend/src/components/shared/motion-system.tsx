@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
@@ -111,6 +111,33 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
       )}
     </AnimatePresence>
   );
+}
+
+export function NumberTicker({
+  value,
+  duration = 0.9,
+  className,
+}: {
+  value: number;
+  duration?: number;
+  className?: string;
+}) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    let raf: number;
+    const start = performance.now();
+    function tick(now: number) {
+      const progress = Math.min(1, (now - start) / (duration * 1000));
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(value * eased));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+
+  return <span className={className}>{display}</span>;
 }
 
 export function InteractiveMascot({ mood = "ready", size = "md" }: { mood?: "ready" | "happy" | "thinking"; size?: "sm" | "md" }) {

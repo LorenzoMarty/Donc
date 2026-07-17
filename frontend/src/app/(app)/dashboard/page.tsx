@@ -6,10 +6,13 @@ import type { LucideIcon } from "lucide-react";
 import { ArrowRight, BookOpen, Clock3, FileText, PenLine, Plus, Sparkles, Trash2, Video } from "lucide-react";
 import { toast } from "sonner";
 
+import { motion } from "framer-motion";
+
 import { ErrorState } from "@/components/shared/error-state";
 import { EssayStatusPill } from "@/components/shared/essay-status-pill";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
+import { NumberTicker } from "@/components/shared/motion-system";
 import { Rail } from "@/components/shared/rail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,8 +176,13 @@ export default function DashboardPage() {
   return (
     <div className="text-foreground">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,1fr)]">
-        <div className="relative overflow-hidden rounded-card bg-primary p-8 text-primary-foreground md:p-10">
-          <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/12" />
+        <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-primary to-primary/85 p-8 text-primary-foreground md:p-10">
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/12"
+            animate={{ scale: [1, 1.08, 1], opacity: [0.9, 1, 0.9] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          />
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary-foreground/80">Bom dia, {studentName}</p>
           <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-tight tracking-normal md:text-5xl">{heroCopy.title}</h1>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-primary-foreground/90">{heroCopy.description}</p>
@@ -199,14 +207,19 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="mt-5 flex items-end gap-3">
-            <span className="text-7xl font-bold leading-none tracking-normal tabular-nums">{streak}</span>
+            <span className="text-7xl font-bold leading-none tracking-normal tabular-nums">
+              <NumberTicker value={streak} />
+            </span>
             <span className="mb-2 text-2xl font-semibold text-muted-foreground">dias</span>
           </div>
           <p className="mt-3 text-base text-muted-foreground">{streak > 0 ? "Sequência ativa" : "Faça uma atividade hoje para começar"}</p>
           <div className="mt-7 grid grid-cols-7 gap-2">
-            {buildWeekProgress(streak).map((day) => (
-              <div
+            {buildWeekProgress(streak).map((day, index) => (
+              <motion.div
                 key={day.key}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05, type: "spring", stiffness: 380, damping: 22 }}
                 className={cn(
                   "grid aspect-square place-items-center rounded-full border-2 text-sm font-bold",
                   day.active
@@ -216,7 +229,7 @@ export default function DashboardPage() {
                 )}
               >
                 {day.label}
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -522,17 +535,33 @@ function StatCard({
   detail: string;
   href: string;
 }) {
+  const numericValue = Number(value);
+  const isNumeric = value.trim() !== "" && !Number.isNaN(numericValue);
+
   return (
-    <Link href={href} className="rounded-card bg-card p-6 shadow-soft transition-transform hover:-translate-y-0.5">
-      <div className={cn("grid h-10 w-10 place-items-center rounded-control", STAT_TONE[tone].icon)}>
-        <Icon className="h-5 w-5" aria-hidden="true" />
-      </div>
-      <div className="mt-3 text-base font-semibold text-muted-foreground">{label}</div>
-      <div className="mt-1 flex items-end gap-1">
-        <span className="text-4xl font-bold leading-none tracking-normal tabular-nums">{value}</span>
-        {suffix ? <span className="mb-1 text-lg font-semibold text-muted-foreground">{suffix}</span> : null}
-      </div>
-      <p className="mt-3 text-base text-muted-foreground">{detail}</p>
+    <Link href={href} className="group block">
+      <motion.div
+        whileHover={{ y: -4, scale: 1.012 }}
+        transition={{ type: "spring", stiffness: 340, damping: 26 }}
+        className="rounded-card bg-card p-6 shadow-soft transition-shadow duration-200 group-hover:shadow-elevated"
+      >
+        <div
+          className={cn(
+            "grid h-10 w-10 place-items-center rounded-control transition-transform duration-200 group-hover:scale-110",
+            STAT_TONE[tone].icon,
+          )}
+        >
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </div>
+        <div className="mt-3 text-base font-semibold text-muted-foreground">{label}</div>
+        <div className="mt-1 flex items-end gap-1">
+          <span className="text-4xl font-bold leading-none tracking-normal tabular-nums">
+            {isNumeric ? <NumberTicker value={numericValue} /> : value}
+          </span>
+          {suffix ? <span className="mb-1 text-lg font-semibold text-muted-foreground">{suffix}</span> : null}
+        </div>
+        <p className="mt-3 text-base text-muted-foreground">{detail}</p>
+      </motion.div>
     </Link>
   );
 }
