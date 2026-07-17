@@ -1,13 +1,33 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, ArrowLeft, CheckCircle2, Send } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Eraser,
+  MousePointer2,
+  PenLine,
+  Send,
+  Trash2,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FriendlyErrorFeedback, RewardAnimation, WritingSidebar } from "@/components/shared/motion-system";
+import {
+  FriendlyErrorFeedback,
+  RewardAnimation,
+  SupportingTextBody,
+  SupportingTextIcon,
+  WritingSidebar,
+} from "@/components/shared/motion-system";
+import { DrawingCanvas, type DrawingTool, type Stroke } from "@/components/writing/drawing-canvas";
 import { EssayTimer } from "@/components/writing/essay-timer";
+import { HydraRail } from "@/components/writing/hydra-rail";
 import { dominantWeakness } from "@/features/gamification/adaptive";
 import { HUBS } from "@/features/gamification/symptoms";
 import type { Essay, EssayTheme } from "@/services/api";
@@ -44,6 +64,10 @@ export function EssayEditor({
   onSubmit: () => void;
 }) {
   const [showSaved, setShowSaved] = useState(false);
+  const [page, setPage] = useState<"folha" | "motivadores">("folha");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const [activeTool, setActiveTool] = useState<DrawingTool | null>(null);
   const wasSavingRef = useRef(false);
   const lines = estimateEditorLines(content);
   const lineNumbers = Array.from({ length: Math.max(30, lines) }, (_, index) => index + 1);
@@ -52,6 +76,7 @@ export function EssayEditor({
   const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
+  const hasMotivadores = Boolean(activeTheme?.supporting_texts?.length);
   const adaptive = useGameStore((state) => state.adaptive);
   const weakHubId = dominantWeakness(adaptive);
   const personalizedTip = weakHubId ? { title: HUBS[weakHubId].title, text: HUBS[weakHubId].weaknessNarrative } : null;
@@ -74,7 +99,10 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="flex flex-col rounded-card bg-card shadow-soft md:grid md:h-dvh md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] md:overflow-hidden md:rounded-none md:shadow-none"
+      className={cn(
+        "flex flex-col rounded-card bg-card shadow-soft md:grid md:h-dvh md:overflow-hidden md:rounded-none md:shadow-none",
+        sidebarCollapsed ? "md:grid-cols-[minmax(0,1fr)_4.5rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]",
+      )}
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
@@ -118,71 +146,279 @@ export function EssayEditor({
         </div>
         </header>
 
-        <article className="mobile-scroll min-h-0 overflow-y-auto bg-background px-5 py-8 md:px-9 lg:py-10">
-          <div className="mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-card px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
-            <div
-              aria-hidden="true"
-              className="select-none pt-1 text-right font-mono text-[0.82rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.88rem]"
-            >
-              {lineNumbers.map((lineNumber) => (
-                <div key={lineNumber} className="h-[var(--essay-line-height)]">
-                  {lineNumber}
-                </div>
-              ))}
-            </div>
-            <textarea
-              value={content}
-              disabled={locked}
-              onChange={(event) => onContentChange(event.target.value)}
-              spellCheck
-              placeholder="Comece sua redação aqui..."
-              className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
+        {hasMotivadores ? (
+          <div className="flex gap-1 border-b border-border/55 bg-card px-4 py-2 md:px-5">
+            <PageTab active={page === "folha"} onClick={() => setPage("folha")} icon={PenLine} label="Folha de redação" />
+            <PageTab
+              active={page === "motivadores"}
+              onClick={() => setPage("motivadores")}
+              icon={BookOpen}
+              label="Textos motivadores"
             />
           </div>
-        </article>
+        ) : null}
+
+        <div className="relative min-h-0 flex-1 overflow-hidden" style={{ perspective: 1600 }}>
+          <AnimatePresence mode="wait" initial={false}>
+            {page === "folha" ? (
+              <motion.article
+                key="folha"
+                initial={{ opacity: 0, rotateY: -10, x: -18 }}
+                animate={{ opacity: 1, rotateY: 0, x: 0 }}
+                exit={{ opacity: 0, rotateY: 10, x: 18 }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 py-8 pb-24 md:px-9 lg:py-10"
+              >
+                <div className="relative mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-card px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
+                  <div
+                    aria-hidden="true"
+                    className="select-none pt-1 text-right font-mono text-[0.82rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.88rem]"
+                  >
+                    {lineNumbers.map((lineNumber) => (
+                      <div key={lineNumber} className="h-[var(--essay-line-height)]">
+                        {lineNumber}
+                      </div>
+                    ))}
+                  </div>
+                  <textarea
+                    value={content}
+                    disabled={locked}
+                    onChange={(event) => onContentChange(event.target.value)}
+                    spellCheck
+                    placeholder="Comece sua redação aqui..."
+                    className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
+                  />
+                  {!locked ? (
+                    <DrawingCanvas
+                      strokes={strokes}
+                      activeTool={activeTool}
+                      onStrokeComplete={(stroke) => setStrokes((prev) => [...prev, stroke])}
+                    />
+                  ) : null}
+                </div>
+              </motion.article>
+            ) : (
+              <motion.article
+                key="motivadores"
+                initial={{ opacity: 0, rotateY: 10, x: 18 }}
+                animate={{ opacity: 1, rotateY: 0, x: 0 }}
+                exit={{ opacity: 0, rotateY: -10, x: -18 }}
+                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 py-8 md:px-9 lg:py-10"
+              >
+                <MotivatorsBooklet theme={activeTheme} />
+              </motion.article>
+            )}
+          </AnimatePresence>
+
+          {page === "folha" && !locked ? (
+            <PenBar
+              activeTool={activeTool}
+              onSelectTool={setActiveTool}
+              onClear={() => setStrokes([])}
+              hasStrokes={strokes.length > 0}
+            />
+          ) : null}
+        </div>
       </div>
 
-      <aside className="mobile-scroll min-h-0 overflow-y-auto bg-card p-4 shadow-soft">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio</p>
-              <h2 className="mt-0.5 text-sm font-semibold">Guia e textos</h2>
+      <aside className={cn("mobile-scroll min-h-0 overflow-y-auto bg-card shadow-soft", sidebarCollapsed ? "p-2" : "p-4")}>
+          <div className={cn("mb-2 flex items-center gap-2", sidebarCollapsed ? "flex-col" : "justify-between")}>
+            {!sidebarCollapsed ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio</p>
+                <h2 className="mt-0.5 text-sm font-semibold">Guia e textos</h2>
+              </div>
+            ) : null}
+            <div className={cn("flex items-center gap-2", sidebarCollapsed && "flex-col")}>
+              {!sidebarCollapsed ? (
+                <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount >= 80 ? "Pronta" : "Rascunho"}</Badge>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarCollapsed((value) => !value)}
+                aria-label={sidebarCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
+                className="h-8 w-8 shrink-0"
+              >
+                {sidebarCollapsed ? (
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                )}
+              </Button>
             </div>
-            <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount >= 80 ? "Pronta" : "Rascunho"}</Badge>
           </div>
 
-          <div className="space-y-2.5">
-            {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
-            <WritingSidebar
-              lines={lines}
-              paragraphs={paragraphCount}
-              structureProgress={structureProgress}
-              theme={activeTheme}
-              personalizedTip={personalizedTip}
-            />
-            <FriendlyErrorFeedback
-              show={wordCount > 0 && wordCount < 80}
-              message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
-            />
-            {locked ? (
-              <div className="rounded-control bg-primary/10 p-3 text-sm font-semibold text-primary">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                  Versão corrigida e bloqueada.
+          {sidebarCollapsed ? (
+            <HydraRail themeId={activeTheme?.id} />
+          ) : (
+            <div className="space-y-2.5">
+              {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
+              <WritingSidebar
+                lines={lines}
+                paragraphs={paragraphCount}
+                structureProgress={structureProgress}
+                theme={activeTheme}
+                personalizedTip={personalizedTip}
+              />
+              <FriendlyErrorFeedback
+                show={wordCount > 0 && wordCount < 80}
+                message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
+              />
+              {locked ? (
+                <div className="rounded-control bg-primary/10 p-3 text-sm font-semibold text-primary">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                    Versão corrigida e bloqueada.
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            {error ? (
-              <div className="rounded-control bg-destructive/10 p-3 text-sm font-semibold text-destructive">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  {error}
+              ) : null}
+              {error ? (
+                <div className="rounded-control bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    {error}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : null}
+            </div>
+          )}
       </aside>
     </motion.section>
+  );
+}
+
+function PageTab({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: typeof PenLine;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors",
+        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {label}
+    </button>
+  );
+}
+
+const PEN_SWATCHES: { tool: DrawingTool; label: string; color: string }[] = [
+  { tool: "pen-black", label: "Caneta preta", color: "#1f2a24" },
+  { tool: "pen-blue", label: "Caneta azul", color: "#1d4ed8" },
+  { tool: "pen-red", label: "Caneta vermelha", color: "#b3122a" },
+  { tool: "highlighter", label: "Marca-texto", color: "#fbbf24" },
+];
+
+/** Bottom bar de seleção de canetas — desenho/marcação livre sobre a folha, não cor de grifo. */
+function PenBar({
+  activeTool,
+  onSelectTool,
+  onClear,
+  hasStrokes,
+}: {
+  activeTool: DrawingTool | null;
+  onSelectTool: (tool: DrawingTool | null) => void;
+  onClear: () => void;
+  hasStrokes: boolean;
+}) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
+      <div className="pointer-events-auto flex items-center gap-1.5 rounded-control border border-border bg-card px-2 py-1.5 shadow-elevated">
+        <button
+          type="button"
+          onClick={() => onSelectTool(null)}
+          aria-label="Escrever (desativar canetas)"
+          aria-pressed={activeTool === null}
+          className={cn(
+            "grid h-8 w-8 place-items-center rounded-control transition-colors",
+            activeTool === null ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60",
+          )}
+        >
+          <MousePointer2 className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        <div className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
+
+        {PEN_SWATCHES.map((pen) => (
+          <button
+            key={pen.tool}
+            type="button"
+            onClick={() => onSelectTool(pen.tool)}
+            aria-label={pen.label}
+            aria-pressed={activeTool === pen.tool}
+            className={cn(
+              "grid h-8 w-8 place-items-center rounded-control transition-colors",
+              activeTool === pen.tool ? "ring-2 ring-primary ring-offset-1 ring-offset-card" : "hover:bg-muted/60",
+            )}
+          >
+            <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pen.color }} aria-hidden="true" />
+          </button>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => onSelectTool("eraser")}
+          aria-label="Borracha"
+          aria-pressed={activeTool === "eraser"}
+          className={cn(
+            "grid h-8 w-8 place-items-center rounded-control transition-colors",
+            activeTool === "eraser" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60",
+          )}
+        >
+          <Eraser className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        <div className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
+
+        <button
+          type="button"
+          onClick={onClear}
+          disabled={!hasStrokes}
+          aria-label="Limpar marcações"
+          className="grid h-8 w-8 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+        >
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Caderno de textos motivadores em página cheia — simula folhear o caderno físico da prova. */
+function MotivatorsBooklet({ theme }: { theme: EssayTheme | null }) {
+  if (!theme?.supporting_texts?.length) return null;
+
+  return (
+    <div className="mx-auto max-w-[720px] space-y-4">
+      <div className="rounded-card bg-card px-5 py-6 shadow-elevated md:px-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
+        <h2 className="mt-1 text-xl font-semibold leading-snug tracking-normal md:text-2xl">{theme.title}</h2>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{theme.context}</p>
+      </div>
+      {theme.supporting_texts.map((text, index) => (
+        <div key={index} className="rounded-card bg-card px-5 py-5 shadow-elevated md:px-8">
+          <div className="mb-3 flex items-center gap-2">
+            <SupportingTextIcon type={text.type} />
+            <h3 className="text-sm font-semibold leading-snug">{text.title}</h3>
+          </div>
+          <SupportingTextBody text={text} themeId={theme.id} textIndex={index} />
+        </div>
+      ))}
+    </div>
   );
 }
 

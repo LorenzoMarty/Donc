@@ -326,7 +326,7 @@ function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null
   );
 }
 
-function SupportingTextIcon({ type }: { type: SupportingText["type"] }) {
+export function SupportingTextIcon({ type }: { type: SupportingText["type"] }) {
   const className = "h-3.5 w-3.5 shrink-0 text-primary";
   switch (type) {
     case "grafico":
@@ -369,7 +369,7 @@ function MiniBarChart({ points }: { points: { label: string; value: number }[] }
   );
 }
 
-function SupportingTextBody({
+export function SupportingTextBody({
   text,
   themeId,
   textIndex,
