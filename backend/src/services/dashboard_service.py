@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, load_only, selectinload
 
-from src.models import Course, Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
+from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
 from src.middlewares.errors import AppError
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentExam, RecentLesson, TrendPoint
 from src.services.rank_service import allowed_difficulties_for_user
@@ -16,15 +16,11 @@ class DashboardService:
 
     def get(self, user_id: int) -> DashboardResponse:
         user = self.db.get(User, user_id)
-        total_lessons = self.db.scalar(
-            select(func.count(Lesson.id)).join(Lesson.module).join(Module.course).where(Course.slug == "destrave-redacao")
-        ) or 0
+        total_lessons = self.db.scalar(select(func.count(Lesson.id))) or 0
         completed_lessons = self.db.scalar(
-            select(func.count(LessonProgress.id))
-            .join(LessonProgress.lesson)
-            .join(Lesson.module)
-            .join(Module.course)
-            .where(LessonProgress.user_id == user_id, LessonProgress.completed.is_(True), Course.slug == "destrave-redacao")
+            select(func.count(LessonProgress.id)).where(
+                LessonProgress.user_id == user_id, LessonProgress.completed.is_(True)
+            )
         ) or 0
         answers = list(self.db.scalars(select(ExerciseAnswer).where(ExerciseAnswer.user_id == user_id)))
         correct_rate = int(sum(1 for answer in answers if answer.is_correct) / len(answers) * 100) if answers else 0
@@ -54,12 +50,8 @@ class DashboardService:
             self.db.scalars(
                 select(LessonProgress)
                 .options(selectinload(LessonProgress.lesson).selectinload(Lesson.module))
-                .join(LessonProgress.lesson)
-                .join(Lesson.module)
-                .join(Module.course)
                 .where(
                     LessonProgress.user_id == user_id,
-                    Course.slug == "destrave-redacao",
                     or_(
                         LessonProgress.progress_percent > 0,
                         LessonProgress.last_position_seconds > 0,
@@ -90,9 +82,7 @@ class DashboardService:
             PendingExercise(id=exercise.id, skill=exercise.skill, difficulty=exercise.difficulty.value)
             for exercise in self.db.scalars(
                 select(Exercise)
-                .join(Exercise.module)
-                .join(Module.course)
-                .where(~Exercise.id.in_(answered_ids), Course.slug == "destrave-redacao", Exercise.difficulty.in_(allowed_difficulties))
+                .where(~Exercise.id.in_(answered_ids), Exercise.difficulty.in_(allowed_difficulties))
                 .limit(5)
             )
         ]
@@ -278,8 +268,6 @@ class DashboardService:
             select(Lesson)
             .options(selectinload(Lesson.module))
             .join(Lesson.module)
-            .join(Module.course)
-            .where(Course.slug == "destrave-redacao")
             .order_by(Module.order, Lesson.order)
             .limit(3)
         )

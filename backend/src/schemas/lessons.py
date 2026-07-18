@@ -67,32 +67,20 @@ class LessonRead(BaseModel):
 class ModuleRead(BaseModel):
     id: int
     title: str
+    slug: str
     description: str
+    color: str
     order: int
     progress_percent: int = 0
     completed: bool = False
     xp_reward: int = 75
+    user_rank: RankRead | None = None
     lessons: list[LessonRead] = []
     items: list[ModuleItemRead] = []
     locked: bool = False
     mastered: bool = False
     unlock_requirements: list[str] = Field(default_factory=list)
     target_competencies: list[str] = Field(default_factory=list)
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class CourseRead(BaseModel):
-    id: int
-    title: str
-    slug: str
-    description: str
-    color: str
-    progress_percent: int = 0
-    completed: bool = False
-    xp_reward: int = 200
-    user_rank: RankRead | None = None
-    modules: list[ModuleRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 

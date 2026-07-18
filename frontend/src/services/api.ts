@@ -3,7 +3,6 @@ export { authApi } from "@/services/auth-service";
 export type {
   AdminMetrics,
   ApiEnvelope,
-  Course,
   Dashboard,
   Essay,
   EssayCorrection,
@@ -15,6 +14,7 @@ export type {
   JobStatus,
   LearningProfile,
   Lesson,
+  Module,
   MockExam,
   MockExamAttemptSummary,
   MockExamQuestionReview,

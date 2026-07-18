@@ -45,8 +45,8 @@ class ProgressionService:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def unlock_map(self, course, user_id: int) -> dict[int, bool]:
-        modules = sorted(course.modules, key=lambda module: module.order)
+    def unlock_map(self, all_modules: list[Module], user_id: int) -> dict[int, bool]:
+        modules = sorted(all_modules, key=lambda module: module.order)
         result: dict[int, bool] = {}
         unlocked = True
         for module in modules:

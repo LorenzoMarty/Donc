@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { buildWriterXray, competencyLabel } from "@/features/profile/writer-xray";
-import type { Dashboard, LearningProfile } from "@/types/api";
+import type { Dashboard, EssayHistory, LearningProfile } from "@/types/api";
 
 function fakeDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
   return {
@@ -96,5 +96,24 @@ describe("buildWriterXray", () => {
     expect(xray.hasScores).toBe(true);
     expect(xray.hasTrend).toBe(true);
     expect(xray.isEmpty).toBe(false);
+  });
+
+  it("deriva competencyTrend a partir do evolution do essayHistory", () => {
+    const essayHistory: EssayHistory = {
+      essays: [],
+      average_score: 800,
+      weakest_competency: "Competencia 3",
+      recurrent_errors: [],
+      evolution: [{ label: "V1", score: 800, c1: 160, c2: 180, c3: 140, c4: 160, c5: 160 }],
+    };
+    const xray = buildWriterXray({ dashboard: null, learningProfile: null, essayHistory });
+    expect(xray.hasCompetencyTrend).toBe(true);
+    expect(xray.competencyTrend).toEqual([{ label: "V1", c1: 160, c2: 180, c3: 140, c4: 160, c5: 160 }]);
+  });
+
+  it("hasCompetencyTrend é false sem essayHistory", () => {
+    const xray = buildWriterXray({ dashboard: null, learningProfile: null });
+    expect(xray.hasCompetencyTrend).toBe(false);
+    expect(xray.competencyTrend).toEqual([]);
   });
 });

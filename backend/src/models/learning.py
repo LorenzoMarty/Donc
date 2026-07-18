@@ -14,29 +14,17 @@ class Difficulty(str, Enum):
     HARD = "hard"
 
 
-class Course(Base):
-    __tablename__ = "subjects"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(120), nullable=False)
-    slug: Mapped[str] = mapped_column(String(140), unique=True, nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=False)
-    color: Mapped[str] = mapped_column(String(40), default="#C9A227")
-
-    modules = relationship("Module", back_populates="course", cascade="all, delete-orphan")
-
-
 class Module(Base):
     __tablename__ = "modules"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    course_id: Mapped[int] = mapped_column("subject_id", ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)
+    slug: Mapped[str] = mapped_column(String(140), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    color: Mapped[str] = mapped_column(String(40), default="#65BE02")
     order: Mapped[int] = mapped_column(Integer, default=0)
     target_competencies: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
 
-    course = relationship("Course", back_populates="modules")
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     exercises = relationship("Exercise", back_populates="module", cascade="all, delete-orphan")
     items = relationship("ModuleItem", back_populates="module", cascade="all, delete-orphan")

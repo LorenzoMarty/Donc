@@ -11,10 +11,9 @@ from src.agents.image_generator import generate_supporting_image
 from src.agents.theme_generator import ThemeGeneratorAgent
 from src.config.ai_pricing import image_generation_cost_micro_usd
 from src.middlewares.errors import AppError
-from src.models import AIInteractionLog, Course, Difficulty, EssayTheme, Exercise, Lesson, Module, ModuleItem
+from src.models import AIInteractionLog, Difficulty, EssayTheme, Exercise, Lesson, Module, ModuleItem
 from src.schemas.admin import (
     AdminActivityRead,
-    AdminCourseRead,
     AdminLessonRead,
     AdminModuleItemRead,
     AdminModuleRead,
@@ -213,41 +212,32 @@ class AdminContentService:
 
     # ── Content Tree ─────────────────────────────────────────────────────────
 
-    def content_tree(self) -> list[AdminCourseRead]:
-        courses = self.db.scalars(
-            select(Course)
+    def content_tree(self) -> list[AdminModuleRead]:
+        modules = self.db.scalars(
+            select(Module)
             .options(
-                selectinload(Course.modules).selectinload(Module.lessons),
-                selectinload(Course.modules).selectinload(Module.exercises),
-                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.lesson),
-                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.exercise),
+                selectinload(Module.lessons),
+                selectinload(Module.exercises),
+                selectinload(Module.items).selectinload(ModuleItem.lesson),
+                selectinload(Module.items).selectinload(ModuleItem.exercise),
             )
-            .order_by(Course.id)
+            .order_by(Module.order, Module.id)
         ).all()
-        return [self._course_to_admin_read(course) for course in courses]
+        return [self._module_to_admin_read(module) for module in modules]
 
-    def create_course(self, *, title: str, slug: str | None, description: str, color: str) -> AdminCourseRead:
-        normalized_slug = self._unique_course_slug(slug or title)
-        course = Course(title=title.strip(), slug=normalized_slug, description=description.strip(), color=color.strip() or "#65BE02")
-        self.db.add(course)
-        self.db.commit()
-        self.db.refresh(course)
-        return self._course_to_admin_read(course)
-
-    def create_module(self, *, course_id: int, title: str, description: str, order: int | None) -> AdminModuleRead:
-        course = self.db.get(Course, course_id)
-        if not course:
-            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
+    def create_module(self, *, title: str, slug: str | None, description: str, color: str, order: int | None) -> list[AdminModuleRead]:
+        normalized_slug = self._unique_module_slug(slug or title)
         module = Module(
-            course_id=course_id,
             title=title.strip(),
+            slug=normalized_slug,
             description=description.strip(),
-            order=order or self._next_module_order(course_id),
+            color=color.strip() or "#65BE02",
+            order=order or self._next_module_order(),
         )
         self.db.add(module)
         self.db.commit()
         self.db.refresh(module)
-        return self._module_to_admin_read(module)
+        return self.content_tree()
 
     def create_lesson(
         self,
@@ -305,7 +295,7 @@ class AdminContentService:
         lesson_id: int | None,
         base_lesson_ids: list[int],
         order: int | None,
-    ) -> AdminCourseRead:
+    ) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
             raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
@@ -326,7 +316,7 @@ class AdminContentService:
         item_order = order or self._next_item_order(module_id)
         self.db.add(ModuleItem(module_id=module_id, kind="activity", exercise_id=exercise.id, order=item_order))
         self.db.commit()
-        return self._course_read_by_id(module.course_id)
+        return self.content_tree()
 
     def generate_activity_drafts(
         self,
@@ -355,9 +345,9 @@ class AdminContentService:
             focus=generation_focus,
             difficulty=difficulty,  # type: ignore[arg-type]
             count=count,
-            profile={"source": "admin_course_builder", "lesson_ids": lesson_ids},
+            profile={"source": "admin_module_builder", "lesson_ids": lesson_ids},
             user_id=admin_user_id,
-            session_id=f"admin:{admin_user_id}:course-activity",
+            session_id=f"admin:{admin_user_id}:module-activity",
         )
         record_ai_interaction(
             self.db,
@@ -386,42 +376,7 @@ class AdminContentService:
         self.db.commit()
         return drafts
 
-    def _course_read_by_id(self, course_id: int) -> AdminCourseRead:
-        course = self.db.scalars(
-            select(Course)
-            .options(
-                selectinload(Course.modules).selectinload(Module.lessons),
-                selectinload(Course.modules).selectinload(Module.exercises),
-                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.lesson),
-                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.exercise),
-            )
-            .where(Course.id == course_id)
-        ).first()
-        if not course:
-            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
-        return self._course_to_admin_read(course)
-
-    def update_course(self, *, course_id: int, title: str | None, description: str | None, color: str | None) -> AdminCourseRead:
-        course = self.db.get(Course, course_id)
-        if not course:
-            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
-        if title is not None:
-            course.title = title.strip()
-        if description is not None:
-            course.description = description.strip()
-        if color is not None:
-            course.color = color.strip() or course.color
-        self.db.commit()
-        return self._course_read_by_id(course_id)
-
-    def delete_course(self, *, course_id: int) -> None:
-        course = self.db.get(Course, course_id)
-        if not course:
-            raise AppError("Curso nao encontrado.", status_code=404, code="course_not_found")
-        self.db.delete(course)
-        self.db.commit()
-
-    def update_module(self, *, module_id: int, title: str | None, description: str | None) -> AdminCourseRead:
+    def update_module(self, *, module_id: int, title: str | None, description: str | None, color: str | None) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
             raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
@@ -429,30 +384,27 @@ class AdminContentService:
             module.title = title.strip()
         if description is not None:
             module.description = description.strip()
+        if color is not None:
+            module.color = color.strip() or module.color
         self.db.commit()
-        return self._course_read_by_id(module.course_id)
+        return self.content_tree()
 
-    def delete_module(self, *, module_id: int) -> AdminCourseRead:
+    def delete_module(self, *, module_id: int) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
             raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
-        course_id = module.course_id
         self.db.delete(module)
         self.db.commit()
-        return self._course_read_by_id(course_id)
+        return self.content_tree()
 
-    def move_module(self, *, module_id: int, direction: str) -> AdminCourseRead:
+    def move_module(self, *, module_id: int, direction: str) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
             raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
-        siblings = list(
-            self.db.scalars(
-                select(Module).where(Module.course_id == module.course_id).order_by(Module.order, Module.id)
-            )
-        )
+        siblings = list(self.db.scalars(select(Module).order_by(Module.order, Module.id)))
         self._swap_order(siblings, module.id, direction)
         self.db.commit()
-        return self._course_read_by_id(module.course_id)
+        return self.content_tree()
 
     def update_lesson(
         self,
@@ -464,7 +416,7 @@ class AdminContentService:
         thumbnail_url: str | None,
         video_url: str | None,
         duration_minutes: int | None,
-    ) -> AdminCourseRead:
+    ) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
             raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
@@ -481,18 +433,17 @@ class AdminContentService:
         if duration_minutes is not None:
             lesson.duration_minutes = duration_minutes
         self.db.commit()
-        return self._course_read_by_id(self.db.get(Module, lesson.module_id).course_id)
+        return self.content_tree()
 
-    def delete_lesson(self, *, lesson_id: int) -> AdminCourseRead:
+    def delete_lesson(self, *, lesson_id: int) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
             raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
-        course_id = self.db.get(Module, lesson.module_id).course_id
         self.db.delete(lesson)
         self.db.commit()
-        return self._course_read_by_id(course_id)
+        return self.content_tree()
 
-    def move_lesson(self, *, lesson_id: int, direction: str) -> AdminCourseRead:
+    def move_lesson(self, *, lesson_id: int, direction: str) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
             raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
@@ -506,7 +457,7 @@ class AdminContentService:
         )
         self._swap_order(siblings, lesson.id, direction)
         self.db.commit()
-        return self._course_read_by_id(self.db.get(Module, lesson.module_id).course_id)
+        return self.content_tree()
 
     def update_activity(
         self,
@@ -520,7 +471,7 @@ class AdminContentService:
         difficulty: str | None,
         lesson_id: int | None,
         base_lesson_ids: list[int] | None,
-    ) -> AdminCourseRead:
+    ) -> list[AdminModuleRead]:
         exercise = self.db.get(Exercise, activity_id)
         if not exercise:
             raise AppError("Atividade nao encontrada.", status_code=404, code="activity_not_found")
@@ -547,21 +498,20 @@ class AdminContentService:
         if base_lesson_ids is not None:
             exercise.base_lesson_ids = base_lesson_ids
         self.db.commit()
-        return self._course_read_by_id(self.db.get(Module, exercise.module_id).course_id)
+        return self.content_tree()
 
-    def delete_activity(self, *, activity_id: int) -> AdminCourseRead:
+    def delete_activity(self, *, activity_id: int) -> list[AdminModuleRead]:
         exercise = self.db.get(Exercise, activity_id)
         if not exercise:
             raise AppError("Atividade nao encontrada.", status_code=404, code="activity_not_found")
-        course_id = self.db.get(Module, exercise.module_id).course_id
         item = self.db.scalar(select(ModuleItem).where(ModuleItem.exercise_id == activity_id))
         if item:
             self.db.delete(item)
         self.db.delete(exercise)
         self.db.commit()
-        return self._course_read_by_id(course_id)
+        return self.content_tree()
 
-    def move_module_item(self, *, item_id: int, direction: str) -> AdminCourseRead:
+    def move_module_item(self, *, item_id: int, direction: str) -> list[AdminModuleRead]:
         item = self.db.get(ModuleItem, item_id)
         if not item:
             raise AppError("Item do modulo nao encontrado.", status_code=404, code="module_item_not_found")
@@ -571,7 +521,7 @@ class AdminContentService:
         self._swap_order(siblings, item.id, direction)
         self._sync_lesson_orders(item.module_id)
         self.db.commit()
-        return self._course_read_by_id(self.db.get(Module, item.module_id).course_id)
+        return self.content_tree()
 
     def _swap_order(self, siblings: list, item_id: int, direction: str) -> None:
         # Normaliza ordens sequenciais (1..n) e troca com o vizinho.
@@ -585,8 +535,8 @@ class AdminContentService:
             return
         siblings[index].order, siblings[target].order = siblings[target].order, siblings[index].order
 
-    def _next_module_order(self, course_id: int) -> int:
-        current = self.db.scalar(select(func.max(Module.order)).where(Module.course_id == course_id)) or 0
+    def _next_module_order(self) -> int:
+        current = self.db.scalar(select(func.max(Module.order))) or 0
         return int(current) + 1
 
     def _next_lesson_order(self, module_id: int) -> int:
@@ -617,26 +567,15 @@ class AdminContentService:
         if found != ids:
             raise AppError("Selecione apenas aulas deste modulo para a atividade.", status_code=422, code="invalid_activity_lessons")
 
-    def _unique_course_slug(self, value: str) -> str:
-        base = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-") or "curso"
+    def _unique_module_slug(self, value: str) -> str:
+        base = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-") or "modulo"
         slug = base[:140]
         suffix = 2
-        while self.db.scalar(select(Course.id).where(Course.slug == slug)):
+        while self.db.scalar(select(Module.id).where(Module.slug == slug)):
             suffix_text = f"-{suffix}"
             slug = f"{base[: 140 - len(suffix_text)]}{suffix_text}"
             suffix += 1
         return slug
-
-    def _course_to_admin_read(self, course: Course) -> AdminCourseRead:
-        modules = sorted(course.modules, key=lambda item: item.order)
-        return AdminCourseRead(
-            id=course.id,
-            title=course.title,
-            slug=course.slug,
-            description=course.description,
-            color=course.color,
-            modules=[self._module_to_admin_read(module) for module in modules],
-        )
 
     def _module_to_admin_read(self, module: Module) -> AdminModuleRead:
         lessons = sorted(module.lessons, key=lambda item: item.order)
@@ -644,7 +583,9 @@ class AdminContentService:
         return AdminModuleRead(
             id=module.id,
             title=module.title,
+            slug=module.slug,
             description=module.description,
+            color=module.color,
             order=module.order,
             lessons=[self._lesson_to_admin_read(lesson) for lesson in lessons],
             items=items,

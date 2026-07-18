@@ -2,16 +2,15 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.middlewares.errors import AppError
-from src.models import LearningReward, Lesson, LessonProgress, Module, User
+from src.models import LearningReward, Lesson, LessonProgress, User
 from src.repositories.learning import LearningRepository
-from src.schemas.lessons import CourseRead, ExercisePreview, LessonProgressRead, LessonRead, ModuleActivityRead, ModuleItemRead, ModuleRead, RankRead
+from src.schemas.lessons import ExercisePreview, LessonProgressRead, LessonRead, ModuleActivityRead, ModuleItemRead, ModuleRead, RankRead
 from src.services.progression_service import ProgressionService
 from src.services.rank_service import allowed_difficulties_for_user, level_for_xp, next_rank_for_xp, rank_for_xp
 
 
 LESSON_XP = 25
 MODULE_XP = 75
-COURSE_XP = 200
 
 
 class LessonService:
@@ -20,35 +19,21 @@ class LessonService:
         self.repo = LearningRepository(db)
         self.progression = ProgressionService(db)
 
-    def list_courses(self, user_id: int) -> list[CourseRead]:
-        courses = self.repo.list_courses()
+    def list_modules(self, user_id: int) -> list[ModuleRead]:
+        modules = self.repo.list_modules()
         user = self._get_user(user_id)
-        return [self._course_schema(course, user_id, user=user) for course in courses]
-
-    def _course_schema(self, course, user_id: int, *, user: User) -> CourseRead:
-        unlock_map = self.progression.unlock_map(course, user_id)
-        return CourseRead(
-            id=course.id,
-            title=course.title,
-            slug=course.slug,
-            description=course.description,
-            color=course.color,
-            progress_percent=self._course_progress(course, user_id),
-            completed=self._course_completed(course.id, user_id),
-            xp_reward=COURSE_XP,
-            user_rank=self._rank_schema(user),
-            modules=[
-                self._module_schema(module, user_id, unlock_map=unlock_map)
-                for module in sorted(course.modules, key=lambda item: item.order)
-            ],
-        )
+        unlock_map = self.progression.unlock_map(modules, user_id)
+        return [
+            self._module_schema(module, user_id, unlock_map=unlock_map, user=user)
+            for module in sorted(modules, key=lambda item: item.order)
+        ]
 
     def get_lesson(self, lesson_id: int, user_id: int) -> LessonRead:
         lesson = self.repo.get_lesson(lesson_id)
         if not lesson:
             raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
         module = lesson.module
-        unlock_map = self.progression.unlock_map(module.course, user_id)
+        unlock_map = self.progression.unlock_map(self.repo.list_modules(), user_id)
         if not unlock_map.get(module.id, True):
             raise AppError(
                 "Este modulo ainda esta bloqueado. Conclua o modulo anterior para liberar esta aula.",
@@ -77,7 +62,6 @@ class LessonService:
         if progress.completed:
             xp_earned += self._award_once(user, "lesson", lesson.id, LESSON_XP, f"Aula concluida: +{LESSON_XP} XP", reward_events)
             xp_earned += self._award_module_if_complete(user, lesson, reward_events)
-            xp_earned += self._award_course_if_complete(user, lesson, reward_events)
 
         self.db.commit()
         self.db.refresh(progress)
@@ -96,17 +80,20 @@ class LessonService:
             exercise_difficulty=rank.max_difficulty.value,
         )
 
-    def _module_schema(self, module, user_id: int, *, unlock_map: dict[int, bool]) -> ModuleRead:
+    def _module_schema(self, module, user_id: int, *, unlock_map: dict[int, bool], user: User) -> ModuleRead:
         locked = not unlock_map.get(module.id, True)
         mastery = self.progression.module_mastery(module, user_id)
         return ModuleRead(
             id=module.id,
             title=module.title,
+            slug=module.slug,
             description=module.description,
+            color=module.color,
             order=module.order,
             progress_percent=self._module_progress(module, user_id),
             completed=self._module_completed(module.id, user_id),
             xp_reward=MODULE_XP,
+            user_rank=self._rank_schema(user),
             lessons=[
                 self._lesson_schema(lesson, user_id, locked=locked)
                 for lesson in sorted(module.lessons, key=lambda item: item.order)
@@ -214,31 +201,12 @@ class LessonService:
             return 0
         return round(sum(self._lesson_progress_percent(lesson, user_id) for lesson in lessons) / len(lessons))
 
-    def _course_progress(self, course, user_id: int) -> int:
-        lessons = [lesson for module in course.modules for lesson in module.lessons]
-        if not lessons:
-            return 0
-        return round(sum(self._lesson_progress_percent(lesson, user_id) for lesson in lessons) / len(lessons))
-
     def _lesson_progress_percent(self, lesson, user_id: int) -> int:
         progress = self.repo.get_progress(user_id, lesson.id)
         return progress.progress_percent if progress else 0
 
     def _module_completed(self, module_id: int, user_id: int) -> bool:
         lesson_ids = list(self.db.scalars(select(Lesson.id).where(Lesson.module_id == module_id)))
-        if not lesson_ids:
-            return False
-        completed_count = self.db.scalar(
-            select(func.count(LessonProgress.id)).where(
-                LessonProgress.user_id == user_id,
-                LessonProgress.lesson_id.in_(lesson_ids),
-                LessonProgress.completed.is_(True),
-            )
-        ) or 0
-        return completed_count == len(lesson_ids)
-
-    def _course_completed(self, course_id: int, user_id: int) -> bool:
-        lesson_ids = list(self.db.scalars(select(Lesson.id).join(Module).where(Module.course_id == course_id)))
         if not lesson_ids:
             return False
         completed_count = self.db.scalar(
@@ -272,9 +240,3 @@ class LessonService:
         if not self._module_completed(module_id, user.id):
             return 0
         return self._award_once(user, "module", module_id, MODULE_XP, f"Modulo concluido: +{MODULE_XP} XP", reward_events)
-
-    def _award_course_if_complete(self, user: User, lesson, reward_events: list[str]) -> int:
-        course_id = lesson.module.course_id
-        if not self._course_completed(course_id, user.id):
-            return 0
-        return self._award_once(user, "course", course_id, COURSE_XP, f"Curso concluido: +{COURSE_XP} XP", reward_events)

@@ -140,31 +140,23 @@ export type Lesson = {
   locked?: boolean;
 };
 
-export type Course = {
+export type Module = {
   id: number;
   title: string;
   slug: string;
   description: string;
   color: string;
+  order: number;
   progress_percent: number;
   completed: boolean;
   xp_reward: number;
   user_rank: RankSummary | null;
-  modules: {
-    id: number;
-    title: string;
-    description: string;
-    order: number;
-    progress_percent: number;
-    completed: boolean;
-    xp_reward: number;
-    lessons: Lesson[];
-    items?: ModuleItem[];
-    locked?: boolean;
-    mastered?: boolean;
-    unlock_requirements?: string[];
-    target_competencies?: string[];
-  }[];
+  lessons: Lesson[];
+  items?: ModuleItem[];
+  locked?: boolean;
+  mastered?: boolean;
+  unlock_requirements?: string[];
+  target_competencies?: string[];
 };
 
 export type ModuleActivity = {
@@ -374,19 +366,12 @@ export type AdminModuleItem = {
 export type AdminModule = {
   id: number;
   title: string;
-  description: string;
-  order: number;
-  lessons: AdminLesson[];
-  items?: AdminModuleItem[];
-};
-
-export type AdminCourse = {
-  id: number;
-  title: string;
   slug: string;
   description: string;
   color: string;
-  modules: AdminModule[];
+  order: number;
+  lessons: AdminLesson[];
+  items?: AdminModuleItem[];
 };
 
 export type AgentStats = {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, ClipboardList, Flame, Lock, LockKeyhole, PlayCircle, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, ChevronDown, ClipboardList, Flame, Lock, PlayCircle, Sparkles, type LucideIcon } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
@@ -13,11 +13,9 @@ import { Rail } from "@/components/shared/rail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { apiFetch, type Course, type Dashboard, type Lesson } from "@/services/api";
+import { apiFetch, type Dashboard, type Lesson, type Module } from "@/services/api";
 import type { ModuleItem } from "@/types/api";
 import { cn } from "@/utils";
-
-type CourseModule = Course["modules"][number];
 
 const difficultyLabel: Record<string, string> = {
   easy: "essencial",
@@ -26,15 +24,15 @@ const difficultyLabel: Record<string, string> = {
 };
 
 export default function LessonsPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [modules, setModules] = useState<Module[]>([]);
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadCourses = useCallback(() => {
-    return Promise.all([apiFetch<Course[]>("/lessons/courses"), apiFetch<Dashboard>("/dashboard").catch(() => null)])
-      .then(([coursesData, dashboardData]) => {
-        setCourses(coursesData);
+  const loadModules = useCallback(() => {
+    return Promise.all([apiFetch<Module[]>("/lessons/modules"), apiFetch<Dashboard>("/dashboard").catch(() => null)])
+      .then(([modulesData, dashboardData]) => {
+        setModules(modulesData);
         setDashboard(dashboardData);
         setError("");
       })
@@ -42,17 +40,17 @@ export default function LessonsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  function retryLoadCourses() {
+  function retryLoadModules() {
     setLoading(true);
     setError("");
-    loadCourses();
+    loadModules();
   }
 
   useEffect(() => {
-    loadCourses();
-  }, [loadCourses]);
+    loadModules();
+  }, [loadModules]);
 
-  if (error) return <ErrorState description={error} onRetry={retryLoadCourses} />;
+  if (error) return <ErrorState description={error} onRetry={retryLoadModules} />;
 
   if (loading) {
     return (
@@ -63,20 +61,20 @@ export default function LessonsPage() {
     );
   }
 
-  const lessonById = new Map(courses.flatMap((course) => course.modules ?? []).flatMap((module) => module.lessons ?? []).map((lesson) => [lesson.id, lesson]));
-  const featuredCourse = courses.find((course) => !course.completed) ?? courses[0] ?? null;
+  const lessonById = new Map(modules.flatMap((module) => module.lessons ?? []).map((lesson) => [lesson.id, lesson]));
+  const featuredModule = modules.find((module) => !module.completed) ?? modules[0] ?? null;
   const continueWatching = (dashboard?.recent_lessons ?? []).filter((entry) => entry.progress_percent > 0 && entry.progress_percent < 100);
   const recommended = dashboard?.suggested_lessons ?? [];
 
   return (
     <MotionShell className="space-y-6">
       <PageHeader
-        eyebrow="Cursos"
-        title="Sua trilha de aulas"
-        description="Continue de onde parou, veja o que a gente recomenda pra você e avance pelos módulos na ordem certa."
+        eyebrow="Aulas"
+        title="Escolha o que assistir"
+        description="Continue de onde parou, veja o que a gente recomenda e explore os módulos no seu ritmo."
       />
 
-      {featuredCourse ? <CourseHero course={featuredCourse} /> : null}
+      {featuredModule ? <ModuleHero module={featuredModule} /> : null}
 
       {continueWatching.length ? (
         <Rail title="Continuar assistindo">
@@ -122,10 +120,10 @@ export default function LessonsPage() {
       ) : null}
 
       <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Todos os cursos</p>
-        <div className="space-y-3">
-          {courses.map((course) => (
-            <CoursePanel key={course.id} course={course} />
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Todos os módulos</p>
+        <div className="space-y-2.5">
+          {modules.map((module, index) => (
+            <ModuleAccordion key={module.id} module={module} index={index} />
           ))}
         </div>
       </div>
@@ -133,20 +131,17 @@ export default function LessonsPage() {
   );
 }
 
-/** Banner de destaque: primeiro curso não concluído, com CTA direto pra próxima aula disponível. */
-function CourseHero({ course }: { course: Course }) {
-  const modules = course.modules ?? [];
-  const nextLesson = modules
-    .filter((module) => !module.locked)
-    .flatMap((module) => module.lessons ?? [])
-    .find((lesson) => !lesson.progress.completed);
-  const progress = course.progress_percent ?? 0;
+/** Banner de destaque: primeiro módulo não concluído, com CTA direto pra próxima aula disponível. */
+function ModuleHero({ module }: { module: Module }) {
+  const items = module.items?.length ? module.items : module.lessons.map((lesson) => ({ id: -lesson.id, kind: "lesson" as const, order: lesson.order, lesson, activity: null }));
+  const nextLesson = items.find((item) => item.kind === "lesson" && item.lesson && !item.lesson.progress.completed)?.lesson;
+  const progress = module.progress_percent ?? 0;
 
   return (
     <Surface className="relative overflow-hidden p-5 lg:p-7">
       <div
         className="absolute inset-0 opacity-90"
-        style={{ background: `linear-gradient(120deg, ${course.color || "hsl(var(--primary))"} 0%, transparent 65%)` }}
+        style={{ background: `linear-gradient(120deg, ${module.color || "hsl(var(--primary))"} 0%, transparent 65%)` }}
         aria-hidden="true"
       />
       <div className="relative grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -154,8 +149,8 @@ function CourseHero({ course }: { course: Course }) {
           <Badge variant="secondary" className="mb-3">
             Continue sua trilha
           </Badge>
-          <h2 className="text-safe text-2xl font-semibold tracking-normal lg:text-3xl">{course.title}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground lg:text-base">{course.description}</p>
+          <h2 className="text-safe text-2xl font-semibold tracking-normal lg:text-3xl">{module.title}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground lg:text-base">{module.description}</p>
           <div className="mt-4 flex max-w-xs items-center gap-3">
             <Progress value={progress} className="h-2" />
             <span className="shrink-0 text-sm font-semibold">{progress}%</span>
@@ -175,77 +170,8 @@ function CourseHero({ course }: { course: Course }) {
   );
 }
 
-function CoursePanel({ course }: { course: Course }) {
-  const modules = course.modules ?? [];
-  const lessons = modules.flatMap((module) => module.lessons ?? []);
-  const completedLessons = lessons.filter((lesson) => lesson.progress.completed).length;
-  const courseProgress = course.progress_percent ?? progressFromLessons(lessons);
-  const rank = course.user_rank;
-  const [openModules, setOpenModules] = useState<Record<number, boolean>>(() => (modules[0] ? { [modules[0].id]: true } : {}));
-
-  function toggleModule(moduleId: number) {
-    setOpenModules((current) => ({ ...current, [moduleId]: !current[moduleId] }));
-  }
-
-  return (
-    <section className="space-y-2.5">
-      <Surface className="relative overflow-hidden p-4 lg:p-4">
-        <div
-          className="absolute inset-x-0 top-0 h-1"
-          style={{ backgroundColor: course.color || "hsl(var(--primary))" }}
-          aria-hidden="true"
-        />
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,23rem)] xl:items-center">
-          <div className="min-w-0">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Trilha</Badge>
-              <Badge variant="outline">{course.xp_reward ?? 200}xp bonus</Badge>
-              {course.completed ? <Badge variant="success">concluido</Badge> : null}
-            </div>
-            <h2 className="text-safe text-xl font-semibold tracking-normal">{course.title}</h2>
-            <p className="mt-1.5 max-w-3xl text-sm leading-5 text-muted-foreground">{course.description}</p>
-          </div>
-
-          <div className="grid gap-2.5">
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold">
-                <span>Progresso do curso</span>
-                <span>{courseProgress}%</span>
-              </div>
-              <Progress value={courseProgress} className="h-2" />
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                {completedLessons}/{lessons.length} aulas concluidas
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <CompactMetric icon={Flame} label="Rank" value={rank?.name ?? "Aprendiz"} tone="streak" />
-              <CompactMetric
-                icon={LockKeyhole}
-                label="Exercicios"
-                value={difficultyLabel[rank?.exercise_difficulty ?? "easy"] ?? "essencial"}
-                tone="highlight"
-              />
-            </div>
-          </div>
-        </div>
-      </Surface>
-
-      <div className="space-y-2.5">
-        {modules.map((module, index) => (
-          <ModuleAccordion
-            key={module.id}
-            module={module}
-            index={index}
-            open={Boolean(openModules[module.id])}
-            onToggle={() => toggleModule(module.id)}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModule; index: number; open: boolean; onToggle: () => void }) {
+function ModuleAccordion({ module, index }: { module: Module; index: number }) {
+  const [open, setOpen] = useState(index === 0);
   const lessons = module.lessons ?? [];
   const items = module.items?.length ? module.items : lessons.map((lesson) => ({ id: -lesson.id, kind: "lesson" as const, order: lesson.order, lesson, activity: null }));
   const completedLessons = lessons.filter((lesson) => lesson.progress.completed).length;
@@ -254,8 +180,13 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
   const requirements = module.unlock_requirements ?? [];
 
   return (
-    <Surface className="p-4 lg:p-4">
-      <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 text-left" aria-expanded={open}>
+    <Surface className="relative overflow-hidden p-4 lg:p-4">
+      <div
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ backgroundColor: module.color || "hsl(var(--primary))" }}
+        aria-hidden="true"
+      />
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-3 text-left" aria-expanded={open}>
         <span
           className={cn(
             "grid h-8 w-8 shrink-0 place-items-center rounded-control text-sm font-semibold",
@@ -294,9 +225,12 @@ function ModuleAccordion({ module, index, open, onToggle }: { module: CourseModu
         <div className="mt-4 border-t border-border pt-3">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Conteúdo do módulo</p>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {completedLessons}/{lessons.length} aulas
-            </span>
+            <div className="flex items-center gap-3">
+              <CompactMetric icon={Flame} label="Rank" value={module.user_rank?.name ?? "Aprendiz"} tone="streak" />
+              <span className="text-xs font-semibold text-muted-foreground">
+                {completedLessons}/{lessons.length} aulas
+              </span>
+            </div>
           </div>
           <Rail>
             {items.map((item) =>
@@ -368,13 +302,10 @@ function CompactMetric({
   tone: keyof typeof METRIC_TONE;
 }) {
   return (
-    <div className="rounded-control bg-muted/60 p-2.5">
-      <div className={cn("mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground")}>
-        <Icon className={cn("h-3.5 w-3.5", METRIC_TONE[tone])} aria-hidden="true" />
-        {label}
-      </div>
-      <p className="text-safe text-sm font-semibold">{value}</p>
-    </div>
+    <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <Icon className={cn("h-3.5 w-3.5", METRIC_TONE[tone])} aria-hidden="true" />
+      {label}: <span className={cn("font-semibold", METRIC_TONE[tone])}>{value}</span>
+    </span>
   );
 }
 
