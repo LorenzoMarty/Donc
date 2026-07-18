@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, BookOpen, ChevronRight, Map, PenLine, Sparkles, Target } from "lucide-react";
+import { BarChart3, BookOpen, ChevronRight, Map, PenLine, Sparkles, Target, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils";
@@ -23,7 +24,15 @@ const LEVELS = [
   { id: "avancado", label: "Avançado", description: "Escrevo com regularidade, quero afinar" },
 ];
 
-const TOUR_SLIDES = [
+const TOUR_SLIDES: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+  bg: string;
+  hydraImageUrl?: string;
+}[] = [
   {
     icon: Map,
     title: "Aqui você treina seus sintomas",
@@ -308,9 +317,19 @@ function TourStep({
           transition={{ duration: 0.25 }}
           className={cn("mt-5 rounded-[var(--radius)] border p-6", current.bg)}
         >
-          <div className={cn("mb-4 inline-flex rounded-xl border p-3", current.bg)}>
-            <Icon className={cn("h-7 w-7", current.color)} aria-hidden="true" />
-          </div>
+          {current.hydraImageUrl ? (
+            <Image
+              src={current.hydraImageUrl}
+              alt="Hydra, a mascote do Donc ENEM"
+              width={80}
+              height={80}
+              className="mb-4 rounded-control object-contain"
+            />
+          ) : (
+            <div className={cn("mb-4 inline-flex rounded-xl border p-3", current.bg)}>
+              <Icon className={cn("h-7 w-7", current.color)} aria-hidden="true" />
+            </div>
+          )}
           <h3 className="text-xl font-bold">{current.title}</h3>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">{current.description}</p>
         </motion.div>

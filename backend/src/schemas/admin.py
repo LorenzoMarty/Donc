@@ -128,31 +128,19 @@ class AdminModuleItemRead(BaseModel):
 class AdminModuleRead(BaseModel):
     id: int
     title: str
+    slug: str
     description: str
+    color: str
     order: int
     lessons: list[AdminLessonRead] = Field(default_factory=list)
     items: list[AdminModuleItemRead] = Field(default_factory=list)
 
 
-class AdminCourseRead(BaseModel):
-    id: int
-    title: str
-    slug: str
-    description: str
-    color: str
-    modules: list[AdminModuleRead] = Field(default_factory=list)
-
-
-class AdminCourseCreateRequest(BaseModel):
-    title: str = Field(min_length=3, max_length=120)
+class AdminModuleCreateRequest(BaseModel):
+    title: str = Field(min_length=3, max_length=160)
     slug: str | None = Field(default=None, min_length=3, max_length=140)
     description: str = Field(min_length=10, max_length=1200)
     color: str = Field(default="#65BE02", max_length=40)
-
-
-class AdminModuleCreateRequest(BaseModel):
-    title: str = Field(min_length=3, max_length=160)
-    description: str = Field(min_length=10, max_length=1200)
     order: int | None = Field(default=None, ge=1, le=999)
 
 
@@ -186,15 +174,10 @@ class AdminActivityGenerateRequest(BaseModel):
     focus: str | None = Field(default=None, max_length=160)
 
 
-class AdminCourseUpdateRequest(BaseModel):
-    title: str | None = Field(default=None, min_length=3, max_length=120)
-    description: str | None = Field(default=None, min_length=10, max_length=1200)
-    color: str | None = Field(default=None, max_length=40)
-
-
 class AdminModuleUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=160)
     description: str | None = Field(default=None, min_length=10, max_length=1200)
+    color: str | None = Field(default=None, max_length=40)
 
 
 class AdminLessonUpdateRequest(BaseModel):
@@ -225,7 +208,7 @@ class AdminMoveRequest(BaseModel):
 class AdminContentActionResponse(BaseModel):
     action: Literal["deleted"]
     id: int
-    kind: Literal["course", "module", "lesson", "activity"]
+    kind: Literal["module", "lesson", "activity"]
 
 
 # ── User detail ──────────────────────────────────────────────────────────────

@@ -1,14 +1,14 @@
 from sqlalchemy import select
 
 from src.database.session import SessionLocal
-from src.models import Course, Essay, EssayCorrection, EssayStatus, EssayTheme, Exercise, ExerciseAnswer, LessonProgress, Module, User, UserRole
+from src.models import Essay, EssayCorrection, EssayStatus, EssayTheme, Exercise, ExerciseAnswer, LessonProgress, Module, User, UserRole
 from src.services.progression_service import ProgressionService
 
 
-def _course(db) -> Course:
-    course = db.scalar(select(Course).where(Course.slug == "destrave-redacao"))
-    assert course is not None
-    return course
+def _modules(db) -> list[Module]:
+    modules = list(db.scalars(select(Module).order_by(Module.order, Module.id)))
+    assert modules
+    return modules
 
 
 def _make_isolated_student(db) -> User:
@@ -27,10 +27,9 @@ def _make_isolated_student(db) -> User:
 
 
 def test_first_module_is_always_unlocked_but_later_modules_start_locked(client):
-    response = client.get("/api/v1/lessons/courses")
+    response = client.get("/api/v1/lessons/modules")
     assert response.status_code == 200
-    course = response.json()["data"][0]
-    modules = sorted(course["modules"], key=lambda item: item["order"])
+    modules = sorted(response.json()["data"], key=lambda item: item["order"])
 
     assert modules[0]["locked"] is False
     assert modules[1]["locked"] is True
@@ -38,9 +37,8 @@ def test_first_module_is_always_unlocked_but_later_modules_start_locked(client):
 
 
 def test_get_lesson_on_locked_module_returns_403(client):
-    courses_response = client.get("/api/v1/lessons/courses")
-    course = courses_response.json()["data"][0]
-    modules = sorted(course["modules"], key=lambda item: item["order"])
+    modules_response = client.get("/api/v1/lessons/modules")
+    modules = sorted(modules_response.json()["data"], key=lambda item: item["order"])
     locked_module = next(module for module in modules if module["locked"])
     locked_lesson = locked_module["lessons"][0]
 
@@ -50,9 +48,8 @@ def test_get_lesson_on_locked_module_returns_403(client):
 
 
 def test_get_lesson_on_unlocked_module_succeeds(client):
-    courses_response = client.get("/api/v1/lessons/courses")
-    course = courses_response.json()["data"][0]
-    modules = sorted(course["modules"], key=lambda item: item["order"])
+    modules_response = client.get("/api/v1/lessons/modules")
+    modules = sorted(modules_response.json()["data"], key=lambda item: item["order"])
     unlocked_lesson = modules[0]["lessons"][0]
 
     response = client.get(f"/api/v1/lessons/{unlocked_lesson['id']}")
@@ -64,8 +61,7 @@ def test_module_mastery_requires_lessons_activity_and_competency(client):  # noq
     db = SessionLocal()
     try:
         student = _make_isolated_student(db)
-        course = _course(db)
-        modules = sorted(course.modules, key=lambda item: item.order)
+        modules = _modules(db)
         module = modules[0]
 
         progression = ProgressionService(db)
@@ -132,7 +128,7 @@ def test_module_mastery_requires_lessons_activity_and_competency(client):  # noq
         assert set(state.weak_competencies) == {"c2", "c3"}
         assert state.mastered is False
 
-        unlock_map = progression.unlock_map(course, student.id)
+        unlock_map = progression.unlock_map(modules, student.id)
         assert unlock_map[modules[1].id] is False
     finally:
         db.close()

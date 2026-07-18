@@ -24,3 +24,4 @@ docker/postgres-data/
 CLAUDE.md
 claude/
 .claude/knowledge/
+.claude/specs/

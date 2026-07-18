@@ -1,23 +1,23 @@
 ﻿from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from src.models import Course, Exercise, Lesson, LessonProgress, Module, ModuleItem
+from src.models import Exercise, Lesson, LessonProgress, Module, ModuleItem
 
 
 class LearningRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list_courses(self) -> list[Course]:
+    def list_modules(self) -> list[Module]:
         stmt = (
-            select(Course)
+            select(Module)
             .options(
-                selectinload(Course.modules).selectinload(Module.lessons),
-                selectinload(Course.modules).selectinload(Module.exercises),
-                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.lesson),
-                selectinload(Course.modules).selectinload(Module.items).selectinload(ModuleItem.exercise),
+                selectinload(Module.lessons),
+                selectinload(Module.exercises),
+                selectinload(Module.items).selectinload(ModuleItem.lesson),
+                selectinload(Module.items).selectinload(ModuleItem.exercise),
             )
-            .order_by(Course.id)
+            .order_by(Module.order, Module.id)
         )
         return list(self.db.scalars(stmt))
 
@@ -29,13 +29,7 @@ class LearningRepository:
         return self.db.get(Exercise, exercise_id)
 
     def list_exercises(self) -> list[Exercise]:
-        stmt = (
-            select(Exercise)
-            .join(Exercise.module)
-            .join(Module.course)
-            .where(Course.slug == "destrave-redacao")
-            .order_by(Exercise.id)
-        )
+        stmt = select(Exercise).order_by(Exercise.id)
         return list(self.db.scalars(stmt))
 
     def get_progress(self, user_id: int, lesson_id: int) -> LessonProgress | None:

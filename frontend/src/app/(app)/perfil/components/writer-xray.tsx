@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, BookMarked, Lightbulb, TriangleAlert } from "lucide-react";
 
-import { CompetencyBarChart, ScoreAreaChart } from "@/components/shared/charts";
+import { CompetencyBarChart, CompetencyTrendChart, ScoreAreaChart } from "@/components/shared/charts";
 import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,15 @@ export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; 
           </Surface>
         ) : null}
       </section>
+
+      {xray.hasCompetencyTrend ? (
+        <Surface>
+          <SectionTitle eyebrow="Evolução por competência" title="Como cada competência ENEM evoluiu" />
+          <div className="mt-4">
+            <CompetencyTrendChart data={xray.competencyTrend} />
+          </div>
+        </Surface>
+      ) : null}
 
       {xray.weakCompetencies.length ? (
         <Surface>

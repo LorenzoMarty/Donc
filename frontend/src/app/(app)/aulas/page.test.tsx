@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import LessonsPage from "@/app/(app)/aulas/page";
-import type { Course, Dashboard } from "@/services/api";
+import type { Dashboard, Module } from "@/services/api";
 
 const LESSON = {
   id: 1,
@@ -19,29 +19,19 @@ const LESSON = {
   exercises: [],
 };
 
-const COURSES: Course[] = [
+const MODULES: Module[] = [
   {
     id: 1,
-    title: "Redação ENEM do zero",
-    slug: "redacao-enem",
-    description: "Curso principal",
+    title: "Módulo 1",
+    slug: "modulo-1",
+    description: "desc",
     color: "#65be02",
+    order: 1,
     progress_percent: 40,
     completed: false,
-    xp_reward: 200,
+    xp_reward: 75,
     user_rank: null,
-    modules: [
-      {
-        id: 1,
-        title: "Módulo 1",
-        description: "desc",
-        order: 1,
-        progress_percent: 40,
-        completed: false,
-        xp_reward: 75,
-        lessons: [LESSON],
-      },
-    ],
+    lessons: [LESSON],
   },
 ];
 
@@ -71,7 +61,7 @@ vi.mock("@/services/api", async () => {
   return {
     ...actual,
     apiFetch: vi.fn((path: string) => {
-      if (path === "/lessons/courses") return Promise.resolve(COURSES);
+      if (path === "/lessons/modules") return Promise.resolve(MODULES);
       if (path === "/dashboard") return Promise.resolve(DASHBOARD);
       return Promise.reject(new Error(`unexpected path ${path}`));
     }),
@@ -79,10 +69,10 @@ vi.mock("@/services/api", async () => {
 });
 
 describe("LessonsPage — catálogo estilo streaming", () => {
-  it("mostra hero do curso em andamento, rail de continuar assistindo e de recomendados", async () => {
+  it("mostra hero do módulo em andamento, rail de continuar assistindo e de recomendados", async () => {
     render(<LessonsPage />);
 
-    expect((await screen.findAllByText("Redação ENEM do zero")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Módulo 1")).length).toBeGreaterThan(0);
     expect(screen.getByText("Continuar assistindo")).toBeInTheDocument();
     expect(screen.getByText("Recomendado pra você")).toBeInTheDocument();
     expect(screen.getAllByText("Introdução à tese").length).toBeGreaterThan(0);

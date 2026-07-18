@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/providers/app-providers";
 import { useTrackEvent } from "@/hooks/use-track-event";
-import { apiFetch, type Course, type Lesson } from "@/services/api";
+import { apiFetch, type Lesson, type Module } from "@/services/api";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>() ?? { id: "" };
@@ -41,9 +41,8 @@ export default function LessonPage() {
   }, [params.id, trackEvent]);
 
   useEffect(() => {
-    apiFetch<Course[]>("/lessons/courses").then((courses) => {
-      const flatLessons = courses
-        .flatMap((course) => course.modules ?? [])
+    apiFetch<Module[]>("/lessons/modules").then((modules) => {
+      const flatLessons = modules
         .flatMap((module) => module.items ?? [])
         .filter((item) => item.kind === "lesson" && item.lesson)
         .map((item) => item.lesson as Lesson);

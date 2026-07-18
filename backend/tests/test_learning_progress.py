@@ -1,10 +1,10 @@
 def test_lesson_completion_awards_xp_once(client):
-    courses_response = client.get("/api/v1/lessons/courses")
-    assert courses_response.status_code == 200
-    course = courses_response.json()["data"][0]
+    modules_response = client.get("/api/v1/lessons/modules")
+    assert modules_response.status_code == 200
+    modules = modules_response.json()["data"]
     lesson = next(
         item
-        for module in course["modules"]
+        for module in modules
         for item in module["lessons"]
         if not item["progress"]["completed"]
     )
@@ -27,26 +27,25 @@ def test_lesson_completion_awards_xp_once(client):
     assert second_progress["total_xp"] == first_progress["total_xp"]
 
 
-def test_course_payload_exposes_modules_rewards_and_rank(client):
-    response = client.get("/api/v1/lessons/courses")
+def test_module_payload_exposes_rewards_and_rank(client):
+    response = client.get("/api/v1/lessons/modules")
     assert response.status_code == 200
-    course = response.json()["data"][0]
+    modules = response.json()["data"]
 
-    assert course["xp_reward"] == 200
-    assert course["user_rank"]["name"]
-    assert course["user_rank"]["exercise_difficulty"] in {"easy", "medium", "hard"}
-    assert course["modules"]
-    assert course["modules"][0]["xp_reward"] == 75
-    assert course["modules"][0]["lessons"][0]["xp_reward"] == 25
+    assert modules
+    assert modules[0]["user_rank"]["name"]
+    assert modules[0]["user_rank"]["exercise_difficulty"] in {"easy", "medium", "hard"}
+    assert modules[0]["xp_reward"] == 75
+    assert modules[0]["lessons"][0]["xp_reward"] == 25
 
 
 def test_dashboard_recent_lessons_ignores_unstarted_progress_rows(client):
-    courses_response = client.get("/api/v1/lessons/courses")
-    assert courses_response.status_code == 200
-    course = courses_response.json()["data"][0]
+    modules_response = client.get("/api/v1/lessons/modules")
+    assert modules_response.status_code == 200
+    modules = modules_response.json()["data"]
     lesson = next(
         item
-        for module in course["modules"]
+        for module in modules
         for item in module["lessons"]
         if item["progress"]["progress_percent"] == 0 and item["progress"]["last_position_seconds"] == 0
     )

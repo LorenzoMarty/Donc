@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from src.config.security import get_password_hash
 from src.models import (
-    Course,
     Difficulty,
     Essay,
     EssayCorrection,
@@ -445,7 +444,7 @@ EXERCISE_SPECS = [
 def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
     user_count = db.scalar(select(func.count(User.id))) or 0
     if user_count:
-        ensure_course_catalog(db)
+        ensure_module_catalog(db)
         seed_missing_exercises(db)
         seed_missing_themes(db)
         seed_missing_mock_exam(db)
@@ -455,7 +454,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         return
 
     if not include_demo_data:
-        ensure_course_catalog(db)
+        ensure_module_catalog(db)
         seed_missing_exercises(db)
         seed_missing_themes(db)
         seed_missing_mock_exam(db)
@@ -485,7 +484,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
     db.add_all([student, admin])
     db.flush()
 
-    _, modules, lessons = ensure_course_catalog(db)
+    modules, lessons = ensure_module_catalog(db)
 
     module_by_title = {module.title: module for module in modules}
     lesson_by_title = {lesson.title: lesson for lesson in lessons}
@@ -602,37 +601,29 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
     db.commit()
 
 
-def ensure_course_catalog(db: Session) -> tuple[Course, list[Module], list[Lesson]]:
-    course = db.scalar(select(Course).where(Course.slug == "destrave-redacao"))
-    if not course:
-        course = Course(slug="destrave-redacao")
-        db.add(course)
-
-    course.title = "Destrave a redacao"
-    course.description = "Curso inicial para sair do bloqueio e montar uma redacao ENEM com tema, tese, argumentos, coesao e intervencao."
-    course.color = "#C9A227"
-    db.flush()
-
+def ensure_module_catalog(db: Session) -> tuple[list[Module], list[Lesson]]:
     # Alvo de competencia (C1-C5) usado pelo gate de dominio (progression_service): define
     # em qual criterio da matriz ENEM o modulo precisa mostrar melhora antes de liberar o proximo.
     module_specs = [
-        ("Fundamentos da Redacao", "Da compreensao do tema ao projeto de texto.", 1, ["c2", "c3"]),
-        ("Competencias do ENEM", "Como a banca enxerga cada criterio da matriz.", 2, ["c5"]),
-        ("Norma-padrao Essencial", "Concordancia, regencia, crase e pontuacao aplicadas.", 3, ["c1"]),
-        ("Leitura Estrategica", "Inferencia, intencionalidade e efeitos de sentido.", 4, ["c2"]),
-        ("Repertorio Literario", "Autores, escolas e conexoes para argumentar melhor.", 5, ["c2"]),
+        ("Fundamentos da Redacao", "fundamentos-da-redacao", "Da compreensao do tema ao projeto de texto.", "#C9A227", 1, ["c2", "c3"]),
+        ("Competencias do ENEM", "competencias-do-enem", "Como a banca enxerga cada criterio da matriz.", "#65BE02", 2, ["c5"]),
+        ("Norma-padrao Essencial", "norma-padrao-essencial", "Concordancia, regencia, crase e pontuacao aplicadas.", "#3B82F6", 3, ["c1"]),
+        ("Leitura Estrategica", "leitura-estrategica", "Inferencia, intencionalidade e efeitos de sentido.", "#A855F7", 4, ["c2"]),
+        ("Repertorio Literario", "repertorio-literario", "Autores, escolas e conexoes para argumentar melhor.", "#F97316", 5, ["c2"]),
     ]
-    existing_modules = {
-        module.title: module
-        for module in db.scalars(select(Module).where(Module.course_id == course.id))
-    }
+    existing_modules = {module.title: module for module in db.scalars(select(Module))}
     modules: list[Module] = []
-    for title, description, order, target_competencies in module_specs:
+    for title, slug, description, color, order, target_competencies in module_specs:
         module = existing_modules.get(title)
         if not module:
-            module = Module(course_id=course.id, title=title)
+            module = Module(title=title, slug=slug)
             db.add(module)
+        if not module.slug:
+            # Backfill de módulo criado antes do campo slug existir (ver migração
+            # 0007_remove_course_entity) — sem isso ModuleRead falha na validação.
+            module.slug = slug
         module.description = description
+        module.color = color
         module.order = order
         module.target_competencies = target_competencies
         modules.append(module)
@@ -703,7 +694,7 @@ def ensure_course_catalog(db: Session) -> tuple[Course, list[Module], list[Lesso
         lessons.append(lesson)
     db.flush()
 
-    return course, modules, lessons
+    return modules, lessons
 
 
 def seed_missing_themes(db: Session) -> None:
@@ -962,11 +953,7 @@ def _paragraph_count(content: str) -> int:
 
 
 def seed_missing_exercises(db: Session) -> None:
-    course = db.scalar(select(Course).where(Course.slug == "destrave-redacao"))
-    if not course:
-        return
-
-    modules = list(db.scalars(select(Module).where(Module.course_id == course.id)))
+    modules = list(db.scalars(select(Module)))
     module_ids = [module.id for module in modules]
     if not module_ids:
         return

@@ -15,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { buildWriterXray, type WriterXray } from "@/features/profile/writer-xray";
 import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
-import { apiFetch, type Dashboard, type LearningProfile } from "@/services/api";
+import { apiFetch, type Dashboard, type EssayHistory, type LearningProfile } from "@/services/api";
 import { cn } from "@/utils";
 
 export default function ProfilePage() {
@@ -25,6 +25,7 @@ export default function ProfilePage() {
 
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [learningProfile, setLearningProfile] = useState<LearningProfile | null>(null);
+  const [essayHistory, setEssayHistory] = useState<EssayHistory | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,10 +34,12 @@ export default function ProfilePage() {
     Promise.all([
       apiFetch<Dashboard>("/dashboard").catch(() => null),
       apiFetch<LearningProfile>("/ai/learning-profile").catch(() => null),
-    ]).then(([dash, profile]) => {
+      apiFetch<EssayHistory>("/essays/history").catch(() => null),
+    ]).then(([dash, profile, history]) => {
       if (ignore) return;
       setDashboard(dash);
       setLearningProfile(profile);
+      setEssayHistory(history);
       setLoading(false);
     });
 
@@ -46,8 +49,8 @@ export default function ProfilePage() {
   }, []);
 
   const xray = useMemo<WriterXray | null>(
-    () => (loading ? null : buildWriterXray({ dashboard, learningProfile })),
-    [loading, dashboard, learningProfile],
+    () => (loading ? null : buildWriterXray({ dashboard, learningProfile, essayHistory })),
+    [loading, dashboard, learningProfile, essayHistory],
   );
 
   return (

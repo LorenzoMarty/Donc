@@ -6,13 +6,13 @@ import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiFetch, type AdminMetrics } from "@/services/api";
-import type { AdminCourse, AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
+import type { AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
 
 import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
-import { CoursesTab } from "./_tabs/courses";
+import { ModulesTab } from "./_tabs/modules";
 import { ThemesTab } from "./_tabs/themes";
 
 const EMPTY_TELEMETRY: AITelemetry = {
@@ -40,7 +40,7 @@ export default function AdminPage() {
   const [telemetryError, setTelemetryError] = useState("");
   const [activity, setActivity] = useState<UserActivity | null>(null);
   const [games, setGames] = useState<AIGeneratedGame[]>([]);
-  const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const [modules, setModules] = useState<AdminModule[]>([]);
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
@@ -52,7 +52,7 @@ export default function AdminPage() {
       apiFetch<AITelemetry>("/admin/ai-telemetry?days=30"),
       apiFetch<UserActivity>("/admin/user-activity?days=7"),
       apiFetch<AIGeneratedGame[]>("/admin/ai-games"),
-      apiFetch<AdminCourse[]>("/admin/content"),
+      apiFetch<AdminModule[]>("/admin/content"),
       apiFetch<EssayTheme[]>("/admin/essay-themes"),
     ]).then(([m, u, t, a, g, c, th]) => {
       if (m.status === "fulfilled") setMetrics(m.value);
@@ -66,7 +66,7 @@ export default function AdminPage() {
       }
       if (a.status === "fulfilled") setActivity(a.value);
       if (g.status === "fulfilled") setGames(g.value);
-      if (c.status === "fulfilled") setCourses(c.value);
+      if (c.status === "fulfilled") setModules(c.value);
       if (th.status === "fulfilled") setThemes(th.value);
     });
   }, []);
@@ -93,7 +93,7 @@ export default function AdminPage() {
           <TabsTrigger value="ai">Custos de IA</TabsTrigger>
           <TabsTrigger value="users">Alunos</TabsTrigger>
           <TabsTrigger value="themes">Temas</TabsTrigger>
-          <TabsTrigger value="courses">Cursos</TabsTrigger>
+          <TabsTrigger value="modules">Módulos</TabsTrigger>
           <TabsTrigger value="games">Jogos IA</TabsTrigger>
         </TabsList>
 
@@ -130,33 +130,21 @@ export default function AdminPage() {
           />
         </TabsContent>
 
-        <TabsContent value="courses" className="mt-4">
-          <CoursesTab
-            courses={courses}
-            onCourseCreated={(course: AdminCourse) => setCourses((prev) => [...prev, course])}
-            onCourseChanged={(course: AdminCourse) =>
-              setCourses((prev) => prev.map((item) => (item.id === course.id ? course : item)))
-            }
-            onCourseRemoved={(courseId: number) => setCourses((prev) => prev.filter((item) => item.id !== courseId))}
-            onModuleCreated={(courseId: number, module: AdminModule) =>
-              setCourses((prev) =>
-                prev.map((course) => (course.id === courseId ? { ...course, modules: [...course.modules, module] } : course)),
-              )
-            }
+        <TabsContent value="modules" className="mt-4">
+          <ModulesTab
+            modules={modules}
+            onModulesChanged={setModules}
             onLessonCreated={(moduleId: number, lesson: AdminLesson) =>
-              setCourses((prev) =>
-                prev.map((course) => ({
-                  ...course,
-                  modules: course.modules.map((module) =>
-                    module.id === moduleId
-                      ? {
-                          ...module,
-                          lessons: [...module.lessons, lesson],
-                          items: [...(module.items ?? []), { id: -lesson.id, kind: "lesson", order: lesson.order, lesson, activity: null }],
-                        }
-                      : module,
-                  ),
-                })),
+              setModules((prev) =>
+                prev.map((module) =>
+                  module.id === moduleId
+                    ? {
+                        ...module,
+                        lessons: [...module.lessons, lesson],
+                        items: [...(module.items ?? []), { id: -lesson.id, kind: "lesson", order: lesson.order, lesson, activity: null }],
+                      }
+                    : module,
+                ),
               )
             }
           />

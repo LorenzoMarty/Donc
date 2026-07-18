@@ -45,6 +45,8 @@ def _ensure_runtime_columns() -> None:
         ("ai_interaction_logs", "cost_micro_usd", "cost_micro_usd BIGINT NOT NULL DEFAULT 0"),
         ("ai_interaction_logs", "model", "model VARCHAR(80)"),
         ("modules", "target_competencies", "target_competencies JSON NOT NULL DEFAULT '[]'"),
+        ("modules", "color", "color VARCHAR(40) NOT NULL DEFAULT '#65BE02'"),
+        ("modules", "slug", "slug VARCHAR(140)"),
     ]
     for table_name, column_name, ddl in column_guards:
         _ensure_column(table_name, column_name, ddl)

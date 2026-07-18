@@ -21,28 +21,21 @@ def override_admin(db: Session = Depends(get_db)) -> User:
     return user
 
 
-def test_admin_can_create_course_module_and_lesson(client):
+def test_admin_can_create_module_and_lesson(client):
     app.dependency_overrides[require_admin] = override_admin
     try:
-        course_response = client.post(
-            "/api/v1/admin/courses",
+        module_response = client.post(
+            "/api/v1/admin/modules",
             json={
-                "title": "Curso Admin",
-                "slug": "curso-admin",
-                "description": "Curso criado pelo painel administrativo.",
+                "title": "Modulo Admin",
+                "slug": "modulo-admin",
+                "description": "Modulo criado pelo painel administrativo.",
                 "color": "#65BE02",
             },
         )
-        assert course_response.status_code == 201
-        course = api_data(course_response)
-
-        module_response = client.post(
-            f"/api/v1/admin/courses/{course['id']}/modules",
-            json={"title": "Modulo Admin", "description": "Modulo criado dentro do curso."},
-        )
         assert module_response.status_code == 201
-        module = api_data(module_response)
-        assert module["order"] == 1
+        modules = api_data(module_response)
+        module = next(item for item in modules if item["title"] == "Modulo Admin")
 
         lesson_response = client.post(
             f"/api/v1/admin/modules/{module['id']}/lessons",
@@ -60,31 +53,32 @@ def test_admin_can_create_course_module_and_lesson(client):
         content_response = client.get("/api/v1/admin/content")
         assert content_response.status_code == 200
         content = api_data(content_response)
-        created_course = next(item for item in content if item["id"] == course["id"])
-        assert created_course["modules"][0]["lessons"][0]["title"] == "Aula Admin"
+        created_module = next(item for item in content if item["id"] == module["id"])
+        assert created_module["lessons"][0]["title"] == "Aula Admin"
     finally:
         app.dependency_overrides.pop(require_admin, None)
 
 
-def test_created_course_is_visible_to_students(client):
+def test_created_module_is_visible_to_students(client):
     app.dependency_overrides[require_admin] = override_admin
     try:
-        course_response = client.post(
-            "/api/v1/admin/courses",
+        module_response = client.post(
+            "/api/v1/admin/modules",
             json={
-                "title": "Curso Visivel",
-                "description": "Curso que deve aparecer na tela de aulas.",
+                "title": "Modulo Visivel",
+                "description": "Modulo que deve aparecer na tela de aulas.",
             },
         )
-        assert course_response.status_code == 201
-        course = api_data(course_response)
+        assert module_response.status_code == 201
+        modules = api_data(module_response)
+        module = next(item for item in modules if item["title"] == "Modulo Visivel")
     finally:
         app.dependency_overrides.pop(require_admin, None)
 
-    courses_response = client.get("/api/v1/lessons/courses")
-    assert courses_response.status_code == 200
-    courses = api_data(courses_response)
-    assert course["id"] in {item["id"] for item in courses}
+    modules_response = client.get("/api/v1/lessons/modules")
+    assert modules_response.status_code == 200
+    visible_modules = api_data(modules_response)
+    assert module["id"] in {item["id"] for item in visible_modules}
 
 
 def test_admin_can_generate_one_essay_theme(client):
@@ -167,16 +161,12 @@ def test_admin_can_update_essay_theme(client):
 def test_admin_can_create_activity_between_lessons(client):
     app.dependency_overrides[require_admin] = override_admin
     try:
-        course_response = client.post(
-            "/api/v1/admin/courses",
-            json={"title": "Curso Atividades", "description": "Curso usado para validar atividades entre aulas."},
-        )
-        course = api_data(course_response)
         module_response = client.post(
-            f"/api/v1/admin/courses/{course['id']}/modules",
+            "/api/v1/admin/modules",
             json={"title": "Modulo Atividades", "description": "Modulo com aulas e atividade."},
         )
-        module = api_data(module_response)
+        modules = api_data(module_response)
+        module = next(item for item in modules if item["title"] == "Modulo Atividades")
         first = api_data(
             client.post(
                 f"/api/v1/admin/modules/{module['id']}/lessons",
@@ -210,8 +200,8 @@ def test_admin_can_create_activity_between_lessons(client):
             },
         )
         assert activity_response.status_code == 201
-        updated_course = api_data(activity_response)
-        updated_module = updated_course["modules"][0]
+        updated_modules = api_data(activity_response)
+        updated_module = next(item for item in updated_modules if item["id"] == module["id"])
         assert [item["kind"] for item in updated_module["items"]] == ["lesson", "lesson", "activity"]
         assert updated_module["items"][2]["activity"]["base_lesson_ids"] == [first["id"], second["id"]]
     finally:
