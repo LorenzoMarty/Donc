@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, ClipboardList, Flame, Lock, PlayCircle, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, ClipboardList, Flame, Lock, PlayCircle, Sparkles, type LucideIcon } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
@@ -74,7 +75,7 @@ export default function LessonsPage() {
         description="Continue de onde parou, veja o que a gente recomenda e explore os módulos no seu ritmo."
       />
 
-      {featuredModule ? <ModuleHero module={featuredModule} /> : null}
+      {featuredModule ? <ModuleHero module={featuredModule} streakDays={dashboard?.streak_days} /> : null}
 
       {continueWatching.length ? (
         <Rail title="Continuar assistindo">
@@ -131,41 +132,92 @@ export default function LessonsPage() {
   );
 }
 
+const heroHeadline = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+};
+
+const heroItem = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
+};
+
 /** Banner de destaque: primeiro módulo não concluído, com CTA direto pra próxima aula disponível. */
-function ModuleHero({ module }: { module: Module }) {
+function ModuleHero({ module, streakDays }: { module: Module; streakDays?: number }) {
   const items = module.items?.length ? module.items : module.lessons.map((lesson) => ({ id: -lesson.id, kind: "lesson" as const, order: lesson.order, lesson, activity: null }));
   const nextLesson = items.find((item) => item.kind === "lesson" && item.lesson && !item.lesson.progress.completed)?.lesson;
   const progress = module.progress_percent ?? 0;
+  const totalLessons = module.lessons.length;
+  const remainingLessons = module.lessons.filter((lesson) => !lesson.progress.completed).length;
+  const accent = module.color || "hsl(var(--primary))";
 
   return (
-    <Surface className="relative overflow-hidden p-5 lg:p-7">
+    <Surface className="relative overflow-hidden p-5 lg:p-8">
       <div
         className="absolute inset-0 opacity-90"
-        style={{ background: `linear-gradient(120deg, ${module.color || "hsl(var(--primary))"} 0%, transparent 65%)` }}
+        style={{ background: `linear-gradient(120deg, ${accent} 0%, transparent 65%)` }}
         aria-hidden="true"
       />
-      <div className="relative grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <motion.div
+        className="absolute -right-16 -top-24 h-64 w-64 rounded-full blur-3xl"
+        style={{ backgroundColor: accent }}
+        aria-hidden="true"
+        animate={{ opacity: [0.12, 0.24, 0.12], scale: [1, 1.08, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.div
+        variants={heroHeadline}
+        initial="hidden"
+        animate="show"
+        className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
+      >
         <div className="min-w-0">
-          <Badge variant="secondary" className="mb-3">
-            Continue sua trilha
-          </Badge>
-          <h2 className="text-safe text-2xl font-semibold tracking-normal lg:text-3xl">{module.title}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground lg:text-base">{module.description}</p>
-          <div className="mt-4 flex max-w-xs items-center gap-3">
-            <Progress value={progress} className="h-2" />
-            <span className="shrink-0 text-sm font-semibold">{progress}%</span>
-          </div>
+          <motion.div variants={heroItem} className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">Continue sua trilha</Badge>
+            {streakDays ? (
+              <Badge variant="outline" className="gap-1">
+                <Flame className="h-3.5 w-3.5 text-streak" aria-hidden="true" />
+                {streakDays} {streakDays === 1 ? "dia" : "dias"} de sequência
+              </Badge>
+            ) : null}
+          </motion.div>
+
+          <motion.h2 variants={heroItem} className="text-safe mt-3 text-2xl font-semibold leading-tight tracking-tight lg:text-4xl">
+            {module.title}
+          </motion.h2>
+          <motion.p variants={heroItem} className="mt-2.5 max-w-2xl text-sm leading-6 text-muted-foreground lg:text-base">
+            {module.description}
+          </motion.p>
+
+          <motion.div variants={heroItem} className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <div className="flex max-w-xs flex-1 items-center gap-3">
+              <Progress value={progress} className="h-2" />
+              <span className="shrink-0 text-sm font-semibold">{progress}%</span>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
+              {remainingLessons > 0
+                ? `${remainingLessons} de ${totalLessons} aulas restantes`
+                : `${totalLessons} aulas concluídas`}
+            </span>
+          </motion.div>
         </div>
+
         {nextLesson ? (
-          <Button asChild size="lg" className="shrink-0">
-            <Link href={`/aulas/${nextLesson.id}`}>
-              <PlayCircle className="h-4 w-4" aria-hidden="true" />
-              {nextLesson.progress.progress_percent > 0 ? "Continuar aula" : "Começar aula"}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
+          <motion.div variants={heroItem} className="shrink-0" whileHover="hover">
+            <Button asChild size="lg" className="group shrink-0">
+              <Link href={`/aulas/${nextLesson.id}`}>
+                <PlayCircle className="h-4 w-4" aria-hidden="true" />
+                {nextLesson.progress.progress_percent > 0 ? "Continuar aula" : "Começar aula"}
+                <motion.span variants={{ hover: { x: 3 } }} transition={{ duration: 0.18, ease: "easeOut" }} className="inline-flex">
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </motion.span>
+              </Link>
+            </Button>
+          </motion.div>
         ) : null}
-      </div>
+      </motion.div>
     </Surface>
   );
 }
