@@ -181,7 +181,7 @@ export default function LessonPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm leading-6 text-muted-foreground">Nenhum exercicio liberado para esta aula no rank atual.</p>
+                <p className="text-sm leading-6 text-muted-foreground">Ainda não liberei exercício aqui pro seu rank atual — sobe de rank treinando e eu abro mais.</p>
               )}
             </div>
           </Surface>

@@ -57,7 +57,7 @@ export default function ExamHistoryPage() {
       />
 
       {attempts.length === 0 ? (
-        <Surface className="p-6 text-sm text-muted-foreground">Nenhuma tentativa registrada ainda.</Surface>
+        <Surface className="p-6 text-sm text-muted-foreground">Você ainda não fez nenhum simulado. Bora testar seu nível com um agora?</Surface>
       ) : (
         <div className="space-y-3">
           {attempts.map((attempt) => (

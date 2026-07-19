@@ -121,7 +121,7 @@ export function ModulesTab({
             onMoveItem={moveItem}
           />
         ))}
-        {!modules.length ? <p className="rounded-card bg-card p-6 text-sm text-muted-foreground shadow-soft">Nenhum módulo cadastrado.</p> : null}
+        {!modules.length ? <p className="rounded-card bg-card p-6 text-sm text-muted-foreground shadow-soft">Nenhum módulo cadastrado ainda. Crie o primeiro acima pra liberar aulas e atividades.</p> : null}
       </div>
 
       {modal?.kind === "module" ? (
@@ -531,7 +531,7 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
                   );
                 })
               ) : (
-                <p className="px-2 py-1.5 text-xs text-muted-foreground">Nenhuma aula neste módulo.</p>
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">Nenhuma aula neste módulo ainda.</p>
               )}
             </div>
           </Field>
