@@ -263,7 +263,7 @@ export function UsersTab({
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum usuário encontrado.
+                    Nenhum usuário encontrado com esse filtro.
                   </td>
                 </tr>
               )}

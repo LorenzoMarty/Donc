@@ -213,7 +213,7 @@ export function ThemesTab({
               </article>
             );
           })}
-          {!themes.length ? <p className="text-sm text-muted-foreground">Nenhum tema ativo cadastrado.</p> : null}
+          {!themes.length ? <p className="text-sm text-muted-foreground">Nenhum tema ativo cadastrado ainda. Gere um tema novo acima.</p> : null}
         </div>
       </div>
 

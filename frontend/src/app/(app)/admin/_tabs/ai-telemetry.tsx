@@ -209,7 +209,7 @@ export function AITelemetryTab({
               ))}
               {telemetry.agents.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sem dados no período.</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sem dados nesse período. Tente ampliar o intervalo.</td>
                 </tr>
               )}
             </tbody>

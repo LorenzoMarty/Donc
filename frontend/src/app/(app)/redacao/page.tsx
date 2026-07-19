@@ -447,7 +447,7 @@ function CorrectionPanel({ correction, error }: { correction: Essay["correction"
         </div>
       ) : (
         <p className="text-sm leading-6 text-muted-foreground">
-          Ainda não tem correção aqui. Envie o texto e a IA mostra, competência por competência, onde focar primeiro.
+          Ainda não tenho correção pra te mostrar aqui. Envia o texto que eu aponto, competência por competência, onde focar primeiro.
         </p>
       )}
       {error ? (

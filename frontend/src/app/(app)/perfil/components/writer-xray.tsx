@@ -26,9 +26,9 @@ export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; 
   if (!xray || xray.isEmpty) {
     return (
       <Surface>
-        <SectionTitle eyebrow="Raio-X do escritor" title="Corrija uma redação para ver seu diagnóstico" />
+        <SectionTitle eyebrow="Raio-X do escritor" title="Ainda não tenho seu raio-x" />
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Depois da primeira correção, o Raio-X mostra sua nota por competência, os erros que se repetem e o que treinar.
+          Corrija sua primeira redação e eu te mostro sua nota por competência, os erros que mais se repetem e o que treinar primeiro.
         </p>
         <Button asChild className="mt-4">
           <Link href="/redacao">

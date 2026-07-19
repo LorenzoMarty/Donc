@@ -304,9 +304,9 @@ export default function DashboardPage() {
           ) : (
             <div className="grid min-h-64 place-items-center px-6 py-10 text-center">
               <div>
-                <p className="text-lg font-bold">Nenhuma redação ainda.</p>
+                <p className="text-lg font-bold">Você ainda não escreveu nada por aqui.</p>
                 <p className="mt-2 text-base text-muted-foreground">
-                  Sua primeira redação vira o ponto de partida — a IA aponta exatamente o que ajustar primeiro.
+                  Escreve a primeira redação e eu já aponto exatamente o que ajustar primeiro.
                 </p>
                 <Button asChild className="mt-5">
                   <Link href="/redacao">
@@ -320,7 +320,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid min-w-0 gap-4">
-          <LessonsRailCard title="Continuar assistindo" emptyLabel="Nenhuma aula acessada ainda." lessons={lessons} />
+          <LessonsRailCard title="Continuar assistindo" emptyLabel="Você ainda não começou nenhuma aula. Bora resolver isso?" lessons={lessons} />
           {suggestedLessons.length ? (
             <LessonsRailCard title="Recomendados pra você" emptyLabel="" lessons={suggestedLessons} />
           ) : null}

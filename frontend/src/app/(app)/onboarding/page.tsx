@@ -32,6 +32,7 @@ const TOUR_SLIDES: {
   color: string;
   bg: string;
   hydraImageUrl?: string;
+  hydraVideoUrl?: string;
 }[] = [
   {
     icon: Map,
@@ -201,7 +202,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.1, duration: 0.4 }}
         className="text-3xl font-bold tracking-tight"
       >
-        Bem-vindo ao Donc ENEM
+        Oi, eu sou o Donc
       </motion.h1>
       <motion.p
         initial={{ opacity: 0, y: 12 }}
@@ -209,7 +210,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         transition={{ delay: 0.2, duration: 0.4 }}
         className="mt-3 text-muted-foreground"
       >
-        3 perguntas rápidas para personalizar seu treino.
+        Antes de começar, me conta 3 coisas rápidas — assim eu já sei por onde te levar.
       </motion.p>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8">
         <Button onClick={onNext} size="lg" className="w-full">
@@ -317,7 +318,14 @@ function TourStep({
           transition={{ duration: 0.25 }}
           className={cn("mt-5 rounded-[var(--radius)] border p-6", current.bg)}
         >
-          {current.hydraImageUrl ? (
+          {current.hydraVideoUrl ? (
+            <video
+              src={current.hydraVideoUrl}
+              controls
+              className="mb-4 w-full rounded-control object-contain"
+              aria-label="Vídeo da Hydra, a mascote do Donc ENEM"
+            />
+          ) : current.hydraImageUrl ? (
             <Image
               src={current.hydraImageUrl}
               alt="Hydra, a mascote do Donc ENEM"
@@ -392,9 +400,9 @@ function CTAStep({
         <Target className="h-10 w-10 text-primary" aria-hidden="true" />
       </motion.div>
 
-      <h2 className="text-2xl font-bold tracking-tight">Prontinho.</h2>
+      <h2 className="text-2xl font-bold tracking-tight">Fechado. Bora treinar.</h2>
       <p className="mt-2 text-muted-foreground">
-        A partir da sua primeira redação a gente já sabe por onde focar. Bora escrever?
+        Assim que você escrever a primeira redação, eu já te aponto exatamente onde focar. Sem enrolação.
       </p>
 
       <div className="mt-6 grid gap-2 text-left">

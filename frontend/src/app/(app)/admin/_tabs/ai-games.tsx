@@ -339,7 +339,7 @@ export function AIGamesTab({
         {filtered.length === 0 && (
           <div className="rounded-card bg-card p-8 text-center shadow-soft">
             <p className="text-sm text-muted-foreground">
-              {statusFilter === "pending" ? "Sem jogos pendentes de revisão." : "Nenhum jogo encontrado."}
+              {statusFilter === "pending" ? "Nenhum jogo pendente de revisão — tudo em dia." : "Nenhum jogo encontrado com esse filtro."}
             </p>
           </div>
         )}
