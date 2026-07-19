@@ -1,4 +1,4 @@
-import { render, screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { fireEvent, render, screen, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -68,23 +68,24 @@ describe("EssayEditor — alternância folha/motivadores", () => {
     expect(screen.getByText("Guia e textos")).toBeInTheDocument();
   });
 
-  it("bottom bar de canetas: seleciona caneta, alterna pra escrever, limpa marcações", async () => {
-    const user = userEvent.setup();
+  it("bottom bar de canetas: sublinha o trecho selecionado e depois limpa as marcações", async () => {
     renderEditor();
 
+    const textarea = screen.getByPlaceholderText("Comece sua redação aqui...") as HTMLTextAreaElement;
     const penButton = screen.getByRole("button", { name: "Caneta azul" });
-    const writeButton = screen.getByRole("button", { name: "Escrever (desativar canetas)" });
     const clearButton = screen.getByRole("button", { name: "Limpar marcações" });
 
-    expect(writeButton).toHaveAttribute("aria-pressed", "true");
     expect(clearButton).toBeDisabled();
 
-    await user.click(penButton);
-    expect(penButton).toHaveAttribute("aria-pressed", "true");
-    expect(writeButton).toHaveAttribute("aria-pressed", "false");
+    textarea.focus();
+    textarea.setSelectionRange(0, 4);
+    fireEvent.click(penButton);
 
-    await user.click(writeButton);
-    expect(writeButton).toHaveAttribute("aria-pressed", "true");
+    expect(clearButton).not.toBeDisabled();
+    expect(screen.getByText("Meu")).toBeInTheDocument();
+
+    fireEvent.click(clearButton);
+    expect(clearButton).toBeDisabled();
   });
 
   it("não mostra a bottom bar de canetas quando a redação já está corrigida (bloqueada)", () => {
