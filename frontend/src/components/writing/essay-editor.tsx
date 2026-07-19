@@ -10,7 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Eraser,
-  MousePointer2,
   PenLine,
   Send,
   Trash2,
@@ -25,14 +24,69 @@ import {
   SupportingTextIcon,
   WritingSidebar,
 } from "@/components/shared/motion-system";
-import { DrawingCanvas, type DrawingTool, type Stroke } from "@/components/writing/drawing-canvas";
 import { EssayTimer } from "@/components/writing/essay-timer";
+import { FloatingPostIts } from "@/components/writing/floating-post-its";
 import { HydraRail } from "@/components/writing/hydra-rail";
 import { dominantWeakness } from "@/features/gamification/adaptive";
 import { HUBS } from "@/features/gamification/symptoms";
 import type { Essay, EssayTheme } from "@/services/api";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
+
+type EssayMarkTool = "pen-black" | "pen-blue" | "pen-red" | "highlighter";
+
+type EssayMark = { id: string; tool: EssayMarkTool; quote: string };
+
+const MARK_TOOL_LABEL: Record<EssayMarkTool, string> = {
+  "pen-black": "Caneta preta",
+  "pen-blue": "Caneta azul",
+  "pen-red": "Caneta vermelha",
+  highlighter: "Marca-texto",
+};
+
+const MARK_TOOL_STYLE: Record<EssayMarkTool, string> = {
+  "pen-black": "underline decoration-2 underline-offset-2 decoration-[#1f2a24]",
+  "pen-blue": "underline decoration-2 underline-offset-2 decoration-[#1d4ed8]",
+  "pen-red": "underline decoration-2 underline-offset-2 decoration-[#b3122a]",
+  highlighter: "rounded-sm bg-[#fbbf24]/45",
+};
+
+function buildMarkSegments(content: string, marks: EssayMark[]) {
+  type Segment = { text: string; mark: EssayMark | null };
+  const segments: Segment[] = [{ text: content, mark: null }];
+  for (const mark of marks) {
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      if (segment.mark || !mark.quote) continue;
+      const idx = segment.text.indexOf(mark.quote);
+      if (idx === -1) continue;
+      const before = segment.text.slice(0, idx);
+      const match = segment.text.slice(idx, idx + mark.quote.length);
+      const after = segment.text.slice(idx + mark.quote.length);
+      const replacement: Segment[] = [];
+      if (before) replacement.push({ text: before, mark: null });
+      replacement.push({ text: match, mark });
+      if (after) replacement.push({ text: after, mark: null });
+      segments.splice(i, 1, ...replacement);
+      break;
+    }
+  }
+  return segments;
+}
+
+const pageFlipVariants = {
+  enter: (direction: number) => ({
+    rotateY: direction > 0 ? 92 : -92,
+    opacity: 0,
+    transformOrigin: direction > 0 ? "left center" : "right center",
+  }),
+  center: { rotateY: 0, opacity: 1, transformOrigin: "center center" },
+  exit: (direction: number) => ({
+    rotateY: direction > 0 ? -92 : 92,
+    opacity: 0,
+    transformOrigin: direction > 0 ? "right center" : "left center",
+  }),
+};
 
 export function EssayEditor({
   essay,
@@ -65,9 +119,11 @@ export function EssayEditor({
 }) {
   const [showSaved, setShowSaved] = useState(false);
   const [page, setPage] = useState<"folha" | "motivadores">("folha");
+  const [pageDirection, setPageDirection] = useState(1);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [strokes, setStrokes] = useState<Stroke[]>([]);
-  const [activeTool, setActiveTool] = useState<DrawingTool | null>(null);
+  const [marks, setMarks] = useState<EssayMark[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const wasSavingRef = useRef(false);
   const lines = estimateEditorLines(content);
   const lineNumbers = Array.from({ length: Math.max(30, lines) }, (_, index) => index + 1);
@@ -93,6 +149,39 @@ export function EssayEditor({
       window.clearTimeout(hideId);
     };
   }, [essay, saving]);
+
+  function goToPage(next: "folha" | "motivadores") {
+    setPageDirection(next === "motivadores" ? 1 : -1);
+    setPage(next);
+  }
+
+  function applyMark(tool: EssayMarkTool) {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd } = textarea;
+    if (selectionEnd <= selectionStart) return;
+    const quote = content.slice(selectionStart, selectionEnd);
+    if (!quote.trim()) return;
+    setMarks((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tool, quote }]);
+  }
+
+  function eraseMark() {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const { selectionStart, selectionEnd } = textarea;
+    if (selectionEnd <= selectionStart) return;
+    const quote = content.slice(selectionStart, selectionEnd);
+    setMarks((prev) => prev.filter((mark) => !mark.quote.includes(quote) && !quote.includes(mark.quote)));
+  }
+
+  function syncOverlayScroll() {
+    if (overlayRef.current && textareaRef.current) {
+      overlayRef.current.scrollTop = textareaRef.current.scrollTop;
+      overlayRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  }
+
+  const markSegments = buildMarkSegments(content, marks);
 
   return (
     <motion.section
@@ -148,10 +237,10 @@ export function EssayEditor({
 
         {hasMotivadores ? (
           <div className="flex gap-1 border-b border-border/55 bg-card px-4 py-2 md:px-5">
-            <PageTab active={page === "folha"} onClick={() => setPage("folha")} icon={PenLine} label="Folha de redação" />
+            <PageTab active={page === "folha"} onClick={() => goToPage("folha")} icon={PenLine} label="Folha de redação" />
             <PageTab
               active={page === "motivadores"}
-              onClick={() => setPage("motivadores")}
+              onClick={() => goToPage("motivadores")}
               icon={BookOpen}
               label="Textos motivadores"
             />
@@ -159,14 +248,16 @@ export function EssayEditor({
         ) : null}
 
         <div className="relative min-h-0 flex-1 overflow-hidden" style={{ perspective: 1600 }}>
-          <AnimatePresence mode="wait" initial={false}>
+          <AnimatePresence mode="wait" initial={false} custom={pageDirection}>
             {page === "folha" ? (
               <motion.article
                 key="folha"
-                initial={{ opacity: 0, rotateY: -10, x: -18 }}
-                animate={{ opacity: 1, rotateY: 0, x: 0 }}
-                exit={{ opacity: 0, rotateY: 10, x: 18 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                custom={pageDirection}
+                variants={pageFlipVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
                 className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 py-8 pb-24 md:px-9 lg:py-10"
               >
                 <div className="relative mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-card px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
@@ -180,30 +271,45 @@ export function EssayEditor({
                       </div>
                     ))}
                   </div>
-                  <textarea
-                    value={content}
-                    disabled={locked}
-                    onChange={(event) => onContentChange(event.target.value)}
-                    spellCheck
-                    placeholder="Comece sua redação aqui..."
-                    className="min-h-[calc(100dvh-18rem)] w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-foreground caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
-                  />
-                  {!locked ? (
-                    <DrawingCanvas
-                      strokes={strokes}
-                      activeTool={activeTool}
-                      onStrokeComplete={(stroke) => setStrokes((prev) => [...prev, stroke])}
+                  <div className="relative min-h-[calc(100dvh-18rem)] w-full">
+                    <div
+                      ref={overlayRef}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-foreground [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
+                    >
+                      {markSegments.map((segment, index) =>
+                        segment.mark ? (
+                          <mark key={index} className={cn("bg-transparent text-foreground", MARK_TOOL_STYLE[segment.mark.tool])}>
+                            {segment.text}
+                          </mark>
+                        ) : (
+                          <span key={index}>{segment.text}</span>
+                        ),
+                      )}
+                      {"​"}
+                    </div>
+                    <textarea
+                      ref={textareaRef}
+                      value={content}
+                      disabled={locked}
+                      onChange={(event) => onContentChange(event.target.value)}
+                      onScroll={syncOverlayScroll}
+                      spellCheck
+                      placeholder="Comece sua redação aqui..."
+                      className="absolute inset-0 h-full w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-transparent caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
                     />
-                  ) : null}
+                  </div>
                 </div>
               </motion.article>
             ) : (
               <motion.article
                 key="motivadores"
-                initial={{ opacity: 0, rotateY: 10, x: 18 }}
-                animate={{ opacity: 1, rotateY: 0, x: 0 }}
-                exit={{ opacity: 0, rotateY: -10, x: -18 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                custom={pageDirection}
+                variants={pageFlipVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
                 className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 py-8 md:px-9 lg:py-10"
               >
                 <MotivatorsBooklet theme={activeTheme} />
@@ -211,13 +317,10 @@ export function EssayEditor({
             )}
           </AnimatePresence>
 
+          {page === "folha" ? <FloatingPostIts themeId={activeTheme?.id} /> : null}
+
           {page === "folha" && !locked ? (
-            <PenBar
-              activeTool={activeTool}
-              onSelectTool={setActiveTool}
-              onClear={() => setStrokes([])}
-              hasStrokes={strokes.length > 0}
-            />
+            <PenBar onApplyMark={applyMark} onEraseMark={eraseMark} onClear={() => setMarks([])} hasMarks={marks.length > 0} />
           ) : null}
         </div>
       </div>
@@ -252,7 +355,7 @@ export function EssayEditor({
           </div>
 
           {sidebarCollapsed ? (
-            <HydraRail themeId={activeTheme?.id} />
+            <HydraRail />
           ) : (
             <div className="space-y-2.5">
               {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
@@ -316,54 +419,37 @@ function PageTab({
   );
 }
 
-const PEN_SWATCHES: { tool: DrawingTool; label: string; color: string }[] = [
-  { tool: "pen-black", label: "Caneta preta", color: "#1f2a24" },
-  { tool: "pen-blue", label: "Caneta azul", color: "#1d4ed8" },
-  { tool: "pen-red", label: "Caneta vermelha", color: "#b3122a" },
-  { tool: "highlighter", label: "Marca-texto", color: "#fbbf24" },
+const PEN_SWATCHES: { tool: EssayMarkTool; color: string }[] = [
+  { tool: "pen-black", color: "#1f2a24" },
+  { tool: "pen-blue", color: "#1d4ed8" },
+  { tool: "pen-red", color: "#b3122a" },
+  { tool: "highlighter", color: "#fbbf24" },
 ];
 
-/** Bottom bar de seleção de canetas — desenho/marcação livre sobre a folha, não cor de grifo. */
+/** Bottom bar de canetas — sublinha/marca o trecho selecionado na folha, não desenho livre. */
 function PenBar({
-  activeTool,
-  onSelectTool,
+  onApplyMark,
+  onEraseMark,
   onClear,
-  hasStrokes,
+  hasMarks,
 }: {
-  activeTool: DrawingTool | null;
-  onSelectTool: (tool: DrawingTool | null) => void;
+  onApplyMark: (tool: EssayMarkTool) => void;
+  onEraseMark: () => void;
   onClear: () => void;
-  hasStrokes: boolean;
+  hasMarks: boolean;
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
       <div className="pointer-events-auto flex items-center gap-1.5 rounded-control border border-border bg-card px-2 py-1.5 shadow-elevated">
-        <button
-          type="button"
-          onClick={() => onSelectTool(null)}
-          aria-label="Escrever (desativar canetas)"
-          aria-pressed={activeTool === null}
-          className={cn(
-            "grid h-8 w-8 place-items-center rounded-control transition-colors",
-            activeTool === null ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60",
-          )}
-        >
-          <MousePointer2 className="h-4 w-4" aria-hidden="true" />
-        </button>
-
-        <div className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
-
         {PEN_SWATCHES.map((pen) => (
           <button
             key={pen.tool}
             type="button"
-            onClick={() => onSelectTool(pen.tool)}
-            aria-label={pen.label}
-            aria-pressed={activeTool === pen.tool}
-            className={cn(
-              "grid h-8 w-8 place-items-center rounded-control transition-colors",
-              activeTool === pen.tool ? "ring-2 ring-primary ring-offset-1 ring-offset-card" : "hover:bg-muted/60",
-            )}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onApplyMark(pen.tool)}
+            aria-label={MARK_TOOL_LABEL[pen.tool]}
+            title={`Sublinhar seleção: ${MARK_TOOL_LABEL[pen.tool]}`}
+            className="grid h-8 w-8 place-items-center rounded-control transition-colors hover:bg-muted/60"
           >
             <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pen.color }} aria-hidden="true" />
           </button>
@@ -371,13 +457,11 @@ function PenBar({
 
         <button
           type="button"
-          onClick={() => onSelectTool("eraser")}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onEraseMark}
           aria-label="Borracha"
-          aria-pressed={activeTool === "eraser"}
-          className={cn(
-            "grid h-8 w-8 place-items-center rounded-control transition-colors",
-            activeTool === "eraser" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60",
-          )}
+          title="Remover marcação da seleção"
+          className="grid h-8 w-8 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-muted/60"
         >
           <Eraser className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -387,7 +471,7 @@ function PenBar({
         <button
           type="button"
           onClick={onClear}
-          disabled={!hasStrokes}
+          disabled={!hasMarks}
           aria-label="Limpar marcações"
           className="grid h-8 w-8 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
         >
