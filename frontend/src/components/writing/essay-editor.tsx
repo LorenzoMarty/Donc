@@ -2,13 +2,12 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
-  AlertCircle,
   ArrowLeft,
   BookOpen,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
+  ChevronDown,
   Eraser,
   PenLine,
   Plus,
@@ -16,23 +15,12 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  FriendlyErrorFeedback,
-  RewardAnimation,
-  SupportingTextBody,
-  SupportingTextIcon,
-  WritingSidebar,
-} from "@/components/shared/motion-system";
+import { RewardAnimation, SupportingTextBody, SupportingTextIcon } from "@/components/shared/motion-system";
 import { EssayTimer } from "@/components/writing/essay-timer";
 import { FloatingPostIts } from "@/components/writing/floating-post-its";
-import { HydraRail } from "@/components/writing/hydra-rail";
-import { dominantWeakness } from "@/features/gamification/adaptive";
-import { HUBS } from "@/features/gamification/symptoms";
 import type { Essay, EssayTheme } from "@/services/api";
 import { useFreePostItsStore } from "@/stores/free-post-its-store";
-import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 type EssayMarkTool = "pen-black" | "pen-blue" | "pen-red" | "highlighter";
@@ -122,23 +110,21 @@ export function EssayEditor({
   const [showSaved, setShowSaved] = useState(false);
   const [page, setPage] = useState<"folha" | "motivadores">("folha");
   const [pageDirection, setPageDirection] = useState(1);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [themeStripOpen, setThemeStripOpen] = useState(false);
   const [marks, setMarks] = useState<EssayMark[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const wasSavingRef = useRef(false);
+  const wasLockedRef = useRef(false);
+  const lastErrorRef = useRef<string | undefined>(undefined);
   const lines = estimateEditorLines(content);
   const lineNumbers = Array.from({ length: Math.max(30, lines) }, (_, index) => index + 1);
   const locked = essay?.status === "corrected";
   const canSubmit = Boolean(essay) && !locked && !saving && !submitting && wordCount >= 80;
   const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
-  const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
   const hasMotivadores = Boolean(activeTheme?.supporting_texts?.length);
   const addFreePostIt = useFreePostItsStore((state) => state.addPostIt);
-  const adaptive = useGameStore((state) => state.adaptive);
-  const weakHubId = dominantWeakness(adaptive);
-  const personalizedTip = weakHubId ? { title: HUBS[weakHubId].title, text: HUBS[weakHubId].weaknessNarrative } : null;
 
   useEffect(() => {
     const shouldShowSaved = wasSavingRef.current && !saving && Boolean(essay) && essay?.status !== "corrected";
@@ -152,6 +138,16 @@ export function EssayEditor({
       window.clearTimeout(hideId);
     };
   }, [essay, saving]);
+
+  useEffect(() => {
+    if (locked && !wasLockedRef.current) toast.success("Versão corrigida e bloqueada.");
+    wasLockedRef.current = locked;
+  }, [locked]);
+
+  useEffect(() => {
+    if (error && error !== lastErrorRef.current) toast.error(error);
+    lastErrorRef.current = error;
+  }, [error]);
 
   function goToPage(next: "folha" | "motivadores") {
     setPageDirection(next === "motivadores" ? 1 : -1);
@@ -191,10 +187,7 @@ export function EssayEditor({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        "flex flex-col rounded-card bg-card shadow-soft md:grid md:h-dvh md:overflow-hidden md:rounded-none md:shadow-none",
-        sidebarCollapsed ? "md:grid-cols-[minmax(0,1fr)_4.5rem]" : "md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]",
-      )}
+      className="flex flex-col rounded-card bg-card shadow-soft md:h-dvh md:overflow-hidden md:rounded-none md:shadow-none"
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
@@ -248,6 +241,10 @@ export function EssayEditor({
               label="Textos motivadores"
             />
           </div>
+        ) : null}
+
+        {activeTheme && page === "folha" ? (
+          <ThemeStrip theme={activeTheme} open={themeStripOpen} onToggle={() => setThemeStripOpen((value) => !value)} />
         ) : null}
 
         <div className="relative min-h-0 flex-1 overflow-hidden" style={{ perspective: 1600 }}>
@@ -333,71 +330,6 @@ export function EssayEditor({
           ) : null}
         </div>
       </div>
-
-      <aside className={cn("mobile-scroll min-h-0 overflow-y-auto bg-card shadow-soft", sidebarCollapsed ? "p-2" : "p-4")}>
-          <div className={cn("mb-2 flex items-center gap-2", sidebarCollapsed ? "flex-col" : "justify-between")}>
-            {!sidebarCollapsed ? (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Apoio</p>
-                <h2 className="mt-0.5 text-sm font-semibold">Guia e textos</h2>
-              </div>
-            ) : null}
-            <div className={cn("flex items-center gap-2", sidebarCollapsed && "flex-col")}>
-              {!sidebarCollapsed ? (
-                <Badge variant={wordCount >= 80 ? "success" : "outline"}>{wordCount >= 80 ? "Pronta" : "Rascunho"}</Badge>
-              ) : null}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarCollapsed((value) => !value)}
-                aria-label={sidebarCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
-                className="h-8 w-8 shrink-0"
-              >
-                {sidebarCollapsed ? (
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {sidebarCollapsed ? (
-            <HydraRail />
-          ) : (
-            <div className="space-y-2.5">
-              {activeTheme ? <ThemeReference theme={activeTheme} compact /> : null}
-              <WritingSidebar
-                lines={lines}
-                paragraphs={paragraphCount}
-                structureProgress={structureProgress}
-                theme={activeTheme}
-                personalizedTip={personalizedTip}
-              />
-              <FriendlyErrorFeedback
-                show={wordCount > 0 && wordCount < 80}
-                message="Bom começo. Para enviar à correção, desenvolva a tese com pelo menos um bloco argumentativo completo."
-              />
-              {locked ? (
-                <div className="rounded-control bg-primary/10 p-3 text-sm font-semibold text-primary">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                    Versão corrigida e bloqueada.
-                  </div>
-                </div>
-              ) : null}
-              {error ? (
-                <div className="rounded-control bg-destructive/10 p-3 text-sm font-semibold text-destructive">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    {error}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )}
-      </aside>
     </motion.section>
   );
 }
@@ -537,12 +469,38 @@ function estimateEditorLines(content: string) {
   return Math.max(1, rows);
 }
 
-function ThemeReference({ theme, compact = false }: { theme: EssayTheme; compact?: boolean }) {
+/** Faixa colapsável com o tema/proposta — substitui o painel lateral fixo (ver REQ-3, spec `refino-interface-apple-v2`). */
+function ThemeStrip({ theme, open, onToggle }: { theme: EssayTheme; open: boolean; onToggle: () => void }) {
   return (
-    <section className={cn("border-b border-border/55 text-foreground", compact ? "pb-2.5" : "p-4")}>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Tema da redação</p>
-      <h2 className={cn("mt-1 font-semibold leading-snug tracking-normal", compact ? "text-sm" : "text-lg md:text-xl")}>{theme.title}</h2>
-      <p className={cn("mt-1.5 whitespace-pre-wrap text-muted-foreground", compact ? "text-xs leading-5" : "text-sm leading-6")}>{theme.context}</p>
-    </section>
+    <div className="border-b border-border/55 bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 md:px-5"
+      >
+        <div className="min-w-0">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-primary">Tema</p>
+          <p className="truncate text-sm font-semibold text-foreground">{theme.title}</p>
+        </div>
+        <ChevronDown
+          className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          aria-hidden="true"
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="whitespace-pre-wrap px-4 pb-3 text-sm leading-6 text-muted-foreground md:px-5">{theme.context}</p>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }

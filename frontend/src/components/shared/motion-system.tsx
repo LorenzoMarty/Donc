@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
-  BookOpen,
   CheckCircle2,
   ImageIcon,
   Lightbulb,
@@ -14,11 +13,9 @@ import {
   Newspaper,
   Target,
   Trophy,
-  X,
 } from "lucide-react";
 
-import { Progress } from "@/components/ui/progress";
-import type { EssayTheme, SupportingText } from "@/types/api";
+import type { SupportingText } from "@/types/api";
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
 import { cn } from "@/utils";
 
@@ -55,27 +52,6 @@ export function AnimatedGameCard({
     >
       {children}
     </motion.div>
-  );
-}
-
-export function FriendlyErrorFeedback({ message, show }: { message: string; show: boolean }) {
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0, x: [-3, 3, -2, 2, 0] }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.38, ease: easeOut }}
-          className="game-tile bg-primary/12 p-3 text-sm font-bold text-foreground"
-        >
-          <div className="flex gap-3">
-            <InteractiveMascot mood="thinking" size="sm" />
-            <p className="leading-6">{message}</p>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }
 
@@ -196,160 +172,6 @@ export function SmoothProgressPath({ progress }: { progress: number }) {
         />
       ))}
     </svg>
-  );
-}
-
-export function WritingSidebar({
-  lines,
-  paragraphs,
-  structureProgress,
-  theme,
-  personalizedTip,
-}: {
-  lines: number;
-  paragraphs: number;
-  structureProgress: number;
-  theme?: EssayTheme | null;
-  personalizedTip?: { title: string; text: string } | null;
-}) {
-  const [tab, setTab] = useState<"guia" | "motivadores">("guia");
-  const hasMotivadores = Boolean(theme?.supporting_texts?.length);
-
-  return (
-    <motion.aside
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.42, ease: easeOut }}
-      className="space-y-1.5"
-    >
-      <div className="flex gap-1 rounded-md bg-muted/45 p-1">
-        <button
-          type="button"
-          onClick={() => setTab("guia")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors",
-            tab === "guia" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <Target className="h-3.5 w-3.5" aria-hidden="true" />
-          Guia
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("motivadores")}
-          className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-semibold transition-colors",
-            tab === "motivadores" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
-          Motivadores
-        </button>
-      </div>
-
-      <AnimatePresence mode="wait" initial={false}>
-        {tab === "guia" ? (
-          <motion.div
-            key="guia"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: easeOut }}
-            className="space-y-1.5"
-          >
-            <div className="border-b border-border/55 pb-2.5">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold">Painel de escrita</p>
-                <Target className="h-4 w-4 text-primary" aria-hidden="true" />
-              </div>
-              <WriterMetric label="Estrutura" value={`${lines} linhas`} progress={structureProgress} />
-              <div className="mt-2">
-                <WriterMetric label="Paragrafos" value={`${paragraphs}`} progress={Math.min(100, (paragraphs / 4) * 100)} />
-              </div>
-            </div>
-            {personalizedTip ? (
-              <div className="rounded-md bg-highlight-tint p-2.5">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-highlight">
-                  Seu ponto de atenção
-                </p>
-                <p className="text-xs font-bold leading-5">{personalizedTip.title}</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{personalizedTip.text}</p>
-              </div>
-            ) : null}
-            <div className="pt-1">
-              <p className="mb-2 text-sm font-semibold">Sugestoes rapidas</p>
-              <SmartSuggestions
-                suggestions={[
-                  "Use um repertorio conectado a tese, nao solto.",
-                  "Feche o desenvolvimento com consequencia clara.",
-                  "Na intervencao, garanta agente, acao, meio e finalidade.",
-                ]}
-              />
-            </div>
-            <HighlightsSummary themeId={theme?.id} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="motivadores"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: easeOut }}
-          >
-            <MotivatingTextsPanel theme={theme} hasContent={hasMotivadores} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.aside>
-  );
-}
-
-function MotivatingTextsPanel({ theme, hasContent }: { theme?: EssayTheme | null; hasContent: boolean }) {
-  const [expanded, setExpanded] = useState<number | null>(0);
-
-  if (!hasContent || !theme?.supporting_texts?.length) {
-    return (
-      <div className="border-b border-border/55 pb-4 text-center">
-        <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground" aria-hidden="true" />
-        <p className="text-sm font-semibold">Sem textos motivadores</p>
-        <p className="mt-1 text-xs text-muted-foreground">Este tema ainda nao possui textos de apoio cadastrados.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1.5">
-      {theme.supporting_texts.map((text, index) => (
-        <div key={index} className="overflow-hidden border-b border-border/55">
-          <button
-            type="button"
-            onClick={() => setExpanded(expanded === index ? null : index)}
-            className="flex w-full items-center justify-between gap-2 p-3 text-left"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <SupportingTextIcon type={text.type} />
-              <span className="text-xs font-semibold leading-snug">{text.title}</span>
-            </div>
-            <span className="shrink-0 text-xs text-muted-foreground">{expanded === index ? "−" : "+"}</span>
-          </button>
-          <AnimatePresence initial={false}>
-            {expanded === index && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.22, ease: easeOut }}
-                className="overflow-hidden"
-              >
-                <div className="px-3 pb-3">
-                  <SupportingTextBody text={text} themeId={theme.id} textIndex={index} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -570,68 +392,3 @@ function HighlightableText({
   );
 }
 
-function HighlightsSummary({ themeId }: { themeId?: number }) {
-  const highlights = useHighlightsStore((state) =>
-    themeId != null ? state.highlightsByTheme[themeId] ?? EMPTY_HIGHLIGHTS : EMPTY_HIGHLIGHTS,
-  );
-  const removeHighlight = useHighlightsStore((state) => state.removeHighlight);
-
-  if (themeId == null || !highlights.length) return null;
-
-  return (
-    <div className="mt-2.5 border-t border-border/55 pt-2.5">
-      <p className="mb-2 text-sm font-semibold">Meus grifos</p>
-      <div className="space-y-1.5">
-        {highlights.map((highlight) => (
-          <div
-            key={highlight.id}
-            className="flex items-start gap-1.5 rounded-md border border-border/55 bg-amber-300/10 p-2 text-[11px]"
-          >
-            <span className="flex-1 leading-4 text-muted-foreground">&ldquo;{highlight.quote}&rdquo;</span>
-            <button
-              type="button"
-              onClick={() => removeHighlight(themeId, highlight.id)}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              aria-label="Remover grifo"
-            >
-              <X className="h-3 w-3" aria-hidden="true" />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SmartSuggestions({ suggestions }: { suggestions: string[] }) {
-  return (
-    <div className="space-y-2">
-      {suggestions.map((suggestion, index) => (
-        <motion.button
-          key={suggestion}
-          type="button"
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.04, ease: easeOut }}
-          whileTap={{ scale: 0.97 }}
-          className="w-full rounded-md bg-background/70 p-2.5 text-left text-xs font-bold leading-5 transition-colors hover:bg-primary/12"
-        >
-          <Lightbulb className="mb-2 h-4 w-4 text-primary" aria-hidden="true" />
-          {suggestion}
-        </motion.button>
-      ))}
-    </div>
-  );
-}
-
-function WriterMetric({ label, value, progress }: { label: string; value: string; progress: number }) {
-  return (
-    <div className="mb-3 last:mb-0">
-      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
-        <span className="font-semibold text-muted-foreground">{label}</span>
-        <span className="font-semibold">{value}</span>
-      </div>
-      <Progress value={progress} />
-    </div>
-  );
-}

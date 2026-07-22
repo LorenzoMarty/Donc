@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { GripHorizontal, X } from "lucide-react";
 
@@ -13,6 +13,18 @@ const EMPTY_FREE_POST_ITS: FreePostIt[] = [];
 
 /** Fallback pra grifos criados antes do post-it ganhar posição (localStorage antigo sem o campo). */
 const DEFAULT_POST_IT_POSITION = { x: 0.65, y: 0.08 };
+
+/** Teto de altura da nota (fração da viewport) — acima disso volta a ter scroll interno normal. */
+const NOTE_MAX_HEIGHT_VH = 0.4;
+
+/** Cresce a textarea até o teto sem barra de scroll; acima do teto, scroll interno assume. */
+function autoResizeNote(el: HTMLTextAreaElement) {
+  const maxHeight = window.innerHeight * NOTE_MAX_HEIGHT_VH;
+  el.style.height = "auto";
+  const nextHeight = Math.min(el.scrollHeight, maxHeight);
+  el.style.height = `${nextHeight}px`;
+  el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+}
 
 const noopSubscribe = () => () => {};
 /** Portal só existe no browser (document.body) — useSyncExternalStore evita mismatch de hidratação sem setState em efeito. */
@@ -96,9 +108,14 @@ function PostItCard({
   onRemove: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
   const draggingRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [draft, setDraft] = useState(note);
+
+  useEffect(() => {
+    if (noteRef.current) autoResizeNote(noteRef.current);
+  }, []);
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -163,9 +180,13 @@ function PostItCard({
       </button>
       {quote ? <p className="mb-1 line-clamp-2 pr-3 leading-3 text-amber-900/80 dark:text-amber-100/80">&ldquo;{quote}&rdquo;</p> : null}
       <textarea
+        ref={noteRef}
         value={draft}
         onPointerDown={(event) => event.stopPropagation()}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          autoResizeNote(event.target);
+        }}
         onBlur={() => onChangeNote(draft)}
         placeholder="Sua nota..."
         rows={quote ? 2 : 3}
