@@ -174,7 +174,7 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
   const href = essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`;
 
   return (
-    <article className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-primary/5 md:px-5">
+    <article className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-5 transition-colors hover:bg-primary/5 md:px-6">
       <Link href={href} className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-center gap-3 md:grid-cols-[3rem_minmax(0,1fr)_auto] md:gap-5">
         <EssayScoreMark status={essay.status} score={essay.score} />
 
