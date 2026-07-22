@@ -38,7 +38,7 @@ export default function LoginPage() {
         <MotionShell className="w-full max-w-md">
           <div className="mb-8 space-y-3">
             <BrandLink href="/" />
-            <h1 className="text-2xl font-semibold tracking-normal">Entrar na plataforma</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Entrar na plataforma</h1>
           </div>
 
           <Card className="p-4 xs:p-6">

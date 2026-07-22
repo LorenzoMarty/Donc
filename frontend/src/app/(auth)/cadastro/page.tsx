@@ -38,7 +38,7 @@ export default function RegisterPage() {
       <MotionShell className="w-full max-w-md">
         <div className="mb-8 space-y-3">
           <BrandLink href="/" />
-          <h1 className="text-2xl font-semibold tracking-normal">Criar conta</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Criar conta</h1>
         </div>
         <Card className="p-4 xs:p-6">
           <form onSubmit={onSubmit} className="space-y-4">
