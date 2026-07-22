@@ -396,12 +396,25 @@ function AIFeedbackPanel({
 
 export function ScoreRing({ score }: { score: number }) {
   const display = Math.round(score / 10);
-  const degrees = Math.max(0, Math.min(360, (score / 1000) * 360));
+  const percent = Math.max(0, Math.min(1, score / 1000));
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
   return (
-    <div
-      className="grid h-24 w-24 place-items-center rounded-full"
-      style={{ background: `conic-gradient(hsl(var(--primary)) ${degrees}deg, hsl(var(--muted)) 0deg)` }}
-    >
+    <div className="relative grid h-24 w-24 place-items-center">
+      <svg viewBox="0 0 96 96" className="absolute inset-0 h-full w-full -rotate-90">
+        <circle cx="48" cy="48" r={radius} className="stroke-muted" strokeWidth="8" fill="none" />
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          className="stroke-primary"
+          strokeWidth="8"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - percent)}
+        />
+      </svg>
       <div className="grid h-[4.5rem] w-[4.5rem] place-items-center rounded-full bg-background text-3xl font-semibold">{display}</div>
     </div>
   );

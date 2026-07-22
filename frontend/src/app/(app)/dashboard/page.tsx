@@ -176,7 +176,7 @@ export default function DashboardPage() {
   return (
     <div className="text-foreground">
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,1fr)]">
-        <div className="relative overflow-hidden rounded-card bg-gradient-to-br from-primary to-primary/85 p-8 text-primary-foreground md:p-10">
+        <div className="relative overflow-hidden rounded-card bg-primary p-8 text-primary-foreground shadow-elevated md:p-10">
           <motion.div
             aria-hidden="true"
             className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/12"
@@ -569,10 +569,7 @@ function StatCard({
 function ScoreBadge({ score }: { score: number | null }) {
   if (score === null) {
     return (
-      <div
-        className="h-16 w-16 rounded-control bg-muted"
-        style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, hsl(var(--border)) 8px, hsl(var(--border)) 9px)" }}
-      />
+      <div className="h-16 w-16 rounded-control border border-dashed border-border bg-muted" />
     );
   }
 

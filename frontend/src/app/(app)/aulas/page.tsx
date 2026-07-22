@@ -153,11 +153,6 @@ function ModuleHero({ module, streakDays }: { module: Module; streakDays?: numbe
 
   return (
     <Surface className="relative overflow-hidden p-5 lg:p-8">
-      <div
-        className="absolute inset-0 opacity-90"
-        style={{ background: `linear-gradient(120deg, ${accent} 0%, transparent 65%)` }}
-        aria-hidden="true"
-      />
       <motion.div
         className="absolute -right-16 -top-24 h-64 w-64 rounded-full blur-3xl"
         style={{ backgroundColor: accent }}
