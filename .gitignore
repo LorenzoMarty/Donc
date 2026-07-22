@@ -15,6 +15,7 @@ htmlcov/
 .coverage
 playwright-report/
 test-results/
+.playwright-mcp/
 .DS_Store
 *.log
 *.db
