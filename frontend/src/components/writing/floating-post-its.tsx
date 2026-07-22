@@ -2,7 +2,7 @@
 
 import { useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { GripHorizontal, X } from "lucide-react";
 
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
 import { useFreePostItsStore, type FreePostIt } from "@/stores/free-post-its-store";
@@ -146,6 +146,12 @@ function PostItCard({
       style={{ left: `${livePosition.x * 100}%`, top: `${livePosition.y * 100}%` }}
       title={quote}
     >
+      {/* Manípulo dedicado: o textarea/botão fazem stopPropagation no pointerdown (senão digitar
+          ou remover já dispararia o drag), então post-its sem citação — só nota livre — ficavam
+          sem nenhuma área "vazia" pra segurar e arrastar. */}
+      <div className="mb-1 flex items-center justify-center text-amber-900/30 dark:text-amber-100/30">
+        <GripHorizontal className="h-3 w-3" aria-hidden="true" />
+      </div>
       <button
         type="button"
         onPointerDown={(event) => event.stopPropagation()}
