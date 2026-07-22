@@ -191,7 +191,7 @@ export function EssayEditor({
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
-      <div className="flex min-h-0 flex-col bg-card">
+      <div className="flex min-h-0 flex-1 flex-col bg-card">
         <header className="grid min-h-[4.75rem] gap-3 bg-card px-4 py-3 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2.5">
