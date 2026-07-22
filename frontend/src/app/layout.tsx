@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Merriweather } from "next/font/google";
+import { Inter, Merriweather, Newsreader } from "next/font/google";
 
 import { Providers } from "@/providers/app-providers";
 import { APPEARANCE_INIT_SCRIPT } from "@/lib/appearance";
@@ -9,6 +9,14 @@ const merriweather = Merriweather({
   subsets: ["latin"],
   weight: ["300", "400", "700"],
   variable: "--font-merriweather",
+  display: "swap",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["500"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
   display: "swap",
 });
 
@@ -35,7 +43,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${merriweather.variable}`}>
+    <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${merriweather.variable} ${newsreader.variable}`}>
       <head>
         {/* Aplica a preferência de letra antes da pintura para evitar flash de tamanho. */}
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_INIT_SCRIPT }} />

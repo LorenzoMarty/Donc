@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EssayEditor } from "@/components/writing/essay-editor";
 import type { EssayTheme } from "@/services/api";
+import { useFreePostItsStore } from "@/stores/free-post-its-store";
 
 const THEME: EssayTheme = {
   id: 1,
@@ -34,6 +35,10 @@ function renderEditor() {
 }
 
 describe("EssayEditor — alternância folha/motivadores", () => {
+  beforeEach(() => {
+    useFreePostItsStore.setState({ postItsByTheme: {} });
+  });
+
   it("mostra a folha de redação por padrão", () => {
     renderEditor();
     expect(screen.getByPlaceholderText("Comece sua redação aqui...")).toBeInTheDocument();
@@ -86,6 +91,15 @@ describe("EssayEditor — alternância folha/motivadores", () => {
 
     fireEvent.click(clearButton);
     expect(clearButton).toBeDisabled();
+  });
+
+  it("dock: botão + cria um post-it livre no store", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    expect(useFreePostItsStore.getState().postItsByTheme["1"] ?? []).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Criar post-it" }));
+    expect(useFreePostItsStore.getState().postItsByTheme["1"]).toHaveLength(1);
   });
 
   it("não mostra a bottom bar de canetas quando a redação já está corrigida (bloqueada)", () => {
