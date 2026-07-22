@@ -46,7 +46,7 @@ export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplet
               <Badge variant="outline">{lesson.duration_minutes} min</Badge>
               <Badge variant="secondary">{lesson.xp_reward ?? 25}xp</Badge>
             </div>
-            <h1 className="text-2xl font-semibold leading-tight tracking-normal">{lesson.title}</h1>
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight">{lesson.title}</h1>
           </div>
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
             {lesson.pdf_url ? (
