@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitForElementToBeRemoved } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -59,18 +59,18 @@ describe("EssayEditor — alternância folha/motivadores", () => {
     expect(textarea).toHaveValue("Meu texto de redação.");
   });
 
-  it("recolhe a sidebar de apoio e mostra o rail com o D e a Hydra placeholder", async () => {
+  it("mostra o titulo do tema numa faixa colapsavel, sem sidebar fixa", async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    expect(screen.getByText("Guia e textos")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Recolher barra lateral" }));
+    expect(screen.getByText("Tema de teste")).toBeInTheDocument();
+    expect(screen.queryByText("Contexto do tema de teste.")).not.toBeInTheDocument();
 
-    expect(screen.queryByText("Guia e textos")).not.toBeInTheDocument();
-    expect(screen.getByTitle("Donc")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Tema de teste/ }));
+    expect(await screen.findByText("Contexto do tema de teste.")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Expandir barra lateral" }));
-    expect(screen.getByText("Guia e textos")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Tema de teste/ }));
+    await waitFor(() => expect(screen.queryByText("Contexto do tema de teste.")).not.toBeInTheDocument());
   });
 
   it("bottom bar de canetas: sublinha o trecho selecionado e depois limpa as marcações", async () => {

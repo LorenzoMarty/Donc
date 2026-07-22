@@ -198,8 +198,8 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 bg-card/85 shadow-elevated backdrop-blur-xl transition-[width,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
-        collapsed ? "py-4" : "py-5",
+        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/45 bg-card/85 backdrop-blur-xl transition-[width,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
+        collapsed ? "py-5" : "py-6",
       )}
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
       onWheel={onWheel}
@@ -258,7 +258,7 @@ function DesktopSidebar({
       </div>
 
       <nav
-        className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-1.5 px-4")}
+        className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-2 px-4")}
         aria-label="Navegação principal"
       >
         {items.map((item) => (
@@ -417,15 +417,15 @@ function ShellNavLink({
       onClick={onNavigate}
       className={cn(
         "group/nav relative flex items-center gap-3 rounded-control text-base font-semibold text-muted-foreground transition-colors hover:text-foreground",
-        collapsed ? "h-11 justify-center px-0" : "min-h-11 px-3",
+        collapsed ? "h-11 justify-center px-0" : "min-h-11 px-3.5",
         showLabel ? "justify-start" : "justify-center",
-        active ? "text-primary-foreground" : "hover:bg-muted/70",
+        active ? "text-primary" : "hover:bg-muted/50",
       )}
     >
       {active ? (
         <motion.span
           layoutId="sidebar-active-pill"
-          className="absolute inset-0 rounded-control bg-primary shadow-control"
+          className="absolute inset-0 rounded-control bg-primary/10"
           transition={{ type: "spring", stiffness: 420, damping: 34 }}
         />
       ) : null}
