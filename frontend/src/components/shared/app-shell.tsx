@@ -238,7 +238,7 @@ function DesktopSidebar({
             asChild
             size="icon"
             aria-label="Nova redação"
-            className="h-10 w-full bg-gradient-to-b from-primary to-primary/85 shadow-control transition-transform hover:scale-[1.03] active:scale-[0.97]"
+            className="h-10 w-full bg-primary shadow-control transition-transform hover:scale-[1.03] active:scale-[0.97]"
           >
             <Link href="/redacao">
               <Plus className="h-6 w-6" aria-hidden="true" />
@@ -247,7 +247,7 @@ function DesktopSidebar({
         ) : (
           <Button
             asChild
-            className="h-10 w-full justify-start bg-gradient-to-b from-primary to-primary/85 text-base shadow-control transition-transform hover:scale-[1.015] active:scale-[0.98]"
+            className="h-10 w-full justify-start bg-primary text-base shadow-control transition-transform hover:scale-[1.015] active:scale-[0.98]"
           >
             <Link href="/redacao">
               <Plus className="h-5 w-5" aria-hidden="true" />

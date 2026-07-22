@@ -73,7 +73,7 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
           </div>
         )}
 
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground/85 via-foreground/20 to-transparent p-3 pt-8">
+        <div className="absolute inset-x-0 bottom-0 bg-foreground/75 p-3 backdrop-blur-sm">
           <p className="line-clamp-2 text-sm font-semibold leading-snug text-background">{lesson.title}</p>
           {lesson.moduleLabel ? <p className="mt-0.5 truncate text-xs text-background/75">{lesson.moduleLabel}</p> : null}
         </div>
