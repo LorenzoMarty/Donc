@@ -1,21 +1,38 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
+import { useFreePostItsStore, type FreePostIt } from "@/stores/free-post-its-store";
+import { cn } from "@/utils";
 
 const EMPTY_HIGHLIGHTS: MotivadorHighlight[] = [];
+const EMPTY_FREE_POST_ITS: FreePostIt[] = [];
 
 /** Fallback pra grifos criados antes do post-it ganhar posição (localStorage antigo sem o campo). */
 const DEFAULT_POST_IT_POSITION = { x: 0.65, y: 0.08 };
 
+const noopSubscribe = () => () => {};
+/** Portal só existe no browser (document.body) — useSyncExternalStore evita mismatch de hidratação sem setState em efeito. */
+function useIsBrowser() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 /**
- * Post-its dos grifos feitos nos textos motivadores, flutuando livremente sobre a folha de
- * redação (posição em fração 0..1 do container, resiliente a resize). Substitui a listagem fixa
- * que existia no HydraRail — aqui o aluno arrasta cada post-it pra onde quiser na folha.
+ * Camada de post-its sobre a tela inteira (portal pro body, não preso à folha de redação):
+ * post-its de grifo de texto motivador (`useHighlightsStore`) e post-its livres criados pelo dock
+ * (`useFreePostItsStore`), ambos renderizados como o mesmo cartão flutuante e arrastáveis por
+ * qualquer ponto da viewport.
  */
 export function FloatingPostIts({ themeId }: { themeId?: number }) {
+  const mounted = useIsBrowser();
+
   const highlights = useHighlightsStore((state) =>
     themeId != null ? state.highlightsByTheme[themeId] ?? EMPTY_HIGHLIGHTS : EMPTY_HIGHLIGHTS,
   );
@@ -23,30 +40,57 @@ export function FloatingPostIts({ themeId }: { themeId?: number }) {
   const setHighlightNote = useHighlightsStore((state) => state.setHighlightNote);
   const setHighlightPosition = useHighlightsStore((state) => state.setHighlightPosition);
 
-  if (themeId == null || highlights.length === 0) return null;
+  const freePostIts = useFreePostItsStore(
+    (state) => state.postItsByTheme[themeId == null ? "untitled" : String(themeId)] ?? EMPTY_FREE_POST_ITS,
+  );
+  const removeFreePostIt = useFreePostItsStore((state) => state.removePostIt);
+  const setFreePostItNote = useFreePostItsStore((state) => state.setPostItNote);
+  const setFreePostItPosition = useFreePostItsStore((state) => state.setPostItPosition);
 
-  return (
-    <div className="pointer-events-none absolute inset-0 z-10">
+  if (!mounted || (highlights.length === 0 && freePostIts.length === 0)) return null;
+
+  return createPortal(
+    <div className="pointer-events-none fixed inset-0 z-[70]">
       {highlights.map((highlight) => (
-        <FloatingPostIt
+        <PostItCard
           key={highlight.id}
-          highlight={highlight}
-          onDragEnd={(position) => setHighlightPosition(themeId, highlight.id, position)}
-          onChangeNote={(note) => setHighlightNote(themeId, highlight.id, note)}
-          onRemove={() => removeHighlight(themeId, highlight.id)}
+          id={highlight.id}
+          quote={highlight.quote}
+          note={highlight.note ?? ""}
+          position={highlight.position ?? DEFAULT_POST_IT_POSITION}
+          onDragEnd={(position) => setHighlightPosition(themeId!, highlight.id, position)}
+          onChangeNote={(note) => setHighlightNote(themeId!, highlight.id, note)}
+          onRemove={() => removeHighlight(themeId!, highlight.id)}
         />
       ))}
-    </div>
+      {freePostIts.map((postIt) => (
+        <PostItCard
+          key={postIt.id}
+          id={postIt.id}
+          note={postIt.note}
+          position={postIt.position}
+          onDragEnd={(position) => setFreePostItPosition(themeId, postIt.id, position)}
+          onChangeNote={(note) => setFreePostItNote(themeId, postIt.id, note)}
+          onRemove={() => removeFreePostIt(themeId, postIt.id)}
+        />
+      ))}
+    </div>,
+    document.body,
   );
 }
 
-function FloatingPostIt({
-  highlight,
+function PostItCard({
+  quote,
+  note,
+  position,
   onDragEnd,
   onChangeNote,
   onRemove,
 }: {
-  highlight: MotivadorHighlight;
+  id: string;
+  quote?: string;
+  note: string;
+  position: { x: number; y: number };
   onDragEnd: (position: { x: number; y: number }) => void;
   onChangeNote: (note: string) => void;
   onRemove: () => void;
@@ -54,28 +98,24 @@ function FloatingPostIt({
   const cardRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const [draft, setDraft] = useState(highlight.note ?? "");
+  const [draft, setDraft] = useState(note);
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     event.currentTarget.setPointerCapture(event.pointerId);
-    const origin = highlight.position ?? DEFAULT_POST_IT_POSITION;
     draggingRef.current = {
       startX: event.clientX,
       startY: event.clientY,
-      originX: origin.x,
-      originY: origin.y,
+      originX: position.x,
+      originY: position.y,
     };
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
     if (!draggingRef.current) return;
-    const parent = cardRef.current?.parentElement;
-    if (!parent) return;
-    const rect = parent.getBoundingClientRect();
-    const dx = (event.clientX - draggingRef.current.startX) / rect.width;
-    const dy = (event.clientY - draggingRef.current.startY) / rect.height;
-    const nextX = Math.min(0.88, Math.max(0, draggingRef.current.originX + dx));
-    const nextY = Math.min(0.9, Math.max(0, draggingRef.current.originY + dy));
+    const dx = (event.clientX - draggingRef.current.startX) / window.innerWidth;
+    const dy = (event.clientY - draggingRef.current.startY) / window.innerHeight;
+    const nextX = Math.min(0.94, Math.max(0, draggingRef.current.originX + dx));
+    const nextY = Math.min(0.95, Math.max(0, draggingRef.current.originY + dy));
     setDragPosition({ x: nextX, y: nextY });
   }
 
@@ -88,20 +128,23 @@ function FloatingPostIt({
     });
   }
 
-  const position = dragPosition ?? highlight.position ?? DEFAULT_POST_IT_POSITION;
+  const livePosition = dragPosition ?? position;
 
   return (
     <div
       ref={cardRef}
       role="group"
-      aria-label={`Post-it: ${highlight.quote}`}
+      aria-label={quote ? `Post-it: ${quote}` : "Post-it"}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="pointer-events-auto absolute w-40 -rotate-1 cursor-grab touch-none select-none rounded-sm border border-amber-300/70 bg-amber-200/90 p-2 text-[11px] shadow-elevated transition-transform hover:rotate-0 active:cursor-grabbing dark:bg-amber-300/25"
-      style={{ left: `${position.x * 100}%`, top: `${position.y * 100}%` }}
-      title={highlight.quote}
+      className={cn(
+        "pointer-events-auto fixed w-40 -rotate-1 cursor-grab touch-none select-none rounded-sm border border-amber-300/70 bg-amber-200/90 p-2 text-[11px] shadow-elevated transition-transform duration-200 ease-out hover:rotate-0 active:cursor-grabbing dark:bg-amber-300/25",
+        dragPosition ? "scale-105 shadow-2xl" : "scale-100",
+      )}
+      style={{ left: `${livePosition.x * 100}%`, top: `${livePosition.y * 100}%` }}
+      title={quote}
     >
       <button
         type="button"
@@ -112,14 +155,14 @@ function FloatingPostIt({
       >
         <X className="h-3 w-3" aria-hidden="true" />
       </button>
-      <p className="mb-1 line-clamp-2 pr-3 leading-3 text-amber-900/80 dark:text-amber-100/80">&ldquo;{highlight.quote}&rdquo;</p>
+      {quote ? <p className="mb-1 line-clamp-2 pr-3 leading-3 text-amber-900/80 dark:text-amber-100/80">&ldquo;{quote}&rdquo;</p> : null}
       <textarea
         value={draft}
         onPointerDown={(event) => event.stopPropagation()}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => onChangeNote(draft)}
         placeholder="Sua nota..."
-        rows={2}
+        rows={quote ? 2 : 3}
         className="w-full resize-none rounded-sm border-none bg-transparent text-[11px] leading-3 text-amber-950 outline-none placeholder:text-amber-900/40 dark:text-amber-50 dark:placeholder:text-amber-100/40"
       />
     </div>

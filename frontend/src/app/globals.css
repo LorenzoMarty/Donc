@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 :root {
-  /* ---- Primitive scale: brand green (hue ~88, matches #65be02) ---- */
-  --green-50: 88 70% 96%;
-  --green-100: 88 65% 91%;
-  --green-200: 88 60% 82%;
-  --green-300: 88 60% 70%;
-  --green-400: 88 70% 55%;
-  --green-500: 88.4 97.9% 37.6%; /* #65be02 — brand primary */
-  --green-600: 88 90% 32%;
-  --green-700: 90 85% 26%;
-  --green-800: 92 70% 21%;
-  --green-900: 94 60% 16%;
+  /* ---- Primitive scale: brand green (hue ~131, matches #2f9e44 — Apple-style redesign) ---- */
+  --green-50: 131 70% 96%;
+  --green-100: 131 65% 91%;
+  --green-200: 131 60% 82%;
+  --green-300: 131 55% 68%;
+  --green-400: 131 55% 52%;
+  --green-500: 131 54% 40%; /* #2f9e44 — brand primary */
+  --green-600: 131 50% 34%;
+  --green-700: 131 52% 27%;
+  --green-800: 131 55% 20%;
+  --green-900: 131 58% 14%;
 
   /* ---- Primitive scale: neutrals (hue ~224-226, matches existing grays) ---- */
   --neutral-50: 220 40% 98%;
@@ -73,7 +73,7 @@
 
   --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04);
   --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
-  --shadow-control: 0 10px 24px rgba(101, 190, 2, 0.16);
+  --shadow-control: 0 10px 24px rgba(47, 158, 68, 0.16);
 
   /* ---- Motion tokens ---- */
   --duration-micro: 180ms;
@@ -85,6 +85,7 @@
   --app-gutter: clamp(1rem, 2.7vw, 2.25rem);
   --app-page-gap: clamp(1rem, 2.1vw, 1.65rem);
   --font-essay: 'Merriweather', Georgia, serif;
+  --font-display: 'Newsreader', Georgia, serif;
   /* Preferência de "letra" do usuário (ver src/lib/appearance.ts). */
   --ui-font-scale: 1;
   --ui-line-height: 1.55;

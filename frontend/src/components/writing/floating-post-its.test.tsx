@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { FloatingPostIts } from "@/components/writing/floating-post-its";
 import { useHighlightsStore } from "@/stores/highlights-store";
+import { useFreePostItsStore } from "@/stores/free-post-its-store";
 
 const THEME_ID = 1;
 
 beforeEach(() => {
   useHighlightsStore.setState({ highlightsByTheme: {} });
+  useFreePostItsStore.setState({ postItsByTheme: {} });
 });
 
 describe("FloatingPostIts", () => {
@@ -43,5 +45,13 @@ describe("FloatingPostIts", () => {
 
     await user.click(screen.getByRole("button", { name: "Remover post-it" }));
     expect(useHighlightsStore.getState().highlightsByTheme[THEME_ID]).toHaveLength(0);
+  });
+
+  it("renderiza também os post-its livres do dock, além dos post-its de grifo", () => {
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado");
+    useFreePostItsStore.getState().addPostIt(THEME_ID);
+    render(<FloatingPostIts themeId={THEME_ID} />);
+
+    expect(screen.getAllByRole("group")).toHaveLength(2);
   });
 });

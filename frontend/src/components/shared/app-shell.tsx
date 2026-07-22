@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type WheelEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   ClipboardList,
@@ -146,7 +146,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         style={{ "--sidebar-width": `${collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px` } as CSSProperties}
       >
         <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
-          {children}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
@@ -188,7 +198,7 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 bg-card/85 shadow-soft backdrop-blur-xl transition-[width,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
+        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/60 bg-card/85 shadow-elevated backdrop-blur-xl transition-[width,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
         collapsed ? "py-4" : "py-5",
       )}
       style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
@@ -258,7 +268,7 @@ function DesktopSidebar({
 
       {!collapsed ? (
         <div className="mx-4 mb-3 rounded-control bg-streak-tint p-3">
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-streak">
+          <div className="font-display mb-2 flex items-center gap-2 text-base font-medium text-streak">
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             Aproveite melhor o Donc
           </div>

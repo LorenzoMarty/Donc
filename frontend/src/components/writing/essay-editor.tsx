@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Eraser,
   PenLine,
+  Plus,
   Send,
   Trash2,
 } from "lucide-react";
@@ -30,6 +31,7 @@ import { HydraRail } from "@/components/writing/hydra-rail";
 import { dominantWeakness } from "@/features/gamification/adaptive";
 import { HUBS } from "@/features/gamification/symptoms";
 import type { Essay, EssayTheme } from "@/services/api";
+import { useFreePostItsStore } from "@/stores/free-post-its-store";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
@@ -133,6 +135,7 @@ export function EssayEditor({
   const structureProgress = Math.min(100, (lines / 30) * 100);
   const activeTheme = theme ?? essay?.theme ?? null;
   const hasMotivadores = Boolean(activeTheme?.supporting_texts?.length);
+  const addFreePostIt = useFreePostItsStore((state) => state.addPostIt);
   const adaptive = useGameStore((state) => state.adaptive);
   const weakHubId = dominantWeakness(adaptive);
   const personalizedTip = weakHubId ? { title: HUBS[weakHubId].title, text: HUBS[weakHubId].weaknessNarrative } : null;
@@ -210,7 +213,7 @@ export function EssayEditor({
               onChange={(event) => onTitleChange(event.target.value)}
               placeholder="Nomeie sua redação"
               aria-label="Título da redação"
-              className="text-safe min-w-0 flex-1 rounded-sm border-none bg-transparent text-xl font-semibold leading-tight tracking-normal text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/30 lg:text-2xl"
+              className="text-safe font-display min-w-0 flex-1 rounded-sm border-none bg-transparent text-xl font-medium leading-tight tracking-normal text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/30 lg:text-2xl"
             />
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
@@ -320,7 +323,13 @@ export function EssayEditor({
           {page === "folha" ? <FloatingPostIts themeId={activeTheme?.id} /> : null}
 
           {page === "folha" && !locked ? (
-            <PenBar onApplyMark={applyMark} onEraseMark={eraseMark} onClear={() => setMarks([])} hasMarks={marks.length > 0} />
+            <Dock
+              onApplyMark={applyMark}
+              onEraseMark={eraseMark}
+              onClear={() => setMarks([])}
+              hasMarks={marks.length > 0}
+              onAddPostIt={() => addFreePostIt(activeTheme?.id)}
+            />
           ) : null}
         </div>
       </div>
@@ -426,21 +435,28 @@ const PEN_SWATCHES: { tool: EssayMarkTool; color: string }[] = [
   { tool: "highlighter", color: "#fbbf24" },
 ];
 
-/** Bottom bar de canetas — sublinha/marca o trecho selecionado na folha, não desenho livre. */
-function PenBar({
+/**
+ * Dock fixo estilo macOS — canetas/marca-texto sublinham o trecho selecionado na folha (não
+ * desenho livre), borracha/limpar removem marcações, e "+" cria um post-it livre arrastável por
+ * toda a tela (`useFreePostItsStore`), reunindo no mesmo lugar as ferramentas que antes viviam no
+ * `PenBar`.
+ */
+function Dock({
   onApplyMark,
   onEraseMark,
   onClear,
   hasMarks,
+  onAddPostIt,
 }: {
   onApplyMark: (tool: EssayMarkTool) => void;
   onEraseMark: () => void;
   onClear: () => void;
   hasMarks: boolean;
+  onAddPostIt: () => void;
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-      <div className="pointer-events-auto flex items-center gap-1.5 rounded-control border border-border bg-card px-2 py-1.5 shadow-elevated">
+      <div className="pointer-events-auto flex items-center gap-1.5 rounded-card border border-white/60 bg-card/80 px-2.5 py-2 shadow-elevated backdrop-blur-xl dark:border-white/10">
         {PEN_SWATCHES.map((pen) => (
           <button
             key={pen.tool}
@@ -449,7 +465,7 @@ function PenBar({
             onClick={() => onApplyMark(pen.tool)}
             aria-label={MARK_TOOL_LABEL[pen.tool]}
             title={`Sublinhar seleção: ${MARK_TOOL_LABEL[pen.tool]}`}
-            className="grid h-8 w-8 place-items-center rounded-control transition-colors hover:bg-muted/60"
+            className="grid h-9 w-9 place-items-center rounded-control transition-transform hover:scale-110 hover:bg-muted/60 active:scale-95"
           >
             <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pen.color }} aria-hidden="true" />
           </button>
@@ -461,21 +477,31 @@ function PenBar({
           onClick={onEraseMark}
           aria-label="Borracha"
           title="Remover marcação da seleção"
-          className="grid h-8 w-8 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-muted/60"
+          className="grid h-9 w-9 place-items-center rounded-control text-muted-foreground transition-transform hover:scale-110 hover:bg-muted/60 active:scale-95"
         >
           <Eraser className="h-4 w-4" aria-hidden="true" />
         </button>
-
-        <div className="mx-1 h-6 w-px bg-border" aria-hidden="true" />
 
         <button
           type="button"
           onClick={onClear}
           disabled={!hasMarks}
           aria-label="Limpar marcações"
-          className="grid h-8 w-8 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+          className="grid h-9 w-9 place-items-center rounded-control text-muted-foreground transition-transform hover:scale-110 hover:bg-destructive/10 hover:text-destructive active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </button>
+
+        <div className="mx-1 h-7 w-px bg-border" aria-hidden="true" />
+
+        <button
+          type="button"
+          onClick={onAddPostIt}
+          aria-label="Criar post-it"
+          title="Criar post-it"
+          className="grid h-9 w-9 place-items-center rounded-control bg-primary text-primary-foreground shadow-control transition-transform hover:scale-110 active:scale-95"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -490,7 +516,7 @@ function MotivatorsBooklet({ theme }: { theme: EssayTheme | null }) {
     <div className="mx-auto max-w-[720px] space-y-4">
       <div className="rounded-card bg-card px-5 py-6 shadow-elevated md:px-8">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
-        <h2 className="mt-1 text-xl font-semibold leading-snug tracking-normal md:text-2xl">{theme.title}</h2>
+        <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal md:text-2xl">{theme.title}</h2>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{theme.context}</p>
       </div>
       {theme.supporting_texts.map((text, index) => (
