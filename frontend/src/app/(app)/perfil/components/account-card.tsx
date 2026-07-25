@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { KeyRound, Pencil } from "lucide-react";
+import { KeyRound, Medal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import { Surface } from "@/components/shared/premium-ui";
@@ -13,7 +13,7 @@ import { useAuth } from "@/providers/app-providers";
 import { ApiClientError, authApi } from "@/services/api";
 import { initials } from "@/utils";
 
-export function AccountCard() {
+export function AccountCard({ rankName }: { rankName?: string }) {
   const { user, refresh } = useAuth();
   const [editingName, setEditingName] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -21,12 +21,20 @@ export function AccountCard() {
   return (
     <Surface className="bg-primary text-primary-foreground">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
-        <div className="grid h-20 w-20 shrink-0 place-items-center rounded-md border border-foreground/20 bg-foreground/10 text-2xl font-semibold text-foreground">
+        <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-foreground/20 bg-foreground/10 text-2xl font-semibold text-foreground">
           {initials(user?.name ?? "Aluno")}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground/62">Aluno Donc ENEM</p>
-          <h2 className="text-safe mt-1 text-3xl font-semibold tracking-normal">{user?.name ?? "Aluno"}</h2>
+          <div className="mt-1 flex flex-wrap items-center gap-2.5">
+            <h2 className="font-display text-safe text-[28px] font-medium tracking-normal">{user?.name ?? "Aluno"}</h2>
+            {rankName ? (
+              <span className="flex items-center gap-1.5 rounded-md bg-white/18 px-2.5 py-1 text-[12px] font-bold">
+                <Medal className="h-3.5 w-3.5" aria-hidden="true" />
+                Rank {rankName}
+              </span>
+            ) : null}
+          </div>
           <p className="text-safe mt-1 text-sm text-foreground/70">{user?.email}</p>
           {user?.created_at ? (
             <p className="mt-1 text-xs text-foreground/55">Membro desde {formatMemberSince(user.created_at)}</p>

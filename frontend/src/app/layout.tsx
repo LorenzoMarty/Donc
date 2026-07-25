@@ -3,6 +3,7 @@ import { Inter, Merriweather, Newsreader } from "next/font/google";
 
 import { Providers } from "@/providers/app-providers";
 import { APPEARANCE_INIT_SCRIPT } from "@/lib/appearance";
+import { ACCENT_INIT_SCRIPT } from "@/lib/accent";
 import "./globals.css";
 
 const merriweather = Merriweather({
@@ -14,7 +15,7 @@ const merriweather = Merriweather({
 
 const newsreader = Newsreader({
   subsets: ["latin"],
-  weight: ["500"],
+  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-newsreader",
   display: "swap",
@@ -45,8 +46,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${inter.variable} ${merriweather.variable} ${newsreader.variable}`}>
       <head>
-        {/* Aplica a preferência de letra antes da pintura para evitar flash de tamanho. */}
+        {/* Aplica preferências de letra e accent color antes da pintura para evitar flash. */}
         <script dangerouslySetInnerHTML={{ __html: APPEARANCE_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
       </head>
       <body>
         <Providers>{children}</Providers>

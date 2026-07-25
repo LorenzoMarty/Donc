@@ -124,7 +124,7 @@ export function EssayAnalysisWorkspace({
         <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="min-w-0">
-              <h1 className="text-safe text-lg font-semibold leading-tight text-foreground lg:text-xl">{title}</h1>
+              <h1 className="font-display text-safe text-lg font-medium leading-tight text-foreground lg:text-xl">{title}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5 font-medium text-accent">
                   <Check className="h-4 w-4" aria-hidden="true" />

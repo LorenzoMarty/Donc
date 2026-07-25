@@ -2,11 +2,27 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { GripHorizontal, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
 import { useFreePostItsStore, type FreePostIt } from "@/stores/free-post-its-store";
 import { cn } from "@/utils";
+
+/** Paleta de tints do mock (WritingSheet) — ciclada de forma estável por hash do id, não por índice de render. */
+const POST_IT_TINTS = ["#fff3b0", "#ffd6a5", "#caffbf", "#bde0fe"];
+
+function tintForId(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return POST_IT_TINTS[hash % POST_IT_TINTS.length];
+}
+
+function rotationForId(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 17 + id.charCodeAt(i)) >>> 0;
+  const sign = hash % 2 ? 1 : -1;
+  return sign * (1 + (hash % 200) / 100);
+}
 
 const EMPTY_HIGHLIGHTS: MotivadorHighlight[] = [];
 const EMPTY_FREE_POST_ITS: FreePostIt[] = [];
@@ -92,6 +108,7 @@ export function FloatingPostIts({ themeId }: { themeId?: number }) {
 }
 
 function PostItCard({
+  id,
   quote,
   note,
   position,
@@ -107,6 +124,8 @@ function PostItCard({
   onChangeNote: (note: string) => void;
   onRemove: () => void;
 }) {
+  const tint = tintForId(id);
+  const rotation = rotationForId(id);
   const cardRef = useRef<HTMLDivElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const draggingRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
@@ -157,41 +176,46 @@ function PostItCard({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       className={cn(
-        "pointer-events-auto fixed w-40 -rotate-1 cursor-grab touch-none select-none rounded-sm border border-amber-300/70 bg-amber-200/90 p-2 text-[11px] shadow-elevated transition-transform duration-200 ease-out hover:rotate-0 active:cursor-grabbing dark:bg-amber-300/25",
-        dragPosition ? "scale-105 shadow-2xl" : "scale-100",
+        "pointer-events-auto fixed flex w-[180px] min-h-[150px] cursor-grab touch-none select-none flex-col rounded-[3px] p-0 shadow-[0_14px_30px_-10px_rgba(60,50,20,.45),0_2px_5px_rgba(0,0,0,.12)] transition-transform duration-200 ease-out active:cursor-grabbing",
+        dragPosition && "scale-105",
       )}
-      style={{ left: `${livePosition.x * 100}%`, top: `${livePosition.y * 100}%` }}
+      style={{
+        left: `${livePosition.x * 100}%`,
+        top: `${livePosition.y * 100}%`,
+        backgroundColor: tint,
+        transform: `rotate(${rotation}deg)${dragPosition ? " scale(1.05)" : ""}`,
+      }}
       title={quote}
     >
-      {/* Manípulo dedicado: o textarea/botão fazem stopPropagation no pointerdown (senão digitar
-          ou remover já dispararia o drag), então post-its sem citação — só nota livre — ficavam
-          sem nenhuma área "vazia" pra segurar e arrastar. */}
-      <div className="mb-1 flex items-center justify-center text-amber-900/30 dark:text-amber-100/30">
-        <GripHorizontal className="h-3 w-3" aria-hidden="true" />
+      {/* A própria faixa superior (vazia) é o manípulo de arraste — textarea/botão fazem
+          stopPropagation no pointerdown (senão digitar ou remover já dispararia o drag). */}
+      <div className="flex h-5 items-center justify-end px-0.5">
+        <button
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onRemove}
+          aria-label="Remover post-it"
+          className="grid h-[18px] w-[18px] place-items-center rounded-full bg-black/[0.08] text-black/45 hover:bg-black/[0.14]"
+        >
+          <X className="h-2.5 w-2.5" aria-hidden="true" />
+        </button>
       </div>
-      <button
-        type="button"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={onRemove}
-        aria-label="Remover post-it"
-        className="absolute right-1 top-1 text-amber-900/50 hover:text-amber-900 dark:text-amber-100/50"
-      >
-        <X className="h-3 w-3" aria-hidden="true" />
-      </button>
-      {quote ? <p className="mb-1 line-clamp-2 pr-3 leading-3 text-amber-900/80 dark:text-amber-100/80">&ldquo;{quote}&rdquo;</p> : null}
-      <textarea
-        ref={noteRef}
-        value={draft}
-        onPointerDown={(event) => event.stopPropagation()}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          autoResizeNote(event.target);
-        }}
-        onBlur={() => onChangeNote(draft)}
-        placeholder="Sua nota..."
-        rows={quote ? 2 : 3}
-        className="w-full resize-none rounded-sm border-none bg-transparent text-[11px] leading-3 text-amber-950 outline-none placeholder:text-amber-900/40 dark:text-amber-50 dark:placeholder:text-amber-100/40"
-      />
+      <div className="flex-1 px-3 pb-3.5">
+        {quote ? <p className="mb-1 line-clamp-2 text-[13px] leading-4 text-[#4a3f1e]">&ldquo;{quote}&rdquo;</p> : null}
+        <textarea
+          ref={noteRef}
+          value={draft}
+          onPointerDown={(event) => event.stopPropagation()}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            autoResizeNote(event.target);
+          }}
+          onBlur={() => onChangeNote(draft)}
+          placeholder="Sua nota..."
+          rows={quote ? 2 : 3}
+          className="w-full resize-none border-none bg-transparent text-[14px] leading-[1.4] text-[#4a3f1e] outline-none placeholder:text-[#4a3f1e]/50"
+        />
+      </div>
     </div>
   );
 }

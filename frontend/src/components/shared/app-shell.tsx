@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type WheelEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -13,11 +13,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   Plus,
   ShieldCheck,
-  Sparkles,
   User,
   X,
   type LucideIcon,
@@ -47,21 +44,11 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/perfil", label: "Perfil", icon: User },
 ];
 
-const SIDEBAR_WIDTH_EXPANDED = 224;
-const SIDEBAR_WIDTH_COLLAPSED = 72;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return localStorage.getItem("sidebar-collapsed") === "true";
-    } catch {
-      return false;
-    }
-  });
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
@@ -71,16 +58,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) hydrateFromBackend();
   }, [user, hydrateFromBackend]);
-
-  function toggleSidebar() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("sidebar-collapsed", String(next));
-      } catch {}
-      return next;
-    });
-  }
 
   function scrollContentArea(event: WheelEvent<HTMLElement>) {
     scrollAreaRef.current?.scrollBy({
@@ -125,8 +102,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         pathname={pathname}
         userName={user?.name ?? "Aluno"}
         userRankName={rankName}
-        collapsed={collapsed}
-        onToggle={toggleSidebar}
         onLogout={logout}
         onWheel={scrollContentArea}
       />
@@ -142,8 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div
         ref={scrollAreaRef}
-        className="h-full overflow-y-auto overscroll-contain transition-[padding-left] duration-200 ease-in-out md:pl-[var(--sidebar-width)]"
-        style={{ "--sidebar-width": `${collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px` } as CSSProperties}
+        className="h-full overflow-y-auto overscroll-contain md:pl-[262px]"
       >
         <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
           <AnimatePresence mode="wait" initial={false}>
@@ -181,8 +155,6 @@ function DesktopSidebar({
   pathname,
   userName,
   userRankName,
-  collapsed,
-  onToggle,
   onLogout,
   onWheel,
 }: {
@@ -190,141 +162,57 @@ function DesktopSidebar({
   pathname: string;
   userName: string;
   userRankName: string;
-  collapsed: boolean;
-  onToggle: () => void;
   onLogout: () => void;
   onWheel: (event: WheelEvent<HTMLElement>) => void;
 }) {
   return (
     <aside
-      className={cn(
-        "group fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border/45 bg-card/85 backdrop-blur-xl transition-[width,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex",
-        collapsed ? "py-5" : "py-6",
-      )}
-      style={{ width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED }}
+      className="fixed inset-y-3 left-3 z-40 hidden w-[236px] flex-col rounded-[18px] border border-white/70 bg-card/90 py-5 px-4 shadow-elevated backdrop-blur-2xl md:flex"
       onWheel={onWheel}
     >
-      {collapsed ? (
-        <div className="mb-5 flex flex-col items-center px-3">
-          <div className="relative grid h-9 w-9 place-items-center">
-            <span className="grid place-items-center transition-opacity duration-150 group-hover:opacity-0">
-              <BrandLink collapsed href="/dashboard" className="w-full justify-center" />
-            </span>
-            <button
-              onClick={onToggle}
-              aria-label="Expandir menu"
-              className="absolute inset-0 grid place-items-center rounded-control bg-muted text-muted-foreground opacity-0 transition-opacity duration-150 pointer-events-none hover:bg-primary/10 hover:text-primary group-hover:pointer-events-auto group-hover:opacity-100"
-            >
-              <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="mb-5 flex items-center justify-between gap-2 overflow-hidden px-4">
-          <BrandLink collapsed={false} href="/dashboard" />
-          <button
-            onClick={onToggle}
-            aria-label="Recolher menu"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-primary/7 hover:text-primary"
-          >
-            <PanelLeftClose className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </div>
-      )}
-
-      <div className={cn("mb-6 overflow-hidden", collapsed ? "px-3" : "px-4")}>
-        {collapsed ? (
-          <Button
-            asChild
-            size="icon"
-            aria-label="Nova redação"
-            className="h-10 w-full bg-primary shadow-control transition-transform hover:scale-[1.03] active:scale-[0.97]"
-          >
-            <Link href="/redacao">
-              <Plus className="h-6 w-6" aria-hidden="true" />
-            </Link>
-          </Button>
-        ) : (
-          <Button
-            asChild
-            className="h-10 w-full justify-start bg-primary text-base shadow-control transition-transform hover:scale-[1.015] active:scale-[0.98]"
-          >
-            <Link href="/redacao">
-              <Plus className="h-5 w-5" aria-hidden="true" />
-              Nova redação
-            </Link>
-          </Button>
-        )}
+      <div className="mb-5 px-1">
+        <BrandLink collapsed={false} href="/dashboard" />
       </div>
 
-      <nav
-        className={cn("flex flex-1 flex-col overflow-hidden", collapsed ? "gap-2.5 px-3" : "gap-2 px-4")}
-        aria-label="Navegação principal"
-      >
+      <div className="mb-5">
+        <Button asChild className="h-11 w-full justify-start gap-2.5 rounded-control bg-primary text-[14px] font-semibold shadow-control">
+          <Link href="/redacao">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nova redação
+          </Link>
+        </Button>
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-1" aria-label="Navegação principal">
         {items.map((item) => (
-          <ShellNavLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
+          <ShellNavLink key={item.href} item={item} pathname={pathname} />
         ))}
       </nav>
 
-      {!collapsed ? (
-        <div className="mx-4 mb-3 rounded-control bg-streak-tint p-3">
-          <div className="font-display mb-2 flex items-center gap-2 text-base font-medium text-streak">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-            Aproveite melhor o Donc
-          </div>
-          <p className="text-sm leading-5 text-muted-foreground">Explore recursos para elevar sua escrita.</p>
-          <Button asChild variant="outline" size="sm" className="mt-3 w-full justify-between border-transparent bg-card">
-            <Link href="/onboarding">Ver tour</Link>
-          </Button>
+      <div className="mt-2">
+        <div className="flex min-h-11 items-center justify-between gap-2 rounded-control bg-muted/60 px-2 py-2 text-[14px] font-semibold transition-colors hover:bg-muted">
+          <Link
+            href="/perfil"
+            className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary"
+            aria-label={`Perfil de ${userName}`}
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-[14px] font-semibold text-primary-foreground">
+              {initials(userName)}
+            </span>
+            <span className="min-w-0 leading-tight">
+              <span className="block truncate text-[13px]">{userName}</span>
+              <span className="block truncate text-[11px] font-medium text-muted-foreground">Rank {userRankName}</span>
+            </span>
+          </Link>
+          <button
+            type="button"
+            aria-label="Sair"
+            onClick={onLogout}
+            className="inline-flex shrink-0 items-center gap-2 rounded-control p-2 text-foreground transition-colors hover:bg-card hover:text-primary"
+          >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
-      ) : null}
-
-      <div className={cn("mt-2 overflow-hidden", collapsed ? "px-3" : "px-4")}>
-        {!collapsed ? (
-          <div className="flex min-h-11 items-center justify-between gap-2 rounded-control bg-muted/60 px-2 py-2 text-base font-semibold transition-colors hover:bg-muted">
-            <Link
-              href="/perfil"
-              className="flex min-w-0 items-center gap-2 text-left transition-colors hover:text-primary"
-              aria-label={`Perfil de ${userName}`}
-            >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-xs font-semibold text-primary ring-1 ring-primary/20 transition-all hover:ring-2 hover:ring-primary/40">
-                {initials(userName)}
-              </span>
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate text-base">{userName}</span>
-                <span className="block truncate text-sm font-medium text-muted-foreground">Rank {userRankName}</span>
-              </span>
-            </Link>
-            <button
-              type="button"
-              aria-label="Sair"
-              onClick={onLogout}
-              className="inline-flex shrink-0 items-center gap-2 rounded-control p-2 text-foreground transition-colors hover:bg-card hover:text-primary"
-            >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : (
-          <div className="grid gap-2">
-            <Link
-              href="/perfil"
-              className="grid h-10 w-full place-items-center rounded-control bg-muted/60 transition-colors hover:bg-primary/10"
-              aria-label={`Perfil de ${userName}`}
-            >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-xs font-semibold text-primary">
-                {initials(userName)}
-              </span>
-            </Link>
-            <button
-              type="button"
-              aria-label="Sair"
-              onClick={onLogout}
-              className="flex h-10 w-full items-center justify-center rounded-control bg-muted/60 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
-            >
-              <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-            </button>
-          </div>
-        )}
       </div>
     </aside>
   );
@@ -396,19 +284,16 @@ function MobileDrawer({
 function ShellNavLink({
   item,
   pathname,
-  collapsed = false,
   expanded = false,
   onNavigate,
 }: {
   item: WorkspaceNavItem;
   pathname: string;
-  collapsed?: boolean;
   expanded?: boolean;
   onNavigate?: () => void;
 }) {
   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
   const Icon = item.icon;
-  const showLabel = expanded || !collapsed;
 
   return (
     <Link
@@ -416,34 +301,19 @@ function ShellNavLink({
       aria-current={active ? "page" : undefined}
       onClick={onNavigate}
       className={cn(
-        "group/nav relative flex items-center gap-3 rounded-control text-base font-semibold text-muted-foreground transition-colors hover:text-foreground",
-        collapsed ? "h-11 justify-center px-0" : "min-h-11 px-3.5",
-        showLabel ? "justify-start" : "justify-center",
-        active ? "text-primary" : "hover:bg-muted/50",
+        "group/nav relative flex min-h-11 items-center gap-3 rounded-control px-3.5 text-[14px] font-medium text-muted-foreground transition-colors hover:text-foreground",
+        active ? "font-semibold text-primary" : "hover:bg-primary/8",
       )}
     >
       {active ? (
         <motion.span
-          layoutId="sidebar-active-pill"
-          className="absolute inset-0 rounded-control bg-primary/10"
+          layoutId={expanded ? undefined : "sidebar-active-pill"}
+          className="absolute inset-0 rounded-control bg-primary/12"
           transition={{ type: "spring", stiffness: 420, damping: 34 }}
         />
       ) : null}
-      <Icon
-        className={cn(
-          "relative z-10 shrink-0 transition-transform duration-150 group-hover/nav:scale-110",
-          collapsed ? "h-5 w-5" : "h-5 w-5",
-        )}
-        aria-hidden="true"
-      />
-      <span
-        className={cn(
-          "relative z-10 min-w-0 overflow-hidden whitespace-nowrap text-safe transition-opacity duration-150",
-          showLabel ? "opacity-100" : "w-0 opacity-0",
-        )}
-      >
-        {item.label}
-      </span>
+      <Icon className="relative z-10 h-5 w-5 shrink-0 transition-transform duration-150 group-hover/nav:scale-110" aria-hidden="true" />
+      <span className="text-safe relative z-10 min-w-0 overflow-hidden whitespace-nowrap">{item.label}</span>
     </Link>
   );
 }

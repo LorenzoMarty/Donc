@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { apiFetch, type Essay, type EssayTheme } from "@/services/api";
 
-export type EssayViewMode = "editor" | "analysis";
+export type EssayViewMode = "editor" | "resultado" | "analysis";
 
 const THEME_CHOICES_LIMIT = 4;
 
@@ -48,7 +48,9 @@ export function useEssayDraft() {
           setContent(openedEssay.content);
           setSelectedTheme(openedEssay.theme);
           setDraftStarted(true);
-          setMode(params.get("view") === "analise" || openedEssay.status === "corrected" ? "analysis" : "editor");
+          if (params.get("view") === "analise") setMode("analysis");
+          else if (openedEssay.status === "corrected") setMode("resultado");
+          else setMode("editor");
           return;
         }
 

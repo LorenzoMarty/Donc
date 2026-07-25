@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { BarChart3, BookOpen, ChevronRight, Map, PenLine, Sparkles, Target, type LucideIcon } from "lucide-react";
+import { BarChart3, Check, ChevronRight, Map, PenLine, Target, type LucideIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/utils";
 
 const STORAGE_KEY = "donc.onboarding.v1";
@@ -29,8 +29,6 @@ const TOUR_SLIDES: {
   title: string;
   description: string;
   href: string;
-  color: string;
-  bg: string;
   hydraImageUrl?: string;
   hydraVideoUrl?: string;
 }[] = [
@@ -39,24 +37,18 @@ const TOUR_SLIDES: {
     title: "Aqui você treina seus sintomas",
     description: "Argumentação, repertório, conectivos — cada um vira um treino curto, direto no que está te travando.",
     href: "/games",
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 border-emerald-200",
   },
   {
     icon: PenLine,
     title: "Aqui você escreve e recebe nota real",
     description: "Escolha um tema, escreva, envie. A IA corrige como o ENEM corrige: nota por competência, não só um número solto.",
     href: "/redacao",
-    color: "text-primary",
-    bg: "bg-primary/10 border-primary/30",
   },
   {
     icon: BarChart3,
     title: "Aqui você acompanha sua evolução",
     description: "Sequência de treino, notas e quais competências ainda travam sua nota — tudo num só lugar.",
     href: "/dashboard",
-    color: "text-primary",
-    bg: "bg-primary/10 border-primary/30",
   },
 ];
 
@@ -74,10 +66,18 @@ export default function OnboardingPage() {
   const [level, setLevel] = useState<string | null>(null);
   const [tourSlide, setTourSlide] = useState(0);
   const autoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const totalSteps = 5;
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   useEffect(() => {
     if (step === 0) {
-      autoRef.current = setTimeout(() => advance(), 2200);
+      autoRef.current = setTimeout(() => advance(), 2600);
     }
     return () => {
       if (autoRef.current) clearTimeout(autoRef.current);
@@ -100,214 +100,193 @@ export default function OnboardingPage() {
     router.push("/dashboard");
   }
 
-  return (
-    <div className="flex min-h-[calc(100dvh-8rem)] flex-col items-center justify-center">
-      <div className="w-full max-w-lg">
-        <StepDots total={5} current={step} />
+  const canBack = step > 0;
+  const isLast = step === totalSteps - 1;
+  const blocked = (step === 1 && !goal) || (step === 2 && !level);
 
-        <AnimatePresence mode="wait" custom={direction}>
-          {step === 0 && (
-            <StepShell key="welcome" direction={direction}>
-              <WelcomeStep onNext={advance} />
-            </StepShell>
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[#12351d]">
+      <div className="flex items-center gap-5 px-9 py-6">
+        <span className="font-display text-[26px] font-medium text-[#8ee0a3]">donc</span>
+        <div className="mx-auto flex w-full max-w-[360px] gap-1.5">
+          {Array.from({ length: totalSteps }).map((_, index) => (
+            <div
+              key={index}
+              className={cn("h-[5px] flex-1 rounded-[3px] transition-colors duration-300", index <= step ? "bg-[#8ee0a3]" : "bg-white/16")}
+            />
+          ))}
+        </div>
+        <Link href="/dashboard" className="text-[14px] font-medium text-white/55 hover:text-white/80">
+          Pular
+        </Link>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center overflow-y-auto px-10 pb-16 pt-5">
+        <div className="w-full max-w-[620px] text-center">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {step === 0 ? <FolhinhaMascot showBubble /> : null}
+
+              {step === 0 ? (
+                <>
+                  <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">Bem-vinda ao Donc</p>
+                  <h1 className="font-display text-[38px] font-medium leading-[1.15] text-white">
+                    Vamos preparar sua jornada rumo ao 1000
+                  </h1>
+                  <p className="mx-auto mt-3.5 max-w-[520px] text-[17px] leading-relaxed text-white/72">
+                    Sou o Donc, seu tutor de redação. Em 3 passos rápidos eu personalizo os treinos, aulas e temas pra você.
+                  </p>
+                </>
+              ) : step === 1 ? (
+                <ChoiceStepBody kicker="Passo 1 de 3" title="Qual é a sua meta no ENEM?" options={GOALS} selected={goal} onSelect={setGoal} />
+              ) : step === 2 ? (
+                <ChoiceStepBody kicker="Passo 2 de 3" title="Qual é o seu nível atual?" options={LEVELS} selected={level} onSelect={setLevel} />
+              ) : step === 3 ? (
+                <TourStepBody slide={tourSlide} onSlide={setTourSlide} />
+              ) : (
+                <CTAStepBody goal={goal} level={level} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center gap-3.5 border-t border-white/8 px-10 py-[26px]">
+        {canBack ? (
+          <button
+            type="button"
+            onClick={back}
+            className="rounded-[13px] bg-white/10 px-6 py-3.5 text-[15px] font-semibold text-white"
+          >
+            Voltar
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => {
+            if (isLast) {
+              finish();
+              return;
+            }
+            if (step === 3 && tourSlide < TOUR_SLIDES.length - 1) {
+              setTourSlide((value) => value + 1);
+              return;
+            }
+            if (!blocked) advance();
+          }}
+          disabled={blocked}
+          className={cn(
+            "flex items-center gap-2 rounded-[13px] px-[30px] py-3.5 text-[15px] font-bold transition-colors",
+            blocked ? "cursor-not-allowed bg-white/15 text-white/40" : "bg-[#8ee0a3] text-[#12351d]",
           )}
-          {step === 1 && (
-            <StepShell key="goal" direction={direction}>
-              <ChoiceStep
-                eyebrow="Passo 1 de 3"
-                title="Qual é a sua meta no ENEM?"
-                options={GOALS}
-                selected={goal}
-                onSelect={setGoal}
-                onNext={advance}
-                onBack={back}
-                nextDisabled={!goal}
-              />
-            </StepShell>
-          )}
-          {step === 2 && (
-            <StepShell key="level" direction={direction}>
-              <ChoiceStep
-                eyebrow="Passo 2 de 3"
-                title="Qual é o seu nível atual?"
-                options={LEVELS}
-                selected={level}
-                onSelect={setLevel}
-                onNext={advance}
-                onBack={back}
-                nextDisabled={!level}
-              />
-            </StepShell>
-          )}
-          {step === 3 && (
-            <StepShell key="tour" direction={direction}>
-              <TourStep slide={tourSlide} onSlide={setTourSlide} onNext={advance} onBack={back} />
-            </StepShell>
-          )}
-          {step === 4 && (
-            <StepShell key="cta" direction={direction}>
-              <CTAStep goal={goal} level={level} onFinish={finish} onBack={back} />
-            </StepShell>
-          )}
-        </AnimatePresence>
+        >
+          {isLast ? "Ir para o painel" : step === 0 ? "Começar" : step === 3 && tourSlide < TOUR_SLIDES.length - 1 ? "Próximo" : "Continuar"}
+          <ChevronRight className="h-[17px] w-[17px]" aria-hidden="true" />
+        </button>
       </div>
     </div>
   );
 }
 
-function StepShell({ children, direction }: { children: React.ReactNode; direction: number }) {
+/** Mascote "Folhinha" — desenho SVG fiel ao Onboarding.dc.html (bloco de notas com rosto). */
+function FolhinhaMascot({ showBubble }: { showBubble?: boolean }) {
   return (
-    <motion.div
-      custom={direction}
-      variants={slideVariants}
-      initial="enter"
-      animate="center"
-      exit="exit"
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function StepDots({ total, current }: { total: number; current: number }) {
-  return (
-    <div className="mb-8 flex justify-center gap-2">
-      {Array.from({ length: total }).map((_, i) => (
+    <div className="relative mx-auto mb-7 h-[150px] w-[150px] animate-[bob_3.4s_ease-in-out_infinite]">
+      {showBubble ? (
         <motion.div
-          key={i}
-          animate={{ width: i === current ? 24 : 8, backgroundColor: i === current ? "hsl(88.4 97.9% 37.6%)" : "hsl(224 30% 92%)" }}
-          transition={{ duration: 0.3 }}
-          className="h-2 rounded-full"
-        />
-      ))}
+          initial={{ opacity: 0, scale: 0.9, y: 6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5, ease: [0.16, 0.84, 0.24, 1] }}
+          className="font-display absolute left-[calc(100%-6px)] top-6 whitespace-nowrap rounded-2xl bg-[#fffdf8] px-[18px] py-3 text-[17px] font-medium text-[#12351d] shadow-[0_12px_28px_-12px_rgba(0,0,0,.5)]"
+        >
+          Oi, eu sou a Folhinha!
+          <span className="absolute right-full top-[22px] border-8 border-transparent border-r-[#fffdf8]" />
+        </motion.div>
+      ) : null}
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <rect x="34" y="28" width="82" height="104" rx="20" fill="#fffdf8" />
+        <rect x="34" y="28" width="82" height="104" rx="20" fill="none" stroke="#dfe8d8" strokeWidth="2" />
+        <rect x="46" y="26" width="58" height="12" rx="6" fill="#2f9e44" />
+        <line x1="48" y1="76" x2="102" y2="76" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
+        <line x1="48" y1="90" x2="102" y2="90" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
+        <line x1="48" y1="104" x2="86" y2="104" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="65" cy="58" r="5.5" fill="#12351d" />
+        <circle cx="89" cy="58" r="5.5" fill="#12351d" />
+        <path d="M67 66 q10 7 20 0" fill="none" stroke="#2f9e44" strokeWidth="3" strokeLinecap="round" />
+      </svg>
     </div>
   );
 }
 
-function WelcomeStep({ onNext }: { onNext: () => void }) {
-  return (
-    <div className="text-center">
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, type: "spring" }}
-        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-control border-2 border-primary/30 bg-primary/10"
-      >
-        <Sparkles className="h-10 w-10 text-primary" aria-hidden="true" />
-      </motion.div>
-      <motion.h1
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="text-3xl font-bold tracking-tight"
-      >
-        Oi, eu sou o Donc
-      </motion.h1>
-      <motion.p
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-        className="mt-3 text-muted-foreground"
-      >
-        Antes de começar, me conta 3 coisas rápidas — assim eu já sei por onde te levar.
-      </motion.p>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-8">
-        <Button onClick={onNext} size="lg" className="w-full">
-          Começar configuração
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
-        </Button>
-      </motion.div>
-    </div>
-  );
-}
-
-function ChoiceStep({
-  eyebrow,
+function ChoiceStepBody({
+  kicker,
   title,
   options,
   selected,
   onSelect,
-  onNext,
-  onBack,
-  nextDisabled,
 }: {
-  eyebrow: string;
+  kicker: string;
   title: string;
   options: { id: string; label: string; description: string }[];
   selected: string | null;
   onSelect: (id: string) => void;
-  onNext: () => void;
-  onBack: () => void;
-  nextDisabled: boolean;
 }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</p>
-      <h2 className="mt-2 text-2xl font-bold tracking-tight">{title}</h2>
-      <div className="mt-5 grid gap-3">
-        {options.map((opt, i) => (
-          <motion.button
-            key={opt.id}
-            type="button"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.28 }}
-            onClick={() => onSelect(opt.id)}
-            className={cn(
-              "w-full rounded-[var(--radius)] border p-4 text-left transition-all duration-150",
-              selected === opt.id
-                ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                : "border-border bg-card hover:border-primary/40 hover:bg-primary/5",
-            )}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold">{opt.label}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{opt.description}</p>
+      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">{kicker}</p>
+      <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">{title}</h2>
+      <div className="mt-8 flex flex-col gap-3 text-left">
+        {options.map((opt, i) => {
+          const active = selected === opt.id;
+          return (
+            <motion.button
+              key={opt.id}
+              type="button"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06, duration: 0.28 }}
+              onClick={() => onSelect(opt.id)}
+              className={cn(
+                "flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4.5 text-left transition-colors",
+                active ? "border-[#8ee0a3] bg-[#8ee0a3]/14" : "border-white/14 bg-white/5",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[16px] font-semibold text-white">{opt.label}</p>
+                <p className="mt-0.5 text-[13px] text-white/60">{opt.description}</p>
               </div>
               <div
                 className={cn(
-                  "h-5 w-5 shrink-0 rounded-full border-2 transition-all",
-                  selected === opt.id ? "border-primary bg-primary" : "border-border",
+                  "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full border-2",
+                  active ? "border-transparent bg-[#8ee0a3]" : "border-white/20",
                 )}
-              />
-            </div>
-          </motion.button>
-        ))}
-      </div>
-      <div className="mt-6 flex gap-3">
-        <Button variant="outline" onClick={onBack} className="flex-1">
-          Voltar
-        </Button>
-        <Button onClick={onNext} disabled={nextDisabled} className="flex-[2]">
-          Continuar
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
-        </Button>
+              >
+                {active ? <Check className="h-3.5 w-3.5 text-[#12351d]" strokeWidth={3} aria-hidden="true" /> : null}
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function TourStep({
-  slide,
-  onSlide,
-  onNext,
-  onBack,
-}: {
-  slide: number;
-  onSlide: (n: number) => void;
-  onNext: () => void;
-  onBack: () => void;
-}) {
+function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) => void }) {
   const current = TOUR_SLIDES[slide];
   const Icon = current.icon;
-  const isLast = slide === TOUR_SLIDES.length - 1;
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Passo 3 de 3 · Tour rápido</p>
-      <h2 className="mt-2 text-2xl font-bold tracking-tight">É assim que você evolui aqui</h2>
+      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">Passo 3 de 3 · Tour rápido</p>
+      <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">É assim que você evolui</h2>
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -316,30 +295,19 @@ function TourStep({
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.25 }}
-          className={cn("mt-5 rounded-[var(--radius)] border p-6", current.bg)}
+          className="mt-6 rounded-2xl border border-white/14 bg-white/5 p-6 text-left"
         >
           {current.hydraVideoUrl ? (
-            <video
-              src={current.hydraVideoUrl}
-              controls
-              className="mb-4 w-full rounded-control object-contain"
-              aria-label="Vídeo da Hydra, a mascote do Donc ENEM"
-            />
+            <video src={current.hydraVideoUrl} controls className="mb-4 w-full rounded-control object-contain" aria-label="Vídeo da Hydra, a mascote do Donc ENEM" />
           ) : current.hydraImageUrl ? (
-            <Image
-              src={current.hydraImageUrl}
-              alt="Hydra, a mascote do Donc ENEM"
-              width={80}
-              height={80}
-              className="mb-4 rounded-control object-contain"
-            />
+            <Image src={current.hydraImageUrl} alt="Hydra, a mascote do Donc ENEM" width={80} height={80} className="mb-4 rounded-control object-contain" />
           ) : (
-            <div className={cn("mb-4 inline-flex rounded-xl border p-3", current.bg)}>
-              <Icon className={cn("h-7 w-7", current.color)} aria-hidden="true" />
+            <div className="mb-4 inline-flex rounded-xl bg-[#8ee0a3]/14 p-3">
+              <Icon className="h-7 w-7 text-[#8ee0a3]" aria-hidden="true" />
             </div>
           )}
-          <h3 className="text-xl font-bold">{current.title}</h3>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{current.description}</p>
+          <h3 className="text-[18px] font-semibold text-white">{current.title}</h3>
+          <p className="mt-2 text-[14px] leading-relaxed text-white/65">{current.description}</p>
         </motion.div>
       </AnimatePresence>
 
@@ -349,81 +317,45 @@ function TourStep({
             key={i}
             type="button"
             onClick={() => onSlide(i)}
-            className={cn("h-2 rounded-full transition-all duration-200", i === slide ? "w-6 bg-primary" : "w-2 bg-border")}
+            className={cn("h-2 rounded-full transition-all duration-200", i === slide ? "w-6 bg-[#8ee0a3]" : "w-2 bg-white/20")}
             aria-label={`Slide ${i + 1}`}
           />
         ))}
-      </div>
-
-      <div className="mt-6 flex gap-3">
-        <Button variant="outline" onClick={onBack} className="flex-1" type="button">
-          Voltar
-        </Button>
-        {isLast ? (
-          <Button onClick={onNext} className="flex-[2]">
-            Continuar
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        ) : (
-          <Button onClick={() => onSlide(slide + 1)} className="flex-[2]">
-            Próximo
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        )}
       </div>
     </div>
   );
 }
 
-function CTAStep({
-  goal,
-  level,
-  onFinish,
-  onBack,
-}: {
-  goal: string | null;
-  level: string | null;
-  onFinish: () => void;
-  onBack: () => void;
-}) {
+function CTAStepBody({ goal, level }: { goal: string | null; level: string | null }) {
   const goalLabel = GOALS.find((g) => g.id === goal)?.label ?? goal;
   const levelLabel = LEVELS.find((l) => l.id === level)?.label ?? level;
 
   return (
-    <div className="text-center">
+    <div>
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.4, type: "spring" }}
-        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-control border-2 border-primary/30 bg-primary/10"
+        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#8ee0a3]/18"
       >
-        <Target className="h-10 w-10 text-primary" aria-hidden="true" />
+        <Target className="h-9 w-9 text-[#8ee0a3]" aria-hidden="true" />
       </motion.div>
 
-      <h2 className="text-2xl font-bold tracking-tight">Fechado. Bora treinar.</h2>
-      <p className="mt-2 text-muted-foreground">
+      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">Tudo pronto</p>
+      <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">Sua trilha está montada!</h2>
+      <p className="mx-auto mt-3.5 max-w-[480px] text-[17px] leading-relaxed text-white/72">
         Assim que você escrever a primeira redação, eu já te aponto exatamente onde focar. Sem enrolação.
       </p>
 
-      <div className="mt-6 grid gap-2 text-left">
-        <div className="flex items-center justify-between rounded-[var(--radius)] border border-border bg-card p-3">
-          <span className="text-sm text-muted-foreground">Meta</span>
-          <span className="text-sm font-semibold">{goalLabel}</span>
+      <div className="mx-auto mt-7 grid max-w-[380px] gap-2 text-left">
+        <div className="flex items-center justify-between rounded-control bg-white/5 px-4 py-3">
+          <span className="text-[13px] text-white/60">Meta</span>
+          <span className="text-[14px] font-semibold text-white">{goalLabel}</span>
         </div>
-        <div className="flex items-center justify-between rounded-[var(--radius)] border border-border bg-card p-3">
-          <span className="text-sm text-muted-foreground">Nível</span>
-          <span className="text-sm font-semibold">{levelLabel}</span>
+        <div className="flex items-center justify-between rounded-control bg-white/5 px-4 py-3">
+          <span className="text-[13px] text-white/60">Nível</span>
+          <span className="text-[14px] font-semibold text-white">{levelLabel}</span>
         </div>
-      </div>
-
-      <div className="mt-6 flex gap-3">
-        <Button variant="outline" onClick={onBack} className="flex-1">
-          Voltar
-        </Button>
-        <Button onClick={onFinish} size="lg" className="flex-[2]">
-          <BookOpen className="h-4 w-4" aria-hidden="true" />
-          Ir para o painel
-        </Button>
       </div>
     </div>
   );

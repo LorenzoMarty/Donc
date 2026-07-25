@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
+import { fireEvent, render, screen, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,7 +24,6 @@ function renderEditor() {
       title="Rascunho"
       content="Meu texto de redação."
       wordCount={10}
-      paragraphCount={1}
       saving={false}
       submitting={false}
       onTitleChange={vi.fn()}
@@ -59,32 +58,25 @@ describe("EssayEditor — alternância folha/motivadores", () => {
     expect(textarea).toHaveValue("Meu texto de redação.");
   });
 
-  it("mostra o titulo do tema numa faixa colapsavel, sem sidebar fixa", async () => {
-    const user = userEvent.setup();
+  it("mostra as abas Folha/Textos motivadores sempre que há um tema (fiel ao mock)", () => {
     renderEditor();
-
-    expect(screen.getByText("Tema de teste")).toBeInTheDocument();
-    expect(screen.queryByText("Contexto do tema de teste.")).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /Tema de teste/ }));
-    expect(await screen.findByText("Contexto do tema de teste.")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /Tema de teste/ }));
-    await waitFor(() => expect(screen.queryByText("Contexto do tema de teste.")).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Folha de redação" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Textos motivadores" })).toBeInTheDocument();
   });
 
-  it("bottom bar de canetas: sublinha o trecho selecionado e depois limpa as marcações", async () => {
+  it("marca-texto: arma a ferramenta e aplica só na seleção seguinte, depois limpa as marcações", async () => {
     renderEditor();
 
     const textarea = screen.getByPlaceholderText("Comece sua redação aqui...") as HTMLTextAreaElement;
-    const penButton = screen.getByRole("button", { name: "Caneta azul" });
-    const clearButton = screen.getByRole("button", { name: "Limpar marcações" });
+    const penButton = screen.getByRole("button", { name: "Marca-texto azul" });
+    const clearButton = screen.getByRole("button", { name: "Limpar folha" });
 
     expect(clearButton).toBeDisabled();
 
+    fireEvent.click(penButton);
     textarea.focus();
     textarea.setSelectionRange(0, 4);
-    fireEvent.click(penButton);
+    fireEvent.mouseUp(textarea);
 
     expect(clearButton).not.toBeDisabled();
     expect(screen.getByText("Meu")).toBeInTheDocument();
@@ -93,12 +85,12 @@ describe("EssayEditor — alternância folha/motivadores", () => {
     expect(clearButton).toBeDisabled();
   });
 
-  it("dock: botão + cria um post-it livre no store", async () => {
+  it("dock: botão de post-it cria um post-it livre no store", async () => {
     const user = userEvent.setup();
     renderEditor();
 
     expect(useFreePostItsStore.getState().postItsByTheme["1"] ?? []).toHaveLength(0);
-    await user.click(screen.getByRole("button", { name: "Criar post-it" }));
+    await user.click(screen.getByRole("button", { name: "Adicionar post-it" }));
     expect(useFreePostItsStore.getState().postItsByTheme["1"]).toHaveLength(1);
   });
 
@@ -110,7 +102,6 @@ describe("EssayEditor — alternância folha/motivadores", () => {
         title="Rascunho"
         content="texto"
         wordCount={10}
-        paragraphCount={1}
         saving={false}
         submitting={false}
         onTitleChange={vi.fn()}
@@ -118,10 +109,10 @@ describe("EssayEditor — alternância folha/motivadores", () => {
         onSubmit={vi.fn()}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Caneta azul" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Marca-texto azul" })).not.toBeInTheDocument();
   });
 
-  it("não mostra o toggle de páginas quando o tema não tem textos motivadores", () => {
+  it("mostra o toggle de páginas mesmo quando o tema não tem textos motivadores (fallback com o contexto do tema)", () => {
     render(
       <EssayEditor
         essay={null}
@@ -129,7 +120,6 @@ describe("EssayEditor — alternância folha/motivadores", () => {
         title="Rascunho"
         content=""
         wordCount={0}
-        paragraphCount={0}
         saving={false}
         submitting={false}
         onTitleChange={vi.fn()}
@@ -137,6 +127,6 @@ describe("EssayEditor — alternância folha/motivadores", () => {
         onSubmit={vi.fn()}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Textos motivadores" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Textos motivadores" })).toBeInTheDocument();
   });
 });
