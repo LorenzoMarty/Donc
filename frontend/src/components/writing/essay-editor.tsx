@@ -3,17 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  BookOpen,
-  CheckCircle2,
-  ChevronDown,
-  Eraser,
-  PenLine,
-  Plus,
-  Send,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, Eraser, Send, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RewardAnimation, SupportingTextBody, SupportingTextIcon } from "@/components/shared/motion-system";
@@ -23,22 +13,22 @@ import type { Essay, EssayTheme } from "@/services/api";
 import { useFreePostItsStore } from "@/stores/free-post-its-store";
 import { cn } from "@/utils";
 
-type EssayMarkTool = "pen-black" | "pen-blue" | "pen-red" | "highlighter";
+type EssayMarkTool = "highlighter-yellow" | "highlighter-green" | "highlighter-blue" | "highlighter-pink";
 
 type EssayMark = { id: string; tool: EssayMarkTool; quote: string };
 
 const MARK_TOOL_LABEL: Record<EssayMarkTool, string> = {
-  "pen-black": "Caneta preta",
-  "pen-blue": "Caneta azul",
-  "pen-red": "Caneta vermelha",
-  highlighter: "Marca-texto",
+  "highlighter-yellow": "Marca-texto amarelo",
+  "highlighter-green": "Marca-texto verde",
+  "highlighter-blue": "Marca-texto azul",
+  "highlighter-pink": "Marca-texto rosa",
 };
 
 const MARK_TOOL_STYLE: Record<EssayMarkTool, string> = {
-  "pen-black": "underline decoration-2 underline-offset-2 decoration-[#1f2a24]",
-  "pen-blue": "underline decoration-2 underline-offset-2 decoration-[#1d4ed8]",
-  "pen-red": "underline decoration-2 underline-offset-2 decoration-[#b3122a]",
-  highlighter: "rounded-sm bg-[#fbbf24]/45",
+  "highlighter-yellow": "rounded-sm bg-[#fff3a0]/70",
+  "highlighter-green": "rounded-sm bg-[#b9f6c8]/70",
+  "highlighter-blue": "rounded-sm bg-[#bde0ff]/70",
+  "highlighter-pink": "rounded-sm bg-[#ffc9de]/70",
 };
 
 function buildMarkSegments(content: string, marks: EssayMark[]) {
@@ -84,7 +74,6 @@ export function EssayEditor({
   title,
   content,
   wordCount,
-  paragraphCount,
   saving,
   submitting,
   error,
@@ -98,7 +87,6 @@ export function EssayEditor({
   title: string;
   content: string;
   wordCount: number;
-  paragraphCount: number;
   saving: boolean;
   submitting: boolean;
   error?: string;
@@ -110,8 +98,8 @@ export function EssayEditor({
   const [showSaved, setShowSaved] = useState(false);
   const [page, setPage] = useState<"folha" | "motivadores">("folha");
   const [pageDirection, setPageDirection] = useState(1);
-  const [themeStripOpen, setThemeStripOpen] = useState(false);
   const [marks, setMarks] = useState<EssayMark[]>([]);
+  const [activeTool, setActiveTool] = useState<EssayMarkTool | "erase" | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const wasSavingRef = useRef(false);
@@ -123,7 +111,6 @@ export function EssayEditor({
   const canSubmit = Boolean(essay) && !locked && !saving && !submitting && wordCount >= 80;
   const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
   const activeTheme = theme ?? essay?.theme ?? null;
-  const hasMotivadores = Boolean(activeTheme?.supporting_texts?.length);
   const addFreePostIt = useFreePostItsStore((state) => state.addPostIt);
 
   useEffect(() => {
@@ -154,23 +141,25 @@ export function EssayEditor({
     setPage(next);
   }
 
-  function applyMark(tool: EssayMarkTool) {
+  /**
+   * Fluxo igual ao mock (WritingSheet): a caneta/borracha vira uma "ferramenta armada" ao
+   * clicar — ela não age sobre uma seleção pré-existente. É a seleção seguinte no texto (ao
+   * soltar o mouse) que dispara a marcação, permitindo marcar vários trechos em sequência sem
+   * reclicar na ferramenta a cada vez.
+   */
+  function handleSelectionRelease() {
     const textarea = textareaRef.current;
-    if (!textarea) return;
+    if (!textarea || !activeTool) return;
     const { selectionStart, selectionEnd } = textarea;
     if (selectionEnd <= selectionStart) return;
     const quote = content.slice(selectionStart, selectionEnd);
     if (!quote.trim()) return;
-    setMarks((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tool, quote }]);
-  }
 
-  function eraseMark() {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const { selectionStart, selectionEnd } = textarea;
-    if (selectionEnd <= selectionStart) return;
-    const quote = content.slice(selectionStart, selectionEnd);
-    setMarks((prev) => prev.filter((mark) => !mark.quote.includes(quote) && !quote.includes(mark.quote)));
+    if (activeTool === "erase") {
+      setMarks((prev) => prev.filter((mark) => !mark.quote.includes(quote) && !quote.includes(mark.quote)));
+      return;
+    }
+    setMarks((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tool: activeTool, quote }]);
   }
 
   function syncOverlayScroll() {
@@ -191,63 +180,51 @@ export function EssayEditor({
     >
       <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
 
-      <div className="flex min-h-0 flex-1 flex-col bg-card">
-        <header className="grid min-h-[4.75rem] gap-3 bg-card px-4 py-3 md:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2.5">
-            {onBack ? (
-              <Button type="button" variant="ghost" size="icon" onClick={onBack} aria-label="Voltar" className="h-11 w-11 shrink-0">
-                <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-              </Button>
-            ) : null}
+      <div className="flex min-h-0 flex-1 flex-col bg-background">
+        <header className="flex items-start gap-4 bg-transparent px-4 pb-2 pt-4 md:px-8">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Voltar"
+              className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-control border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : null}
+          <div className="min-w-0 flex-1">
             <input
               value={title}
               disabled={locked}
               onChange={(event) => onTitleChange(event.target.value)}
               placeholder="Nomeie sua redação"
               aria-label="Título da redação"
-              className="text-safe font-display min-w-0 flex-1 rounded-sm border-none bg-transparent text-xl font-medium leading-tight tracking-normal text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/30 lg:text-2xl"
+              className="text-safe font-display min-w-0 w-full rounded-sm border-none bg-transparent text-[25px] font-medium leading-tight text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/30"
             />
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-10 text-xs font-medium text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 font-medium text-accent">
-              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+            <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <span className="h-[7px] w-[7px] rounded-full bg-primary" aria-hidden="true" />
               {syncLabel}
-            </span>
-            <span>
-              <strong className="text-foreground">{wordCount.toLocaleString("pt-BR")}</strong> palavras
-            </span>
-            <span>{paragraphCount} parágrafos</span>
-            <span>{lines} linhas</span>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center justify-end gap-3 self-center">
-          {!locked ? <EssayTimer /> : null}
-          <Button size="sm" onClick={onSubmit} disabled={!canSubmit} className="h-9">
-            <Send className="h-4 w-4" aria-hidden="true" />
-            {submitting ? "Corrigindo..." : "Corrigir"}
-          </Button>
-        </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {!locked ? <EssayTimer className="rounded-[11px] px-[13px] py-2" /> : null}
+            <Button onClick={onSubmit} disabled={!canSubmit} className="h-auto rounded-[11px] px-[18px] py-2.5 text-[14px] font-semibold">
+              <Send className="h-4 w-4" aria-hidden="true" />
+              {submitting ? "Corrigindo..." : "Corrigir"}
+            </Button>
+          </div>
         </header>
 
-        {hasMotivadores ? (
-          <div className="flex gap-1 border-b border-border/55 bg-card px-4 py-2 md:px-5">
-            <PageTab active={page === "folha"} onClick={() => goToPage("folha")} icon={PenLine} label="Folha de redação" />
-            <PageTab
-              active={page === "motivadores"}
-              onClick={() => goToPage("motivadores")}
-              icon={BookOpen}
-              label="Textos motivadores"
-            />
-          </div>
-        ) : null}
-
-        {activeTheme && page === "folha" ? (
-          <ThemeStrip theme={activeTheme} open={themeStripOpen} onToggle={() => setThemeStripOpen((value) => !value)} />
-        ) : null}
-
         <div className="relative min-h-0 flex-1 overflow-hidden" style={{ perspective: 1600 }}>
+          {activeTheme ? (
+            <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center">
+              <div className="pointer-events-auto inline-flex gap-0.5 rounded-control bg-muted/70 p-[3px] backdrop-blur-sm">
+                <PageTab active={page === "folha"} onClick={() => goToPage("folha")} label="Folha de redação" />
+                <PageTab active={page === "motivadores"} onClick={() => goToPage("motivadores")} label="Textos motivadores" />
+              </div>
+            </div>
+          ) : null}
           <AnimatePresence mode="wait" initial={false} custom={pageDirection}>
             {page === "folha" ? (
               <motion.article
@@ -258,12 +235,14 @@ export function EssayEditor({
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 py-8 pb-24 md:px-9 lg:py-10"
+                className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 pb-24 pt-14 md:px-9 md:pt-16"
               >
-                <div className="relative mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-card px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8">
+                <div
+                  className="relative mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-[#fffdf8] px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8"
+                >
                   <div
                     aria-hidden="true"
-                    className="select-none pt-1 text-right font-mono text-[0.82rem] leading-[var(--essay-line-height)] text-muted-foreground/40 [--essay-line-height:2.82rem] md:text-[0.88rem]"
+                    className="select-none pt-1 text-right text-[0.82rem] leading-[var(--essay-line-height)] text-[#3c3c43]/32 [--essay-line-height:2.82rem] md:text-[0.88rem]"
                   >
                     {lineNumbers.map((lineNumber) => (
                       <div key={lineNumber} className="h-[var(--essay-line-height)]">
@@ -275,11 +254,15 @@ export function EssayEditor({
                     <div
                       ref={overlayRef}
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-foreground [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
+                      className="font-display pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-[#26241f] [--essay-line-height:2.82rem]"
+                      style={{
+                        backgroundImage:
+                          "repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--essay-line-height) - 1px), rgba(60,60,67,.10) calc(var(--essay-line-height) - 1px), rgba(60,60,67,.10) var(--essay-line-height))",
+                      }}
                     >
                       {markSegments.map((segment, index) =>
                         segment.mark ? (
-                          <mark key={index} className={cn("bg-transparent text-foreground", MARK_TOOL_STYLE[segment.mark.tool])}>
+                          <mark key={index} className={cn("bg-transparent text-[#26241f]", MARK_TOOL_STYLE[segment.mark.tool])}>
                             {segment.text}
                           </mark>
                         ) : (
@@ -294,9 +277,10 @@ export function EssayEditor({
                       disabled={locked}
                       onChange={(event) => onContentChange(event.target.value)}
                       onScroll={syncOverlayScroll}
+                      onMouseUp={handleSelectionRelease}
                       spellCheck
                       placeholder="Comece sua redação aqui..."
-                      className="absolute inset-0 h-full w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-transparent caret-primary outline-none placeholder:text-muted-foreground/55 [--essay-line-height:2.82rem] [font-family:var(--font-merriweather,Georgia,serif)]"
+                      className="font-display absolute inset-0 h-full w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-transparent caret-primary outline-none placeholder:italic placeholder:text-[#3c3c43]/34 [--essay-line-height:2.82rem]"
                     />
                   </div>
                 </div>
@@ -310,7 +294,7 @@ export function EssayEditor({
                 animate="center"
                 exit="exit"
                 transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 py-8 md:px-9 lg:py-10"
+                className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 pb-8 pt-14 md:px-9 md:pt-16"
               >
                 <MotivatorsBooklet theme={activeTheme} />
               </motion.article>
@@ -321,8 +305,8 @@ export function EssayEditor({
 
           {page === "folha" && !locked ? (
             <Dock
-              onApplyMark={applyMark}
-              onEraseMark={eraseMark}
+              activeTool={activeTool}
+              onSelectTool={setActiveTool}
               onClear={() => setMarks([])}
               hasMarks={marks.length > 0}
               onAddPostIt={() => addFreePostIt(activeTheme?.id)}
@@ -334,37 +318,26 @@ export function EssayEditor({
   );
 }
 
-function PageTab({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: typeof PenLine;
-  label: string;
-}) {
+function PageTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1.5 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors",
-        active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+        "whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors",
+        active ? "bg-card text-foreground shadow-soft" : "text-[#8a8a8e] hover:text-foreground",
       )}
     >
-      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {label}
     </button>
   );
 }
 
 const PEN_SWATCHES: { tool: EssayMarkTool; color: string }[] = [
-  { tool: "pen-black", color: "#1f2a24" },
-  { tool: "pen-blue", color: "#1d4ed8" },
-  { tool: "pen-red", color: "#b3122a" },
-  { tool: "highlighter", color: "#fbbf24" },
+  { tool: "highlighter-yellow", color: "#fff3a0" },
+  { tool: "highlighter-green", color: "#b9f6c8" },
+  { tool: "highlighter-blue", color: "#bde0ff" },
+  { tool: "highlighter-pink", color: "#ffc9de" },
 ];
 
 /**
@@ -374,66 +347,84 @@ const PEN_SWATCHES: { tool: EssayMarkTool; color: string }[] = [
  * `PenBar`.
  */
 function Dock({
-  onApplyMark,
-  onEraseMark,
+  activeTool,
+  onSelectTool,
   onClear,
   hasMarks,
   onAddPostIt,
 }: {
-  onApplyMark: (tool: EssayMarkTool) => void;
-  onEraseMark: () => void;
+  activeTool: EssayMarkTool | "erase" | null;
+  onSelectTool: (tool: EssayMarkTool | "erase" | null) => void;
   onClear: () => void;
   hasMarks: boolean;
   onAddPostIt: () => void;
 }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-      <div className="pointer-events-auto flex items-center gap-1.5 rounded-card border border-white/60 bg-card/80 px-2.5 py-2 shadow-elevated backdrop-blur-xl dark:border-white/10">
-        {PEN_SWATCHES.map((pen) => (
-          <button
-            key={pen.tool}
-            type="button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onApplyMark(pen.tool)}
-            aria-label={MARK_TOOL_LABEL[pen.tool]}
-            title={`Sublinhar seleção: ${MARK_TOOL_LABEL[pen.tool]}`}
-            className="grid h-9 w-9 place-items-center rounded-control transition-transform hover:scale-110 hover:bg-muted/60 active:scale-95"
-          >
-            <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: pen.color }} aria-hidden="true" />
-          </button>
-        ))}
+      <div className="pointer-events-auto flex items-end gap-1.5 rounded-card border border-white/60 bg-card/80 px-2.5 py-2 shadow-elevated backdrop-blur-xl">
+        {PEN_SWATCHES.map((pen) => {
+          const armed = activeTool === pen.tool;
+          return (
+            <button
+              key={pen.tool}
+              type="button"
+              onClick={() => onSelectTool(armed ? null : pen.tool)}
+              aria-label={MARK_TOOL_LABEL[pen.tool]}
+              aria-pressed={armed}
+              title={`Marca-texto: ${MARK_TOOL_LABEL[pen.tool]}`}
+              className={cn(
+                "flex w-[34px] flex-col items-center justify-end rounded-t-md rounded-b-[3px] bg-transparent p-0 transition-all",
+                armed ? "h-[52px] -translate-y-1.5" : "h-[46px]",
+              )}
+            >
+              <span
+                className="w-[22px] flex-1 rounded-t-md rounded-b-[2px] border border-black/[0.06] shadow-[inset_0_2px_0_rgba(255,255,255,.5),0_4px_10px_-4px_rgba(0,0,0,.3)]"
+                style={{ backgroundColor: pen.color }}
+                aria-hidden="true"
+              />
+              <span className="h-[7px] w-4 rounded-b-[3px] brightness-[.82]" style={{ backgroundColor: pen.color }} aria-hidden="true" />
+            </button>
+          );
+        })}
+
+        <div className="mx-1 mb-1.5 h-7 w-px bg-border" aria-hidden="true" />
 
         <button
           type="button"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onEraseMark}
-          aria-label="Borracha"
-          title="Remover marcação da seleção"
-          className="grid h-9 w-9 place-items-center rounded-control text-muted-foreground transition-transform hover:scale-110 hover:bg-muted/60 active:scale-95"
+          onClick={() => onSelectTool(activeTool === "erase" ? null : "erase")}
+          aria-label="Remover marca-texto"
+          aria-pressed={activeTool === "erase"}
+          title="Remover marca-texto"
+          className={cn(
+            "mb-1.5 grid h-9 w-9 place-items-center rounded-control text-muted-foreground transition-transform",
+            activeTool === "erase" ? "-translate-y-1 bg-muted/60" : "hover:scale-110 hover:bg-muted/60",
+          )}
         >
           <Eraser className="h-4 w-4" aria-hidden="true" />
         </button>
 
         <button
           type="button"
-          onClick={onClear}
-          disabled={!hasMarks}
-          aria-label="Limpar marcações"
-          className="grid h-9 w-9 place-items-center rounded-control text-muted-foreground transition-transform hover:scale-110 hover:bg-destructive/10 hover:text-destructive active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+          onClick={onAddPostIt}
+          aria-label="Adicionar post-it"
+          title="Adicionar post-it"
+          className="mb-1.5 grid h-[46px] w-[46px] place-items-center rounded-control bg-transparent transition-transform hover:-translate-y-1"
         >
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="#ffe27a" stroke="#c99a00" strokeWidth="1.5" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9l7-7V5a2 2 0 0 0-2-2z" />
+            <path d="M14 21v-5a1 1 0 0 1 1-1h5" fill="#ffd23f" />
+          </svg>
         </button>
-
-        <div className="mx-1 h-7 w-px bg-border" aria-hidden="true" />
 
         <button
           type="button"
-          onClick={onAddPostIt}
-          aria-label="Criar post-it"
-          title="Criar post-it"
-          className="grid h-9 w-9 place-items-center rounded-control bg-primary text-primary-foreground shadow-control transition-transform hover:scale-110 active:scale-95"
+          onClick={onClear}
+          disabled={!hasMarks}
+          aria-label="Limpar folha"
+          title="Limpar folha"
+          className="mb-1.5 grid h-9 w-9 place-items-center rounded-control text-muted-foreground transition-transform hover:scale-110 hover:bg-destructive/10 hover:text-destructive active:scale-95 disabled:opacity-40 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
         >
-          <Plus className="h-4 w-4" aria-hidden="true" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -442,7 +433,19 @@ function Dock({
 
 /** Caderno de textos motivadores em página cheia — simula folhear o caderno físico da prova. */
 function MotivatorsBooklet({ theme }: { theme: EssayTheme | null }) {
-  if (!theme?.supporting_texts?.length) return null;
+  if (!theme) return null;
+
+  if (!theme.supporting_texts?.length) {
+    return (
+      <div className="mx-auto max-w-[720px]">
+        <div className="rounded-card bg-card px-5 py-6 shadow-elevated md:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
+          <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal md:text-2xl">{theme.title}</h2>
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{theme.context}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[720px] space-y-4">
@@ -469,38 +472,3 @@ function estimateEditorLines(content: string) {
   return Math.max(1, rows);
 }
 
-/** Faixa colapsável com o tema/proposta — substitui o painel lateral fixo (ver REQ-3, spec `refino-interface-apple-v2`). */
-function ThemeStrip({ theme, open, onToggle }: { theme: EssayTheme; open: boolean; onToggle: () => void }) {
-  return (
-    <div className="border-b border-border/55 bg-card">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 md:px-5"
-      >
-        <div className="min-w-0">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-primary">Tema</p>
-          <p className="truncate text-sm font-semibold text-foreground">{theme.title}</p>
-        </div>
-        <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
-          aria-hidden="true"
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <p className="whitespace-pre-wrap px-4 pb-3 text-sm leading-6 text-muted-foreground md:px-5">{theme.context}</p>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}

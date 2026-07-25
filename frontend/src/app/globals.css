@@ -36,7 +36,7 @@
   --highlight-tint: 253 91% 96%;
 
   /* ---- Semantic layer (components should reference these, not primitives) ---- */
-  --background: 93 20% 96%; /* soft paper tint, not pure white — cards read as raised without borders */
+  --background: 42 26% 93%; /* #f1eee7 — fundo creme exato do mock Apple-inspired (painel interno) */
   --foreground: var(--neutral-800);
   --card: 0 0% 100%;
   --card-foreground: 0 0% 20%;
@@ -66,14 +66,14 @@
   --input: var(--neutral-200);
   --ring: var(--green-500);
 
-  /* ---- Radius scale: bento cards larger, controls tighter ---- */
+  /* ---- Radius scale: Apple-inspired redesign — cards 18px, controls tighter ---- */
   --radius: 8px;
-  --radius-card: 20px;
+  --radius-card: 18px;
   --radius-control: 10px;
 
-  --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04);
+  --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04), 0 12px 28px -18px rgba(30, 30, 40, 0.28);
   --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
-  --shadow-control: 0 10px 24px rgba(47, 158, 68, 0.16);
+  --shadow-control: 0 10px 24px hsl(var(--primary) / 0.16);
 
   /* ---- Motion tokens ---- */
   --duration-micro: 180ms;
@@ -89,38 +89,6 @@
   /* Preferência de "letra" do usuário (ver src/lib/appearance.ts). */
   --ui-font-scale: 1;
   --ui-line-height: 1.55;
-}
-
-.dark {
-  --background: 93 20% 96%;
-  --foreground: var(--neutral-800);
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 20%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 20%;
-  --primary: var(--green-500);
-  --primary-foreground: 0 0% 100%;
-  --secondary: var(--neutral-50);
-  --secondary-foreground: var(--neutral-800);
-  --muted: 220 44% 97%;
-  --muted-foreground: var(--neutral-500);
-  --accent: 134 61% 41%;
-  --accent-foreground: 0 0% 100%;
-  --success: var(--green-600);
-  --success-foreground: 0 0% 100%;
-  --warning: 38 92% 50%;
-  --warning-foreground: 0 0% 100%;
-  --streak: var(--streak-500);
-  --streak-foreground: 0 0% 100%;
-  --info: var(--info-500);
-  --info-foreground: 0 0% 100%;
-  --highlight: var(--highlight-500);
-  --highlight-foreground: 0 0% 100%;
-  --destructive: 354 70% 54%;
-  --destructive-foreground: 0 0% 100%;
-  --border: var(--neutral-200);
-  --input: var(--neutral-200);
-  --ring: var(--green-500);
 }
 
 * {
@@ -330,7 +298,7 @@ li {
   .focus-ring-soft {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 26px rgba(101, 190, 2, 0.16);
+      0 12px 26px hsl(var(--primary) / 0.16);
   }
 
   .website-shell {
@@ -399,7 +367,7 @@ li {
   [class*="shadow-glow"] {
     box-shadow:
       0 0 0 3px hsl(var(--primary) / 0.2),
-      0 12px 28px rgba(101, 190, 2, 0.16) !important;
+      0 12px 28px hsl(var(--primary) / 0.16) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -420,6 +388,16 @@ li {
     .soft-grid {
       background-size: 28px 28px;
     }
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }
 

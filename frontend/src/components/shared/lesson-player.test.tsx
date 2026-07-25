@@ -19,18 +19,15 @@ const BASE_LESSON: Lesson = {
   exercises: [],
 };
 
-describe("LessonPlayer — player de vídeo sem vazamento de marca do YouTube", () => {
-  it("adiciona parâmetros que reduzem o branding do YouTube (sem logo, sem sugestões, cor neutra)", () => {
+describe("LessonPlayer — overlay customizado sobre a IFrame API do YouTube (fiel a AulaPlayer.dc.html)", () => {
+  it("monta o player customizado (botão play + barra de progresso) para URLs do YouTube", () => {
     render(<LessonPlayer lesson={BASE_LESSON} onComplete={vi.fn()} />);
-    const iframe = screen.getByTitle(BASE_LESSON.title) as HTMLIFrameElement;
-    const src = new URL(iframe.src);
-    expect(src.searchParams.get("modestbranding")).toBe("1");
-    expect(src.searchParams.get("rel")).toBe("0");
-    expect(src.searchParams.get("color")).toBe("white");
-    expect(src.searchParams.get("iv_load_policy")).toBe("3");
+    expect(screen.getByTitle(BASE_LESSON.title)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reproduzir" })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Progresso do vídeo" })).toBeInTheDocument();
   });
 
-  it("não mexe em URLs que não são do YouTube", () => {
+  it("não mexe em URLs que não são do YouTube (iframe cru, sem overlay)", () => {
     render(<LessonPlayer lesson={{ ...BASE_LESSON, video_url: "https://player.vimeo.com/video/123" }} onComplete={vi.fn()} />);
     const iframe = screen.getByTitle(BASE_LESSON.title) as HTMLIFrameElement;
     expect(iframe.src).toBe("https://player.vimeo.com/video/123");

@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"],
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     screens: {
@@ -95,7 +94,7 @@ const config: Config = {
       },
       boxShadow: {
         premium: "0 18px 42px rgba(20, 30, 55, 0.10)",
-        glow: "0 0 0 2px rgba(47, 158, 68, 0.22), 0 10px 24px rgba(47, 158, 68, 0.16)",
+        glow: "0 0 0 2px hsl(var(--primary) / 0.22), 0 10px 24px hsl(var(--primary) / 0.16)",
         soft: "var(--shadow-soft)",
         elevated: "var(--shadow-elevated)",
         control: "var(--shadow-control)",

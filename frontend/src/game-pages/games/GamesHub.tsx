@@ -3,27 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarCheck, ChevronRight, Dumbbell, Flame, Shield, Sparkles, Zap } from "lucide-react";
+import { Gauge, Medal, Play, Sparkles, Star, Zap, type LucideIcon } from "lucide-react";
 
 import { getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
 import { masteryForHub, recommendHub } from "@/features/gamification/adaptive";
 import { getRankSnapshot } from "@/features/xp/xp";
-import { symptomHubs } from "@/features/gamification/symptoms";
-import { Button } from "@/components/ui/button";
+import { gamesForHub, symptomHubs } from "@/features/gamification/symptoms";
+import { PageHeader } from "@/components/shared/premium-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGameStore } from "@/stores/game-store";
-import { cn } from "@/utils";
 
-const HUB_TONE = [
-  { tile: "bg-primary/8", icon: "bg-primary/12 text-primary" },
-  { tile: "bg-info-tint/60", icon: "bg-info-tint text-info" },
-  { tile: "bg-streak-tint/60", icon: "bg-streak-tint text-streak" },
-  { tile: "bg-highlight-tint/60", icon: "bg-highlight-tint text-highlight" },
-] as const;
+const HUB_TINTS = ["#8b5cf6", "#0a84ff", "hsl(var(--primary))", "#e6820e", "#e5484d", "#14b8a6", "#8b5cf6"];
 
 export default function GamesHub() {
   const [ready, setReady] = useState(false);
-  const attempts = useGameStore((state) => state.attempts);
   const progress = useGameStore((state) => state.progress);
   const adaptive = useGameStore((state) => state.adaptive);
   const xp = useGameStore((state) => state.xp);
@@ -43,159 +36,124 @@ export default function GamesHub() {
   const games = getEnrichedGames(progress, remoteGames);
   const recommended = getRecommendedGames(progress, remoteGames);
   const overallProgress = games.length ? Math.round(games.reduce((sum, game) => sum + game.progress, 0) / games.length) : 0;
-  const lastAttempt = attempts[0];
-  const continueGame = lastAttempt ? games.find((game) => game.id === lastAttempt.gameId) : undefined;
-  const dailyGame = games.find((game) => game.category === "desafios-diarios") ?? recommended[0];
 
   const recommendation = recommendHub(adaptive, games);
   const recommendedMission = recommendation.missionGameId ? games.find((game) => game.id === recommendation.missionGameId) : undefined;
+  const recommendedHub = symptomHubs.find((hub) => hub.id === recommendation.hub);
+  const recommendedMastery = recommendedHub ? masteryForHub(adaptive, recommendedHub.id) : 0;
+  const primaryGame = recommendedMission ?? recommended[0];
   const rank = getRankSnapshot(xp);
-
-  const primaryGame = continueGame ?? recommendedMission ?? recommended[0];
-  const primaryLabel = continueGame ? "Continuar treino" : "Treinar agora";
-  const showDailyChip = dailyGame && dailyGame.id !== primaryGame?.id;
 
   if (!ready) {
     return <GamesHubSkeleton />;
   }
 
+  const metrics: { icon: LucideIcon; value: string; label: string; tint: string }[] = [
+    { icon: Medal, value: rank.current.name, label: "Rank atual", tint: "#e6820e" },
+    { icon: Star, value: xp.toLocaleString("pt-BR"), label: "XP total", tint: "hsl(var(--primary))" },
+    { icon: Zap, value: `${streak.current} dias`, label: "Sequência", tint: "#e5484d" },
+    { icon: Gauge, value: `${overallProgress}%`, label: "Maestria geral", tint: "#0a84ff" },
+  ];
+
   return (
     <div className="space-y-5 md:space-y-6">
-      <motion.section
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-card bg-primary p-6 text-primary-foreground md:p-8"
-      >
-        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/12" aria-hidden="true" />
-        <div className="relative max-w-2xl">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em]">
-            <Dumbbell className="h-4 w-4" aria-hidden="true" />
-            Academia de escrita
-          </div>
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-primary-foreground/70">
-            {continueGame ? "Retome de onde parou" : "Recomendado pra você agora"}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-            {continueGame ? continueGame.name : recommendedMission?.name ?? "Comece seu primeiro treino"}
-          </h1>
-          <p className="mt-3 max-w-xl text-base leading-7 text-primary-foreground/90">
-            {continueGame ? continueGame.description : recommendation.reason}
-          </p>
+      <PageHeader
+        eyebrow="Treino"
+        title="Micro-desafios para lapidar cada competência da escrita"
+        action={
+          <Link
+            href="/games/simulado"
+            className="flex items-center gap-2 rounded-control border border-border bg-card px-4 py-2.5 text-[14px] font-semibold text-foreground"
+          >
+            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
+            Simulado adaptativo
+          </Link>
+        }
+      />
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-            {primaryGame && (
-              <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90">
-                <Link href={`/games/${primaryGame.category}/${primaryGame.id}`}>
-                  {primaryLabel}
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            )}
-            {showDailyChip && (
-              <Link href={`/games/${dailyGame.category}/${dailyGame.id}`} className="inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline">
-                <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-                Desafio de hoje: {dailyGame.name}
-              </Link>
-            )}
-            <Link href="/games/simulado" className="inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-4 hover:underline">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Simulado adaptativo
-            </Link>
-          </div>
-        </div>
-      </motion.section>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-[auto_1fr_auto_auto]">
-        <div className="flex items-center gap-2.5 rounded-control bg-card px-4 py-3 shadow-soft">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-highlight-tint text-highlight">
-            <Shield className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{rank.current.name}</p>
-            <p className="text-xs text-muted-foreground">rank atual</p>
-          </div>
-        </div>
-
-        <div className="order-first col-span-2 flex items-center gap-3 rounded-control bg-card px-4 py-3 shadow-soft md:order-none md:col-span-1">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-primary/12 text-primary">
-            <Zap className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold tabular-nums">{xp} XP</span>
-              <span className="text-muted-foreground">{rank.next ? `${rank.xpToNext} para ${rank.next.name}` : "rank máximo"}</span>
-            </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full bg-primary" style={{ width: `${rank.progress}%` }} />
+      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+        {metrics.map((metric) => (
+          <div key={metric.label} className="flex items-center gap-3.5 rounded-card bg-card p-4.5 shadow-soft">
+            <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-control" style={{ backgroundColor: `${metric.tint}1a` }}>
+              <metric.icon className="h-5 w-5" style={{ color: metric.tint }} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[22px] font-bold leading-none tabular-nums">{metric.value}</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">{metric.label}</p>
             </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 rounded-control bg-card px-4 py-3 shadow-soft">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-streak-tint text-streak">
-            <Flame className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tabular-nums">{streak.current} dias</p>
-            <p className="text-xs text-muted-foreground">sequência</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 rounded-control bg-card px-4 py-3 shadow-soft">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-info-tint text-info">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tabular-nums">{overallProgress}%</p>
-            <p className="text-xs text-muted-foreground">domínio geral</p>
-          </div>
-        </div>
+        ))}
       </div>
 
+      {primaryGame && recommendedHub ? (
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="flex items-center gap-7 rounded-[18px] bg-[#12351d] p-7 text-white"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-2.5">
+              <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8ee0a3]">Recomendado pra você</span>
+              <span className="rounded-md bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">Desafio de hoje</span>
+            </div>
+            <p className="font-display text-[25px] font-medium leading-tight">{primaryGame.name}</p>
+            <p className="mt-1.5 max-w-[460px] text-[14px] text-white/70">{recommendation.reason}</p>
+            <div className="mt-4.5 flex items-center gap-4">
+              <Link
+                href={`/games/${primaryGame.category}/${primaryGame.id}`}
+                className="flex items-center gap-2 rounded-control bg-white px-6 py-3 text-[14px] font-bold text-[#12351d]"
+              >
+                <Play className="h-4 w-4 fill-current" aria-hidden="true" />
+                Jogar agora
+              </Link>
+              <span className="text-[13px] text-white/60">~4 min · +60 XP</span>
+            </div>
+          </div>
+          <div className="grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full border-[3px] border-dashed border-[#8ee0a3]/40">
+            <div className="text-center">
+              <p className="text-[38px] font-bold leading-none">{recommendedMastery}%</p>
+              <p className="text-[12px] text-white/60">domínio neste hub</p>
+            </div>
+          </div>
+        </motion.div>
+      ) : null}
+
       <section id="sintomas">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold tracking-normal text-foreground md:text-2xl">Ou escolha o que travar sua redação</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Identifique o sintoma que aparece na sua escrita — o treinador monta a sequência de missões para ele.
-          </p>
+        <div className="mb-3.5 flex items-center justify-between">
+          <h2 className="text-[17px] font-semibold">Hubs de treino</h2>
+          <span className="text-[13px] text-muted-foreground">
+            Maestria geral <strong className="text-foreground">{overallProgress}%</strong>
+          </span>
         </div>
-        <div className="fluid-grid gap-3 [--grid-min:17rem]">
+        <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
           {symptomHubs.map((hub, index) => {
             const HubIcon = hub.icon;
             const mastery = masteryForHub(adaptive, hub.id);
-            const tone = HUB_TONE[index % HUB_TONE.length];
+            const tint = HUB_TINTS[index % HUB_TINTS.length];
             const isRecommended = hub.id === recommendation.hub;
             return (
               <Link
                 key={hub.id}
                 href={`/games/treino/${hub.id}`}
-                className={cn(
-                  "group relative flex flex-col gap-3 rounded-control p-4 shadow-soft transition-transform hover:-translate-y-0.5",
-                  tone.tile,
-                  isRecommended && "ring-2 ring-primary",
-                )}
+                className="rounded-card bg-card p-4.5 shadow-soft transition-shadow hover:shadow-elevated"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className={cn("grid h-10 w-10 place-items-center rounded-control", tone.icon)}>
-                    <HubIcon className="h-5 w-5" aria-hidden="true" />
+                <div className="mb-3.5 flex items-center justify-between">
+                  <span className="grid h-[46px] w-[46px] place-items-center rounded-[13px]" style={{ backgroundColor: `${tint}1a` }}>
+                    <HubIcon className="h-[22px] w-[22px]" style={{ color: tint }} aria-hidden="true" />
                   </span>
                   {isRecommended ? (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">Recomendado</span>
-                  ) : (
-                    mastery > 0 && (
-                      <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground shadow-soft">
-                        {mastery}/100
-                      </span>
-                    )
-                  )}
+                    <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">Recomendado</span>
+                  ) : null}
                 </div>
-                <h3 className="text-base font-semibold leading-snug tracking-normal text-foreground">{hub.title}</h3>
-                <p className="text-sm leading-6 text-muted-foreground">{hub.description}</p>
-                <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-primary">
-                  Treinar
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-                </span>
+                <h3 className="text-[15px] font-semibold leading-tight text-foreground">{hub.title}</h3>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">{gamesForHub(games, hub).length} jogos</p>
+                <div className="mt-4 flex items-center gap-2.5">
+                  <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full" style={{ width: `${mastery}%`, backgroundColor: tint }} />
+                  </div>
+                  <span className="min-w-[34px] text-right text-[12px] font-bold tabular-nums text-foreground/70">{mastery}%</span>
+                </div>
               </Link>
             );
           })}
@@ -208,18 +166,14 @@ export default function GamesHub() {
 function GamesHubSkeleton() {
   return (
     <div className="space-y-5 md:space-y-6">
-      <div className="rounded-card bg-primary/80 p-6 md:p-8">
-        <Skeleton className="mb-5 h-6 w-40 bg-white/20" />
-        <Skeleton className="mb-4 h-10 w-full max-w-xl bg-white/20" />
-        <Skeleton className="h-5 w-full max-w-lg bg-white/20" />
-      </div>
-      <div className="grid grid-cols-3 gap-3 md:grid-cols-[auto_1fr_auto_auto]">
+      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-14" />
+          <Skeleton key={index} className="h-16" />
         ))}
       </div>
-      <div className="fluid-grid gap-3 [--grid-min:17rem]">
-        {Array.from({ length: 7 }).map((_, index) => (
+      <Skeleton className="h-40" />
+      <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
           <Skeleton key={index} className="h-40" />
         ))}
       </div>

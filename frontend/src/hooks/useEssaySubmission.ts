@@ -75,8 +75,8 @@ export function useEssaySubmission({
     setEssay(corrected);
     setTitle(corrected.title);
     setContent(corrected.content);
-    setMode("analysis");
-    replaceEssayUrl(corrected.id, "analysis");
+    setMode("resultado");
+    replaceEssayUrl(corrected.id);
     submittingRef.current = false;
     saveRequestRef.current += 1;
     setSubmitting(false);

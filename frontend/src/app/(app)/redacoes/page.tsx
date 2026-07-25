@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Clock3, PenLine, Plus, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowDownUp, ArrowRight, CheckCircle2, Clock3, PenLine, Plus, Search, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
-import { EssayStatusPill } from "@/components/shared/essay-status-pill";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,11 @@ import { cn } from "@/utils";
 
 type StatusFilter = "all" | "draft" | "submitted" | "corrected";
 
-const filters: { id: StatusFilter; label: string }[] = [
+const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: "all", label: "Todas" },
-  { id: "draft", label: "Rascunhos" },
-  { id: "submitted", label: "Em análise" },
   { id: "corrected", label: "Corrigidas" },
+  { id: "submitted", label: "Aguardando" },
+  { id: "draft", label: "Rascunhos" },
 ];
 
 export default function EssayHistoryPage() {
@@ -28,6 +27,7 @@ export default function EssayHistoryPage() {
   const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [sortAsc, setSortAsc] = useState(false);
   const [busyAction, setBusyAction] = useState("");
   const [actionError, setActionError] = useState("");
 
@@ -47,8 +47,28 @@ export default function EssayHistoryPage() {
   }, [loadHistory]);
 
   const essays = useMemo(
-    () => [...(history?.essays ?? [])].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
-    [history],
+    () =>
+      [...(history?.essays ?? [])].sort((a, b) => {
+        const diff = new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        return sortAsc ? -diff : diff;
+      }),
+    [history, sortAsc],
+  );
+
+  const averageScore = useMemo(() => {
+    const scored = essays.filter((essay) => essay.score !== null).map((essay) => essay.score as number);
+    if (!scored.length) return null;
+    return Math.round(scored.reduce((sum, value) => sum + value, 0) / scored.length);
+  }, [essays]);
+
+  const counts = useMemo(
+    () => ({
+      all: essays.length,
+      corrected: essays.filter((essay) => essay.status === "corrected").length,
+      submitted: essays.filter((essay) => essay.status === "submitted").length,
+      draft: essays.filter((essay) => essay.status === "draft").length,
+    }),
+    [essays],
   );
 
   const filteredEssays = useMemo(() => {
@@ -82,50 +102,67 @@ export default function EssayHistoryPage() {
     <div className="text-foreground">
       <PageHeader
         eyebrow="Histórico"
-        title="Redações escritas"
-        description={`${essays.length} ${essays.length === 1 ? "redação" : "redações"} registradas`}
+        title="Minhas redações"
+        description={`${essays.length} ${essays.length === 1 ? "redação" : "redações"}${averageScore ? ` · nota média ${averageScore}` : ""}`}
         action={
           <Button asChild className="w-full md:w-auto">
             <Link href="/redacao">
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Nova redacao
+              Nova redação
             </Link>
           </Button>
         }
       />
 
       <section className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="relative w-full lg:max-w-sm">
+        <div className="relative w-full lg:max-w-[260px]">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
           />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por titulo ou tema"
-            className="pl-9"
+            placeholder="Buscar por tema…"
+            className="rounded-control pl-9 text-[14px]"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setSortAsc((value) => !value)}
+          className="flex items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2.5 text-[14px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowDownUp className="h-4 w-4" aria-hidden="true" />
+          Ordenar
+        </button>
+      </section>
 
-        <div className="flex flex-wrap gap-2">
-          {filters.map((item) => (
+      <div className="mt-5 inline-flex gap-1 rounded-control bg-muted/60 p-1">
+        {FILTERS.map((item) => {
+          const active = filter === item.id;
+          return (
             <button
               key={item.id}
               type="button"
               onClick={() => setFilter(item.id)}
               className={cn(
-                "min-h-11 rounded-control px-3 text-sm font-semibold transition-colors",
-                filter === item.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
+                "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
+                active ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
               )}
             >
               {item.label}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-px text-[11px] font-bold",
+                  active ? "bg-primary/14 text-primary" : "bg-muted-foreground/15 text-muted-foreground",
+                )}
+              >
+                {counts[item.id]}
+              </span>
             </button>
-          ))}
-        </div>
-      </section>
+          );
+        })}
+      </div>
 
       {actionError ? (
         <div className="mt-4 flex gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-semibold text-destructive">
@@ -139,30 +176,28 @@ export default function EssayHistoryPage() {
           <EmptyState title="Seu histórico começa na primeira redação" description="Escreve no editor e ela aparece aqui, com nota e evolução ao longo do tempo." />
         </div>
       ) : (
-        <section className="mt-5 overflow-hidden rounded-card bg-card shadow-soft">
+        <section className="mt-4 flex flex-col gap-3">
           {filteredEssays.length === 0 ? (
-            <div className="px-5 py-10 text-center">
+            <div className="rounded-card bg-card px-5 py-10 text-center shadow-soft">
               <p className="text-base font-semibold">Não achei nenhuma redação com esse filtro.</p>
               <p className="mt-1 text-sm text-muted-foreground">Tenta outro termo de busca ou limpa o filtro.</p>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {filteredEssays.map((essay) => (
-                <EssayRow
-                  key={essay.id}
-                  essay={essay}
-                  busy={busyAction === `delete-${essay.id}`}
-                  onDelete={() =>
-                    runAction(`delete-${essay.id}`, async () => {
-                      if (!window.confirm(essay.status === "draft" ? "Excluir este rascunho?" : "Excluir esta redação e sua correção?"))
-                        return;
-                      await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
-                      await loadHistory();
-                    })
-                  }
-                />
-              ))}
-            </div>
+            filteredEssays.map((essay) => (
+              <EssayRow
+                key={essay.id}
+                essay={essay}
+                busy={busyAction === `delete-${essay.id}`}
+                onDelete={() =>
+                  runAction(`delete-${essay.id}`, async () => {
+                    if (!window.confirm(essay.status === "draft" ? "Excluir este rascunho?" : "Excluir esta redação e sua correção?"))
+                      return;
+                    await apiFetch<{ message: string }>(`/essays/${essay.id}`, { method: "DELETE" });
+                    await loadHistory();
+                  })
+                }
+              />
+            ))
           )}
         </section>
       )}
@@ -170,56 +205,82 @@ export default function EssayHistoryPage() {
   );
 }
 
+const STATUS_META = {
+  corrected: { label: "Corrigida", icon: CheckCircle2, tint: "bg-primary/12 text-primary" },
+  submitted: { label: "Aguardando", icon: Clock3, tint: "bg-streak-tint text-streak" },
+  draft: { label: "Rascunho", icon: PenLine, tint: "bg-muted text-muted-foreground" },
+} as const;
+
 function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDelete: () => void }) {
-  const href = essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`;
+  const href = `/redacao?essayId=${essay.id}`;
+  const status = STATUS_META[essay.status];
+  const StatusIcon = status.icon;
+  const actionLabel = essay.status === "corrected" ? "Ver correção" : essay.status === "draft" ? "Continuar" : "Acompanhar";
+  const comps = essay.correction
+    ? [
+        essay.correction.competency_1,
+        essay.correction.competency_2,
+        essay.correction.competency_3,
+        essay.correction.competency_4,
+        essay.correction.competency_5,
+      ]
+    : [];
 
   return (
-    <article className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-5 transition-colors hover:bg-primary/5 md:px-6">
-      <Link href={href} className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-center gap-3 md:grid-cols-[3rem_minmax(0,1fr)_auto] md:gap-5">
-        <EssayScoreMark status={essay.status} score={essay.score} />
+    <article className="flex items-center gap-5 rounded-card bg-card px-5 py-4.5 shadow-soft">
+      <div
+        className={cn(
+          "grid h-[72px] w-[72px] shrink-0 place-items-center rounded-control",
+          essay.status === "corrected" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+        )}
+      >
+        <span className="text-[22px] font-bold leading-none tabular-nums">{essay.score ?? "—"}</span>
+        <span className="mt-0.5 text-[10px] font-semibold opacity-70">
+          {essay.status === "corrected" ? "/1000" : essay.status === "submitted" ? "em análise" : "não enviada"}
+        </span>
+      </div>
 
-        <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold tracking-normal">{essay.title}</h2>
-          <p className="mt-1 truncate text-sm text-muted-foreground">{essay.theme.title}</p>
-        </div>
-
-        <div className="col-span-2 flex flex-wrap items-center gap-2 pt-2 md:col-span-1 md:justify-end md:pt-0">
-          <EssayStatusPill status={essay.status} className="rounded-full" />
-          <span className="text-sm text-muted-foreground">{formatDate(essay.updated_at)}</span>
-          <span className="hidden text-sm text-muted-foreground sm:inline">{essay.word_count} palavras</span>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+      <Link href={href} className="min-w-0 flex-1">
+        <h2 className="font-display truncate text-[18px] font-medium leading-tight">{essay.title}</h2>
+        <div className="mt-1.5 flex flex-wrap items-center gap-3.5 text-[13px] text-muted-foreground">
+          <span>{formatDate(essay.updated_at)}</span>
+          <span>{essay.word_count} palavras</span>
+          {comps.length ? (
+            <span className="flex items-center gap-[3px]">
+              {comps.map((value, index) => (
+                <span
+                  key={index}
+                  className={cn(
+                    "h-[5px] w-3.5 rounded-full",
+                    value >= 200 ? "bg-primary" : value >= 180 ? "bg-primary/55" : "bg-muted-foreground/30",
+                  )}
+                />
+              ))}
+            </span>
+          ) : null}
         </div>
       </Link>
 
-      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redacao" className="h-11 w-11">
+      <div className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold", status.tint)}>
+        <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
+        {status.label}
+      </div>
+
+      <Link
+        href={href}
+        className={cn(
+          "flex shrink-0 items-center gap-1.5 rounded-control px-3.5 py-2 text-[13px] font-semibold",
+          essay.status === "corrected" ? "bg-primary/10 text-primary" : "bg-muted text-foreground/70",
+        )}
+      >
+        {actionLabel}
+        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+      </Link>
+
+      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redacao" className="h-9 w-9 shrink-0">
         <Trash2 className="h-4 w-4" aria-hidden="true" />
       </Button>
     </article>
-  );
-}
-
-function EssayScoreMark({ status, score }: { status: Essay["status"]; score: number | null }) {
-  if (status === "corrected" && score !== null) {
-    return (
-      <div className="grid h-12 w-12 place-items-center rounded-control bg-primary/12 text-center text-primary">
-        <span className="block text-lg font-bold leading-none tabular-nums">{score}</span>
-        <span className="mt-0.5 block text-[0.6rem] font-semibold text-primary/70">/1000</span>
-      </div>
-    );
-  }
-
-  if (status === "submitted") {
-    return (
-      <div className="grid h-12 w-12 place-items-center rounded-control bg-info-tint text-info">
-        <Clock3 className="h-5 w-5" aria-hidden="true" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid h-12 w-12 place-items-center rounded-control bg-muted text-muted-foreground">
-      <PenLine className="h-5 w-5" aria-hidden="true" />
-    </div>
   );
 }
 

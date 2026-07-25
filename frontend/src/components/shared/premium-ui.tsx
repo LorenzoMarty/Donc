@@ -26,14 +26,14 @@ export function PageHeader({
     >
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start lg:gap-4">
         <div className="min-w-0">
-          <div className="game-chip mb-2 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+          <div className="game-chip mb-2 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-primary">
             {eyebrow}
           </div>
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
+          <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight sm:text-[32px]">
             {title}
           </h1>
           {description && (
-            <p className="mt-2 max-w-[82ch] text-base font-medium leading-6 text-muted-foreground">{description}</p>
+            <p className="mt-2 max-w-[82ch] text-[14px] font-medium leading-6 text-muted-foreground">{description}</p>
           )}
         </div>
         {action && <div className="w-full min-w-0 shrink-0 lg:w-auto">{action}</div>}

@@ -68,14 +68,13 @@ vi.mock("@/services/api", async () => {
   };
 });
 
-describe("LessonsPage — catálogo estilo streaming", () => {
-  it("mostra hero do módulo em andamento, rail de continuar assistindo e de recomendados", async () => {
+describe("LessonsPage — trilhas de aprendizado (fiel a Aulas.dc.html)", () => {
+  it("mostra o card da trilha e a aula recente", async () => {
     render(<LessonsPage />);
 
     expect((await screen.findAllByText("Módulo 1")).length).toBeGreaterThan(0);
-    expect(screen.getByText("Continuar assistindo")).toBeInTheDocument();
-    expect(screen.getByText("Recomendado pra você")).toBeInTheDocument();
+    expect(screen.getByText("Trilhas de aprendizado")).toBeInTheDocument();
+    expect(screen.getByText("Aulas recentes")).toBeInTheDocument();
     expect(screen.getAllByText("Introdução à tese").length).toBeGreaterThan(0);
-    expect(screen.getByText("Conectivos essenciais")).toBeInTheDocument();
   });
 });

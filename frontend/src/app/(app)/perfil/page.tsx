@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Flame, GraduationCap, Medal, Zap } from "lucide-react";
 
+import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
 import { HubMastery } from "@/app/(app)/perfil/components/hub-mastery";
@@ -70,7 +71,7 @@ export default function ProfilePage() {
       />
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <AccountCard />
+        <AccountCard rankName={rank.current.name} />
 
         <div className="fluid-grid gap-4 [--grid-min:13rem]">
           <Metric tone="g" icon={Zap} label="Pontos" value={String(xp)} />
@@ -96,6 +97,8 @@ export default function ProfilePage() {
       <WriterXraySection xray={xray} loading={loading} />
 
       <HubMastery />
+
+      <AccentSettings />
 
       <AppearanceSettings />
     </div>

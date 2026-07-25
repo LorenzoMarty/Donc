@@ -3,41 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, BookOpen, Clock3, FileText, PenLine, Plus, Sparkles, Trash2, Video } from "lucide-react";
-import { toast } from "sonner";
-
-import { motion } from "framer-motion";
+import { Bell, Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
-import { EssayStatusPill } from "@/components/shared/essay-status-pill";
-import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
-import { NumberTicker } from "@/components/shared/motion-system";
-import { Rail } from "@/components/shared/rail";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { apiFetch, type Dashboard, type Essay } from "@/services/api";
+import { apiFetch, type Dashboard, type EssayTheme } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
 import { cn } from "@/utils";
-
-type EssayRow = {
-  id: number;
-  score: number | null;
-  title: string;
-  meta: string;
-  status: Essay["status"];
-  updatedAt: string;
-  href: string;
-};
-
-type LessonRow = {
-  id: number;
-  index: number;
-  title: string;
-  module: string;
-  progressPercent: number;
-  href: string;
-};
 
 type CompetencyRow = {
   competency: string;
@@ -45,24 +17,13 @@ type CompetencyRow = {
   value: number;
 };
 
-type TaskRow = {
-  id: number;
-  title: string;
-  due: string;
-  done: boolean;
-  current: number;
-  target: number;
-  unit: string;
-};
+const THEME_ICONS = [Sparkles, FileText, Video];
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
-  const [challengeTitle, setChallengeTitle] = useState("");
-  const [challengeTarget, setChallengeTarget] = useState("1");
-  const [challengeUnit, setChallengeUnit] = useState("vez");
-  const [challengeBusy, setChallengeBusy] = useState(false);
+  const [themes, setThemes] = useState<EssayTheme[]>([]);
 
   useEffect(() => {
     let ignore = false;
@@ -78,160 +39,61 @@ export default function DashboardPage() {
       }
     }
 
+    async function loadThemes() {
+      try {
+        const items = await apiFetch<EssayTheme[]>("/essays/themes/generate", { method: "POST", body: JSON.stringify({}) });
+        if (!ignore) setThemes(items.slice(0, 3));
+      } catch {
+        // temas sugeridos sao um extra do painel — sem tema, so oculta a secao
+      }
+    }
+
     loadDashboard();
+    loadThemes();
     return () => {
       ignore = true;
     };
   }, []);
 
-  const essays = useMemo(() => buildEssayRows(data), [data]);
-  const lessons = useMemo(() => buildLessonRows(data), [data]);
-  const suggestedLessons = useMemo(() => buildSuggestedLessonRows(data), [data]);
   const competencies = useMemo(() => buildCompetencyRows(data), [data]);
-  const tasks = useMemo(() => buildTaskRows(data), [data]);
-  const latestDraft = essays.find((essay) => essay.status === "draft");
-  const latestEssay = essays[0];
 
   if (error) {
     return <ErrorState title="Dados indisponíveis" description={error} />;
   }
 
   if (!data) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <LoadingCard />
-        <LoadingCard />
-        <LoadingCard />
-        <LoadingCard />
-      </div>
-    );
+    return <LoadingCard />;
   }
 
   const studentName = (user?.name ?? "Aluno").split(" ")[0];
   const average = data.essay_average || 0;
-  const essaysWritten = data.essays_written ?? essays.length;
+  const essaysWritten = data.essays_written ?? 0;
   const completedLessons = data.completed_lessons ?? 0;
   const streak = data.streak_days ?? 0;
-  const bestScore = data.best_essay_score || latestEssay?.score || 0;
-  const studyGoal = data.goals.find((goal) => goal.unit.toLowerCase().includes("min")) ?? data.goals[0];
-  const studyValue = studyGoal ? String(studyGoal.current) : String(Math.round((data.progress_general ?? 0) / 2));
-  const studySuffix = studyGoal?.unit ? ` ${studyGoal.unit}` : " min";
-  const heroHref = latestDraft?.href ?? "/redacao";
-  const heroCopy = buildHeroCopy({ bestScore, latestDraft: Boolean(latestDraft), progress: data.progress_general });
-
-  async function addChallenge() {
-    if (!challengeTitle.trim() || challengeBusy) return;
-    setChallengeBusy(true);
-    try {
-      const goal = await apiFetch<Dashboard["goals"][number]>("/dashboard/challenges", {
-        method: "POST",
-        body: JSON.stringify({
-          title: challengeTitle,
-          target: Number(challengeTarget) || 1,
-          unit: challengeUnit || "vez",
-        }),
-      });
-      setData((current) => (current ? { ...current, goals: [goal, ...current.goals] } : current));
-      setChallengeTitle("");
-      setChallengeTarget("1");
-      setChallengeUnit("vez");
-      toast.success("Desafio semanal criado.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel criar o desafio.");
-    } finally {
-      setChallengeBusy(false);
-    }
-  }
-
-  async function toggleChallenge(task: TaskRow) {
-    if (challengeBusy) return;
-    setChallengeBusy(true);
-    try {
-      const goal = await apiFetch<Dashboard["goals"][number]>(`/dashboard/challenges/${task.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ completed: !task.done }),
-      });
-      setData((current) => (current ? { ...current, goals: current.goals.map((item) => (item.id === goal.id ? goal : item)) } : current));
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel atualizar o desafio.");
-    } finally {
-      setChallengeBusy(false);
-    }
-  }
-
-  async function deleteChallenge(task: TaskRow) {
-    if (challengeBusy) return;
-    setChallengeBusy(true);
-    try {
-      await apiFetch<{ message: string }>(`/dashboard/challenges/${task.id}`, { method: "DELETE" });
-      setData((current) => (current ? { ...current, goals: current.goals.filter((item) => item.id !== task.id) } : current));
-      toast.success("Desafio excluido.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Nao foi possivel excluir o desafio.");
-    } finally {
-      setChallengeBusy(false);
-    }
-  }
+  const bestScore = data.best_essay_score || 0;
+  const heroCopy = buildHeroCopy({ bestScore, progress: data.progress_general });
+  const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const trend = data.trend ?? [];
 
   return (
     <div className="text-foreground">
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(24rem,1fr)]">
-        <div className="relative overflow-hidden rounded-card bg-primary p-8 text-primary-foreground shadow-elevated md:p-10">
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-white/12"
-            animate={{ scale: [1, 1.08, 1], opacity: [0.9, 1, 0.9] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary-foreground/80">Bom dia, {studentName}</p>
-          <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-tight tracking-normal md:text-5xl">{heroCopy.title}</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-primary-foreground/90">{heroCopy.description}</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Button
-              asChild
-              className="h-12 rounded-control bg-white px-5 text-base text-primary hover:bg-white/90"
-            >
-              <Link href={heroHref}>
-                <PenLine className="h-4 w-4" aria-hidden="true" />
-                {latestDraft ? "Continuar redacao" : "Comecar redacao"}
-              </Link>
-            </Button>
-          </div>
+      <section className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[14px] capitalize text-muted-foreground">{today}</p>
+          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {studentName} 👋</h1>
         </div>
-
-        <div className="rounded-card bg-streak-tint p-7">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-lg font-semibold text-muted-foreground">Sequência</p>
-            <span className="rounded-full bg-streak px-3 py-1 text-sm font-bold text-streak-foreground">
-              {streak > 0 ? "+1 hoje" : "comece hoje"}
-            </span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2 text-[14px] font-semibold shadow-soft">
+            <span aria-hidden="true">🔥</span>
+            {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
           </div>
-          <div className="mt-5 flex items-end gap-3">
-            <span className="text-7xl font-bold leading-none tracking-normal tabular-nums">
-              <NumberTicker value={streak} />
-            </span>
-            <span className="mb-2 text-2xl font-semibold text-muted-foreground">dias</span>
-          </div>
-          <p className="mt-3 text-base text-muted-foreground">{streak > 0 ? "Sequência ativa" : "Faça uma atividade hoje para começar"}</p>
-          <div className="mt-7 grid grid-cols-7 gap-2">
-            {buildWeekProgress(streak).map((day, index) => (
-              <motion.div
-                key={day.key}
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05, type: "spring", stiffness: 380, damping: 22 }}
-                className={cn(
-                  "grid aspect-square place-items-center rounded-full border-2 text-sm font-bold",
-                  day.active
-                    ? "border-streak bg-streak text-streak-foreground"
-                    : "border-border bg-transparent text-muted-foreground",
-                  day.today && "ring-2 ring-streak ring-offset-2 ring-offset-streak-tint",
-                )}
-              >
-                {day.label}
-              </motion.div>
-            ))}
-          </div>
+          <button
+            type="button"
+            aria-label="Notificações"
+            className="grid h-10 w-10 place-items-center rounded-control border border-border bg-card text-muted-foreground shadow-soft transition-colors hover:text-primary"
+          >
+            <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
+          </button>
         </div>
       </section>
 
@@ -239,281 +101,168 @@ export default function DashboardPage() {
         <StatCard
           tone="g"
           icon={Sparkles}
-          label="Nota media"
+          label="Nota média"
           value={average ? String(average) : "--"}
           suffix="/1000"
-          detail={bestScore ? `melhor nota ${bestScore}` : "envie uma redacao"}
-          href="/redacoes"
+          delta={bestScore ? `melhor nota ${bestScore}` : "envie uma redação"}
+          up={average > 0}
         />
         <StatCard
           tone="b"
           icon={FileText}
-          label="Redacoes enviadas"
+          label="Redações"
           value={String(essaysWritten)}
-          detail={`${essays.length} na biblioteca`}
-          href="/redacoes"
+          suffix="enviadas"
+          delta={`${essaysWritten} no total`}
+          up={null}
         />
         <StatCard
           tone="a"
           icon={Clock3}
-          label="Tempo de estudo"
-          value={studyValue}
-          suffix={studySuffix}
-          detail={studyGoal ? `${studyGoal.target} ${studyGoal.unit} de meta` : "acompanhe sua rotina"}
-          href="/aulas"
+          label="Sequência"
+          value={String(streak)}
+          suffix="dias"
+          delta={streak > 0 ? "sequência ativa" : "comece hoje"}
+          up={streak > 0}
         />
         <StatCard
           tone="v"
           icon={Video}
-          label="Aulas assistidas"
+          label="Aulas"
           value={String(completedLessons)}
-          detail={`${data.progress_general ?? 0}% do percurso`}
-          href="/aulas"
+          suffix="assistidas"
+          delta={`${data.progress_general ?? 0}% do percurso`}
+          up={completedLessons > 0}
         />
       </section>
 
-      <section className="mt-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-normal">Suas redações</h2>
-          <p className="mt-1 text-base text-muted-foreground">Correções, rascunhos e histórico do mês</p>
-        </div>
-      </section>
-
-      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,1fr)]">
-        <div className="overflow-hidden rounded-card bg-card shadow-soft">
-          {essays.length ? (
-            <div>
-              {essays.map((essay) => (
-                <Link
-                  key={essay.id}
-                  href={essay.href}
-                  className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-4 border-b border-border px-6 py-5 last:border-b-0 hover:bg-primary/5 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto]"
-                >
-                  <ScoreBadge score={essay.score} />
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-bold">{essay.title}</p>
-                    <p className="mt-1 truncate text-base text-muted-foreground">{essay.meta}</p>
-                  </div>
-                  <div className="col-span-2 flex items-center justify-between gap-4 sm:col-span-1 sm:justify-end">
-                    <EssayStatusPill status={essay.status} />
-                    <ArrowRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="grid min-h-64 place-items-center px-6 py-10 text-center">
-              <p className="text-lg font-bold">Você ainda não escreveu nada por aqui.</p>
-              <p className="mt-2 text-base text-muted-foreground">
-                Escreve a primeira redação e eu já aponto exatamente o que ajustar primeiro.
-              </p>
-              <Button asChild className="mt-5">
-                <Link href="/redacao">
-                  <PenLine className="h-4 w-4" aria-hidden="true" />
-                  Escrever redacao
-                </Link>
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="grid min-w-0 gap-4">
-          <LessonsRailCard title="Continuar assistindo" emptyLabel="Você ainda não começou nenhuma aula. Bora resolver isso?" lessons={lessons} />
-          {suggestedLessons.length ? (
-            <LessonsRailCard title="Recomendados pra você" emptyLabel="" lessons={suggestedLessons} />
-          ) : null}
-          <CompetenciesCard items={competencies} />
-          <WeeklyTasksCard
-            tasks={tasks}
-            title={challengeTitle}
-            target={challengeTarget}
-            unit={challengeUnit}
-            busy={challengeBusy}
-            onTitleChange={setChallengeTitle}
-            onTargetChange={setChallengeTarget}
-            onUnitChange={setChallengeUnit}
-            onAdd={addChallenge}
-            onToggle={toggleChallenge}
-            onDelete={deleteChallenge}
-          />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function LessonsRailCard({
-  title,
-  emptyLabel,
-  lessons,
-}: {
-  title: string;
-  emptyLabel: string;
-  lessons: LessonRow[];
-}) {
-  return (
-    <div className="min-w-0 rounded-card bg-card shadow-soft p-6">
-      <Rail
-        title={title}
-        action={
-          <Link href="/aulas" className="text-sm font-semibold text-muted-foreground hover:text-primary">
-            ver todas
-          </Link>
-        }
-      >
-        {lessons.length ? (
-          lessons.map((lesson) => (
-            <LessonPosterCard
-              key={lesson.id}
-              lesson={{
-                id: lesson.id,
-                title: lesson.title,
-                href: lesson.href,
-                moduleLabel: lesson.module,
-                progressPercent: lesson.progressPercent,
-                completed: lesson.progressPercent >= 100,
-                fallbackSeed: lesson.module,
-              }}
-            />
-          ))
-        ) : (
-          <div className="w-full rounded-control border border-dashed border-border p-4 text-sm text-muted-foreground">
-            {emptyLabel}
-            <Button asChild size="sm" className="mt-4 w-full rounded-control">
-              <Link href="/aulas">
-                <BookOpen className="h-4 w-4" aria-hidden="true" />
-                Abrir aulas
-              </Link>
-            </Button>
+      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="rounded-card bg-card p-6 shadow-soft">
+          <div className="mb-1.5 flex items-center justify-between">
+            <h2 className="text-[16px] font-semibold">Evolução das notas</h2>
+            <span className="text-[13px] text-muted-foreground">últimas {trend.length} redações</span>
           </div>
-        )}
-      </Rail>
-    </div>
-  );
-}
+          <EvolutionChart trend={trend} />
+        </div>
 
-function CompetenciesCard({ items }: { items: CompetencyRow[] }) {
-  return (
-    <div className="min-w-0 rounded-card bg-card shadow-soft p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-normal">Competencias ENEM</h2>
-        <Link href="/redacoes" className="text-sm font-semibold text-muted-foreground hover:text-primary">
-          ultima redacao
-        </Link>
-      </div>
-      <div className="mt-5 grid gap-3">
-        {items.map((item) => (
-          <div key={item.competency} className="grid grid-cols-[2.3rem_minmax(0,1fr)_4.8rem] items-center gap-3">
-            <div className="grid h-8 w-8 place-items-center rounded-control bg-primary/10 text-xs font-bold leading-none text-primary">
-              <span>{item.competency.slice(0, 1)}</span>
-              <span>{item.competency.slice(1)}</span>
-            </div>
-            <div className="min-w-0">
-              <div className="mb-1.5 truncate text-base text-foreground/80">{item.label}</div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.value / 200) * 100)}%` }} />
+        <div className="flex flex-col rounded-card bg-card p-6 shadow-soft">
+          <h2 className="mb-4 text-[16px] font-semibold">Competências (ENEM)</h2>
+          <div className="flex-1 space-y-3.5">
+            {competencies.map((item) => (
+              <div key={item.competency}>
+                <div className="mb-1.5 flex justify-between text-[13px]">
+                  <span className="font-medium text-foreground/80">{item.label}</span>
+                  <span className="font-semibold tabular-nums text-foreground">{item.value}/200</span>
+                </div>
+                <div className="h-[7px] overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (item.value / 200) * 100)}%` }} />
+                </div>
               </div>
-            </div>
-            <div className="text-right text-base font-bold">
-              {item.value} <span className="font-medium text-muted-foreground">/200</span>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
+
+      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="flex items-center justify-between gap-6 rounded-card bg-primary p-6 text-primary-foreground shadow-control">
+          <div className="min-w-0 max-w-2xl">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/80">{heroCopy.eyebrow}</p>
+            <p className="font-display mt-1.5 text-[23px] font-medium leading-snug">{heroCopy.title}</p>
+            <p className="mt-1 text-[13px] text-primary-foreground/85">{heroCopy.description}</p>
+          </div>
+          <Link
+            href="/redacao"
+            className="flex h-11 shrink-0 items-center gap-2 rounded-control bg-white px-5 text-[14px] font-bold text-primary transition-colors hover:bg-white/90"
+          >
+            <PenLine className="h-4 w-4" aria-hidden="true" />
+            Continuar
+          </Link>
+        </div>
+
+        <div className="rounded-card bg-card p-6 shadow-soft">
+          <div className="mb-3.5 flex items-center justify-between">
+            <h2 className="text-[16px] font-semibold">Temas sugeridos</h2>
+            <Link href="/redacao" className="text-[13px] font-semibold text-primary hover:underline">
+              Ver todos
+            </Link>
+          </div>
+          <div className="space-y-1">
+            {themes.map((theme, index) => {
+              const Icon = THEME_ICONS[index % THEME_ICONS.length];
+              return (
+                <Link
+                  key={theme.id}
+                  href="/redacao"
+                  className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-b-0 hover:opacity-80"
+                >
+                  <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-control bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-safe truncate text-[14px] font-semibold leading-tight">{theme.title}</p>
+                    <p className="truncate text-[12px] text-muted-foreground">{theme.source}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-function WeeklyTasksCard({
-  tasks,
-  title,
-  target,
-  unit,
-  busy,
-  onTitleChange,
-  onTargetChange,
-  onUnitChange,
-  onAdd,
-  onToggle,
-  onDelete,
-}: {
-  tasks: TaskRow[];
-  title: string;
-  target: string;
-  unit: string;
-  busy: boolean;
-  onTitleChange: (value: string) => void;
-  onTargetChange: (value: string) => void;
-  onUnitChange: (value: string) => void;
-  onAdd: () => void;
-  onToggle: (task: TaskRow) => void;
-  onDelete: (task: TaskRow) => void;
-}) {
-  const pending = tasks.filter((task) => !task.done).length;
+function EvolutionChart({ trend }: { trend: { label: string; score: number }[] }) {
+  if (trend.length < 2) {
+    return <p className="text-sm text-muted-foreground">Envie mais redações para ver sua evolução aqui.</p>;
+  }
+
+  const width = 560;
+  const height = 200;
+  const padX = 28;
+  const top = 34;
+  const bottom = 168;
+  const values = trend.map((point) => point.score);
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 1000);
+  const x = (index: number) => padX + index * ((width - padX * 2) / (trend.length - 1));
+  const y = (value: number) => bottom - ((value - min) / (max - min || 1)) * (bottom - top);
+
+  const points = trend.map((point, index) => ({ x: x(index), y: y(point.score), v: point.score, label: point.label }));
+  const line = points.map((p, i) => `${i ? "L" : "M"}${p.x} ${p.y}`).join(" ");
+  const area = `${line} L${points[points.length - 1].x} ${bottom} L${points[0].x} ${bottom} Z`;
+  const delta = points[points.length - 1].v - points[0].v;
 
   return (
-    <div className="min-w-0 rounded-card bg-card shadow-soft p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold tracking-normal">Desafios da semana</h2>
-        <span className="text-sm font-semibold text-muted-foreground">{pending} pendentes</span>
-      </div>
-
-      <div className="mt-4 grid gap-2 rounded-control border border-dashed border-border p-3">
-        <Input
-          value={title}
-          onChange={(event) => onTitleChange(event.target.value)}
-          placeholder="Ex: escrever 2 redações esta semana"
-          className="h-10"
-        />
-        <div className="grid grid-cols-[5rem_minmax(0,1fr)_auto] gap-2">
-          <Input type="number" min={1} value={target} onChange={(event) => onTargetChange(event.target.value)} className="h-10" />
-          <Input value={unit} onChange={(event) => onUnitChange(event.target.value)} placeholder="unidade" className="h-10" />
-          <Button type="button" size="sm" onClick={onAdd} disabled={busy || !title.trim()} className="h-10">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Criar
-          </Button>
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-3">
-        {tasks.length ? tasks.map((task) => (
-          <div
-            key={task.id}
-            className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-1 rounded-control border border-border px-1.5 py-2 transition-colors hover:border-primary/25 hover:bg-primary/5"
-          >
-            <label className="touch-target grid shrink-0 place-items-center">
-              <input
-                type="checkbox"
-                checked={Boolean(task.done)}
-                onChange={() => onToggle(task)}
-                disabled={busy}
-                aria-label={task.title}
-                className="h-5 w-5 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35"
-              />
-            </label>
-            <div className="min-w-0">
-              <p className={cn("truncate text-base font-semibold", task.done && "text-muted-foreground line-through")}>{task.title}</p>
-              <p className="mt-1 text-xs font-medium text-muted-foreground">{task.due}</p>
-            </div>
-            <Button type="button" size="icon" variant="ghost" onClick={() => onDelete(task)} disabled={busy} aria-label="Excluir desafio" className="h-11 w-11">
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          </div>
-        )) : (
-          <div className="rounded-control border border-dashed border-border p-4 text-sm text-muted-foreground">
-            Sem desafios ainda. Crie um objetivo para a semana acima.
-          </div>
-        )}
-      </div>
-    </div>
+    <>
+      <p className={cn("mb-3.5 text-[13px] font-semibold", delta >= 0 ? "text-primary" : "text-destructive")}>
+        {delta >= 0 ? "↑" : "↓"} {delta >= 0 ? "+" : ""}
+        {delta} pontos no período
+      </p>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" style={{ height }}>
+        <path d={area} fill="hsl(var(--primary) / 0.12)" />
+        <path d={line} fill="none" stroke="hsl(var(--primary))" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        {points.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r={4.5} fill="hsl(var(--card))" stroke="hsl(var(--primary))" strokeWidth={2.5} />
+            <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize={12} fontWeight={600} fill="hsl(var(--foreground))">
+              {p.v}
+            </text>
+            <text x={p.x} y={bottom + 18} textAnchor="middle" fontSize={11} fill="hsl(var(--muted-foreground))">
+              {p.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </>
   );
 }
 
 const STAT_TONE = {
-  g: { icon: "bg-primary/12 text-primary" },
-  b: { icon: "bg-info-tint text-info" },
-  a: { icon: "bg-streak-tint text-streak" },
-  v: { icon: "bg-highlight-tint text-highlight" },
+  g: "bg-primary/12 text-primary",
+  b: "bg-info-tint text-info",
+  a: "bg-streak-tint text-streak",
+  v: "bg-highlight-tint text-highlight",
 } as const;
 
 function StatCard({
@@ -522,77 +271,34 @@ function StatCard({
   label,
   value,
   suffix,
-  detail,
-  href,
+  delta,
+  up,
 }: {
   tone: keyof typeof STAT_TONE;
   icon: LucideIcon;
   label: string;
   value: string;
   suffix?: string;
-  detail: string;
-  href: string;
+  delta: string;
+  up: boolean | null;
 }) {
-  const numericValue = Number(value);
-  const isNumeric = value.trim() !== "" && !Number.isNaN(numericValue);
-
   return (
-    <Link href={href} className="group block">
-      <motion.div
-        whileHover={{ y: -4, scale: 1.012 }}
-        transition={{ type: "spring", stiffness: 340, damping: 26 }}
-        className="rounded-card bg-card p-6 shadow-soft transition-shadow duration-200 group-hover:shadow-elevated"
-      >
-        <div
-          className={cn(
-            "grid h-10 w-10 place-items-center rounded-control transition-transform duration-200 group-hover:scale-110",
-            STAT_TONE[tone].icon,
-          )}
-        >
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </div>
-        <div className="mt-3 text-base font-semibold text-muted-foreground">{label}</div>
-        <div className="mt-1 flex items-end gap-1">
-          <span className="text-4xl font-bold leading-none tracking-normal tabular-nums">
-            {isNumeric ? <NumberTicker value={numericValue} /> : value}
-          </span>
-          {suffix ? <span className="mb-1 text-lg font-semibold text-muted-foreground">{suffix}</span> : null}
-        </div>
-        <p className="mt-3 text-base text-muted-foreground">{detail}</p>
-      </motion.div>
-    </Link>
-  );
-}
-
-function ScoreBadge({ score }: { score: number | null }) {
-  if (score === null) {
-    return (
-      <div className="h-16 w-16 rounded-control border border-dashed border-border bg-muted" />
-    );
-  }
-
-  return (
-    <div className="grid h-16 w-16 place-items-center rounded-control bg-primary/12 text-center text-primary">
-      <span className="block text-xl font-bold leading-none tabular-nums">{score}</span>
-      <span className="mt-1 block text-xs font-semibold text-primary/70">/1000</span>
+    <div className="rounded-card bg-card p-5 shadow-soft">
+      <div className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
+        <span className={cn("grid h-6 w-6 place-items-center rounded-md", STAT_TONE[tone])}>
+          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+        {label}
+      </div>
+      <div className="mt-3 flex items-baseline gap-1.5">
+        <span className="text-[34px] font-semibold leading-none tracking-tight tabular-nums">{value}</span>
+        {suffix ? <span className="text-[14px] text-muted-foreground">{suffix}</span> : null}
+      </div>
+      <p className={cn("mt-2.5 text-[12px] font-semibold", up === true ? "text-primary" : up === false ? "text-destructive" : "text-muted-foreground")}>
+        {delta}
+      </p>
     </div>
   );
-}
-
-
-function buildEssayRows(data: Dashboard | null): EssayRow[] {
-  return [...(data?.recent_essays ?? [])]
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 5)
-    .map((essay) => ({
-      id: essay.id,
-      score: essay.score,
-      title: essay.title,
-      meta: `${essay.theme_title} - ${essay.word_count} palavras - ${formatRelativeDate(essay.updated_at)}`,
-      status: essay.status,
-      updatedAt: essay.updated_at,
-      href: essay.status === "corrected" ? `/redacao?essayId=${essay.id}&view=analise` : `/redacao?essayId=${essay.id}`,
-    }));
 }
 
 function buildCompetencyRows(data: Dashboard | null): CompetencyRow[] {
@@ -600,10 +306,10 @@ function buildCompetencyRows(data: Dashboard | null): CompetencyRow[] {
     ? data.mastery_map
     : [
         { competency: "C1", label: "Norma culta", value: 0 },
-        { competency: "C2", label: "Compreensao do tema", value: 0 },
-        { competency: "C3", label: "Argumentacao", value: 0 },
-        { competency: "C4", label: "Coesao e coerencia", value: 0 },
-        { competency: "C5", label: "Proposta de intervencao", value: 0 },
+        { competency: "C2", label: "Compreensão", value: 0 },
+        { competency: "C3", label: "Argumentação", value: 0 },
+        { competency: "C4", label: "Coesão", value: 0 },
+        { competency: "C5", label: "Intervenção", value: 0 },
       ];
 
   return source.map((item, index) => ({
@@ -616,90 +322,25 @@ function buildCompetencyRows(data: Dashboard | null): CompetencyRow[] {
 function normalizeCompetencyLabel(competency: string, label: string) {
   const labels: Record<string, string> = {
     C1: "Norma culta",
-    C2: "Compreensao do tema",
-    C3: "Argumentacao",
-    C4: "Coesao e coerencia",
-    C5: "Proposta de intervencao",
+    C2: "Compreensão",
+    C3: "Argumentação",
+    C4: "Coesão",
+    C5: "Intervenção",
   };
   return labels[competency] ?? label;
 }
 
-function buildTaskRows(data: Dashboard | null): TaskRow[] {
-  return (data?.goals ?? []).slice(0, 6).map((goal) => ({
-    id: goal.id,
-    title: goal.title,
-    due: goal.completed ? "concluido" : `${goal.current}/${goal.target} ${goal.unit}`,
-    done: goal.completed,
-    current: goal.current,
-    target: goal.target,
-    unit: goal.unit,
-  }));
-}
-
-function buildLessonRows(data: Dashboard | null): LessonRow[] {
-  return (data?.recent_lessons ?? []).slice(0, 8).map((lesson, index) => ({
-    id: lesson.id,
-    index: index + 1,
-    title: lesson.title,
-    module: lesson.module,
-    progressPercent: lesson.progress_percent,
-    href: `/aulas/${lesson.id}`,
-  }));
-}
-
-function buildSuggestedLessonRows(data: Dashboard | null): LessonRow[] {
-  return (data?.suggested_lessons ?? []).slice(0, 8).map((lesson, index) => ({
-    id: lesson.id,
-    index: index + 1,
-    title: lesson.title,
-    module: lesson.module,
-    progressPercent: lesson.progress_percent,
-    href: `/aulas/${lesson.id}`,
-  }));
-}
-
-function buildHeroCopy({ bestScore, latestDraft, progress }: { bestScore: number; latestDraft: boolean; progress: number }) {
-  if (latestDraft) {
-    return {
-      title: "Seu rascunho está esperando.",
-      description: "Retome o texto, ajuste a tese e envie para correção quando estiver pronto.",
-    };
-  }
+function buildHeroCopy({ bestScore, progress }: { bestScore: number; progress: number }) {
   if (bestScore) {
     return {
+      eyebrow: "Continue de onde parou",
       title: "Hora de superar seu melhor.",
       description: `Sua redação mais alta chegou a ${bestScore}/1000. Escreva outra para subir as competências mais fracas.`,
     };
   }
   return {
+    eyebrow: "Comece por aqui",
     title: "Comece pela primeira redação.",
-    description: `Seu percurso está em ${progress}%. Escreva uma redação para receber nota por competência e saber o que treinar.`,
+    description: `Seu percurso está em ${progress}%. Escreva uma redação para receber nota por competência.`,
   };
-}
-
-function buildWeekProgress(streak: number) {
-  const labels = ["S", "T", "Q", "Q", "S", "S", "D"];
-  const todayIndex = (new Date().getDay() + 6) % 7;
-  const firstActive = Math.max(0, todayIndex - Math.max(0, streak - 1));
-  return labels.map((label, index) => ({
-    key: `${label}-${index}`,
-    label,
-    today: index === todayIndex,
-    active: streak > 0 && index >= firstActive && index <= todayIndex,
-  }));
-}
-
-function formatRelativeDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "recentemente";
-
-  const diffMs = date.getTime() - Date.now();
-  const diffMinutes = Math.round(diffMs / 60000);
-  const diffHours = Math.round(diffMinutes / 60);
-  const diffDays = Math.round(diffHours / 24);
-  const formatter = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
-
-  if (Math.abs(diffMinutes) < 60) return formatter.format(diffMinutes, "minute");
-  if (Math.abs(diffHours) < 24) return formatter.format(diffHours, "hour");
-  return formatter.format(diffDays, "day");
 }
