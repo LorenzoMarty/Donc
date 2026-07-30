@@ -93,28 +93,42 @@ Híbrido "Raio-X do escritor" + conta. Diagnóstico: notas por competência + ev
 ### Estrutura do Backend
 Padrão **Routes → Services → Repositories**:
 - `src/routes/` — routers FastAPI (auth, dashboard, lessons, exercises, essays, exams, ai, admin, games)
-- `src/services/` — lógica de negócio (EssayService, AuthService, AIService, GameService, DashboardService, ExamService, ExerciseService, LessonService, RankService, StreakService, `ai_telemetry`, `seed`)
+- `src/services/` — lógica de negócio (EssayService, AuthService, AIService, GameService, DashboardService, ExamService, ExerciseService, LessonService, ProgressionService, StreakService, `ai_telemetry`, `seed`)
 - `src/repositories/` — queries SQLAlchemy; `src/models/` — ORM; `src/schemas/` — Pydantic
 
 Todas respostas usam `ApiEnvelope<T>`: `{ success, message, data, error? }` via `src/schemas/common.py`.
 
 ### Pipeline de IA (Correção de Redações)
-Assíncrona via Celery:
+Assíncrona via Celery (fallback síncrono no próprio request quando Redis/worker não respondem —
+ver `enqueue_correct_essay()` em `src/queues/jobs.py`):
 1. Frontend faz polling em `/api/v1/essays/{id}/job`
-2. Task `correct_essay` chama `CorrectionOrchestratorWorkflow.correct()`
-3. 5 agentes em sequência: `ThesisAgent` → `GrammarAgent` → `RepertoireAgent` → `ENEMCompetencyAgent` → `EssayCorrectionAgent`
-4. Todos estendem `AgnoAgentRunner` (`src/agents/base.py`), framework `agno` + OpenAI
-5. Sem `OPENAI_API_KEY` ou falha do agno → valor `fallback` configurado (degradação graciosa)
+2. Task `correct_essay` chama `CorrectionOrchestratorWorkflow.correct()` (`src/workflows/correction.py`)
+3. Pipeline v2 real: `PreProcessor` → `EliminationGateAgent` (corte precoce em nota zero) → 6
+   analisadores em paralelo via `ThreadPoolExecutor` (`ThemeAnalyzerAgent`, `ThesisAnalyzerAgent`,
+   `RepertoireAnalyzerV2Agent`, `ArgumentationAnalyzerAgent`, `InterventionAnalyzerAgent`,
+   `GrammarAnalyzerV2Agent`) → `CompetencyScorer` → `ScoreAuditor` → `OutputMapper`
+4. Agentes estendem `AgnoAgentRunner` (`src/agents/base.py`), framework `agno` + OpenAI
+5. Sem `OPENAI_API_KEY` ou falha do agno → `FallbackCorrectionProvider` (`src/agents/correction/fallback.py`,
+   degradação graciosa)
 6. Após correção, `update_learning_profile()` atualiza `StudentLearningProfile`
 
+> Nota histórica: um pipeline v1 (`ThesisAgent`/`GrammarAgent`/`RepertoireAgent`/`ENEMCompetencyAgent`/
+> `EssayCorrectionAgent`, orquestrado por `agents/orchestrator`) existiu antes do v2 e foi removido do
+> código por estar sem uso — se você encontrar essa descrição em documentação antiga, está desatualizada.
+
 ### Observabilidade de IA (Langfuse tracing)
-Langfuse SDK v4 + OpenLIT (integração nativa do agno), inicializado por `configure_ai_telemetry()` em `telemetry/langfuse.py`. Sem `LANGFUSE_*`, vira no-op. Cada correção = um trace (`essay_correction`) com os 5 agentes como spans-filhos; PII protegida (`capture_message_content=False` + `mask`). Detalhes (gotcha do `tracer=`, propagação OTel, flush): registros `2026-06-10-langfuse-tracing` e `2026-06-11-enxugamento-claude-md` no Obsidian.
+Langfuse SDK v4 + OpenLIT (integração nativa do agno), inicializado por `configure_ai_telemetry()` em `telemetry/langfuse.py`. Sem `LANGFUSE_*`, vira no-op. Cada correção = um trace (`essay_correction`) com os agentes do pipeline v2 como spans-filhos; PII protegida (`capture_message_content=False` + `mask`). Detalhes (gotcha do `tracer=`, propagação OTel, flush): registros `2026-06-10-langfuse-tracing` e `2026-06-11-enxugamento-claude-md` no Obsidian.
 
 ### Custos de IA (telemetria)
 Cada chamada grava `AIInteractionLog` (`ai_interaction_logs`) com `model`, tokens e `cost_micro_usd` (micro-USD; tabela de preços em `src/config/ai_pricing.py`, fonte única `build_interaction_log()` em `services/ai_telemetry.py`). Conversão R$ via PTAX/BCB (`services/fx_rate.py`). Painel admin agrega por workflow/modelo/dia/top-users. Detalhes: registro `2026-06-10-custos-ia-brl` no Obsidian.
 
 ### Jogos (Client-side)
 XP, streaks e progresso **totalmente client-side** — `useGameStore` (Zustand, localStorage `donk.games.v1`). Definições estáticas em `src/games/`; campo `engine` roteia no `GameSession` (13 engines: quiz, timed-rush, classify, order, fill-blank, sequence, text-surgery, essay-collapse, artificiality, argument-escalation, duel, corrector, survival).
+
+> XP/nível de **conta** (`User.xp`/`User.level` no backend) foi removido temporariamente (rollback de
+> gamificação, não substituição) — ver seção seguinte. O XP client-side do `useGameStore` **não foi
+> afetado** por essa remoção; são sistemas independentes. `POST /games/complete` continua existindo
+> (o front chama fire-and-forget) mas não persiste mais XP de conta, só confirma o recebimento.
 
 Fonte cognitiva principal: `useGameStore.adaptive` (EWMA por **7 hubs**; registro `HUBS` em `features/gamification/symptoms.ts`, núcleo puro em `adaptive.ts`). Engines emitem via `recordCognitiveOutcome`; nota qualitativa S/A/B/C (nunca "% de acerto"). Navegação hub-first: "Atividades" → `GamesHub` (7 hubs) → `games/treino/[symptomId]`. `useGameStore.skills` é legado (só compat). IA de reescrita: `POST /ai/evaluate-rewrite` (fallback heurístico).
 
@@ -134,5 +148,17 @@ Detalhe completo (engines, payloads, contrato de missão, como criar missão nov
 | `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` / `LANGFUSE_HOST` | Tracing Langfuse (off se ausentes) |
 | `USD_BRL_FALLBACK_RATE` / `USD_BRL_RATE_TTL_HOURS` | Cotação USD→BRL quando PTAX falha (padrão `5.40`) / TTL do cache (padrão `6`) |
 
+### XP e progressão de conta (removidos temporariamente)
+`User.xp`/`User.level`, `LearningReward` e `RankService`/dificuldade adaptativa por xp foram removidos
+do backend (models, schemas, services, rotas) — rollback de gamificação, não substituição por outro
+sistema. Redações, simulados, exercícios, aulas e jogos continuam funcionando normalmente sem XP;
+exercícios/atividades não são mais filtrados por dificuldade (todas aparecem). Isso **não afeta** o XP
+client-side de `useGameStore` (seção "Jogos" acima), que é um sistema separado e continua ativo.
+
 ### Migrações do Banco
-`Base.metadata.create_all()` no startup cria tabelas; Alembic gerencia schema em produção. `_ensure_paragraph_count_columns()` no startup é guarda manual da coluna `paragraph_count`.
+Alembic é a **única** estratégia de evolução de schema em produção (`alembic upgrade head`, rodado
+explicitamente no deploy — precisa ser um passo real do pipeline). `Base.metadata.create_all()` no
+startup (`src/main.py`) só roda fora de produção (`settings.environment != "production"`), como
+conveniência para dev local/testes sem passo de migração manual. Não há mais guarda manual de coluna
+(`_ensure_runtime_columns`) — todo o schema, incluindo os campos de `ai_interaction_logs` que só
+existiam via guarda, está coberto por migrations (`alembic/versions/0001` a `0009`).

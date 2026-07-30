@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, load_only, selectinload
 from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
 from src.middlewares.errors import AppError
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentExam, RecentLesson, TrendPoint
-from src.services.rank_service import allowed_difficulties_for_user
 
 
 class DashboardService:
@@ -77,13 +76,10 @@ class DashboardService:
         suggested_lessons = self._suggest_lessons(completed_lesson_ids=completed_lesson_ids, progress_by_lesson=progress_by_lesson)
 
         answered_ids = {answer.exercise_id for answer in answers}
-        allowed_difficulties = set(allowed_difficulties_for_user(user)) if user else set()
         pending_exercises = [
             PendingExercise(id=exercise.id, skill=exercise.skill, difficulty=exercise.difficulty.value)
             for exercise in self.db.scalars(
-                select(Exercise)
-                .where(~Exercise.id.in_(answered_ids), Exercise.difficulty.in_(allowed_difficulties))
-                .limit(5)
+                select(Exercise).where(~Exercise.id.in_(answered_ids)).limit(5)
             )
         ]
 
@@ -142,8 +138,6 @@ class DashboardService:
             TrendPoint(label="Semana 3", score=780),
         ]
 
-        user_xp = user.xp if user else 0
-        user_level = user.level if user else 1
         streak = user.streak_days if user else 0
 
         return DashboardResponse(
@@ -151,8 +145,6 @@ class DashboardService:
             essay_average=essay_average,
             best_essay_score=best_essay_score,
             streak_days=streak,
-            xp=user_xp,
-            level=user_level,
             completed_lessons=completed_lessons,
             correct_exercises_rate=correct_rate,
             essays_written=len(essays),

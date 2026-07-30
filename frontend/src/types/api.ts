@@ -65,8 +65,6 @@ export type User = {
   name: string;
   email: string;
   role: "student" | "admin";
-  xp: number;
-  level: number;
   streak_days: number;
   daily_goal_minutes: number;
   created_at: string;
@@ -80,13 +78,6 @@ export type LearningProfile = {
   has_data: boolean;
 };
 
-export type RankSummary = {
-  name: string;
-  xp: number;
-  next_rank_xp: number | null;
-  exercise_difficulty: string;
-};
-
 export type TokenResponse = {
   access_token: string;
   token_type: string;
@@ -98,8 +89,6 @@ export type Dashboard = {
   essay_average: number;
   best_essay_score: number;
   streak_days: number;
-  xp: number;
-  level: number;
   completed_lessons: number;
   correct_exercises_rate: number;
   essays_written: number;
@@ -124,17 +113,10 @@ export type Lesson = {
   pdf_url: string | null;
   duration_minutes: number;
   order: number;
-  xp_reward: number;
   progress: {
     progress_percent: number;
     last_position_seconds: number;
     completed: boolean;
-    xp_earned?: number;
-    reward_events?: string[];
-    total_xp?: number | null;
-    rank_name?: string | null;
-    next_rank_xp?: number | null;
-    exercise_difficulty?: string | null;
   };
   exercises: { id: number; statement: string; skill: string; difficulty: string }[];
   locked?: boolean;
@@ -149,8 +131,6 @@ export type Module = {
   order: number;
   progress_percent: number;
   completed: boolean;
-  xp_reward: number;
-  user_rank: RankSummary | null;
   lessons: Lesson[];
   items?: ModuleItem[];
   locked?: boolean;
@@ -320,8 +300,6 @@ export type AdminUser = {
   name: string;
   email: string;
   role: string;
-  xp: number;
-  level: number;
   streak_days: number;
   daily_goal_minutes: number;
   essays: number;

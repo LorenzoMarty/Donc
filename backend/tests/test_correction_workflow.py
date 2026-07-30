@@ -206,5 +206,4 @@ def test_games_complete_endpoint(client):
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
-    assert data["data"]["xp_earned"] == 50
-    assert data["data"]["total_xp"] >= 50
+    assert data["data"]["game_id"] == "concordancia-nominal"

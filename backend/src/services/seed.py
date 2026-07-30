@@ -466,8 +466,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         email="aluno@demo.com",
         hashed_password=get_password_hash("12345678"),
         role=UserRole.STUDENT,
-        xp=680,
-        level=3,
         streak_days=9,
         daily_goal_minutes=45,
     )
@@ -476,8 +474,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         email="admin@demo.com",
         hashed_password=get_password_hash("12345678"),
         role=UserRole.ADMIN,
-        xp=1200,
-        level=5,
         streak_days=18,
         daily_goal_minutes=60,
     )

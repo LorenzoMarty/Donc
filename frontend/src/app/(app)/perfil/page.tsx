@@ -14,15 +14,12 @@ import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { buildWriterXray, type WriterXray } from "@/features/profile/writer-xray";
-import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type Dashboard, type EssayHistory, type LearningProfile } from "@/services/api";
 import { cn } from "@/utils";
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const xp = user?.xp ?? 0;
-  const rank = getRankSnapshot(xp);
 
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [learningProfile, setLearningProfile] = useState<LearningProfile | null>(null);
@@ -71,11 +68,11 @@ export default function ProfilePage() {
       />
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <AccountCard rankName={rank.current.name} />
+        <AccountCard />
 
         <div className="fluid-grid gap-4 [--grid-min:13rem]">
-          <Metric tone="g" icon={Zap} label="Pontos" value={String(xp)} />
-          <Metric tone="v" icon={GraduationCap} label="Rank" value={rank.current.name} />
+          <Metric tone="g" icon={GraduationCap} label="Redações corrigidas" value={String(dashboard?.essays_written ?? 0)} />
+          <Metric tone="v" icon={Medal} label="Média das redações" value={String(dashboard?.essay_average ?? 0)} />
           <Metric tone="a" icon={Flame} label="Sequência" value={`${user?.streak_days ?? 0} dias`} />
         </div>
       </section>
@@ -83,15 +80,13 @@ export default function ProfilePage() {
       <Surface>
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Próximo rank</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal">Seu progresso de rank</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {rank.next ? `${rank.xpToNext} XP até ${rank.next.name}` : "Rank máximo alcançado"}
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Progresso geral</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-normal">Seu avanço no curso</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{dashboard?.progress_general ?? 0}% concluído</p>
           </div>
-          <Medal className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <Zap className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
         </div>
-        <Progress value={rank.progress} className="h-3" />
+        <Progress value={dashboard?.progress_general ?? 0} className="h-3" />
       </Surface>
 
       <WriterXraySection xray={xray} loading={loading} />

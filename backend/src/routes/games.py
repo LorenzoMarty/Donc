@@ -37,9 +37,7 @@ class GameCompleteRequest(BaseModel):
 
 
 class GameCompleteResponse(BaseModel):
-    xp_earned: int
-    total_xp: int
-    level: int
+    game_id: str
 
 
 class GameProgressUpsertRequest(BaseModel):
@@ -94,19 +92,11 @@ def published_games(
 @router.post("/complete", response_model=ApiResponse[GameCompleteResponse])
 def complete_game(
     payload: GameCompleteRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
 ) -> ApiResponse[GameCompleteResponse]:
-    current_user.xp = (current_user.xp or 0) + payload.xp_earned
-    current_user.level = max(current_user.level or 1, current_user.xp // 350 + 1)
-    db.commit()
-    return success_response(
-        GameCompleteResponse(
-            xp_earned=payload.xp_earned,
-            total_xp=current_user.xp,
-            level=current_user.level,
-        )
-    )
+    # A progressao de XP local (useGameStore) e a fonte de verdade no cliente; este
+    # endpoint so confirma o recebimento da sincronizacao "fire-and-forget".
+    return success_response(GameCompleteResponse(game_id=payload.game_id))
 
 
 @router.get("/progress", response_model=ApiResponse[list[GameProgressRead]])

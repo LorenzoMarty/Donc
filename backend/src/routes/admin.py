@@ -338,8 +338,6 @@ def update_user(
         AdminUserService(db).update_student(
             user_id=user_id,
             name=payload.name,
-            xp=payload.xp,
-            level=payload.level,
             streak_days=payload.streak_days,
             daily_goal_minutes=payload.daily_goal_minutes,
         ),

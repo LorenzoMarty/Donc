@@ -22,8 +22,7 @@ def run_correct_essay_job(job_id: str) -> dict:
         if not user:
             raise AppError("Usuario do job nao encontrado.", status_code=404, code="user_not_found")
         essay_id = int(job.request_payload.get("essay_id"))
-        award_points = bool(job.request_payload.get("award_points", True))
-        essay = EssayService(db).submit_for_correction(essay_id=essay_id, user=user, job_id=job.id, award_points=award_points)
+        essay = EssayService(db).submit_for_correction(essay_id=essay_id, user=user, job_id=job.id)
         result = EssayRead.model_validate(essay).model_dump(mode="json")
         jobs.mark_completed(job, result)
         return result

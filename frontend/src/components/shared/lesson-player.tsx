@@ -30,7 +30,6 @@ export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplet
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <Badge variant="outline">{lesson.duration_minutes} min</Badge>
-              <Badge variant="secondary">{lesson.xp_reward ?? 25}xp</Badge>
             </div>
             <h1 className="font-display text-3xl font-medium leading-tight tracking-tight">{lesson.title}</h1>
           </div>

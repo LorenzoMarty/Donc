@@ -29,8 +29,6 @@ function formatDate(iso: string | null, now: number | null) {
 
 type UserDraft = {
   name: string;
-  xp: string;
-  level: string;
   streak_days: string;
   daily_goal_minutes: string;
 };
@@ -38,8 +36,6 @@ type UserDraft = {
 function draftFromUser(user: AdminUser): UserDraft {
   return {
     name: user.name,
-    xp: String(user.xp),
-    level: String(user.level),
     streak_days: String(user.streak_days),
     daily_goal_minutes: String(user.daily_goal_minutes),
   };
@@ -107,8 +103,6 @@ export function UsersTab({
         method: "PATCH",
         body: JSON.stringify({
           name: draft.name,
-          xp: Number(draft.xp),
-          level: Number(draft.level),
           streak_days: Number(draft.streak_days),
           daily_goal_minutes: Number(draft.daily_goal_minutes),
         }),
@@ -167,8 +161,6 @@ export function UsersTab({
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">E-mail</th>
                 <th className="px-4 py-3 font-medium">Papel</th>
-                <th className="px-4 py-3 font-medium tabular-nums">XP</th>
-                <th className="px-4 py-3 font-medium tabular-nums">Nivel</th>
                 <th className="px-4 py-3 font-medium tabular-nums">Sequencia</th>
                 <th className="px-4 py-3 font-medium tabular-nums">Meta</th>
                 <th className="px-4 py-3 font-medium tabular-nums">Redacoes</th>
@@ -197,8 +189,6 @@ export function UsersTab({
                           {user.role}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 tabular-nums">{user.xp}</td>
-                      <td className="px-4 py-3 tabular-nums">{user.level}</td>
                       <td className="px-4 py-3 tabular-nums">{user.streak_days}d</td>
                       <td className="px-4 py-3 tabular-nums">{user.daily_goal_minutes}min</td>
                       <td className="px-4 py-3 tabular-nums">{user.essays}</td>
@@ -243,7 +233,7 @@ export function UsersTab({
                     </tr>
                     {isEditing && draft ? (
                       <tr key={`${user.id}-editor`} className="border-b bg-muted/25">
-                        <td colSpan={11} className="px-4 py-4">
+                        <td colSpan={9} className="px-4 py-4">
                           <StudentEditor
                             draft={draft}
                             busy={busyId === user.id}
@@ -262,7 +252,7 @@ export function UsersTab({
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                     Nenhum usuário encontrado com esse filtro.
                   </td>
                 </tr>
@@ -388,15 +378,9 @@ function StudentEditor({
   onSave: () => void;
 }) {
   return (
-    <div className="collapse-in grid gap-3 lg:grid-cols-[minmax(12rem,1.4fr)_repeat(4,minmax(6rem,0.8fr))_auto] lg:items-end">
+    <div className="collapse-in grid gap-3 lg:grid-cols-[minmax(12rem,1.4fr)_repeat(2,minmax(6rem,0.8fr))_auto] lg:items-end">
       <Field label="Nome">
         <Input value={draft.name} onChange={(event) => onChange({ ...draft, name: event.target.value })} disabled={busy} />
-      </Field>
-      <Field label="XP">
-        <Input type="number" min={0} value={draft.xp} onChange={(event) => onChange({ ...draft, xp: event.target.value })} disabled={busy} />
-      </Field>
-      <Field label="Nivel">
-        <Input type="number" min={1} value={draft.level} onChange={(event) => onChange({ ...draft, level: event.target.value })} disabled={busy} />
       </Field>
       <Field label="Sequencia">
         <Input

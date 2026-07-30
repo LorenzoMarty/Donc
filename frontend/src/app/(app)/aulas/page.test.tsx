@@ -14,7 +14,6 @@ const LESSON = {
   pdf_url: null,
   duration_minutes: 8,
   order: 1,
-  xp_reward: 50,
   progress: { progress_percent: 0, last_position_seconds: 0, completed: false },
   exercises: [],
 };
@@ -29,8 +28,6 @@ const MODULES: Module[] = [
     order: 1,
     progress_percent: 40,
     completed: false,
-    xp_reward: 75,
-    user_rank: null,
     lessons: [LESSON],
   },
 ];
@@ -40,8 +37,6 @@ const DASHBOARD: Dashboard = {
   essay_average: 700,
   best_essay_score: 800,
   streak_days: 3,
-  xp: 500,
-  level: 2,
   completed_lessons: 1,
   correct_exercises_rate: 70,
   essays_written: 2,

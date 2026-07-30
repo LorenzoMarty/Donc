@@ -23,7 +23,6 @@ import {
 import { BrandLink } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
 import { useGameStore } from "@/stores/game-store";
 import { cn, initials } from "@/utils";
@@ -50,7 +49,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const rankName = getRankSnapshot(user?.xp ?? 0).current.name;
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
 
   const navItems = user?.role === "admin" ? [...workspaceNav, { href: "/admin", label: "Administração", icon: ShieldCheck }] : workspaceNav;
@@ -101,7 +99,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         items={navItems}
         pathname={pathname}
         userName={user?.name ?? "Aluno"}
-        userRankName={rankName}
         onLogout={logout}
         onWheel={scrollContentArea}
       />
@@ -110,7 +107,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         open={drawerOpen}
         pathname={pathname}
         userName={user?.name ?? "Aluno"}
-        userRankName={rankName}
         onClose={() => setDrawerOpen(false)}
         onLogout={logout}
       />
@@ -154,14 +150,12 @@ function DesktopSidebar({
   items,
   pathname,
   userName,
-  userRankName,
   onLogout,
   onWheel,
 }: {
   items: WorkspaceNavItem[];
   pathname: string;
   userName: string;
-  userRankName: string;
   onLogout: () => void;
   onWheel: (event: WheelEvent<HTMLElement>) => void;
 }) {
@@ -201,7 +195,6 @@ function DesktopSidebar({
             </span>
             <span className="min-w-0 leading-tight">
               <span className="block truncate text-[13px]">{userName}</span>
-              <span className="block truncate text-[11px] font-medium text-muted-foreground">Rank {userRankName}</span>
             </span>
           </Link>
           <button
@@ -223,7 +216,6 @@ function MobileDrawer({
   open,
   pathname,
   userName,
-  userRankName,
   onClose,
   onLogout,
 }: {
@@ -231,7 +223,6 @@ function MobileDrawer({
   open: boolean;
   pathname: string;
   userName: string;
-  userRankName: string;
   onClose: () => void;
   onLogout: () => void;
 }) {
@@ -266,7 +257,6 @@ function MobileDrawer({
                 </span>
                 <span className="min-w-0 leading-tight">
                   <span className="block text-safe font-semibold">{userName}</span>
-                  <span className="block text-sm text-muted-foreground">Rank {userRankName}</span>
                 </span>
               </Link>
               <Button variant="outline" onClick={onLogout}>

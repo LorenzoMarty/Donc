@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.memory.profile import get_learning_profile_payload
 from src.middlewares.errors import AppError
-from src.models import AIInteractionLog, User
+from src.models import AIInteractionLog, Essay, User
 from src.models.events import UserEvent
 from src.repositories.users import UserRepository
 from src.schemas.admin import (
@@ -30,34 +30,16 @@ class AdminUserService:
 
     def users_list(self) -> list[AdminUserRead]:
         users = self.users.list_users()
-        # aggregate tokens per user
-        token_rows = self.db.execute(
-            select(AIInteractionLog.user_id, func.sum(AIInteractionLog.token_count).label("total"))
-            .where(AIInteractionLog.user_id.is_not(None))
-            .group_by(AIInteractionLog.user_id)
-        ).all()
-        token_by_user = {row.user_id: int(row.total or 0) for row in token_rows}
-
-        # aggregate event count per user
-        event_rows = self.db.execute(
-            select(UserEvent.user_id, func.count(UserEvent.id).label("cnt"))
-            .where(UserEvent.user_id.is_not(None))
-            .group_by(UserEvent.user_id)
-        ).all()
-        events_by_user = {row.user_id: int(row.cnt or 0) for row in event_rows}
-
+        if not users:
+            return []
+        user_ids = [user.id for user in users]
+        essays_by_user = self._essays_count_by_user(user_ids)
+        token_by_user = self._tokens_by_user(user_ids)
+        events_by_user = self._events_by_user(user_ids)
         return [
-            AdminUserRead(
-                id=user.id,
-                name=user.name,
-                email=user.email,
-                role=user.role.value,
-                xp=user.xp,
-                level=user.level,
-                streak_days=user.streak_days,
-                daily_goal_minutes=user.daily_goal_minutes,
-                essays=len(user.essays),
-                last_seen_at=user.last_seen_at,
+            self._to_admin_user_read(
+                user,
+                essays=essays_by_user.get(user.id, 0),
                 total_tokens=token_by_user.get(user.id, 0),
                 event_count=events_by_user.get(user.id, 0),
             )
@@ -69,24 +51,18 @@ class AdminUserService:
         *,
         user_id: int,
         name: str | None = None,
-        xp: int | None = None,
-        level: int | None = None,
         streak_days: int | None = None,
         daily_goal_minutes: int | None = None,
     ) -> AdminUserRead:
         user = self._get_student(user_id)
         if name is not None:
             user.name = name.strip()
-        if xp is not None:
-            user.xp = xp
-        if level is not None:
-            user.level = level
         if streak_days is not None:
             user.streak_days = streak_days
         if daily_goal_minutes is not None:
             user.daily_goal_minutes = daily_goal_minutes
         self.db.commit()
-        return next(item for item in self.users_list() if item.id == user.id)
+        return self._summary_for_user(user)
 
     def delete_student(self, *, user_id: int, admin_user_id: int) -> None:
         if user_id == admin_user_id:
@@ -100,9 +76,7 @@ class AdminUserService:
         if not user:
             raise AppError("Usuario nao encontrado.", status_code=404, code="user_not_found")
 
-        summary = next((item for item in self.users_list() if item.id == user_id), None)
-        if summary is None:
-            raise AppError("Usuario nao encontrado.", status_code=404, code="user_not_found")
+        summary = self._summary_for_user(user)
 
         dashboard = DashboardService(self.db).get(user_id)
         progress = AdminUserProgress(
@@ -216,3 +190,47 @@ class AdminUserService:
         if user.role.value != "student":
             raise AppError("Esta acao so pode ser aplicada a alunos.", status_code=409, code="admin_user_protected")
         return user
+
+    def _summary_for_user(self, user: User) -> AdminUserRead:
+        essays = self._essays_count_by_user([user.id]).get(user.id, 0)
+        tokens = self._tokens_by_user([user.id]).get(user.id, 0)
+        events = self._events_by_user([user.id]).get(user.id, 0)
+        return self._to_admin_user_read(user, essays=essays, total_tokens=tokens, event_count=events)
+
+    def _to_admin_user_read(self, user: User, *, essays: int, total_tokens: int, event_count: int) -> AdminUserRead:
+        return AdminUserRead(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role.value,
+            streak_days=user.streak_days,
+            daily_goal_minutes=user.daily_goal_minutes,
+            essays=essays,
+            last_seen_at=user.last_seen_at,
+            total_tokens=total_tokens,
+            event_count=event_count,
+        )
+
+    def _essays_count_by_user(self, user_ids: list[int]) -> dict[int, int]:
+        rows = self.db.execute(
+            select(Essay.user_id, func.count(Essay.id).label("total"))
+            .where(Essay.user_id.in_(user_ids))
+            .group_by(Essay.user_id)
+        ).all()
+        return {row.user_id: int(row.total or 0) for row in rows}
+
+    def _tokens_by_user(self, user_ids: list[int]) -> dict[int, int]:
+        rows = self.db.execute(
+            select(AIInteractionLog.user_id, func.sum(AIInteractionLog.token_count).label("total"))
+            .where(AIInteractionLog.user_id.in_(user_ids))
+            .group_by(AIInteractionLog.user_id)
+        ).all()
+        return {row.user_id: int(row.total or 0) for row in rows}
+
+    def _events_by_user(self, user_ids: list[int]) -> dict[int, int]:
+        rows = self.db.execute(
+            select(UserEvent.user_id, func.count(UserEvent.id).label("cnt"))
+            .where(UserEvent.user_id.in_(user_ids))
+            .group_by(UserEvent.user_id)
+        ).all()
+        return {row.user_id: int(row.cnt or 0) for row in rows}

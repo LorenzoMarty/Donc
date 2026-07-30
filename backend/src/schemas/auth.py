@@ -34,8 +34,6 @@ class UserRead(BaseModel):
     name: str
     email: EmailStr
     role: UserRole
-    xp: int
-    level: int
     streak_days: int
     daily_goal_minutes: int
     created_at: datetime

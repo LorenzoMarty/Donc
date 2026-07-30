@@ -110,7 +110,7 @@ class EssayService:
         self.db.commit()
         return self.repo.get_essay(essay.id, user_id)  # type: ignore[return-value]
 
-    def submit_for_correction(self, *, essay_id: int, user: User, job_id: str | None = None, award_points: bool = True) -> Essay:
+    def submit_for_correction(self, *, essay_id: int, user: User, job_id: str | None = None) -> Essay:
         essay = self.repo.get_essay(essay_id, user.id)
         if not essay:
             raise AppError("Redacao nao encontrada.", status_code=404, code="essay_not_found")
@@ -120,7 +120,7 @@ class EssayService:
         essay = self.repo.get_essay(essay_id, user.id) or essay
         self._require_edit_before_new_correction(essay)
 
-        return self._apply_correction(essay=essay, user=user, award_points=award_points, job_id=job_id)
+        return self._apply_correction(essay=essay, user=user, job_id=job_id)
 
     def duplicate(self, *, essay_id: int, user_id: int) -> Essay:
         essay = self.get(essay_id=essay_id, user_id=user_id)
@@ -171,9 +171,9 @@ class EssayService:
         self.db.commit()
 
     def reprocess(self, *, essay_id: int, user: User, job_id: str | None = None) -> Essay:
-        return self.submit_for_correction(essay_id=essay_id, user=user, job_id=job_id, award_points=False)
+        return self.submit_for_correction(essay_id=essay_id, user=user, job_id=job_id)
 
-    def _apply_correction(self, *, essay: Essay, user: User, award_points: bool, job_id: str | None = None) -> Essay:
+    def _apply_correction(self, *, essay: Essay, user: User, job_id: str | None = None) -> Essay:
         result = self.ai.correct(
             theme=essay.theme.title,
             context=essay.theme.context,
@@ -237,9 +237,6 @@ class EssayService:
         essay.line_count = self._line_count(essay.content)
         essay.paragraph_count = self._paragraph_count(essay.content)
         essay.submitted_at = submitted_at
-        if award_points:
-            user.xp += 120
-            user.level = max(user.level, user.xp // 250 + 1)
         if not correction.id:
             self.db.add(correction)
         self.db.commit()

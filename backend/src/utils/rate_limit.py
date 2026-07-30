@@ -1,9 +1,12 @@
 ﻿from __future__ import annotations
 
+import logging
 import time
 
 from src.config.settings import settings
 from src.middlewares.errors import AppError
+
+logger = logging.getLogger("src.utils.rate_limit")
 
 _memory_counters: dict[str, tuple[int, int]] = {}
 
@@ -28,7 +31,11 @@ def _increment_redis(key: str) -> int | None:
         if count == 1:
             client.expire(key, 70)
         return count
-    except Exception:
+    except Exception as exc:
+        # Fallback e o contador em memoria do processo (nao compartilhado entre
+        # replicas) — se o Redis cair, o rate limit de IA fica menos efetivo, e isso
+        # precisa aparecer nos logs em vez de falhar silenciosamente.
+        logger.warning("Falha ao incrementar rate limit no Redis (key=%s, caindo para contador em memoria): %s: %s", key, type(exc).__name__, exc)
         return None
 
 
