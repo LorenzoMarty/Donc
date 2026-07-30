@@ -14,7 +14,6 @@ const BASE_LESSON: Lesson = {
   pdf_url: null,
   duration_minutes: 8,
   order: 1,
-  xp_reward: 50,
   progress: { progress_percent: 0, last_position_seconds: 0, completed: false },
   exercises: [],
 };

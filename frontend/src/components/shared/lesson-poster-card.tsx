@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, Clock, Lock, PlayCircle, Zap } from "lucide-react";
+import { CheckCircle2, Clock, Lock, PlayCircle } from "lucide-react";
 
 import { cn } from "@/utils";
 
@@ -16,7 +16,6 @@ export type LessonPosterInfo = {
   progressPercent?: number;
   completed?: boolean;
   durationMinutes?: number;
-  xpReward?: number;
   moduleLabel?: string;
   /** Semente pro fallback ilustrado quando não há imagem real (título/módulo, algo estável). */
   fallbackSeed?: string;
@@ -104,20 +103,12 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
         ) : null}
       </div>
 
-      {(lesson.durationMinutes != null || lesson.xpReward != null) && (
+      {lesson.durationMinutes != null && (
         <div className="flex items-center gap-2 p-2.5 text-xs text-muted-foreground">
-          {lesson.durationMinutes != null ? (
-            <span className="inline-flex items-center gap-1">
-              <Clock className="h-3 w-3" aria-hidden="true" />
-              {lesson.durationMinutes} min
-            </span>
-          ) : null}
-          {lesson.xpReward != null ? (
-            <span className="ml-auto inline-flex items-center gap-1">
-              <Zap className="h-3 w-3 text-primary" aria-hidden="true" />
-              {lesson.xpReward}xp
-            </span>
-          ) : null}
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" aria-hidden="true" />
+            {lesson.durationMinutes} min
+          </span>
         </div>
       )}
     </>

@@ -34,8 +34,6 @@ class ExamService:
         normalized = {skill: int(performance.get(skill, 0) / total * 100) for skill, total in totals.items()}
         finished_at = datetime.now(UTC)
         attempt = MockExamAttempt(user_id=user.id, exam_id=exam.id, answers=answers, score=score, finished_at=finished_at)
-        user.xp += 80 + correct * 10
-        user.level = max(user.level, user.xp // 250 + 1)
         self.db.add(attempt)
         self.db.commit()
         self.db.refresh(attempt)

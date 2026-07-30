@@ -69,8 +69,6 @@ class DashboardResponse(BaseModel):
     essay_average: int
     best_essay_score: int
     streak_days: int
-    xp: int
-    level: int
     completed_lessons: int
     correct_exercises_rate: int
     essays_written: int

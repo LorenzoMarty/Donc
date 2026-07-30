@@ -31,8 +31,6 @@ def test_admin_can_update_student_controls(client):
             f"/api/v1/admin/users/{student['id']}",
             json={
                 "name": "Aluno Controlado",
-                "xp": 1234,
-                "level": 8,
                 "streak_days": 6,
                 "daily_goal_minutes": 75,
             },
@@ -41,8 +39,6 @@ def test_admin_can_update_student_controls(client):
         assert response.status_code == 200
         updated = api_data(response)
         assert updated["name"] == "Aluno Controlado"
-        assert updated["xp"] == 1234
-        assert updated["level"] == 8
         assert updated["streak_days"] == 6
         assert updated["daily_goal_minutes"] == 75
     finally:
@@ -56,7 +52,7 @@ def test_admin_user_is_protected_from_student_controls(client):
         assert users_response.status_code == 200
         admin = next(user for user in api_data(users_response) if user["role"] == "admin")
 
-        response = client.patch(f"/api/v1/admin/users/{admin['id']}", json={"xp": 10})
+        response = client.patch(f"/api/v1/admin/users/{admin['id']}", json={"streak_days": 10})
 
         assert response.status_code == 409
         assert response.json()["success"] is False

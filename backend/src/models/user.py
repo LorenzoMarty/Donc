@@ -21,8 +21,6 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), default=UserRole.STUDENT, nullable=False)
-    xp: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    level: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     streak_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

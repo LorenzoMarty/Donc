@@ -23,6 +23,4 @@ class ExerciseSubmitResponse(BaseModel):
     correct_answer: str
     is_correct: bool
     explanation: str
-    next_difficulty: str
-    xp_earned: int
 

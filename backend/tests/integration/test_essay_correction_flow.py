@@ -26,16 +26,6 @@ ESSAY_CONTENT = (
 EDITED_ESSAY_CONTENT = ESSAY_CONTENT + "\n\nEdicao adicional para permitir reprocessamento apos a correcao inicial."
 
 
-def _get_demo_user() -> User:
-    db = SessionLocal()
-    try:
-        user = db.scalar(select(User).where(User.email == "aluno@demo.com"))
-        assert user is not None
-        return user
-    finally:
-        db.close()
-
-
 def _create_theme_and_essay() -> tuple[int, int]:
     """Cria um tema e uma redação (com conteúdo suficiente) para o aluno demo. Retorna (theme_id, essay_id)."""
     db = SessionLocal()
@@ -66,10 +56,6 @@ def _create_theme_and_essay() -> tuple[int, int]:
         db.close()
 
 
-def _user_xp() -> int:
-    return _get_demo_user().xp
-
-
 @pytest.fixture()
 def _force_synchronous_celery(monkeypatch: pytest.MonkeyPatch) -> None:
     """Garante execução síncrona do job (sem depender de Redis/worker disponíveis no ambiente de teste)."""
@@ -91,7 +77,6 @@ def test_submit_essay_enqueues_job_and_returns_expected_shape(client: TestClient
 
 def test_submit_then_poll_job_reaches_completed_with_corrected_essay(client: TestClient, _force_synchronous_celery: None) -> None:
     _, essay_id = _create_theme_and_essay()
-    xp_before = _user_xp()
 
     submit_res = client.post(f"/api/v1/essays/{essay_id}/submit")
     assert submit_res.status_code == 200
@@ -121,19 +106,13 @@ def test_submit_then_poll_job_reaches_completed_with_corrected_essay(client: Tes
     )
     assert correction["feedback"]
 
-    # Submit awards points (award_points=True por padrão).
-    assert _user_xp() == xp_before + 120
 
-
-def test_reprocess_uses_same_async_flow_without_awarding_points_twice(client: TestClient, _force_synchronous_celery: None) -> None:
+def test_reprocess_uses_same_async_flow_and_creates_new_job(client: TestClient, _force_synchronous_celery: None) -> None:
     _, essay_id = _create_theme_and_essay()
-    xp_before = _user_xp()
 
     submit_res = client.post(f"/api/v1/essays/{essay_id}/submit")
     assert submit_res.status_code == 200
     first_job_id = submit_res.json()["data"]["job_id"]
-    xp_after_submit = _user_xp()
-    assert xp_after_submit == xp_before + 120
 
     # Redação corrigida fica travada para autosave; é preciso abrir nova versão (rascunho) antes
     # de editar e reprocessar (regra de negócio: edit_required).
@@ -160,6 +139,3 @@ def test_reprocess_uses_same_async_flow_without_awarding_points_twice(client: Te
     assert poll_body["job_id"] == second_job_id
     assert poll_body["status"] == "completed"
     assert poll_body["essay"]["content"] == EDITED_ESSAY_CONTENT
-
-    # Reprocess usa award_points=False -> XP não deve aumentar de novo.
-    assert _user_xp() == xp_after_submit

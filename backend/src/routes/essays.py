@@ -139,7 +139,7 @@ def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user
     job = AIJobService(db).create(
         user_id=current_user.id,
         kind="essay_correction",
-        request_payload={"essay_id": essay_id, "award_points": False},
+        request_payload={"essay_id": essay_id},
     )
     enqueued = enqueue_correct_essay(job.id)
     if not enqueued:

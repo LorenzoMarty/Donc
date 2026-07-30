@@ -9,8 +9,6 @@ function fakeDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
     essay_average: 0,
     best_essay_score: 0,
     streak_days: 0,
-    xp: 0,
-    level: 1,
     completed_lessons: 0,
     correct_exercises_rate: 0,
     essays_written: 0,

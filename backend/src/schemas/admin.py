@@ -21,8 +21,6 @@ class AdminUserRead(BaseModel):
     name: str
     email: str
     role: str
-    xp: int
-    level: int
     streak_days: int
     daily_goal_minutes: int
     essays: int
@@ -33,8 +31,6 @@ class AdminUserRead(BaseModel):
 
 class AdminUserUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=120)
-    xp: int | None = Field(default=None, ge=0, le=1_000_000)
-    level: int | None = Field(default=None, ge=1, le=500)
     streak_days: int | None = Field(default=None, ge=0, le=3650)
     daily_goal_minutes: int | None = Field(default=None, ge=10, le=480)
 

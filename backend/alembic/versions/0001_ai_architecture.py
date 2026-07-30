@@ -17,7 +17,7 @@ except Exception:  # pragma: no cover
 
 
 revision: str = "0001_ai_architecture"
-down_revision: str | None = None
+down_revision: str | None = "0000_baseline_schema"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import json
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -9,6 +10,9 @@ from sqlalchemy.orm import Session
 from src.config.settings import settings
 from src.middlewares.errors import AppError
 from src.models import AIJob
+
+
+logger = logging.getLogger("src.queues.jobs")
 
 
 class AIJobService:
@@ -64,9 +68,15 @@ class AIJobService:
 
             client = redis.from_url(settings.redis_url, socket_connect_timeout=0.2, socket_timeout=0.2)
             client.publish(f"ai-job:{job.id}", json.dumps(job_payload(job)))
-        except Exception:
-            # Publicação é best-effort: se o Redis estiver fora, apenas ignora.
-            pass
+        except Exception as exc:
+            # Publicação é best-effort: se o Redis estiver fora, o job continua
+            # funcionando via polling — mas a falha precisa ficar visível nos logs.
+            logger.warning(
+                "Falha ao publicar job %s no Redis (pub/sub degradado, seguindo via polling): %s: %s",
+                job.id,
+                type(exc).__name__,
+                exc,
+            )
 
 
 def job_payload(job: AIJob) -> dict:
@@ -85,9 +95,16 @@ def enqueue_correct_essay(job_id: str) -> bool:
         from src.queues.tasks import correct_essay_task
 
         if correct_essay_task is None:
+            logger.warning("Celery indisponivel para job %s (correct_essay_task=None); caindo para execucao sincrona.", job_id)
             return False
         redis.from_url(settings.redis_url, socket_connect_timeout=0.2, socket_timeout=0.2).ping()
         correct_essay_task.delay(job_id)
         return True
-    except Exception:
+    except Exception as exc:
+        logger.warning(
+            "Falha ao enfileirar job %s no Celery/Redis (caindo para execucao sincrona): %s: %s",
+            job_id,
+            type(exc).__name__,
+            exc,
+        )
         return False
