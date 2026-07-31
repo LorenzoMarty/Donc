@@ -1,7 +1,7 @@
 """Close schema drift: ai_interaction_logs columns that were only ever created by
 the manual startup guard (`_ensure_runtime_columns` in src/main.py), never by Alembic.
 
-Revision ID: 0008_close_ai_interaction_logs_drift
+Revision ID: 0008_ai_logs_drift
 Revises: 0007_remove_course_entity
 Create Date: 2026-07-29
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0008_close_ai_interaction_logs_drift"
+revision: str = "0008_ai_logs_drift"
 down_revision: str | None = "0007_remove_course_entity"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
