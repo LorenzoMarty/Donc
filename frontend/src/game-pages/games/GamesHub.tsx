@@ -73,7 +73,7 @@ export default function GamesHub() {
 
       <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         {metrics.map((metric) => (
-          <div key={metric.label} className="flex items-center gap-3.5 rounded-card bg-card p-4.5 shadow-soft">
+          <div key={metric.label} className="flex items-center gap-3.5 rounded-card bg-card p-5 shadow-soft">
             <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-control" style={{ backgroundColor: `${metric.tint}1a` }}>
               <metric.icon className="h-5 w-5" style={{ color: metric.tint }} aria-hidden="true" />
             </span>
@@ -126,7 +126,7 @@ export default function GamesHub() {
             Maestria geral <strong className="text-foreground">{overallProgress}%</strong>
           </span>
         </div>
-        <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3.5">
           {symptomHubs.map((hub, index) => {
             const HubIcon = hub.icon;
             const mastery = masteryForHub(adaptive, hub.id);
@@ -136,7 +136,7 @@ export default function GamesHub() {
               <Link
                 key={hub.id}
                 href={`/games/treino/${hub.id}`}
-                className="rounded-card bg-card p-4.5 shadow-soft transition-shadow hover:shadow-elevated"
+                className="rounded-card bg-card p-5 shadow-soft transition-shadow hover:shadow-elevated"
               >
                 <div className="mb-3.5 flex items-center justify-between">
                   <span className="grid h-[46px] w-[46px] place-items-center rounded-[13px]" style={{ backgroundColor: `${tint}1a` }}>
