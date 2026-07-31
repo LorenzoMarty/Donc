@@ -5,7 +5,7 @@ temporary rollback of gamification, not a replacement — no new columns are
 introduced.
 
 Revision ID: 0009_remove_user_progression
-Revises: 0008_close_ai_interaction_logs_drift
+Revises: 0008_ai_logs_drift
 Create Date: 2026-07-29
 """
 
@@ -16,7 +16,7 @@ from alembic import op
 
 
 revision: str = "0009_remove_user_progression"
-down_revision: str | None = "0008_close_ai_interaction_logs_drift"
+down_revision: str | None = "0008_ai_logs_drift"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
