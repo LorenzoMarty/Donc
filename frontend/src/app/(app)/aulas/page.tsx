@@ -71,7 +71,7 @@ export default function LessonsPage() {
 
       <div>
         <h2 className="mb-3.5 text-[17px] font-semibold">Trilhas de aprendizado</h2>
-        <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5">
           {modules.map((module, index) => (
             <TrackCard key={module.id} module={module} icon={TRACK_ICONS[index % TRACK_ICONS.length]} />
           ))}
@@ -82,7 +82,7 @@ export default function LessonsPage() {
         <div className="mb-3.5 flex items-center justify-between">
           <h2 className="text-[17px] font-semibold">Aulas recentes</h2>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
           {recentLessons.map((lesson) => {
             const lessonModule = modules.find((item) => item.lessons?.some((l) => l.id === lesson.id));
             return (
@@ -144,7 +144,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
 function TrackCard({ module, icon: Icon }: { module: Module; icon: LucideIcon }) {
   const tint = module.color || "hsl(var(--primary))";
   return (
-    <div className="rounded-card bg-card p-4.5 shadow-soft">
+    <div className="rounded-card bg-card p-5 shadow-soft">
       <div className="grid h-11 w-11 place-items-center rounded-control" style={{ backgroundColor: tintBackground(tint) }}>
         <Icon className="h-5 w-5" style={{ color: tint }} aria-hidden="true" />
       </div>
