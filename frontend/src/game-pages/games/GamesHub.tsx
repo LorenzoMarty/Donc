@@ -94,7 +94,7 @@ export default function GamesHub() {
         >
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2.5">
-              <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8ee0a3]">Recomendado pra você</span>
+              <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Recomendado pra você</span>
               <span className="rounded-md bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">Desafio de hoje</span>
             </div>
             <p className="font-display text-[25px] font-medium leading-tight">{primaryGame.name}</p>
@@ -110,7 +110,7 @@ export default function GamesHub() {
               <span className="text-[13px] text-white/60">~4 min · +60 XP</span>
             </div>
           </div>
-          <div className="grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full border-[3px] border-dashed border-[#8ee0a3]/40">
+          <div className="grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full border-[3px] border-dashed border-[hsl(var(--accent-300)/40%)]">
             <div className="text-center">
               <p className="text-[38px] font-bold leading-none">{recommendedMastery}%</p>
               <p className="text-[12px] text-white/60">domínio neste hub</p>

@@ -106,7 +106,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
   return (
     <div className="flex items-center gap-8 rounded-[20px] bg-[hsl(var(--accent-900))] p-7 text-white">
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8ee0a3]">Continue assistindo</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Continue assistindo</p>
         <p className="font-display mt-1.5 text-[27px] font-medium leading-tight">{lesson.title}</p>
         <p className="text-[14px] text-white/70">
           {module.title} · Aula {lesson.order} de {module.lessons.length}
