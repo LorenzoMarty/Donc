@@ -27,6 +27,11 @@ def run_correct_essay_job(job_id: str) -> dict:
         jobs.mark_completed(job, result)
         return result
     except Exception as exc:
+        # Se a excecao veio de uma escrita que falhou (ex.: IntegrityError nao tratada em algum
+        # ponto), a sessao fica com uma transacao pendente de rollback — sem isso, o db.get()
+        # abaixo tambem falha (PendingRollbackError) e o job nunca e marcado como failed, ficando
+        # preso em "running" para sempre.
+        db.rollback()
         job = db.get(AIJob, job_id)
         if job:
             error = exc.message if isinstance(exc, AppError) else str(exc)

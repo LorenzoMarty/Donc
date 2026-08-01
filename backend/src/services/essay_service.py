@@ -2,6 +2,7 @@
 from collections import Counter
 from datetime import UTC, datetime
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.agents.theme_generator import ThemeGeneratorAgent
@@ -239,7 +240,20 @@ class EssayService:
         essay.submitted_at = submitted_at
         if not correction.id:
             self.db.add(correction)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # Duas requisicoes de correcao concorrentes para a mesma redacao (ex.: duplo submit)
+            # podem colidir na constraint unica de EssayCorrection.essay_id. A sessao fica suja
+            # apos o IntegrityError — precisa de rollback explicito antes de qualquer outra
+            # operacao, senao o proximo db.get()/commit() nesta mesma sessao (ex.: o caller
+            # marcando o job como failed) tambem falha com PendingRollbackError.
+            self.db.rollback()
+            raise AppError(
+                "Esta redacao ja foi corrigida por outra requisicao em andamento.",
+                status_code=409,
+                code="correction_already_in_progress",
+            ) from None
         return self.repo.get_essay(essay.id, user.id)  # type: ignore[return-value]
 
     def history(self, user_id: int) -> EssayHistoryResponse:

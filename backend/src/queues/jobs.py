@@ -39,6 +39,21 @@ class AIJobService:
             raise AppError("Job de IA nao encontrado.", status_code=404, code="ai_job_not_found")
         return job
 
+    def get_active_for_essay(self, *, user_id: int, essay_id: int, kind: str = "essay_correction") -> AIJob | None:
+        # Idempotencia: evita criar um job novo (e rodar o pipeline de IA de novo) se ja existe
+        # um em andamento para a mesma redacao — ver nota sobre corrida em submits concorrentes.
+        active_statuses = ("queued", "running")
+        jobs = (
+            self.db.query(AIJob)
+            .filter(AIJob.user_id == user_id, AIJob.kind == kind, AIJob.status.in_(active_statuses))
+            .order_by(AIJob.created_at.desc())
+            .all()
+        )
+        return next(
+            (job for job in jobs if int((job.request_payload or {}).get("essay_id", -1)) == essay_id),
+            None,
+        )
+
     def mark_running(self, job: AIJob) -> None:
         job.status = "running"
         self.db.commit()

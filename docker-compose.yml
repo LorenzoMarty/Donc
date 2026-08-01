@@ -31,18 +31,20 @@ services:
     build:
       context: ./backend
     container_name: enem-redacao-api
+    # backend/.env fornece OPENAI_API_KEY/OPENAI_MODEL/OPENAI_EMBEDDING_MODEL/LANGFUSE_* (nao
+    # listados em `environment:` abaixo, entao vem daqui). Antes o compose so lia o .env da raiz
+    # do projeto (auto-load do Docker Compose), que fica sem essas chaves — a correcao de redacao
+    # rodava sempre em fallback heuristico, sem erro visivel. As chaves docker-especificas (rede
+    # interna, secrets) continuam explicitas abaixo, sempre com prioridade sobre o env_file.
+    env_file:
+      - ./backend/.env
     environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://enem:enem@db:5432/enem_redacao}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-secret-before-production}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.5}
-      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       AI_SYNC_TIMEOUT_SECONDS: ${AI_SYNC_TIMEOUT_SECONDS:-45}
       ENABLE_AGENTOS: ${ENABLE_AGENTOS:-false}
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
-      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       PORT: ${PORT:-8000}
     ports:
@@ -58,18 +60,15 @@ services:
       context: ./backend
     container_name: enem-redacao-worker
     command: celery -A src.queues.celery_app:celery_app worker --loglevel=INFO
+    env_file:
+      - ./backend/.env
     environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://enem:enem@db:5432/enem_redacao}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-secret-before-production}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.5}
-      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       AI_SYNC_TIMEOUT_SECONDS: ${AI_SYNC_TIMEOUT_SECONDS:-45}
       ENABLE_AGENTOS: ${ENABLE_AGENTOS:-false}
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
-      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
     depends_on:
       db:
