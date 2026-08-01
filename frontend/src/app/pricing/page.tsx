@@ -23,7 +23,7 @@ const plans = [
     name: "Mentoria",
     price: "R$ 129",
     description: "Para preparação intensiva.",
-    features: ["Tudo do Avançado", "Simulados guiados", "Planos semanais"],
+    features: ["Tudo do Avançado", "Mentoria personalizada", "Planos semanais"],
   },
 ];
 

@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
-  ClipboardList,
   FilePenLine,
   Gamepad2,
   History,
@@ -38,7 +37,6 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/redacao", label: "Redação", icon: FilePenLine },
   { href: "/redacoes", label: "Redações", icon: History },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
-  { href: "/simulados", label: "Simulados", icon: ClipboardList },
   { href: "/games", label: "Atividades", icon: Gamepad2 },
   { href: "/perfil", label: "Perfil", icon: User },
 ];

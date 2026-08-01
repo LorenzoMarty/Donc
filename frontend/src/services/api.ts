@@ -15,10 +15,6 @@ export type {
   LearningProfile,
   Lesson,
   Module,
-  MockExam,
-  MockExamAttemptSummary,
-  MockExamQuestionReview,
-  MockExamSubmitResult,
   TokenResponse,
   User,
 } from "@/types/api";

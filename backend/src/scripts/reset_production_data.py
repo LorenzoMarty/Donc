@@ -21,9 +21,6 @@ from src.models import (
     Goal,
     Lesson,
     LessonProgress,
-    MockExam,
-    MockExamAttempt,
-    MockExamQuestion,
     Module,
     StudentLearningProfile,
     User,
@@ -42,7 +39,7 @@ CONFIRMATION = "RESET_PRODUCTION_DATA"
 def main() -> None:
     parser = argparse.ArgumentParser(description="Reset production data without loading demo accounts.")
     parser.add_argument("--confirm", required=True, help=f"Required literal value: {CONFIRMATION}")
-    parser.add_argument("--wipe-catalog", action="store_true", help="Also remove course, lesson, exercise, theme, exam and knowledge catalog before reseeding.")
+    parser.add_argument("--wipe-catalog", action="store_true", help="Also remove course, lesson, exercise, theme and knowledge catalog before reseeding.")
     parser.add_argument("--admin-email", help="Optional first admin email to create after reset.")
     parser.add_argument("--admin-password", help="Optional first admin password to create after reset.")
     parser.add_argument("--admin-name", default="Admin", help="Optional first admin display name.")
@@ -83,7 +80,6 @@ def _reset_transactional_data(db) -> None:
         Goal,
         LessonProgress,
         ExerciseAnswer,
-        MockExamAttempt,
         EssayVersionCorrection,
         EssayVersion,
         EssayCorrection,
@@ -98,8 +94,6 @@ def _reset_catalog_data(db) -> None:
         Exercise,
         Lesson,
         Module,
-        MockExamQuestion,
-        MockExam,
         EssayTheme,
         AIKnowledgeChunk,
         AIKnowledgeDocument,

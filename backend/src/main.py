@@ -10,7 +10,7 @@ from src.config.settings import settings
 from src.database.session import Base, SessionLocal, engine
 from src.middlewares.errors import register_error_handlers
 from src.models import *  # noqa: F403 - garante registro das tabelas no metadata.
-from src.routes import admin, ai, auth, dashboard, essays, exams, exercises, games, lessons
+from src.routes import admin, ai, auth, dashboard, essays, exercises, games, lessons
 from src.schemas.common import ApiResponse, HealthData, success_response
 from src.services.seed import seed_database
 from src.telemetry import configure_ai_telemetry, flush_ai_telemetry
@@ -67,7 +67,6 @@ app.include_router(dashboard.router, prefix=settings.api_v1_prefix)
 app.include_router(lessons.router, prefix=settings.api_v1_prefix)
 app.include_router(exercises.router, prefix=settings.api_v1_prefix)
 app.include_router(essays.router, prefix=settings.api_v1_prefix)
-app.include_router(exams.router, prefix=settings.api_v1_prefix)
 app.include_router(games.router, prefix=settings.api_v1_prefix)
 app.include_router(ai.router, prefix=settings.api_v1_prefix)
 app.include_router(admin.router, prefix=settings.api_v1_prefix)

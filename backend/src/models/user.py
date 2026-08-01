@@ -29,6 +29,5 @@ class User(Base):
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")
     essays = relationship("Essay", back_populates="user", cascade="all, delete-orphan")
-    exam_attempts = relationship("MockExamAttempt", back_populates="user", cascade="all, delete-orphan")
     goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")
 

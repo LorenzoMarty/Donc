@@ -17,7 +17,6 @@ function fakeDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
     trend: [],
     recent_lessons: [],
     pending_exercises: [],
-    recent_exams: [],
     recent_essays: [],
     suggested_lessons: [],
     goals: [],
