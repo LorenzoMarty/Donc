@@ -15,6 +15,66 @@
   --green-800: 131 55% 20%;
   --green-900: 131 58% 14%;
 
+  /* ---- Primitive scale: blue accent (hue 210, matches #0a84ff) ---- */
+  --blue-50: 210 100% 97%;
+  --blue-100: 210 100% 97%;
+  --blue-200: 210 100% 94%;
+  --blue-300: 210 100% 80%;
+  --blue-400: 210 100% 64%;
+  --blue-500: 210 100% 52%; /* #0a84ff */
+  --blue-600: 210 100% 46%;
+  --blue-700: 210 100% 39%;
+  --blue-800: 210 100% 32%;
+  --blue-900: 210 100% 26%;
+
+  /* ---- Primitive scale: purple accent (hue 258, matches #8b5cf6) ---- */
+  --purple-50: 258 90% 97%;
+  --purple-100: 258 90% 97%;
+  --purple-200: 258 90% 97%;
+  --purple-300: 258 90% 94%;
+  --purple-400: 258 90% 78%;
+  --purple-500: 258 90% 66%; /* #8b5cf6 */
+  --purple-600: 258 90% 60%;
+  --purple-700: 258 90% 53%;
+  --purple-800: 258 90% 46%;
+  --purple-900: 258 90% 40%;
+
+  /* ---- Primitive scale: orange accent (hue 32, matches #e6820e) ---- */
+  --orange-50: 32 89% 97%;
+  --orange-100: 32 89% 97%;
+  --orange-200: 32 89% 90%;
+  --orange-300: 32 89% 76%;
+  --orange-400: 32 89% 60%;
+  --orange-500: 32 89% 48%; /* #e6820e */
+  --orange-600: 32 89% 42%;
+  --orange-700: 32 89% 35%;
+  --orange-800: 32 89% 28%;
+  --orange-900: 32 89% 22%;
+
+  /* ---- Primitive scale: red accent (hue 358, matches #e5484d) ---- */
+  --red-50: 358 75% 97%;
+  --red-100: 358 75% 97%;
+  --red-200: 358 75% 97%;
+  --red-300: 358 75% 87%;
+  --red-400: 358 75% 71%;
+  --red-500: 358 75% 59%; /* #e5484d */
+  --red-600: 358 75% 53%;
+  --red-700: 358 75% 46%;
+  --red-800: 358 75% 39%;
+  --red-900: 358 75% 33%;
+
+  /* ---- Primitive scale: teal accent (hue 173, matches #14b8a6) ---- */
+  --teal-50: 173 80% 96%;
+  --teal-100: 173 80% 91%;
+  --teal-200: 173 80% 82%;
+  --teal-300: 173 80% 68%;
+  --teal-400: 173 80% 52%;
+  --teal-500: 173 80% 40%; /* #14b8a6 */
+  --teal-600: 173 80% 34%;
+  --teal-700: 173 80% 27%;
+  --teal-800: 173 80% 20%;
+  --teal-900: 173 80% 14%;
+
   /* ---- Primitive scale: neutrals (hue ~224-226, matches existing grays) ---- */
   --neutral-50: 220 40% 98%;
   --neutral-100: 224 30% 95%;
@@ -44,6 +104,19 @@
   --popover-foreground: 0 0% 20%;
   --primary: var(--green-500);
   --primary-foreground: 0 0% 100%;
+
+  /* ---- Accent ativo: sempre aponta pra escala da cor escolhida em /perfil (src/lib/accent.ts) ---- */
+  --accent-50: var(--green-50);
+  --accent-100: var(--green-100);
+  --accent-200: var(--green-200);
+  --accent-300: var(--green-300);
+  --accent-400: var(--green-400);
+  --accent-500: var(--green-500);
+  --accent-600: var(--green-600);
+  --accent-700: var(--green-700);
+  --accent-800: var(--green-800);
+  --accent-900: var(--green-900);
+
   --secondary: var(--neutral-50);
   --secondary-foreground: var(--neutral-800);
   --muted: 220 44% 97%;
