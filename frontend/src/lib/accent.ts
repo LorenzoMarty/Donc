@@ -4,7 +4,11 @@
  * persistência/anti-flash de `src/lib/appearance.ts`.
  */
 
-export type AccentOption = { label: string; hex: string; key: string };
+export type AccentOption = {
+  label: string;
+  hex: string;
+  key: "green" | "blue" | "purple" | "orange" | "red" | "teal";
+};
 
 export const ACCENT_KEY = "donc.accent.v1";
 

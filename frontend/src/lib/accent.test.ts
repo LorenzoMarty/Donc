@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 import {
   ACCENT_KEY,
@@ -11,6 +11,11 @@ import {
 } from "@/lib/accent";
 
 describe("accent (cor de destaque)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.removeAttribute("style");
+  });
+
   it("normaliza hex desconhecido/inválido para o default", () => {
     expect(normalizeAccent("#123456")).toBe(DEFAULT_ACCENT);
     expect(normalizeAccent(null)).toBe(DEFAULT_ACCENT);
