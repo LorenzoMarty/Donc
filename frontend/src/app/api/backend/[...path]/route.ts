@@ -39,6 +39,7 @@ async function forward(request: NextRequest, context: RouteContext) {
   const responseHeaders = new Headers(response.headers);
   responseHeaders.delete("content-encoding");
   responseHeaders.delete("transfer-encoding");
+  responseHeaders.delete("content-length");
 
   return new NextResponse(response.body, {
     status: response.status,
