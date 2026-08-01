@@ -90,7 +90,7 @@ export default function GamesHub() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-7 rounded-[18px] bg-[#12351d] p-7 text-white"
+          className="flex items-center gap-7 rounded-[18px] bg-[hsl(var(--accent-900))] p-7 text-white"
         >
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2.5">
@@ -102,7 +102,7 @@ export default function GamesHub() {
             <div className="mt-4.5 flex items-center gap-4">
               <Link
                 href={`/games/${primaryGame.category}/${primaryGame.id}`}
-                className="flex items-center gap-2 rounded-control bg-white px-6 py-3 text-[14px] font-bold text-[#12351d]"
+                className="flex items-center gap-2 rounded-control bg-white px-6 py-3 text-[14px] font-bold text-[hsl(var(--accent-900))]"
               >
                 <Play className="h-4 w-4 fill-current" aria-hidden="true" />
                 Jogar agora

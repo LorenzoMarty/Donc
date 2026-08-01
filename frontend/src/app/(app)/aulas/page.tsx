@@ -104,7 +104,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
   const remainingMinutes = Math.max(1, Math.round(lesson.duration_minutes * (1 - lesson.progress.progress_percent / 100)));
 
   return (
-    <div className="flex items-center gap-8 rounded-[20px] bg-[#12351d] p-7 text-white">
+    <div className="flex items-center gap-8 rounded-[20px] bg-[hsl(var(--accent-900))] p-7 text-white">
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#8ee0a3]">Continue assistindo</p>
         <p className="font-display mt-1.5 text-[27px] font-medium leading-tight">{lesson.title}</p>
@@ -114,7 +114,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
         <div className="mt-4.5 flex items-center gap-3.5">
           <Link
             href={`/aulas/${lesson.id}`}
-            className="flex items-center gap-2 rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-[#12351d]"
+            className="flex items-center gap-2 rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-[hsl(var(--accent-900))]"
           >
             <Play className="h-4 w-4 fill-current" aria-hidden="true" />
             Retomar aula
@@ -134,7 +134,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
         className="grid h-[132px] w-[220px] shrink-0 place-items-center rounded-[14px] bg-primary shadow-elevated"
       >
         <span className="grid h-[52px] w-[52px] place-items-center rounded-full bg-white/90">
-          <Play className="h-5 w-5 fill-[#12351d] text-[#12351d]" aria-hidden="true" />
+          <Play className="h-5 w-5 fill-[hsl(var(--accent-900))] text-[hsl(var(--accent-900))]" aria-hidden="true" />
         </span>
       </Link>
     </div>
