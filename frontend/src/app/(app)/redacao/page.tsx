@@ -179,7 +179,7 @@ function ThemePicker({
   return (
     <div>
       {weekly ? (
-        <div className="mb-5 flex items-center gap-6 rounded-card bg-[#12351d] p-6 text-white">
+        <div className="mb-5 flex items-center gap-6 rounded-card bg-[hsl(var(--accent-900))] p-6 text-white">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8ee0a3]">Tema da semana</p>
             <p className="font-display mt-1.5 text-2xl font-medium leading-tight">{weekly.title}</p>
@@ -188,7 +188,7 @@ function ThemePicker({
           <button
             type="button"
             onClick={() => onPick(weekly)}
-            className="flex shrink-0 items-center gap-2 rounded-control bg-white px-5 py-3 text-sm font-bold text-[#12351d] transition-colors hover:bg-white/90"
+            className="flex shrink-0 items-center gap-2 rounded-control bg-white px-5 py-3 text-sm font-bold text-[hsl(var(--accent-900))] transition-colors hover:bg-white/90"
           >
             Escrever agora
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
