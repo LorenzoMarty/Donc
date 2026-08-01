@@ -105,14 +105,14 @@ export default function OnboardingPage() {
   const blocked = (step === 1 && !goal) || (step === 2 && !level);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-[#12351d]">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-[hsl(var(--accent-900))]">
       <div className="flex items-center gap-5 px-9 py-6">
-        <span className="font-display text-[26px] font-medium text-[#8ee0a3]">donc</span>
+        <span className="font-display text-[26px] font-medium text-[hsl(var(--accent-300))]">donc</span>
         <div className="mx-auto flex w-full max-w-[360px] gap-1.5">
           {Array.from({ length: totalSteps }).map((_, index) => (
             <div
               key={index}
-              className={cn("h-[5px] flex-1 rounded-[3px] transition-colors duration-300", index <= step ? "bg-[#8ee0a3]" : "bg-white/16")}
+              className={cn("h-[5px] flex-1 rounded-[3px] transition-colors duration-300", index <= step ? "bg-[hsl(var(--accent-300))]" : "bg-white/16")}
             />
           ))}
         </div>
@@ -137,7 +137,7 @@ export default function OnboardingPage() {
 
               {step === 0 ? (
                 <>
-                  <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">Bem-vinda ao Donc</p>
+                  <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">Bem-vinda ao Donc</p>
                   <h1 className="font-display text-[38px] font-medium leading-[1.15] text-white">
                     Vamos preparar sua jornada rumo ao 1000
                   </h1>
@@ -185,7 +185,7 @@ export default function OnboardingPage() {
           disabled={blocked}
           className={cn(
             "flex items-center gap-2 rounded-[13px] px-[30px] py-3.5 text-[15px] font-bold transition-colors",
-            blocked ? "cursor-not-allowed bg-white/15 text-white/40" : "bg-[#8ee0a3] text-[#12351d]",
+            blocked ? "cursor-not-allowed bg-white/15 text-white/40" : "bg-[hsl(var(--accent-300))] text-[hsl(var(--accent-900))]",
           )}
         >
           {isLast ? "Ir para o painel" : step === 0 ? "Começar" : step === 3 && tourSlide < TOUR_SLIDES.length - 1 ? "Próximo" : "Continuar"}
@@ -205,7 +205,7 @@ function FolhinhaMascot({ showBubble }: { showBubble?: boolean }) {
           initial={{ opacity: 0, scale: 0.9, y: 6 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5, ease: [0.16, 0.84, 0.24, 1] }}
-          className="font-display absolute left-[calc(100%-6px)] top-6 whitespace-nowrap rounded-2xl bg-[#fffdf8] px-[18px] py-3 text-[17px] font-medium text-[#12351d] shadow-[0_12px_28px_-12px_rgba(0,0,0,.5)]"
+          className="font-display absolute left-[calc(100%-6px)] top-6 whitespace-nowrap rounded-2xl bg-[#fffdf8] px-[18px] py-3 text-[17px] font-medium text-[hsl(var(--accent-900))] shadow-[0_12px_28px_-12px_rgba(0,0,0,.5)]"
         >
           Oi, eu sou a Folhinha!
           <span className="absolute right-full top-[22px] border-8 border-transparent border-r-[#fffdf8]" />
@@ -214,13 +214,13 @@ function FolhinhaMascot({ showBubble }: { showBubble?: boolean }) {
       <svg width="150" height="150" viewBox="0 0 150 150">
         <rect x="34" y="28" width="82" height="104" rx="20" fill="#fffdf8" />
         <rect x="34" y="28" width="82" height="104" rx="20" fill="none" stroke="#dfe8d8" strokeWidth="2" />
-        <rect x="46" y="26" width="58" height="12" rx="6" fill="#2f9e44" />
+        <rect x="46" y="26" width="58" height="12" rx="6" fill="hsl(var(--accent-500))" />
         <line x1="48" y1="76" x2="102" y2="76" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
         <line x1="48" y1="90" x2="102" y2="90" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
         <line x1="48" y1="104" x2="86" y2="104" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="65" cy="58" r="5.5" fill="#12351d" />
-        <circle cx="89" cy="58" r="5.5" fill="#12351d" />
-        <path d="M67 66 q10 7 20 0" fill="none" stroke="#2f9e44" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="65" cy="58" r="5.5" fill="hsl(var(--accent-900))" />
+        <circle cx="89" cy="58" r="5.5" fill="hsl(var(--accent-900))" />
+        <path d="M67 66 q10 7 20 0" fill="none" stroke="hsl(var(--accent-500))" strokeWidth="3" strokeLinecap="round" />
       </svg>
     </div>
   );
@@ -241,7 +241,7 @@ function ChoiceStepBody({
 }) {
   return (
     <div>
-      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">{kicker}</p>
+      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">{kicker}</p>
       <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">{title}</h2>
       <div className="mt-8 flex flex-col gap-3 text-left">
         {options.map((opt, i) => {
@@ -256,7 +256,7 @@ function ChoiceStepBody({
               onClick={() => onSelect(opt.id)}
               className={cn(
                 "flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4.5 text-left transition-colors",
-                active ? "border-[#8ee0a3] bg-[#8ee0a3]/14" : "border-white/14 bg-white/5",
+                active ? "border-[hsl(var(--accent-300))] bg-[hsl(var(--accent-300)/14%)]" : "border-white/14 bg-white/5",
               )}
             >
               <div className="min-w-0 flex-1">
@@ -266,10 +266,10 @@ function ChoiceStepBody({
               <div
                 className={cn(
                   "grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full border-2",
-                  active ? "border-transparent bg-[#8ee0a3]" : "border-white/20",
+                  active ? "border-transparent bg-[hsl(var(--accent-300))]" : "border-white/20",
                 )}
               >
-                {active ? <Check className="h-3.5 w-3.5 text-[#12351d]" strokeWidth={3} aria-hidden="true" /> : null}
+                {active ? <Check className="h-3.5 w-3.5 text-[hsl(var(--accent-900))]" strokeWidth={3} aria-hidden="true" /> : null}
               </div>
             </motion.button>
           );
@@ -285,7 +285,7 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
 
   return (
     <div>
-      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">Passo 3 de 3 · Tour rápido</p>
+      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">Passo 3 de 3 · Tour rápido</p>
       <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">É assim que você evolui</h2>
 
       <AnimatePresence mode="wait">
@@ -302,8 +302,8 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
           ) : current.hydraImageUrl ? (
             <Image src={current.hydraImageUrl} alt="Hydra, a mascote do Donc ENEM" width={80} height={80} className="mb-4 rounded-control object-contain" />
           ) : (
-            <div className="mb-4 inline-flex rounded-xl bg-[#8ee0a3]/14 p-3">
-              <Icon className="h-7 w-7 text-[#8ee0a3]" aria-hidden="true" />
+            <div className="mb-4 inline-flex rounded-xl bg-[hsl(var(--accent-300)/14%)] p-3">
+              <Icon className="h-7 w-7 text-[hsl(var(--accent-300))]" aria-hidden="true" />
             </div>
           )}
           <h3 className="text-[18px] font-semibold text-white">{current.title}</h3>
@@ -317,7 +317,7 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
             key={i}
             type="button"
             onClick={() => onSlide(i)}
-            className={cn("h-2 rounded-full transition-all duration-200", i === slide ? "w-6 bg-[#8ee0a3]" : "w-2 bg-white/20")}
+            className={cn("h-2 rounded-full transition-all duration-200", i === slide ? "w-6 bg-[hsl(var(--accent-300))]" : "w-2 bg-white/20")}
             aria-label={`Slide ${i + 1}`}
           />
         ))}
@@ -336,12 +336,12 @@ function CTAStepBody({ goal, level }: { goal: string | null; level: string | nul
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.4, type: "spring" }}
-        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#8ee0a3]/18"
+        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[hsl(var(--accent-300)/18%)]"
       >
-        <Target className="h-9 w-9 text-[#8ee0a3]" aria-hidden="true" />
+        <Target className="h-9 w-9 text-[hsl(var(--accent-300))]" aria-hidden="true" />
       </motion.div>
 
-      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[#8ee0a3]">Tudo pronto</p>
+      <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">Tudo pronto</p>
       <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">Sua trilha está montada!</h2>
       <p className="mx-auto mt-3.5 max-w-[480px] text-[17px] leading-relaxed text-white/72">
         Assim que você escrever a primeira redação, eu já te aponto exatamente onde focar. Sem enrolação.
