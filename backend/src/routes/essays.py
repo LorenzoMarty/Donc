@@ -71,7 +71,13 @@ def autosave(
 @router.post("/{essay_id}/submit", response_model=ApiResponse[EssaySubmitResponse])
 def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
-    job = AIJobService(db).create(
+    jobs = AIJobService(db)
+    active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=essay_id)
+    if active_job:
+        # Evita duplo-clique/retry disparando um novo pipeline de IA enquanto o anterior ainda
+        # esta rodando para a mesma redacao — devolve o job ja em andamento em vez de criar outro.
+        return success_response(EssaySubmitResponse(job_id=active_job.id, essay_id=essay.id), "Correcao ja em andamento.")
+    job = jobs.create(
         user_id=current_user.id,
         kind="essay_correction",
         request_payload={"essay_id": essay_id},
@@ -136,7 +142,11 @@ def rewrite_from_version(essay_id: int, version_id: int, current_user: User = De
 @router.post("/{essay_id}/reprocess", response_model=ApiResponse[EssaySubmitResponse])
 def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
-    job = AIJobService(db).create(
+    jobs = AIJobService(db)
+    active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=essay_id)
+    if active_job:
+        return success_response(EssaySubmitResponse(job_id=active_job.id, essay_id=essay.id), "Correcao ja em andamento.")
+    job = jobs.create(
         user_id=current_user.id,
         kind="essay_correction",
         request_payload={"essay_id": essay_id},

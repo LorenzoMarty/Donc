@@ -51,6 +51,9 @@ def correct_essay(
     check_ai_rate_limit(current_user.id)
     if payload.async_mode:
         jobs = AIJobService(db)
+        active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=payload.essay_id)
+        if active_job:
+            return success_response(AIJobResponse(**job_payload(active_job)), "Correcao ja em andamento.")
         job = jobs.create(user_id=current_user.id, kind="essay_correction", request_payload={"essay_id": payload.essay_id})
         if not enqueue_correct_essay(job.id):
             run_correct_essay_job(job.id)
