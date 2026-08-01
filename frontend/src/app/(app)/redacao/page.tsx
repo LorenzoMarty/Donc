@@ -181,7 +181,7 @@ function ThemePicker({
       {weekly ? (
         <div className="mb-5 flex items-center gap-6 rounded-card bg-[hsl(var(--accent-900))] p-6 text-white">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8ee0a3]">Tema da semana</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Tema da semana</p>
             <p className="font-display mt-1.5 text-2xl font-medium leading-tight">{weekly.title}</p>
             <p className="mt-1 text-sm text-white/70">{weekly.source}</p>
           </div>
