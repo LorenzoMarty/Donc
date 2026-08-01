@@ -11,25 +11,11 @@ import { EssayTimer } from "@/components/writing/essay-timer";
 import { FloatingPostIts } from "@/components/writing/floating-post-its";
 import type { Essay, EssayTheme } from "@/services/api";
 import { useFreePostItsStore } from "@/stores/free-post-its-store";
+import { useHighlightsStore } from "@/stores/highlights-store";
+import { MARK_TOOL_LABEL, MARK_TOOL_STYLE, PEN_SWATCHES, type EssayMarkTool } from "@/lib/mark-tools";
 import { cn } from "@/utils";
 
-type EssayMarkTool = "highlighter-yellow" | "highlighter-green" | "highlighter-blue" | "highlighter-pink";
-
 type EssayMark = { id: string; tool: EssayMarkTool; quote: string };
-
-const MARK_TOOL_LABEL: Record<EssayMarkTool, string> = {
-  "highlighter-yellow": "Marca-texto amarelo",
-  "highlighter-green": "Marca-texto verde",
-  "highlighter-blue": "Marca-texto azul",
-  "highlighter-pink": "Marca-texto rosa",
-};
-
-const MARK_TOOL_STYLE: Record<EssayMarkTool, string> = {
-  "highlighter-yellow": "rounded-sm bg-[#fff3a0]/70",
-  "highlighter-green": "rounded-sm bg-[#b9f6c8]/70",
-  "highlighter-blue": "rounded-sm bg-[#bde0ff]/70",
-  "highlighter-pink": "rounded-sm bg-[#ffc9de]/70",
-};
 
 function buildMarkSegments(content: string, marks: EssayMark[]) {
   type Segment = { text: string; mark: EssayMark | null };
@@ -112,6 +98,10 @@ export function EssayEditor({
   const syncLabel = submitting ? "Corrigindo..." : saving ? "Salvando..." : essay ? "Salvo" : "Rascunho local";
   const activeTheme = theme ?? essay?.theme ?? null;
   const addFreePostIt = useFreePostItsStore((state) => state.addPostIt);
+  const motivadorHighlights = useHighlightsStore((state) =>
+    activeTheme ? state.highlightsByTheme[activeTheme.id] ?? [] : [],
+  );
+  const clearHighlights = useHighlightsStore((state) => state.clearHighlights);
 
   useEffect(() => {
     const shouldShowSaved = wasSavingRef.current && !saving && Boolean(essay) && essay?.status !== "corrected";
@@ -296,19 +286,19 @@ export function EssayEditor({
                 transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
                 className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 pb-8 pt-14 md:px-9 md:pt-16"
               >
-                <MotivatorsBooklet theme={activeTheme} />
+                <MotivatorsBooklet theme={activeTheme} activeTool={activeTool} />
               </motion.article>
             )}
           </AnimatePresence>
 
-          {page === "folha" ? <FloatingPostIts themeId={activeTheme?.id} /> : null}
+          <FloatingPostIts themeId={activeTheme?.id} />
 
-          {page === "folha" && !locked ? (
+          {!locked ? (
             <Dock
               activeTool={activeTool}
               onSelectTool={setActiveTool}
-              onClear={() => setMarks([])}
-              hasMarks={marks.length > 0}
+              onClear={() => (page === "motivadores" ? activeTheme && clearHighlights(activeTheme.id) : setMarks([]))}
+              hasMarks={page === "motivadores" ? motivadorHighlights.length > 0 : marks.length > 0}
               onAddPostIt={() => addFreePostIt(activeTheme?.id)}
             />
           ) : null}
@@ -332,13 +322,6 @@ function PageTab({ active, onClick, label }: { active: boolean; onClick: () => v
     </button>
   );
 }
-
-const PEN_SWATCHES: { tool: EssayMarkTool; color: string }[] = [
-  { tool: "highlighter-yellow", color: "#fff3a0" },
-  { tool: "highlighter-green", color: "#b9f6c8" },
-  { tool: "highlighter-blue", color: "#bde0ff" },
-  { tool: "highlighter-pink", color: "#ffc9de" },
-];
 
 /**
  * Dock fixo estilo macOS — canetas/marca-texto sublinham o trecho selecionado na folha (não
@@ -432,7 +415,13 @@ function Dock({
 }
 
 /** Caderno de textos motivadores em página cheia — simula folhear o caderno físico da prova. */
-function MotivatorsBooklet({ theme }: { theme: EssayTheme | null }) {
+function MotivatorsBooklet({
+  theme,
+  activeTool,
+}: {
+  theme: EssayTheme | null;
+  activeTool: EssayMarkTool | "erase" | null;
+}) {
   if (!theme) return null;
 
   if (!theme.supporting_texts?.length) {
@@ -460,7 +449,7 @@ function MotivatorsBooklet({ theme }: { theme: EssayTheme | null }) {
             <SupportingTextIcon type={text.type} />
             <h3 className="text-sm font-semibold leading-snug">{text.title}</h3>
           </div>
-          <SupportingTextBody text={text} themeId={theme.id} textIndex={index} />
+          <SupportingTextBody text={text} themeId={theme.id} textIndex={index} activeTool={activeTool} />
         </div>
       ))}
     </div>

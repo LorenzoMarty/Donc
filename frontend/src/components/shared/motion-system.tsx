@@ -17,6 +17,7 @@ import {
 
 import type { SupportingText } from "@/types/api";
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
+import { DEFAULT_MARK_TOOL, MARK_TOOL_HIGHLIGHT_STYLE, type EssayMarkTool } from "@/lib/mark-tools";
 import { cn } from "@/utils";
 
 const easeOut = [0.16, 1, 0.3, 1] as const;
@@ -222,10 +223,12 @@ export function SupportingTextBody({
   text,
   themeId,
   textIndex,
+  activeTool,
 }: {
   text: SupportingText;
   themeId?: number;
   textIndex?: number;
+  activeTool?: EssayMarkTool | "erase" | null;
 }) {
   switch (text.type) {
     case "grafico":
@@ -311,6 +314,7 @@ export function SupportingTextBody({
             textIndex={textIndex}
             textTitle={text.title}
             content={text.content}
+            activeTool={activeTool}
           />
         );
       }
@@ -319,7 +323,7 @@ export function SupportingTextBody({
 }
 
 function buildHighlightedSegments(content: string, highlights: MotivadorHighlight[]) {
-  type Segment = { text: string; highlightId: string | null };
+  type Segment = { text: string; highlightId: string | null; tool?: EssayMarkTool };
   const segments: Segment[] = [{ text: content, highlightId: null }];
   for (const highlight of highlights) {
     for (let i = 0; i < segments.length; i++) {
@@ -332,7 +336,7 @@ function buildHighlightedSegments(content: string, highlights: MotivadorHighligh
       const after = segment.text.slice(idx + highlight.quote.length);
       const replacement: Segment[] = [];
       if (before) replacement.push({ text: before, highlightId: null });
-      replacement.push({ text: match, highlightId: highlight.id });
+      replacement.push({ text: match, highlightId: highlight.id, tool: highlight.tool });
       if (after) replacement.push({ text: after, highlightId: null });
       segments.splice(i, 1, ...replacement);
       break;
@@ -346,11 +350,13 @@ function HighlightableText({
   textIndex,
   textTitle,
   content,
+  activeTool,
 }: {
   themeId: number;
   textIndex: number;
   textTitle: string;
   content: string;
+  activeTool?: EssayMarkTool | "erase" | null;
 }) {
   const containerRef = useRef<HTMLParagraphElement>(null);
   const highlights = useHighlightsStore((state) => state.highlightsByTheme[themeId] ?? EMPTY_HIGHLIGHTS);
@@ -364,7 +370,10 @@ function HighlightableText({
     if (!containerRef.current.contains(selection.anchorNode)) return;
     const quote = selection.toString().trim();
     if (quote.length < 3 || !content.includes(quote)) return;
-    addHighlight(themeId, textIndex, textTitle, quote);
+    // Grifo só é criado com uma caneta armada no Dock (mesmo fluxo da folha de redação) —
+    // sem ferramenta ativa, ou com a borracha, a seleção não marca nada.
+    if (!activeTool || activeTool === "erase") return;
+    addHighlight(themeId, textIndex, textTitle, quote, activeTool);
     selection.removeAllRanges();
   }
 
@@ -380,7 +389,10 @@ function HighlightableText({
             tabIndex={0}
             title="Clique para remover o grifo"
             onClick={() => removeHighlight(themeId, segment.highlightId as string)}
-            className="cursor-pointer rounded bg-amber-300/60 px-0.5 text-foreground"
+            className={cn(
+              "cursor-pointer rounded px-0.5 text-foreground",
+              MARK_TOOL_HIGHLIGHT_STYLE[segment.tool ?? DEFAULT_MARK_TOOL],
+            )}
           >
             {segment.text}
           </mark>
