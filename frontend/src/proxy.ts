@@ -7,7 +7,6 @@ const protectedRoutes = [
   "/redacao",
   "/redacoes",
   "/perfil",
-  "/simulados",
   "/admin",
   "/onboarding",
 ];

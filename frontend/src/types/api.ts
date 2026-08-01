@@ -97,7 +97,6 @@ export type Dashboard = {
   trend: { label: string; score: number }[];
   recent_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   pending_exercises: { id: number; skill: string; difficulty: string }[];
-  recent_exams: { id: number; title: string; score: number }[];
   recent_essays: { id: number; title: string; theme_title: string; status: Essay["status"]; word_count: number; score: number | null; updated_at: string }[];
   suggested_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   goals: { id: number; title: string; current: number; target: number; unit: string; completed: boolean; due_date?: string | null }[];
@@ -242,47 +241,6 @@ export type JobStatus = {
   status: "queued" | "running" | "completed" | "failed";
   essay?: Essay;
   error?: string;
-};
-
-export type MockExam = {
-  id: number;
-  title: string;
-  description: string;
-  area: string;
-  duration_minutes: number;
-  questions: { id: number; statement: string; options: string[]; skill: string }[];
-};
-
-export type MockExamQuestionReview = {
-  id: number;
-  statement: string;
-  options: string[];
-  skill: string;
-  correct_answer: string;
-  explanation: string;
-  user_answer: string | null;
-  correct: boolean;
-};
-
-export type MockExamSubmitResult = {
-  attempt_id: number;
-  exam_id: number;
-  score: number;
-  total_questions: number;
-  correct_answers: number;
-  finished_at: string;
-  performance_by_skill: Record<string, number>;
-  questions: MockExamQuestionReview[];
-};
-
-export type MockExamAttemptSummary = {
-  attempt_id: number;
-  exam_id: number;
-  exam_title: string;
-  score: number;
-  total_questions: number;
-  correct_answers: number;
-  finished_at: string | null;
 };
 
 export type AdminMetrics = {

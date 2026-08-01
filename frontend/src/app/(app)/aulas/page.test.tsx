@@ -45,7 +45,6 @@ const DASHBOARD: Dashboard = {
   trend: [],
   recent_lessons: [{ id: 1, title: "Introdução à tese", module: "Módulo 1", progress_percent: 55 }],
   pending_exercises: [],
-  recent_exams: [],
   recent_essays: [],
   suggested_lessons: [{ id: 2, title: "Conectivos essenciais", module: "Módulo 1", progress_percent: 0 }],
   goals: [],

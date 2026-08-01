@@ -4,9 +4,9 @@ from datetime import date, timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, load_only, selectinload
 
-from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, MockExamAttempt, Module, User
+from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, Module, User
 from src.middlewares.errors import AppError
-from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentExam, RecentLesson, TrendPoint
+from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentLesson, TrendPoint
 
 
 class DashboardService:
@@ -83,16 +83,6 @@ class DashboardService:
             )
         ]
 
-        attempts = list(
-            self.db.scalars(
-                select(MockExamAttempt)
-                .options(selectinload(MockExamAttempt.exam))
-                .where(MockExamAttempt.user_id == user_id)
-                .order_by(MockExamAttempt.finished_at.desc())
-                .limit(3)
-            )
-        )
-        recent_exams = [RecentExam(id=attempt.exam_id, title=attempt.exam.title, score=attempt.score) for attempt in attempts]
         recent_essays = [
             RecentEssay(
                 id=essay.id,
@@ -153,7 +143,6 @@ class DashboardService:
             trend=trend,
             recent_lessons=recent_lessons,
             pending_exercises=pending_exercises,
-            recent_exams=recent_exams,
             recent_essays=recent_essays,
             suggested_lessons=suggested_lessons,
             goals=goals,

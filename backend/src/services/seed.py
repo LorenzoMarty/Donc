@@ -14,8 +14,6 @@ from src.models import (
     Goal,
     Lesson,
     LessonProgress,
-    MockExam,
-    MockExamQuestion,
     Module,
     User,
     UserRole,
@@ -447,7 +445,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         ensure_module_catalog(db)
         seed_missing_exercises(db)
         seed_missing_themes(db)
-        seed_missing_mock_exam(db)
         if include_demo_data:
             seed_missing_demo_essays(db)
         db.commit()
@@ -457,7 +454,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         ensure_module_catalog(db)
         seed_missing_exercises(db)
         seed_missing_themes(db)
-        seed_missing_mock_exam(db)
         db.commit()
         return
 
@@ -550,38 +546,6 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
             feedback="Texto consistente, com projeto claro e boa adequacao ao tema. O salto para 900+ depende de repertorio mais produtivo e maior densidade argumentativa.",
             recurrent_patterns=["repertorio pouco desenvolvido", "detalhamento da intervencao"],
         )
-    )
-
-    exam = MockExam(title="Simulado ENEM Linguagens I", description="Bloco curto para treino de interpretacao, gramatica e redacao.", duration_minutes=45)
-    db.add(exam)
-    db.flush()
-    db.add_all(
-        [
-            MockExamQuestion(
-                exam_id=exam.id,
-                statement="Em textos publicitarios, o uso do imperativo geralmente busca:",
-                options=["A) Narrar eventos passados.", "B) Convocar o leitor a uma acao.", "C) Apagar a intencao persuasiva.", "D) Descrever apenas paisagens.", "E) Eliminar marcas de interlocucao."],
-                correct_answer="B",
-                explanation="O imperativo aproxima o interlocutor e reforca a chamada para acao.",
-                skill="Funcoes da linguagem",
-            ),
-            MockExamQuestion(
-                exam_id=exam.id,
-                statement="A coesao referencial ocorre quando um termo:",
-                options=["A) Retoma ou antecipa outro elemento textual.", "B) Contradiz a tese obrigatoriamente.", "C) Substitui a pontuacao.", "D) Remove conectivos.", "E) Impede inferencias."],
-                correct_answer="A",
-                explanation="Pronomes, sinonimos e expressoes equivalentes podem retomar informacoes e evitar repeticao.",
-                skill="Coesao",
-            ),
-            MockExamQuestion(
-                exam_id=exam.id,
-                statement="Uma tese produtiva para redacao deve:",
-                options=["A) Ser vaga para servir a qualquer tema.", "B) Apresentar posicao clara sobre o problema.", "C) Evitar relacao com os argumentos.", "D) Copiar integralmente a proposta.", "E) Ser sempre uma pergunta."],
-                correct_answer="B",
-                explanation="A tese orienta o projeto de texto e precisa deixar evidente o posicionamento do autor.",
-                skill="Redacao ENEM",
-            ),
-        ]
     )
 
     db.add_all(
@@ -750,44 +714,6 @@ def seed_missing_themes(db: Session) -> None:
             db.add(EssayTheme(**spec))
         elif not existing.supporting_texts:
             existing.supporting_texts = spec["supporting_texts"]
-
-
-def seed_missing_mock_exam(db: Session) -> None:
-    title = "Simulado ENEM Linguagens I"
-    if db.scalar(select(MockExam).where(MockExam.title == title)):
-        return
-
-    exam = MockExam(title=title, description="Bloco curto para treino de interpretacao, gramatica e redacao.", duration_minutes=45)
-    db.add(exam)
-    db.flush()
-    db.add_all(
-        [
-            MockExamQuestion(
-                exam_id=exam.id,
-                statement="Em textos publicitarios, o uso do imperativo geralmente busca:",
-                options=["A) Narrar eventos passados.", "B) Convocar o leitor a uma acao.", "C) Apagar a intencao persuasiva.", "D) Descrever apenas paisagens.", "E) Eliminar marcas de interlocucao."],
-                correct_answer="B",
-                explanation="O imperativo aproxima o interlocutor e reforca a chamada para acao.",
-                skill="Funcoes da linguagem",
-            ),
-            MockExamQuestion(
-                exam_id=exam.id,
-                statement="A coesao referencial ocorre quando um termo:",
-                options=["A) Retoma ou antecipa outro elemento textual.", "B) Contradiz a tese obrigatoriamente.", "C) Substitui a pontuacao.", "D) Remove conectivos.", "E) Impede inferencias."],
-                correct_answer="A",
-                explanation="Pronomes, sinonimos e expressoes equivalentes podem retomar informacoes e evitar repeticao.",
-                skill="Coesao",
-            ),
-            MockExamQuestion(
-                exam_id=exam.id,
-                statement="Uma tese produtiva para redacao deve:",
-                options=["A) Ser vaga para servir a qualquer tema.", "B) Apresentar posicao clara sobre o problema.", "C) Evitar relacao com os argumentos.", "D) Copiar integralmente a proposta.", "E) Ser sempre uma pergunta."],
-                correct_answer="B",
-                explanation="A tese orienta o projeto de texto e precisa deixar evidente o posicionamento do autor.",
-                skill="Redacao ENEM",
-            ),
-        ]
-    )
 
 
 def seed_missing_demo_essays(db: Session) -> None:

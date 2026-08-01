@@ -78,7 +78,7 @@ export default function LoginPage() {
             <p className="mb-3 text-sm font-semibold text-primary">Redação, dados e IA</p>
             <h2 className="text-4xl font-semibold tracking-normal">Estudo guiado para evoluir com clareza.</h2>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Acompanhe competências, rotina, simulados e feedbacks em uma experiência única.
+              Acompanhe competências, rotina e feedbacks em uma experiência única.
             </p>
           </div>
         </div>

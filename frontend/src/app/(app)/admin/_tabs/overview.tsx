@@ -13,8 +13,6 @@ const EVENT_LABELS: Record<string, string> = {
   essay_submitted: "Redações enviadas",
   lesson_opened: "Aulas abertas",
   lesson_completed: "Aulas concluídas",
-  exam_started: "Simulados iniciados",
-  exam_submitted: "Simulados enviados",
 };
 
 function labelFor(eventType: string) {

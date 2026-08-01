@@ -21,12 +21,6 @@ class PendingExercise(BaseModel):
     difficulty: str
 
 
-class RecentExam(BaseModel):
-    id: int
-    title: str
-    score: int
-
-
 class RecentEssay(BaseModel):
     id: int
     title: str
@@ -77,7 +71,6 @@ class DashboardResponse(BaseModel):
     trend: list[TrendPoint]
     recent_lessons: list[RecentLesson]
     pending_exercises: list[PendingExercise]
-    recent_exams: list[RecentExam]
     recent_essays: list[RecentEssay]
     suggested_lessons: list[RecentLesson]
     goals: list[GoalRead]
