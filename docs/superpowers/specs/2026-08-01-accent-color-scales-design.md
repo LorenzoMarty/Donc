@@ -229,3 +229,39 @@ individual de nenhuma task anterior.
 **Recomendação para o usuário:** antes de considerar 100% fechado, vale abrir `/perfil` no navegador
 manualmente, trocar o accent pra Azul ou Roxo, e conferir visualmente as 4 telas — a lacuna acima é
 a única verificação que não pôde ser feita nesta sessão.
+
+## Revisão final de branch + fix wave (2026-08-01)
+
+A revisão final (subagente em Opus, whole-branch) aprovou a feature (**"Ready to merge: Yes"**), mas
+achou 2 findings **Important** — não bugs, qualidade visual — na fórmula de geração das 5 escalas
+novas: pra Roxo e Vermelho (L% base alto), a fórmula original (delta absoluto, clampado) produzia
+degraus claros quase idênticos entre si (`--purple-50/100/200` todos ~97%) e o degrau 300 (usado
+como "texto claro sobre fundo escuro" nos kickers) ficava quase sem cor perceptível
+(`--purple-300` em 94% L). O tom 900 também variava de "escuridão" entre cores — Roxo só chegava a
+40% L, não lia como banner escuro de verdade.
+
+**Corrigido** (commit `307a619`, re-review confirmou os 3 achados endereçados sem quebra nova):
+recalculada a fórmula pra interpolação proporcional (não delta absoluto) — todo tom 900 agora
+converge pra exatamente L=14% em todas as 6 cores (mesmo "peso" escuro do banner, consistente entre
+temas), e os tons claros (50-400) ficam espaçados proporcionalmente entre a base e 97% de
+luminosidade, sem clampar em duplicatas. Contraste recalculado e **melhorou** em relação à primeira
+versão: branco-sobre-900 agora 13.8-18.5:1 (AAA folgado) em todas as 6 cores; o combo "texto no tom
+300 sobre fundo no tom 900" (usado nos kickers) agora 7.7-8.6:1 em todas as 6 (era 5.8:1 no Azul
+antes — abaixo do ideal). Também corrigidos no mesmo fix: `AccentOption.key` estreitado pra union
+type (evita CSS var inválida silenciosa por typo) e `accent.test.ts` ganhou `beforeEach` de limpeza
+(suíte deixa de depender de ordem de execução).
+
+**Achados Minor deferidos** (não bloqueiam merge, registrados no ledger
+`.superpowers/sdd/2026-08-01-accent-color-scales/progress.md` pra referência futura): escalas novas
+não expostas como classes Tailwind (`bg-accent-900` etc.) — hoje só valor arbitrário
+`bg-[hsl(var(--accent-900))]`, funciona mas sem validação de typo em build; mudança de tom do banner
+verde padrão (`#12351d` → `#0f3817`) não foi destacada como "mudança visual" em nenhum lugar, embora
+imperceptível; drift de arredondamento entre a cor do swatch do seletor e a cor de fato aplicada
+(também imperceptível); um passo do plano original (repoint de `--primary`/`--ring` pra
+`--accent-500` direto em `globals.css`) foi pulado — o resultado ficou bom mesmo assim (o
+`applyAccent()` já sobrescreve via inline style), só não foi comentado no ledger na hora.
+
+O reviewer final também fez, por conta própria, uma verificação real em Chromium headless
+confirmando que a cadeia `--accent-N` → `var()` resolve corretamente inclusive dentro de atributos
+de apresentação SVG (`fill="hsl(var(--accent-500))"`) e repinta ao trocar o accent — fechando boa
+parte da lacuna de "verificação visual real" que ficou em aberto na sessão de implementação.
