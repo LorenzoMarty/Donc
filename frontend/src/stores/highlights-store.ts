@@ -1,12 +1,16 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import type { EssayMarkTool } from "@/lib/mark-tools";
+
 export type MotivadorHighlight = {
   id: string;
   textIndex: number;
   textTitle: string;
   quote: string;
   createdAt: number;
+  /** Cor da caneta do Dock usada pra criar o grifo. Ausente em grifos antigos (pré-unificação com o Dock) — usar DEFAULT_MARK_TOOL. */
+  tool?: EssayMarkTool;
   /** Anotação do aluno (post-it) sobre o trecho grifado — opcional, editável depois do grifo. */
   note?: string;
   /** Posição do post-it flutuante sobre a folha de redação, fração 0..1 do container. */
@@ -21,8 +25,9 @@ function nextPostItPosition(existingCount: number): { x: number; y: number } {
 
 type HighlightsStore = {
   highlightsByTheme: Record<number, MotivadorHighlight[]>;
-  addHighlight: (themeId: number, textIndex: number, textTitle: string, quote: string) => void;
+  addHighlight: (themeId: number, textIndex: number, textTitle: string, quote: string, tool: EssayMarkTool) => void;
   removeHighlight: (themeId: number, highlightId: string) => void;
+  clearHighlights: (themeId: number) => void;
   setHighlightNote: (themeId: number, highlightId: string, note: string) => void;
   setHighlightPosition: (themeId: number, highlightId: string, position: { x: number; y: number }) => void;
 };
@@ -31,7 +36,7 @@ export const useHighlightsStore = create<HighlightsStore>()(
   persist(
     (set) => ({
       highlightsByTheme: {},
-      addHighlight: (themeId, textIndex, textTitle, quote) =>
+      addHighlight: (themeId, textIndex, textTitle, quote, tool) =>
         set((state) => {
           const existing = state.highlightsByTheme[themeId] ?? [];
           if (existing.some((h) => h.textIndex === textIndex && h.quote === quote)) return state;
@@ -40,6 +45,7 @@ export const useHighlightsStore = create<HighlightsStore>()(
             textIndex,
             textTitle,
             quote,
+            tool,
             createdAt: Date.now(),
             position: nextPostItPosition(existing.length),
           };
@@ -55,6 +61,13 @@ export const useHighlightsStore = create<HighlightsStore>()(
           highlightsByTheme: {
             ...state.highlightsByTheme,
             [themeId]: (state.highlightsByTheme[themeId] ?? []).filter((h) => h.id !== highlightId),
+          },
+        })),
+      clearHighlights: (themeId) =>
+        set((state) => ({
+          highlightsByTheme: {
+            ...state.highlightsByTheme,
+            [themeId]: [],
           },
         })),
       setHighlightNote: (themeId, highlightId, note) =>

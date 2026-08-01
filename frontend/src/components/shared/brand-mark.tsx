@@ -14,10 +14,6 @@ const DONC_FULL_PATH =
 const DONC_ICON_PATH =
   "M 34.0,51.5 L 33.0,51.5 L 32.0,50.5 L 31.0,50.5 L 29.5,49.0 L 29.5,48.0 L 29.0,47.5 L 28.0,48.5 L 27.0,48.5 L 24.0,50.5 L 21.0,50.5 L 20.0,51.5 L 16.0,51.5 L 15.0,50.5 L 13.0,50.5 L 12.5,50.0 L 12.5,49.0 L 14.0,47.5 L 15.0,47.5 L 16.5,46.0 L 16.5,44.0 L 15.5,43.0 L 15.5,41.0 L 16.5,40.0 L 16.5,39.0 L 17.0,38.5 L 18.0,38.5 L 19.0,37.5 L 21.0,37.5 L 22.0,36.5 L 23.0,36.5 L 23.5,36.0 L 25.5,34.0 L 25.5,33.0 L 26.5,32.0 L 26.5,30.0 L 28.5,28.0 L 28.5,27.0 L 29.5,26.0 L 29.5,16.0 L 29.0,15.5 L 23.0,21.5 L 22.0,21.5 L 21.0,22.5 L 20.0,22.5 L 18.0,24.5 L 17.0,24.5 L 12.5,29.0 L 12.5,31.0 L 11.5,32.0 L 11.5,35.0 L 12.5,36.0 L 12.5,39.0 L 11.5,40.0 L 11.5,41.0 L 8.5,44.0 L 9.5,45.0 L 9.5,48.0 L 9.0,48.5 L 8.0,48.5 L 3.5,44.0 L 3.5,43.0 L 1.5,41.0 L 1.5,39.0 L 0.5,38.0 L 0.5,27.0 L 1.5,26.0 L 1.5,25.0 L 2.5,24.0 L 2.5,23.0 L 3.5,22.0 L 3.5,21.0 L 7.0,17.5 L 8.0,17.5 L 10.0,15.5 L 11.0,15.5 L 12.0,14.5 L 14.0,14.5 L 15.0,13.5 L 27.0,13.5 L 28.5,12.0 L 28.5,11.0 L 29.5,10.0 L 29.5,2.0 L 31.0,0.5 L 32.0,0.5 L 33.0,-0.5 L 34.0,-0.5 L 35.0,0.5 L 36.0,0.5 L 38.5,3.0 L 38.5,48.0 L 36.0,50.5 L 35.0,50.5 L 34.0,51.5 Z M 22.0,27.5 L 21.5,27.0 L 22.0,26.5 L 22.5,27.0 L 22.0,27.5 Z M 21.0,28.5 L 20.5,28.0 L 21.0,27.5 L 21.5,28.0 L 21.0,28.5 Z M 20.0,29.5 L 19.5,29.0 L 20.0,28.5 L 20.5,29.0 L 20.0,29.5 Z M 15.0,38.5 L 14.0,38.5 L 13.5,38.0 L 14.5,37.0 L 14.5,35.0 L 16.5,33.0 L 16.5,32.0 L 19.0,29.5 L 19.5,30.0 L 19.5,31.0 L 17.5,33.0 L 17.5,34.0 L 16.5,35.0 L 16.5,36.0 L 15.5,37.0 L 15.5,38.0 L 15.0,38.5 Z M 12.0,47.5 L 11.5,47.0 L 11.5,45.0 L 12.0,44.5 L 13.0,44.5 L 13.5,45.0 L 12.5,46.0 L 12.5,47.0 L 12.0,47.5 Z";
 
-// Verde de marca amostrado do PNG original (#2c8602) — deliberadamente não é o token --green-500
-// (#2f9e44) do design system atual, pra manter fidelidade visual exata ao logo publicado.
-const DONC_LOGO_COLOR = "#2c8602";
-
 export function DoncLogoMark({
   className,
   size = "md",
@@ -30,13 +26,12 @@ export function DoncLogoMark({
   return (
     <span
       className={cn(
-        "relative inline-block shrink-0 overflow-hidden",
+        "relative inline-block shrink-0 overflow-hidden text-primary",
         compressed ? "h-10 w-12" : size === "sm" && "h-8 w-20",
         !compressed && size === "md" && "h-10 w-24",
         !compressed && size === "lg" && "h-11 w-28",
         className,
       )}
-      style={{ color: DONC_LOGO_COLOR }}
       aria-hidden="true"
     >
       <svg

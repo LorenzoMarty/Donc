@@ -12,6 +12,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   ShieldCheck,
   User,
@@ -32,6 +34,26 @@ type WorkspaceNavItem = {
   icon: LucideIcon;
 };
 
+const SIDEBAR_COLLAPSED_KEY = "donk.sidebar-collapsed.v1";
+
+/** Estado recolhido persiste por browser (localStorage) — hidrata após o mount pra não divergir do SSR. */
+function useSidebarCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    setCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1");
+    hydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
+
+  return [collapsed, setCollapsed] as const;
+}
+
 const workspaceNav: WorkspaceNavItem[] = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/redacao", label: "Redação", icon: FilePenLine },
@@ -46,6 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
 
@@ -93,13 +116,26 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="h-dvh overflow-hidden bg-background text-foreground">
       <MobileHeader onMenuClick={() => setDrawerOpen(true)} />
-      <DesktopSidebar
-        items={navItems}
-        pathname={pathname}
-        userName={user?.name ?? "Aluno"}
-        onLogout={logout}
-        onWheel={scrollContentArea}
-      />
+      {!sidebarCollapsed ? (
+        <DesktopSidebar
+          items={navItems}
+          pathname={pathname}
+          userName={user?.name ?? "Aluno"}
+          onLogout={logout}
+          onWheel={scrollContentArea}
+          onCollapse={() => setSidebarCollapsed(true)}
+        />
+      ) : (
+        <button
+          type="button"
+          aria-label="Abrir menu lateral"
+          title="Abrir menu lateral"
+          onClick={() => setSidebarCollapsed(false)}
+          className="fixed left-3 top-3 z-40 hidden h-10 w-10 place-items-center rounded-control border border-white/70 bg-card/90 text-muted-foreground shadow-elevated backdrop-blur-2xl transition-colors hover:text-primary md:grid"
+        >
+          <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+        </button>
+      )}
       <MobileDrawer
         items={navItems}
         open={drawerOpen}
@@ -111,7 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div
         ref={scrollAreaRef}
-        className="h-full overflow-y-auto overscroll-contain md:pl-[262px]"
+        className={cn("h-full overflow-y-auto overscroll-contain", sidebarCollapsed ? "md:pl-0" : "md:pl-[262px]")}
       >
         <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
           <AnimatePresence mode="wait" initial={false}>
@@ -150,20 +186,31 @@ function DesktopSidebar({
   userName,
   onLogout,
   onWheel,
+  onCollapse,
 }: {
   items: WorkspaceNavItem[];
   pathname: string;
   userName: string;
   onLogout: () => void;
   onWheel: (event: WheelEvent<HTMLElement>) => void;
+  onCollapse: () => void;
 }) {
   return (
     <aside
       className="fixed inset-y-3 left-3 z-40 hidden w-[236px] flex-col rounded-[18px] border border-white/70 bg-card/90 py-5 px-4 shadow-elevated backdrop-blur-2xl md:flex"
       onWheel={onWheel}
     >
-      <div className="mb-5 px-1">
+      <div className="mb-5 flex items-center justify-between gap-2 px-1">
         <BrandLink collapsed={false} href="/dashboard" />
+        <button
+          type="button"
+          aria-label="Recolher menu lateral"
+          title="Recolher menu lateral"
+          onClick={onCollapse}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-control text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+        >
+          <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="mb-5">
