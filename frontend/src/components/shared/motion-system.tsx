@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
@@ -15,6 +15,7 @@ import {
   Trophy,
 } from "lucide-react";
 
+import { useMarkOnSelection } from "@/hooks/useMarkOnSelection";
 import type { SupportingText } from "@/types/api";
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
 import { DEFAULT_MARK_TOOL, MARK_TOOL_HIGHLIGHT_STYLE, type EssayMarkTool } from "@/lib/mark-tools";
@@ -364,23 +365,36 @@ function HighlightableText({
   const removeHighlight = useHighlightsStore((state) => state.removeHighlight);
   const textHighlights = highlights.filter((h) => h.textIndex === textIndex);
 
-  function handleMouseUp() {
+  const getSelectedQuote = useCallback(() => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !containerRef.current) return;
-    if (!containerRef.current.contains(selection.anchorNode)) return;
+    if (!selection || selection.isCollapsed || !containerRef.current) return null;
+    if (!containerRef.current.contains(selection.anchorNode)) return null;
     const quote = selection.toString().trim();
-    if (quote.length < 3 || !content.includes(quote)) return;
-    // Grifo só é criado com uma caneta armada no Dock (mesmo fluxo da folha de redação) —
-    // sem ferramenta ativa, ou com a borracha, a seleção não marca nada.
-    if (!activeTool || activeTool === "erase") return;
-    addHighlight(themeId, textIndex, textTitle, quote, activeTool);
-    selection.removeAllRanges();
-  }
+    if (quote.length < 3 || !content.includes(quote)) return null;
+    return quote;
+  }, [content]);
+
+  const handleMark = useCallback(
+    (quote: string, tool: EssayMarkTool) => {
+      addHighlight(themeId, textIndex, textTitle, quote, tool);
+      window.getSelection()?.removeAllRanges();
+    },
+    [addHighlight, themeId, textIndex, textTitle],
+  );
+
+  // Grifo só é criado com uma caneta armada no Dock (mesmo fluxo da folha de redação) — a
+  // borracha não age sobre a seleção aqui, remoção é só clicando no grifo já criado.
+  const handleSelectionRelease = useMarkOnSelection({
+    activeTool,
+    getSelectedQuote,
+    onMark: handleMark,
+    onErase: () => {},
+  });
 
   const segments = buildHighlightedSegments(content, textHighlights);
 
   return (
-    <p ref={containerRef} onMouseUp={handleMouseUp} className="text-xs leading-5 text-muted-foreground">
+    <p ref={containerRef} onPointerUp={handleSelectionRelease} className="text-xs leading-5 text-muted-foreground">
       {segments.map((segment, index) =>
         segment.highlightId ? (
           <mark

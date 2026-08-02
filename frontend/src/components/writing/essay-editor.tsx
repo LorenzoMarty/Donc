@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Eraser, Send, Trash2 } from "lucide-react";
 
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { RewardAnimation, SupportingTextBody, SupportingTextIcon } from "@/components/shared/motion-system";
 import { EssayTimer } from "@/components/writing/essay-timer";
 import { FloatingPostIts } from "@/components/writing/floating-post-its";
+import { useMarkOnSelection } from "@/hooks/useMarkOnSelection";
 import type { Essay, EssayTheme } from "@/services/api";
 import { useFreePostItsStore } from "@/stores/free-post-its-store";
 import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
@@ -136,23 +137,32 @@ export function EssayEditor({
   /**
    * Fluxo igual ao mock (WritingSheet): a caneta/borracha vira uma "ferramenta armada" ao
    * clicar — ela não age sobre uma seleção pré-existente. É a seleção seguinte no texto (ao
-   * soltar o mouse) que dispara a marcação, permitindo marcar vários trechos em sequência sem
+   * soltar o ponteiro) que dispara a marcação, permitindo marcar vários trechos em sequência sem
    * reclicar na ferramenta a cada vez.
    */
-  function handleSelectionRelease() {
+  const getSelectedQuote = useCallback(() => {
     const textarea = textareaRef.current;
-    if (!textarea || !activeTool) return;
+    if (!textarea) return null;
     const { selectionStart, selectionEnd } = textarea;
-    if (selectionEnd <= selectionStart) return;
+    if (selectionEnd <= selectionStart) return null;
     const quote = content.slice(selectionStart, selectionEnd);
-    if (!quote.trim()) return;
+    return quote.trim() ? quote : null;
+  }, [content]);
 
-    if (activeTool === "erase") {
-      setMarks((prev) => prev.filter((mark) => !mark.quote.includes(quote) && !quote.includes(mark.quote)));
-      return;
-    }
-    setMarks((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tool: activeTool, quote }]);
-  }
+  const handleMark = useCallback((quote: string, tool: EssayMarkTool) => {
+    setMarks((prev) => [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, tool, quote }]);
+  }, []);
+
+  const handleErase = useCallback((quote: string) => {
+    setMarks((prev) => prev.filter((mark) => !mark.quote.includes(quote) && !quote.includes(mark.quote)));
+  }, []);
+
+  const handleSelectionRelease = useMarkOnSelection({
+    activeTool,
+    getSelectedQuote,
+    onMark: handleMark,
+    onErase: handleErase,
+  });
 
   function syncOverlayScroll() {
     if (overlayRef.current && textareaRef.current) {
@@ -267,7 +277,7 @@ export function EssayEditor({
                       disabled={locked}
                       onChange={(event) => onContentChange(event.target.value)}
                       onScroll={syncOverlayScroll}
-                      onMouseUp={handleSelectionRelease}
+                      onPointerUp={handleSelectionRelease}
                       spellCheck
                       placeholder="Comece sua redação aqui..."
                       className="font-display absolute inset-0 h-full w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-transparent caret-primary outline-none placeholder:italic placeholder:text-[#3c3c43]/34 [--essay-line-height:2.82rem]"

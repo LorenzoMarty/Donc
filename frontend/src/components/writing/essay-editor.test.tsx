@@ -75,13 +75,27 @@ describe("EssayEditor — alternância folha/motivadores", () => {
     fireEvent.click(penButton);
     textarea.focus();
     textarea.setSelectionRange(0, 4);
-    fireEvent.mouseUp(textarea);
+    fireEvent.pointerUp(textarea);
 
     expect(clearButton).not.toBeDisabled();
     expect(screen.getByText("Meu")).toBeInTheDocument();
 
     fireEvent.click(clearButton);
     expect(clearButton).toBeDisabled();
+  });
+
+  it("marca-texto: funciona com seleção via caneta/stylus (pointerType 'pen'), não só mouse", async () => {
+    renderEditor();
+
+    const textarea = screen.getByPlaceholderText("Comece sua redação aqui...") as HTMLTextAreaElement;
+    const penButton = screen.getByRole("button", { name: "Marca-texto azul" });
+
+    fireEvent.click(penButton);
+    textarea.focus();
+    textarea.setSelectionRange(0, 4);
+    fireEvent.pointerUp(textarea, { pointerType: "pen" });
+
+    expect(screen.getByText("Meu")).toBeInTheDocument();
   });
 
   it("dock: botão de post-it cria um post-it livre no store", async () => {
