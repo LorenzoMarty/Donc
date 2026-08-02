@@ -113,7 +113,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label="Abrir menu lateral"
           title="Abrir menu lateral"
           onClick={() => setSidebarCollapsed(false)}
-          className="fixed left-3 top-3 z-40 hidden h-10 w-10 place-items-center rounded-control border border-white/70 bg-card/90 text-muted-foreground shadow-elevated backdrop-blur-2xl transition-colors hover:text-primary md:grid"
+          className="fixed left-3 top-3 z-40 hidden h-10 w-10 place-items-center rounded-control bg-card/90 text-muted-foreground shadow-elevated backdrop-blur-2xl transition-colors hover:text-primary md:grid"
         >
           <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -179,7 +179,7 @@ function DesktopSidebar({
 }) {
   return (
     <aside
-      className="fixed inset-y-3 left-3 z-40 hidden w-[236px] flex-col rounded-[18px] border border-white/70 bg-card/90 py-5 px-4 shadow-elevated backdrop-blur-2xl md:flex"
+      className="fixed inset-y-3 left-3 z-40 hidden w-[236px] flex-col rounded-[18px] bg-card/90 py-5 px-4 shadow-elevated backdrop-blur-2xl md:flex"
       onWheel={onWheel}
     >
       <div className="mb-5 flex items-center justify-between gap-2 px-1">
