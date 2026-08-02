@@ -35,13 +35,18 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
   const completeGame = useGameStore((state) => state.completeGame);
   const xp = useGameStore((state) => state.xp);
 
+  const [attempt, setAttempt] = useState(0);
+  // `attempt` força reembaralhar (pool e alternativas) a cada "Repetir" — sem isso o useMemo
+  // reaproveitava a mesma seleção/ordem/posição da 1ª tentativa em replays no mesmo componente
+  // montado, fazendo a resposta certa parecer sempre no mesmo lugar.
   const questions = useMemo<GameQuestion[]>(() => {
     const pool = game.survival?.poolGameIds?.length
       ? game.survival.poolGameIds.map((id) => getGameById(id)).filter(Boolean as unknown as (g: GameDefinition | undefined) => g is GameDefinition)
       : getAllGames().filter((g) => g.id !== game.id && (g.engine === "quiz" || g.engine === "timed-rush"));
     const all = pool.flatMap((g) => g.questions ?? []);
     return shuffle(all).slice(0, RUN_LENGTH).map(shuffleQuestionOptions);
-  }, [game]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, attempt]);
 
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -117,6 +122,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
     setSessionXp(0);
     setTimeLeft(roundDuration(0));
     setResult(null);
+    setAttempt((value) => value + 1);
   }
 
   if (questions.length === 0) {
