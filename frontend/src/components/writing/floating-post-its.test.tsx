@@ -20,13 +20,13 @@ describe("FloatingPostIts", () => {
   });
 
   it("renderiza um post-it flutuante por grifo do tema, posicionado sobre a folha", () => {
-    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado pelo aluno");
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado pelo aluno", "highlighter-yellow");
     render(<FloatingPostIts themeId={THEME_ID} />);
     expect(screen.getByTitle("trecho grifado pelo aluno")).toBeInTheDocument();
   });
 
   it("edita a nota do post-it e persiste no store ao perder o foco", async () => {
-    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado");
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado", "highlighter-yellow");
     const user = userEvent.setup();
     render(<FloatingPostIts themeId={THEME_ID} />);
 
@@ -39,7 +39,7 @@ describe("FloatingPostIts", () => {
   });
 
   it("remove o post-it ao clicar no botão de remover", async () => {
-    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado");
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado", "highlighter-yellow");
     const user = userEvent.setup();
     render(<FloatingPostIts themeId={THEME_ID} />);
 
@@ -48,7 +48,7 @@ describe("FloatingPostIts", () => {
   });
 
   it("renderiza também os post-its livres do dock, além dos post-its de grifo", () => {
-    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado");
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho grifado", "highlighter-yellow");
     useFreePostItsStore.getState().addPostIt(THEME_ID);
     render(<FloatingPostIts themeId={THEME_ID} />);
 

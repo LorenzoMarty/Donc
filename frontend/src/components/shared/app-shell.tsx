@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/providers/app-providers";
 import { useGameStore } from "@/stores/game-store";
+import { useSidebarStore } from "@/stores/sidebar-store";
 import { cn, initials } from "@/utils";
 
 type WorkspaceNavItem = {
@@ -33,26 +34,6 @@ type WorkspaceNavItem = {
   label: string;
   icon: LucideIcon;
 };
-
-const SIDEBAR_COLLAPSED_KEY = "donk.sidebar-collapsed.v1";
-
-/** Estado recolhido persiste por browser (localStorage) — hidrata após o mount pra não divergir do SSR. */
-function useSidebarCollapsed() {
-  const [collapsed, setCollapsed] = useState(false);
-  const hydratedRef = useRef(false);
-
-  useEffect(() => {
-    setCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1");
-    hydratedRef.current = true;
-  }, []);
-
-  useEffect(() => {
-    if (!hydratedRef.current) return;
-    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
-  }, [collapsed]);
-
-  return [collapsed, setCollapsed] as const;
-}
 
 const workspaceNav: WorkspaceNavItem[] = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
@@ -68,7 +49,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useSidebarCollapsed();
+  const sidebarCollapsed = useSidebarStore((s) => s.collapsed);
+  const setSidebarCollapsed = useSidebarStore((s) => s.setCollapsed);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const hydrateFromBackend = useGameStore((s) => s.hydrateFromBackend);
 
