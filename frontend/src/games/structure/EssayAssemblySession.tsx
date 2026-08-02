@@ -252,7 +252,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{level.title}</p>
               <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
-                Organize a estrutura da redacao
+                Organize a estrutura da redação
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{level.description}</p>
             </div>
@@ -684,7 +684,7 @@ const essayLevels: AssemblyLevel[] = [
         id: "easy-proof",
         expectedSection: "development",
         order: 4,
-        text: "Com isso, estudantes de regioes vulneraveis tendem a desenvolver menor repertorio e menor autonomia interpretativa.",
+        text: "Com isso, estudantes de regiões vulneráveis tendem a desenvolver menor repertório e menor autonomia interpretativa.",
       },
       {
         id: "easy-conclusion",
@@ -696,9 +696,9 @@ const essayLevels: AssemblyLevel[] = [
   },
   {
     id: "hard",
-    label: "Dificil",
-    title: "Argumentacao completa",
-    description: "Mais blocos, dois argumentos e frases parecidas. Deixe distratores no banco para manter a redacao limpa.",
+    label: "Difícil",
+    title: "Argumentação completa",
+    description: "Mais blocos, dois argumentos e frases parecidas. Deixe distratores no banco para manter a redação limpa.",
     blocks: [
       {
         id: "hard-context",
@@ -722,19 +722,19 @@ const essayLevels: AssemblyLevel[] = [
         id: "hard-arg1-proof",
         expectedSection: "development",
         order: 4,
-        text: "Esse cenario aprofunda diferencas de repertorio, pois o aluno conectado encontra mais fontes para comparar ideias e ampliar vocabulario.",
+        text: "Esse cenário aprofunda diferenças de repertório, pois o aluno conectado encontra mais fontes para comparar ideias e ampliar vocabulário.",
       },
       {
         id: "hard-arg2",
         expectedSection: "development",
         order: 5,
-        text: "Além disso, muitas escolas tratam a leitura apenas como tarefa avaliativa, e nao como habito interpretativo permanente.",
+        text: "Além disso, muitas escolas tratam a leitura apenas como tarefa avaliativa, e não como hábito interpretativo permanente.",
       },
       {
         id: "hard-arg2-proof",
         expectedSection: "development",
         order: 6,
-        text: "Dessa maneira, o estudante le textos sem aprender a relaciona-los a problemas sociais, o que enfraquece sua argumentacao.",
+        text: "Dessa maneira, o estudante lê textos sem aprender a relacioná-los a problemas sociais, o que enfraquece sua argumentação.",
       },
       {
         id: "hard-close",
@@ -746,7 +746,7 @@ const essayLevels: AssemblyLevel[] = [
         id: "hard-detail",
         expectedSection: "conclusion",
         order: 8,
-        text: "Tal medida deve ocorrer em parceria com secretarias estaduais, a fim de ampliar repertorio e autonomia critica dos estudantes.",
+        text: "Tal medida deve ocorrer em parceria com secretarias estaduais, a fim de ampliar repertório e autonomia crítica dos estudantes.",
       },
       {
         id: "hard-distractor-1",

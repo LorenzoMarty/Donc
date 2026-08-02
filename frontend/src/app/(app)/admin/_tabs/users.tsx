@@ -291,7 +291,7 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Progresso" value={`${progress.progress_general}%`} />
-        <Stat label="Media redacao" value={String(progress.essay_average)} />
+        <Stat label="Média redação" value={String(progress.essay_average)} />
         <Stat label="Aulas concluidas" value={String(progress.completed_lessons)} />
         <Stat label="Acerto exercicios" value={`${progress.correct_exercises_rate}%`} />
       </div>

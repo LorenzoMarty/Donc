@@ -89,7 +89,7 @@ export default function EssayHistoryPage() {
     try {
       await action();
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : "Nao foi possivel concluir a acao.");
+      setActionError(error instanceof Error ? error.message : "Não foi possível concluir a ação.");
     } finally {
       setBusyAction("");
     }
@@ -277,7 +277,7 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
         <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
       </Link>
 
-      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redacao" className="h-9 w-9 shrink-0">
+      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redação" className="h-9 w-9 shrink-0">
         <Trash2 className="h-4 w-4" aria-hidden="true" />
       </Button>
     </article>

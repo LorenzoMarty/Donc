@@ -93,3 +93,41 @@ describe("completeGame", () => {
     expect(useGameStore.getState().xp).toBeGreaterThan(before);
   });
 });
+
+describe("importProgress", () => {
+  it("restaura xp/streak/attempts/progress/skills de um JSON válido e retorna true", () => {
+    const backup = JSON.stringify({
+      xp: 420,
+      streak: { current: 3, best: 5 },
+      attempts: [],
+      progress: {},
+      skills: { "texto-robotico": { attempts: 2, errors: 1 } },
+    });
+
+    const ok = useGameStore.getState().importProgress(backup);
+
+    expect(ok).toBe(true);
+    expect(useGameStore.getState().xp).toBe(420);
+    expect(useGameStore.getState().streak).toEqual({ current: 3, best: 5 });
+    expect(useGameStore.getState().skills["texto-robotico"]).toEqual({ attempts: 2, errors: 1 });
+  });
+
+  it("mantém o estado atual e retorna false para JSON inválido, sem lançar exceção", () => {
+    useGameStore.setState({ xp: 100 });
+
+    const ok = useGameStore.getState().importProgress("{ isso não é json válido");
+
+    expect(ok).toBe(false);
+    expect(useGameStore.getState().xp).toBe(100);
+  });
+
+  it("preserva campos ausentes no backup usando o estado atual como fallback", () => {
+    useGameStore.setState({ xp: 100, streak: { current: 7, best: 7 } });
+
+    const ok = useGameStore.getState().importProgress(JSON.stringify({ xp: 250 }));
+
+    expect(ok).toBe(true);
+    expect(useGameStore.getState().xp).toBe(250);
+    expect(useGameStore.getState().streak).toEqual({ current: 7, best: 7 });
+  });
+});

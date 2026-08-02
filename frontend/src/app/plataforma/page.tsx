@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 
 const pillars = [
   { title: "Diagnóstico contínuo", text: "Painel com metas, notas, sequência e habilidades fracas.", icon: LineChart },
-  { title: "Pratica guiada", text: "Trilhas, etapas curtas e revisoes com progresso gradual.", icon: PlayCircle },
+  { title: "Prática guiada", text: "Trilhas, etapas curtas e revisões com progresso gradual.", icon: PlayCircle },
   { title: "Redação ativa", text: "Editor, IA, repertório, conectivos e laboratório de argumentos.", icon: FilePenLine },
-  { title: "Dominio gradual", text: "Marcos discretos para registrar constancia e melhoria real.", icon: Medal },
+  { title: "Domínio gradual", text: "Marcos discretos para registrar constância e melhoria real.", icon: Medal },
 ];
 
 export default function PlatformPage() {
@@ -27,8 +27,8 @@ export default function PlatformPage() {
                 Uma plataforma de estudo clara, moderna e constante.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Donc ENEM organiza Portugues e Redacao em uma experiencia visual e progressiva: conteudo, pratica, IA e historico de
-                evolucao no mesmo fluxo.
+                Donc ENEM organiza Português e Redação em uma experiência visual e progressiva: conteúdo, prática, IA e histórico de
+                evolução no mesmo fluxo.
               </p>
               <Button asChild size="lg" className="mt-7">
                 <Link href="/cadastro">

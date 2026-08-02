@@ -107,7 +107,7 @@ def essay_job_status(essay_id: int, current_user: User = Depends(get_current_use
     )
     if not job:
         from src.middlewares.errors import AppError
-        raise AppError("Nenhum job encontrado para essa redacao.", status_code=404, code="ai_job_not_found")
+        raise AppError("Nenhum job encontrado para essa redação.", status_code=404, code="ai_job_not_found")
     essay_read: EssayRead | None = None
     if job.status == "completed" and job.result_payload:
         essay_read = EssayRead.model_validate(job.result_payload)

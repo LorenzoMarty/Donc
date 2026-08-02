@@ -5,7 +5,7 @@ import type { MutableRefObject } from "react";
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { apiFetch, type Essay, type EssaySubmitResponse } from "@/services/api";
 
-import { replaceEssayUrl, type EssayViewMode } from "./useEssayDraft";
+import { computeEssayTitle, replaceEssayUrl, type EssayViewMode } from "./useEssayDraft";
 
 type UseEssaySubmissionParams = {
   essay: Essay | null;
@@ -44,7 +44,7 @@ export function useEssaySubmission({
     if (!essay || submittingRef.current) return;
     setError("");
     if (wordCount < 80) {
-      setError("A redacao precisa ter pelo menos 80 palavras para ser enviada para correcao.");
+      setError("A redação precisa ter pelo menos 80 palavras para ser enviada para correção.");
       return;
     }
 
@@ -62,7 +62,7 @@ export function useEssaySubmission({
       trackEvent({ event_type: "essay_submitted", entity_id: String(saved.id), entity_type: "essay", meta: { word_count: wordCount } });
       // submitting stays true — CorrectionWaitingScreen polls via useCorrectionStatus
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel iniciar a correcao.");
+      setError(err instanceof Error ? err.message : "Não foi possível iniciar a correção.");
       setMode("editor");
       submittingRef.current = false;
       saveRequestRef.current += 1;
@@ -73,7 +73,7 @@ export function useEssaySubmission({
 
   function handleCorrectionCompleted(corrected: Essay) {
     setEssay(corrected);
-    setTitle(corrected.title);
+    setTitle(computeEssayTitle(corrected.theme, corrected));
     setContent(corrected.content);
     setMode("resultado");
     replaceEssayUrl(corrected.id);

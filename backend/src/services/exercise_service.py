@@ -28,7 +28,7 @@ class ExerciseService:
     def submit(self, *, user: User, exercise_id: int, selected_answer: str) -> dict[str, object]:
         exercise = self.repo.get_exercise(exercise_id)
         if not exercise:
-            raise AppError("Exercicio nao encontrado.", status_code=404, code="exercise_not_found")
+            raise AppError("Exercício não encontrado.", status_code=404, code="exercise_not_found")
 
         is_correct = selected_answer == exercise.correct_answer
         answer = ExerciseAnswer(

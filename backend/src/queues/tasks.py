@@ -16,11 +16,11 @@ def run_correct_essay_job(job_id: str) -> dict:
         jobs = AIJobService(db)
         job = db.get(AIJob, job_id)
         if not job:
-            raise AppError("Job de IA nao encontrado.", status_code=404, code="ai_job_not_found")
+            raise AppError("Job de IA não encontrado.", status_code=404, code="ai_job_not_found")
         jobs.mark_running(job)
         user = db.get(User, job.user_id)
         if not user:
-            raise AppError("Usuario do job nao encontrado.", status_code=404, code="user_not_found")
+            raise AppError("Usuário do job não encontrado.", status_code=404, code="user_not_found")
         essay_id = int(job.request_payload.get("essay_id"))
         essay = EssayService(db).submit_for_correction(essay_id=essay_id, user=user, job_id=job.id)
         result = EssayRead.model_validate(essay).model_dump(mode="json")

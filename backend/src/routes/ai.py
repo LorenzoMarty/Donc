@@ -261,4 +261,4 @@ def _default_focus(db: Session, user_id: int) -> str:
 
 def _reject_prompt_injection(text: str) -> None:
     if text and contains_prompt_injection(text):
-        raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+        raise AppError("Entrada contém instruções indevidas para o agente.", status_code=422, code="prompt_injection_detected")

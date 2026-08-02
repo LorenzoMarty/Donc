@@ -25,7 +25,7 @@ class LessonService:
     def get_lesson(self, lesson_id: int, user_id: int) -> LessonRead:
         lesson = self.repo.get_lesson(lesson_id)
         if not lesson:
-            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+            raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         module = lesson.module
         unlock_map = self.progression.unlock_map(self.repo.list_modules(), user_id)
         if not unlock_map.get(module.id, True):
@@ -39,7 +39,7 @@ class LessonService:
     def update_progress(self, lesson_id: int, user_id: int, *, progress_percent: int, last_position_seconds: int, completed: bool) -> LessonProgressRead:
         lesson = self.repo.get_lesson(lesson_id)
         if not lesson:
-            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+            raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         self._get_user(user_id)
         progress = self.repo.get_progress(user_id, lesson_id)
         if not progress:
@@ -151,7 +151,7 @@ class LessonService:
     def _get_user(self, user_id: int) -> User:
         user = self.db.get(User, user_id)
         if not user:
-            raise AppError("Usuario nao encontrado.", status_code=404, code="user_not_found")
+            raise AppError("Usuário não encontrado.", status_code=404, code="user_not_found")
         return user
 
     def _module_progress(self, module, user_id: int) -> int:

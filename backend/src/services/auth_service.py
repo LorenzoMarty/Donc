@@ -17,14 +17,14 @@ class AuthService:
 
     def register(self, *, name: str, email: str, password: str) -> User:
         if self.users.get_by_email(email):
-            raise AppError("Ja existe uma conta com este e-mail.", status_code=409, code="email_in_use")
+            raise AppError("Já existe uma conta com este e-mail.", status_code=409, code="email_in_use")
         user = self.users.create(name=name, email=email, hashed_password=get_password_hash(password))
         return touch_daily_streak(self.db, user)
 
     def authenticate(self, *, email: str, password: str) -> User:
         user = self.users.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
-            raise AppError("E-mail ou senha invalidos.", status_code=401, code="invalid_credentials")
+            raise AppError("E-mail ou senha inválidos.", status_code=401, code="invalid_credentials")
         return touch_daily_streak(self.db, user)
 
     def update_profile(self, user: User, *, name: str) -> User:

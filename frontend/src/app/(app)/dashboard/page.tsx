@@ -35,7 +35,7 @@ export default function DashboardPage() {
         setData(dashboardPayload);
         setError("");
       } catch (err) {
-        if (!ignore) setError(err instanceof Error ? err.message : "Nao foi possivel carregar o painel.");
+        if (!ignore) setError(err instanceof Error ? err.message : "Não foi possível carregar o painel.");
       }
     }
 

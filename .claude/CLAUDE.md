@@ -15,8 +15,8 @@ usa skill `claude-obsidian` neste projeto (corrigido de `knowledge-manager`, que
 por projeto, não registro de decisões/arquitetura).
 
 > Nota sobre as duas camadas de CLAUDE.md: a raiz tem um `CLAUDE.md` curto que só faz
-> `@claude/CLAUDE.md` para reativar o auto-load. O arquivo real de instruções é
-> **`claude/CLAUDE.md`** — edite-o lá, não na raiz.
+> `@.claude/CLAUDE.md` para reativar o auto-load. O arquivo real de instruções é
+> **`.claude/CLAUDE.md`** — edite-o lá, não na raiz.
 
 ### Regras específicas deste projeto
 

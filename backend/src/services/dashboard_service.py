@@ -183,7 +183,7 @@ class DashboardService:
     def _get_goal(self, *, goal_id: int, user_id: int) -> Goal:
         goal = self.db.get(Goal, goal_id)
         if not goal or goal.user_id != user_id:
-            raise AppError("Desafio nao encontrado.", status_code=404, code="goal_not_found")
+            raise AppError("Desafio não encontrado.", status_code=404, code="goal_not_found")
         return goal
 
     def _goal_read(self, goal: Goal) -> GoalRead:

@@ -45,4 +45,22 @@ describe("useHighlightsStore", () => {
     expect(highlights).toHaveLength(1);
     expect(highlights[0].quote).toBe("trecho B");
   });
+
+  it("clearHighlights esvazia todos os grifos do tema", () => {
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho A", "highlighter-yellow");
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho B", "highlighter-yellow");
+
+    useHighlightsStore.getState().clearHighlights(THEME_ID);
+
+    expect(useHighlightsStore.getState().highlightsByTheme[THEME_ID]).toEqual([]);
+  });
+
+  it("setHighlightPosition atualiza a posição do post-it grifado", () => {
+    useHighlightsStore.getState().addHighlight(THEME_ID, 0, "Texto 1", "trecho A", "highlighter-yellow");
+    const [highlight] = useHighlightsStore.getState().highlightsByTheme[THEME_ID];
+
+    useHighlightsStore.getState().setHighlightPosition(THEME_ID, highlight.id, { x: 0.3, y: 0.4 });
+
+    expect(useHighlightsStore.getState().highlightsByTheme[THEME_ID][0].position).toEqual({ x: 0.3, y: 0.4 });
+  });
 });

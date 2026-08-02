@@ -79,7 +79,7 @@ def generate_essay_theme(
     if focus and contains_prompt_injection(focus):
         from src.middlewares.errors import AppError
 
-        raise AppError("Entrada contem instrucoes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+        raise AppError("Entrada contém instruções indevidas para o agente.", status_code=422, code="prompt_injection_detected")
     requirements = {item.type: item.count for item in payload.supporting_text_requirements if item.count > 0}
     return success_response(
         AdminContentService(db).generate_essay_theme(

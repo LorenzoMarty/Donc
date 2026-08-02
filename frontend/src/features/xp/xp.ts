@@ -11,7 +11,7 @@ type RankDefinition = {
 };
 
 const rankCatalog: RankDefinition[] = [
-  { id: "aprendiz", name: "Aprendiz", minXp: 0, description: "Construindo constancia e base estrutural.", exerciseDifficulty: "easy" },
+  { id: "aprendiz", name: "Aprendiz", minXp: 0, description: "Construindo constância e base estrutural.", exerciseDifficulty: "easy" },
   {
     id: "argumentador",
     name: "Argumentador",
@@ -23,15 +23,15 @@ const rankCatalog: RankDefinition[] = [
     id: "estrategista",
     name: "Estrategista",
     minXp: 900,
-    description: "Escolhendo repertorio, tese e coesao com intencao.",
+    description: "Escolhendo repertório, tese e coesão com intenção.",
     exerciseDifficulty: "hard",
   },
-  { id: "orador", name: "Orador", minXp: 1650, description: "Dominando ritmo, precisao e repertorio produtivo.", exerciseDifficulty: "hard" },
+  { id: "orador", name: "Orador", minXp: 1650, description: "Dominando ritmo, precisão e repertório produtivo.", exerciseDifficulty: "hard" },
   {
     id: "mestre",
-    name: "Mestre da Redacao",
+    name: "Mestre da Redação",
     minXp: 2700,
-    description: "Alto dominio da escrita ENEM em pratica recorrente.",
+    description: "Alto domínio da escrita ENEM em prática recorrente.",
     exerciseDifficulty: "hard",
   },
 ];

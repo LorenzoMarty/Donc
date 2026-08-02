@@ -51,7 +51,7 @@ const features = [
   },
   {
     title: "Evolucao",
-    text: "Marcos discretos para registrar constancia, dominio e qualidade de escrita.",
+    text: "Marcos discretos para registrar constância, domínio e qualidade de escrita.",
     icon: Trophy,
     tone: "bg-primary/12 text-primary",
   },
@@ -96,12 +96,12 @@ export function LandingPage() {
                   Donc ENEM
                 </h1>
                 <p className="mt-5 max-w-2xl text-lg font-medium leading-7 text-muted-foreground md:text-2xl md:leading-9">
-                  Pratique escrita com constancia: aulas, redacao com IA, exercicios curtos e indicadores de evolucao real.
+                  Pratique escrita com constância: aulas, redação com IA, exercícios curtos e indicadores de evolução real.
                 </p>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <Button asChild size="lg" className="bg-primary text-primary-foreground">
                     <Link href="/cadastro">
-                      Comecar rotina
+                      Começar rotina
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                   </Button>
@@ -122,8 +122,8 @@ export function LandingPage() {
           <MetricRail
             items={[
               { value: "5", label: "competências ENEM acompanhadas" },
-              { value: "12", label: "formatos de pratica para estudar sem travar" },
-              { value: "PTS", label: "reforco secundario de consistencia" },
+              { value: "12", label: "formatos de prática para estudar sem travar" },
+              { value: "PTS", label: "reforço secundário de consistência" },
               { value: "1000", label: "meta final para redação" },
             ]}
           />
@@ -152,10 +152,10 @@ export function LandingPage() {
                 Fluxo contínuo
               </div>
               <h2 className="text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                O proximo passo sempre fica claro.
+                O próximo passo sempre fica claro.
               </h2>
               <p className="mt-4 text-sm font-semibold leading-6 text-foreground/74 md:text-base">
-                Sem listas infinitas. O aluno abre uma trilha, conclui uma pratica curta, recebe feedback e sabe qual e o proximo passo.
+                Sem listas infinitas. O aluno abre uma trilha, conclui uma prática curta, recebe feedback e sabe qual é o próximo passo.
               </p>
               <Button asChild className="mt-7 bg-background text-foreground hover:bg-background/90">
                 <Link href="/games">
@@ -177,13 +177,13 @@ export function LandingPage() {
           <MovingBorderPanel>
             <div className="grid gap-6 p-5 md:grid-cols-[1fr_0.85fr] md:p-8 lg:p-10">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratorio de redacao</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratório de redação</p>
                 <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
                   Escrever fica mais leve em uma tela limpa e direta.
                 </h2>
                 <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">
-                  A redacao tem editor compacto, banco de conectivos, repertorios por tema e praticas curtas para treinar coesao antes da
-                  correcao.
+                  A redação tem editor compacto, banco de conectivos, repertórios por tema e práticas curtas para treinar coesão antes da
+                  correção.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {["A4", "IA por competência", "Repertório", "Conectivos"].map((item) => (
@@ -220,10 +220,10 @@ export function LandingPage() {
           <div className="game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">
-                Pronto para sair da lista de exercicios?
+                Pronto para sair da lista de exercícios?
               </p>
               <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                Entre e comece pela sua primeira pratica.
+                Entre e comece pela sua primeira prática.
               </h2>
             </div>
             <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
@@ -251,7 +251,7 @@ function HeroConsole() {
               <p className="text-xs font-bold text-muted-foreground">42 min de foco</p>
             </div>
           </div>
-          <span className="game-chip bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Consistencia 8</span>
+          <span className="game-chip bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Consistência 8</span>
         </div>
 
         <div className="grid gap-3">

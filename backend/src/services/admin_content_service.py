@@ -50,7 +50,7 @@ class AdminContentService:
         generated = result.themes[0]
         title = self._clean_theme_title(generated.title)
         if self._normalize_theme_title(title) in {self._normalize_theme_title(item) for item in existing_titles}:
-            raise AppError("A IA retornou um tema ja existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
+            raise AppError("A IA retornou um tema já existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
 
         self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
 
@@ -89,7 +89,7 @@ class AdminContentService:
         if title is not None:
             cleaned_title = self._clean_theme_title(title)
             if len(cleaned_title) < 8:
-                raise AppError("Titulo do tema precisa ter pelo menos 8 caracteres.", status_code=422, code="invalid_theme_title")
+                raise AppError("Título do tema precisa ter pelo menos 8 caracteres.", status_code=422, code="invalid_theme_title")
             normalized_title = self._normalize_theme_title(cleaned_title)
             active_titles = list(
                 self.db.scalars(
@@ -97,7 +97,7 @@ class AdminContentService:
                 )
             )
             if normalized_title in {self._normalize_theme_title(item) for item in active_titles}:
-                raise AppError("Ja existe um tema ativo com esse titulo.", status_code=409, code="duplicate_theme")
+                raise AppError("Já existe um tema ativo com esse título.", status_code=409, code="duplicate_theme")
             theme.title = cleaned_title
         if context is not None:
             cleaned_context = context.strip()
@@ -170,9 +170,9 @@ class AdminContentService:
             title = str(item.get("title") or "").strip()
             content = str(item.get("content") or "").strip()
             if kind not in allowed:
-                raise AppError("Tipo de texto motivador invalido.", status_code=422, code="invalid_supporting_text_type")
+                raise AppError("Tipo de texto motivador inválido.", status_code=422, code="invalid_supporting_text_type")
             if len(title) < 4:
-                raise AppError("Titulo do texto motivador precisa ter pelo menos 4 caracteres.", status_code=422, code="invalid_supporting_text")
+                raise AppError("Título do texto motivador precisa ter pelo menos 4 caracteres.", status_code=422, code="invalid_supporting_text")
             if len(content) < 20:
                 raise AppError("Texto motivador precisa ter pelo menos 20 caracteres.", status_code=422, code="invalid_supporting_text")
             normalized = {"title": title, "content": content, "type": kind}
@@ -183,10 +183,10 @@ class AdminContentService:
         if not cleaned:
             raise AppError("Adicione pelo menos um texto motivador.", status_code=422, code="missing_supporting_texts")
         if len(cleaned) > 8:
-            raise AppError("Use no maximo 8 textos motivadores por tema.", status_code=422, code="too_many_supporting_texts")
+            raise AppError("Use no máximo 8 textos motivadores por tema.", status_code=422, code="too_many_supporting_texts")
         for kind, amount in (requirements or {}).items():
             if amount > 0 and sum(1 for item in cleaned if item["type"] == kind) < amount:
-                raise AppError("A IA nao gerou a quantidade solicitada de textos motivadores.", status_code=422, code="supporting_text_count_mismatch")
+                raise AppError("A IA não gerou a quantidade solicitada de textos motivadores.", status_code=422, code="supporting_text_count_mismatch")
         return cleaned
 
     def delete_essay_theme(self, *, theme_id: int) -> None:
@@ -197,7 +197,7 @@ class AdminContentService:
     def _get_active_essay_theme(self, theme_id: int) -> EssayTheme:
         theme = self.db.get(EssayTheme, theme_id)
         if not theme or not theme.is_active:
-            raise AppError("Tema de redacao nao encontrado.", status_code=404, code="theme_not_found")
+            raise AppError("Tema de redação não encontrado.", status_code=404, code="theme_not_found")
         return theme
 
     def _clean_theme_title(self, title: str) -> str:
@@ -254,7 +254,7 @@ class AdminContentService:
     ) -> AdminLessonRead:
         module = self.db.get(Module, module_id)
         if not module:
-            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+            raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
         lesson_order = order or self._next_lesson_order(module_id)
         item_order = order or self._next_item_order(module_id)
         lesson = Lesson(
@@ -298,7 +298,7 @@ class AdminContentService:
     ) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
-            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+            raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
         self._validate_activity_lessons(module_id=module_id, lesson_id=lesson_id, base_lesson_ids=base_lesson_ids)
         exercise = Exercise(
             module_id=module_id,
@@ -330,12 +330,12 @@ class AdminContentService:
     ) -> list[AdminActivityRead]:
         module = self.db.get(Module, module_id)
         if not module:
-            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+            raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
         lessons = list(
             self.db.scalars(select(Lesson).where(Lesson.module_id == module_id, Lesson.id.in_(lesson_ids)).order_by(Lesson.order, Lesson.id))
         )
         if len(lessons) != len(set(lesson_ids)):
-            raise AppError("Selecione apenas aulas deste modulo.", status_code=422, code="invalid_activity_lessons")
+            raise AppError("Selecione apenas aulas deste módulo.", status_code=422, code="invalid_activity_lessons")
         lesson_context = "\n\n".join(
             f"Aula: {lesson.title}\nDescricao: {lesson.description}\nResumo: {lesson.summary}" for lesson in lessons
         )
@@ -379,7 +379,7 @@ class AdminContentService:
     def update_module(self, *, module_id: int, title: str | None, description: str | None, color: str | None) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
-            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+            raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
         if title is not None:
             module.title = title.strip()
         if description is not None:
@@ -392,7 +392,7 @@ class AdminContentService:
     def delete_module(self, *, module_id: int) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
-            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+            raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
         self.db.delete(module)
         self.db.commit()
         return self.content_tree()
@@ -400,7 +400,7 @@ class AdminContentService:
     def move_module(self, *, module_id: int, direction: str) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
-            raise AppError("Modulo nao encontrado.", status_code=404, code="module_not_found")
+            raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
         siblings = list(self.db.scalars(select(Module).order_by(Module.order, Module.id)))
         self._swap_order(siblings, module.id, direction)
         self.db.commit()
@@ -419,7 +419,7 @@ class AdminContentService:
     ) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
-            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+            raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         if title is not None:
             lesson.title = title.strip()
         if description is not None:
@@ -438,7 +438,7 @@ class AdminContentService:
     def delete_lesson(self, *, lesson_id: int) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
-            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+            raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         self.db.delete(lesson)
         self.db.commit()
         return self.content_tree()
@@ -446,7 +446,7 @@ class AdminContentService:
     def move_lesson(self, *, lesson_id: int, direction: str) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
-            raise AppError("Aula nao encontrada.", status_code=404, code="lesson_not_found")
+            raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         item = self.db.scalar(select(ModuleItem).where(ModuleItem.lesson_id == lesson_id))
         if item:
             return self.move_module_item(item_id=item.id, direction=direction)
@@ -474,7 +474,7 @@ class AdminContentService:
     ) -> list[AdminModuleRead]:
         exercise = self.db.get(Exercise, activity_id)
         if not exercise:
-            raise AppError("Atividade nao encontrada.", status_code=404, code="activity_not_found")
+            raise AppError("Atividade não encontrada.", status_code=404, code="activity_not_found")
         if base_lesson_ids is not None or lesson_id is not None:
             self._validate_activity_lessons(
                 module_id=exercise.module_id,
@@ -503,7 +503,7 @@ class AdminContentService:
     def delete_activity(self, *, activity_id: int) -> list[AdminModuleRead]:
         exercise = self.db.get(Exercise, activity_id)
         if not exercise:
-            raise AppError("Atividade nao encontrada.", status_code=404, code="activity_not_found")
+            raise AppError("Atividade não encontrada.", status_code=404, code="activity_not_found")
         item = self.db.scalar(select(ModuleItem).where(ModuleItem.exercise_id == activity_id))
         if item:
             self.db.delete(item)
@@ -514,7 +514,7 @@ class AdminContentService:
     def move_module_item(self, *, item_id: int, direction: str) -> list[AdminModuleRead]:
         item = self.db.get(ModuleItem, item_id)
         if not item:
-            raise AppError("Item do modulo nao encontrado.", status_code=404, code="module_item_not_found")
+            raise AppError("Item do módulo não encontrado.", status_code=404, code="module_item_not_found")
         siblings = list(
             self.db.scalars(select(ModuleItem).where(ModuleItem.module_id == item.module_id).order_by(ModuleItem.order, ModuleItem.id))
         )
@@ -565,7 +565,7 @@ class AdminContentService:
             return
         found = set(self.db.scalars(select(Lesson.id).where(Lesson.module_id == module_id, Lesson.id.in_(ids))))
         if found != ids:
-            raise AppError("Selecione apenas aulas deste modulo para a atividade.", status_code=422, code="invalid_activity_lessons")
+            raise AppError("Selecione apenas aulas deste módulo para a atividade.", status_code=422, code="invalid_activity_lessons")
 
     def _unique_module_slug(self, value: str) -> str:
         base = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-") or "modulo"

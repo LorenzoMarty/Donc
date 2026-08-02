@@ -70,7 +70,7 @@ class AdminGameReviewService:
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
-            raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+            raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
         game.status = "approved" if action == "approve" else "rejected"
         game.reviewed_at = datetime.now(timezone.utc)
         game.reviewed_by = reviewer_id
@@ -96,7 +96,7 @@ class AdminGameReviewService:
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
-            raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+            raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
         if name is not None:
             game.name = name
         if xp_reward is not None:
@@ -110,7 +110,7 @@ class AdminGameReviewService:
     def delete_game(self, game_id: int) -> None:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
-            raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+            raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
         self.db.delete(game)
         self.db.commit()
 
