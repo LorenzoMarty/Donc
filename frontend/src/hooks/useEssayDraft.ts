@@ -12,7 +12,7 @@ export function useEssayDraft() {
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<EssayTheme | null>(null);
   const [essay, setEssay] = useState<Essay | null>(null);
-  const [title, setTitle] = useState("Minha redação ENEM");
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [draftStarted, setDraftStarted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -44,7 +44,7 @@ export function useEssayDraft() {
           const openedEssay = await apiFetch<Essay>(`/essays/${essayId}`);
           if (!mounted) return;
           setEssay(openedEssay);
-          setTitle(openedEssay.title);
+          setTitle(computeEssayTitle(openedEssay.theme, openedEssay));
           setContent(openedEssay.content);
           setSelectedTheme(openedEssay.theme);
           setDraftStarted(true);
@@ -56,7 +56,7 @@ export function useEssayDraft() {
 
         setSelectedTheme(items[0] ?? null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Nao foi possivel abrir a redacao.");
+        setError(err instanceof Error ? err.message : "Não foi possível abrir a redação.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -87,7 +87,7 @@ export function useEssayDraft() {
           })
           .catch((err) => {
             if (requestId === saveRequestRef.current && !submittingRef.current) {
-              setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho.");
+              setError(err instanceof Error ? err.message : "Não foi possível salvar o rascunho.");
             }
           })
           .finally(() => {
@@ -108,7 +108,7 @@ export function useEssayDraft() {
           })
           .catch((err) => {
             if (requestId === saveRequestRef.current && !submittingRef.current) {
-              setError(err instanceof Error ? err.message : "Nao foi possivel remover o rascunho vazio.");
+              setError(err instanceof Error ? err.message : "Não foi possível remover o rascunho vazio.");
             }
           })
           .finally(() => {
@@ -128,7 +128,7 @@ export function useEssayDraft() {
         })
         .catch((err) => {
           if (requestId === saveRequestRef.current && !submittingRef.current) {
-            setError(err instanceof Error ? err.message : "Nao foi possivel salvar o rascunho.");
+            setError(err instanceof Error ? err.message : "Não foi possível salvar o rascunho.");
           }
         })
         .finally(() => {
@@ -146,7 +146,7 @@ export function useEssayDraft() {
     setEssay(null);
     setMode("editor");
     setDraftStarted(true);
-    setTitle(`Redacao - ${theme.title.slice(0, 70)}`);
+    setTitle(computeEssayTitle(theme, null));
     setContent("");
     replaceEssayUrl();
   }
@@ -160,7 +160,7 @@ export function useEssayDraft() {
       setThemes(sampledThemes);
       setSelectedTheme(sampledThemes[0] ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nao foi possivel sortear temas do banco.");
+      setError(err instanceof Error ? err.message : "Não foi possível sortear temas do banco.");
     } finally {
       setGeneratingTheme(false);
     }
@@ -213,6 +213,19 @@ async function fetchThemeChoices() {
     body: JSON.stringify({}),
   });
   return themes.slice(0, THEME_CHOICES_LIMIT);
+}
+
+/**
+ * Título deixou de ser digitável (ver essay-editor.tsx): enquanto escreve, é só o título do
+ * tema; depois de corrigida, ganha data + nº da redação para diferenciar reescritas do mesmo tema.
+ */
+export function computeEssayTitle(theme: EssayTheme | null, essay: Pick<Essay, "id" | "status" | "submitted_at" | "updated_at"> | null) {
+  if (!theme) return "";
+  if (essay?.status !== "corrected") return theme.title;
+
+  const dateSource = essay.submitted_at ?? essay.updated_at;
+  const formattedDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(dateSource));
+  return `${theme.title} — ${formattedDate} — nº${essay.id}`;
 }
 
 export function countWords(value: string) {

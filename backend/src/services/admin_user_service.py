@@ -66,7 +66,7 @@ class AdminUserService:
 
     def delete_student(self, *, user_id: int, admin_user_id: int) -> None:
         if user_id == admin_user_id:
-            raise AppError("Voce nao pode excluir sua propria conta.", status_code=409, code="cannot_delete_self")
+            raise AppError("Você não pode excluir sua própria conta.", status_code=409, code="cannot_delete_self")
         user = self._get_student(user_id)
         self.db.delete(user)
         self.db.commit()
@@ -74,7 +74,7 @@ class AdminUserService:
     def user_detail(self, user_id: int) -> AdminUserDetailResponse:
         user = self.db.get(User, user_id)
         if not user:
-            raise AppError("Usuario nao encontrado.", status_code=404, code="user_not_found")
+            raise AppError("Usuário não encontrado.", status_code=404, code="user_not_found")
 
         summary = self._summary_for_user(user)
 
@@ -186,9 +186,9 @@ class AdminUserService:
     def _get_student(self, user_id: int) -> User:
         user = self.db.get(User, user_id)
         if not user:
-            raise AppError("Aluno nao encontrado.", status_code=404, code="student_not_found")
+            raise AppError("Aluno não encontrado.", status_code=404, code="student_not_found")
         if user.role.value != "student":
-            raise AppError("Esta acao so pode ser aplicada a alunos.", status_code=409, code="admin_user_protected")
+            raise AppError("Esta ação só pode ser aplicada a alunos.", status_code=409, code="admin_user_protected")
         return user
 
     def _summary_for_user(self, user: User) -> AdminUserRead:

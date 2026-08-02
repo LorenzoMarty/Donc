@@ -25,7 +25,6 @@ export default function EssayPage() {
     essay,
     title,
     content,
-    setTitle,
     setContent,
     draftStarted,
     saving,
@@ -117,7 +116,6 @@ export default function EssayPage() {
         submitting={submitting}
         error={error}
         onBack={backToStart}
-        onTitleChange={setTitle}
         onContentChange={setContent}
         onSubmit={submit}
       />
@@ -153,7 +151,6 @@ export default function EssayPage() {
             submitting={submitting}
             error={error}
             onBack={backToStart}
-            onTitleChange={setTitle}
             onContentChange={setContent}
             onSubmit={submit}
           />

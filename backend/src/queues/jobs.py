@@ -36,7 +36,7 @@ class AIJobService:
     def get_for_user(self, *, job_id: str, user_id: int) -> AIJob:
         job = self.db.get(AIJob, job_id)
         if not job or job.user_id != user_id:
-            raise AppError("Job de IA nao encontrado.", status_code=404, code="ai_job_not_found")
+            raise AppError("Job de IA não encontrado.", status_code=404, code="ai_job_not_found")
         return job
 
     def get_active_for_essay(self, *, user_id: int, essay_id: int, kind: str = "essay_correction") -> AIJob | None:

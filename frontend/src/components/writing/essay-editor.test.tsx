@@ -26,7 +26,6 @@ function renderEditor() {
       wordCount={10}
       saving={false}
       submitting={false}
-      onTitleChange={vi.fn()}
       onContentChange={vi.fn()}
       onSubmit={vi.fn()}
     />,
@@ -104,12 +103,17 @@ describe("EssayEditor — alternância folha/motivadores", () => {
         wordCount={10}
         saving={false}
         submitting={false}
-        onTitleChange={vi.fn()}
         onContentChange={vi.fn()}
         onSubmit={vi.fn()}
       />,
     );
     expect(screen.queryByRole("button", { name: "Marca-texto azul" })).not.toBeInTheDocument();
+  });
+
+  it("título não é editável: mostra o texto recebido via prop e não expõe input/textbox", () => {
+    renderEditor();
+    expect(screen.getByLabelText("Título da redação")).toHaveTextContent("Rascunho");
+    expect(screen.queryByRole("textbox", { name: "Título da redação" })).not.toBeInTheDocument();
   });
 
   it("mostra o toggle de páginas mesmo quando o tema não tem textos motivadores (fallback com o contexto do tema)", () => {
@@ -122,7 +126,6 @@ describe("EssayEditor — alternância folha/motivadores", () => {
         wordCount={0}
         saving={false}
         submitting={false}
-        onTitleChange={vi.fn()}
         onContentChange={vi.fn()}
         onSubmit={vi.fn()}
       />,

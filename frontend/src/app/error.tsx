@@ -5,7 +5,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
     <main className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
       <section className="w-full max-w-md text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Erro inesperado</p>
-        <h1 className="mt-3 text-3xl font-semibold">Nao foi possivel carregar esta area.</h1>
+        <h1 className="mt-3 text-3xl font-semibold">Não foi possível carregar esta área.</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Tente novamente. Se o problema continuar, a API pode estar indisponivel ou a sessao pode ter expirado.
         </p>

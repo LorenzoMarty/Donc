@@ -23,7 +23,6 @@ test-results/
 docker/postgres-data/
 .serena/
 CLAUDE.md
-claude/
 .claude/knowledge/
 .claude/specs/
 

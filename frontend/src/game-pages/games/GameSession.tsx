@@ -287,10 +287,10 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
                   <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
                 </div>
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessao concluida</p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisao</h2>
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessão concluída</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisão</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Voce recebeu {result?.xpEarned ?? 0} pontos secundarios nesta conclusao.
+                  Você recebeu {result?.xpEarned ?? 0} pontos secundários nesta conclusão.
                 </p>
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
                   <Button onClick={restart} variant="outline">

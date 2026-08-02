@@ -72,9 +72,9 @@ class EssayService:
     def create(self, *, user_id: int, theme_id: int, title: str, content: str = "") -> Essay:
         theme = self.repo.get_theme(theme_id)
         if not theme:
-            raise AppError("Tema de redacao nao encontrado.", status_code=404, code="theme_not_found")
+            raise AppError("Tema de redação não encontrado.", status_code=404, code="theme_not_found")
         if not content.strip():
-            raise AppError("Rascunhos vazios nao sao salvos.", status_code=422, code="empty_draft")
+            raise AppError("Rascunhos vazios não são salvos.", status_code=422, code="empty_draft")
         essay = Essay(
             user_id=user_id,
             theme_id=theme_id,
@@ -91,18 +91,18 @@ class EssayService:
     def get(self, *, essay_id: int, user_id: int) -> Essay:
         essay = self.repo.get_essay(essay_id, user_id)
         if not essay:
-            raise AppError("Redacao nao encontrada.", status_code=404, code="essay_not_found")
+            raise AppError("Redação não encontrada.", status_code=404, code="essay_not_found")
         self._ensure_initial_version(essay)
         return self.repo.get_essay(essay_id, user_id) or essay
 
     def autosave(self, *, essay_id: int, user_id: int, title: str, content: str) -> Essay:
         essay = self.repo.get_essay(essay_id, user_id)
         if not essay:
-            raise AppError("Redacao nao encontrada.", status_code=404, code="essay_not_found")
+            raise AppError("Redação não encontrada.", status_code=404, code="essay_not_found")
         if essay.status == EssayStatus.CORRECTED:
-            raise AppError("Redacoes corrigidas nao podem ser editadas.", status_code=409, code="essay_locked")
+            raise AppError("Redações corrigidas não podem ser editadas.", status_code=409, code="essay_locked")
         if not content.strip():
-            raise AppError("Rascunhos vazios nao sao salvos.", status_code=422, code="empty_draft")
+            raise AppError("Rascunhos vazios não são salvos.", status_code=422, code="empty_draft")
         essay.title = title
         essay.content = content
         essay.word_count = self._word_count(content)
@@ -114,9 +114,9 @@ class EssayService:
     def submit_for_correction(self, *, essay_id: int, user: User, job_id: str | None = None) -> Essay:
         essay = self.repo.get_essay(essay_id, user.id)
         if not essay:
-            raise AppError("Redacao nao encontrada.", status_code=404, code="essay_not_found")
+            raise AppError("Redação não encontrada.", status_code=404, code="essay_not_found")
         if essay.word_count < 80:
-            raise AppError("A redacao ainda esta curta para correcao. Desenvolva melhor a tese antes de enviar.", status_code=422, code="essay_too_short")
+            raise AppError("A redação ainda está curta para correção. Desenvolva melhor a tese antes de enviar.", status_code=422, code="essay_too_short")
         self._ensure_initial_version(essay)
         essay = self.repo.get_essay(essay_id, user.id) or essay
         self._require_edit_before_new_correction(essay)
@@ -128,7 +128,7 @@ class EssayService:
         draft = Essay(
             user_id=user_id,
             theme_id=essay.theme_id,
-            title=self._unique_copy_title(user_id=user_id, title=f"{essay.title} copia"),
+            title=self._unique_copy_title(user_id=user_id, title=f"{essay.title} cópia"),
             content=essay.content,
             word_count=essay.word_count,
             line_count=essay.line_count,
@@ -156,7 +156,7 @@ class EssayService:
         essay = self.get(essay_id=essay_id, user_id=user_id)
         version = next((item for item in essay.versions if item.id == version_id), None)
         if not version:
-            raise AppError("Versao nao encontrada.", status_code=404, code="version_not_found")
+            raise AppError("Versão não encontrada.", status_code=404, code="version_not_found")
         essay.title = self._version_base_title(version.title)
         essay.content = version.content
         essay.status = EssayStatus.DRAFT
@@ -378,7 +378,7 @@ class EssayService:
         return len([line for line in stripped.splitlines() if line.strip()])
 
     def _version_base_title(self, title: str) -> str:
-        return re.sub(r"\s+V\d+$", "", title.strip(), flags=re.IGNORECASE) or "Redacao"
+        return re.sub(r"\s+V\d+$", "", title.strip(), flags=re.IGNORECASE) or "Redação"
 
     def _version_number(self, title: str) -> int:
         match = re.search(r"\s+V(\d+)$", title.strip(), flags=re.IGNORECASE)
@@ -396,7 +396,7 @@ class EssayService:
     def _unique_copy_title(self, *, user_id: int, title: str) -> str:
         essays = self.repo.list_by_user(user_id)
         existing = {essay.title.lower() for essay in essays}
-        base = title[:210].strip() or "Redacao copia"
+        base = title[:210].strip() or "Redação cópia"
         if base.lower() not in existing:
             return base
         suffix = 2

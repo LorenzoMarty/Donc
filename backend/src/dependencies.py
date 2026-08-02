@@ -23,18 +23,18 @@ def get_current_user(
 ) -> User:
     raw_token = token or request.cookies.get("access_token")
     if not raw_token:
-        raise AppError("Autenticacao obrigatoria.", status_code=401, code="not_authenticated")
+        raise AppError("Autenticação obrigatória.", status_code=401, code="not_authenticated")
     if raw_token.startswith("Bearer "):
         raw_token = raw_token.replace("Bearer ", "", 1)
     try:
         payload = decode_access_token(raw_token)
         user_id = int(payload.get("sub"))
     except Exception as exc:
-        raise AppError("Sessao invalida ou expirada.", status_code=401, code="invalid_token") from exc
+        raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token") from exc
 
     user = UserRepository(db).get_by_id(user_id)
     if not user:
-        raise AppError("Usuario nao encontrado.", status_code=401, code="user_not_found")
+        raise AppError("Usuário não encontrado.", status_code=401, code="user_not_found")
 
     try:
         user = touch_daily_streak(db, user)

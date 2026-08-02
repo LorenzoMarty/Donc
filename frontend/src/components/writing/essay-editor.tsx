@@ -68,7 +68,6 @@ export function EssayEditor({
   submitting,
   error,
   onBack,
-  onTitleChange,
   onContentChange,
   onSubmit,
 }: {
@@ -81,7 +80,6 @@ export function EssayEditor({
   submitting: boolean;
   error?: string;
   onBack?: () => void;
-  onTitleChange: (value: string) => void;
   onContentChange: (value: string) => void;
   onSubmit: () => void;
 }) {
@@ -187,14 +185,12 @@ export function EssayEditor({
             </button>
           ) : null}
           <div className="min-w-0 flex-1">
-            <input
-              value={title}
-              disabled={locked}
-              onChange={(event) => onTitleChange(event.target.value)}
-              placeholder="Nomeie sua redação"
+            <p
               aria-label="Título da redação"
-              className="text-safe font-display min-w-0 w-full rounded-sm border-none bg-transparent text-[25px] font-medium leading-tight text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-ring/30"
-            />
+              className="text-safe font-display min-w-0 truncate text-[25px] font-medium leading-tight text-foreground"
+            >
+              {title || "Nomeie um tema para começar"}
+            </p>
             <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
               <span className="h-[7px] w-[7px] rounded-full bg-primary" aria-hidden="true" />
               {syncLabel}

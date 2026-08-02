@@ -54,7 +54,7 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   essay_too_short: "A redação precisa ter pelo menos 80 palavras.",
   edit_required: "Edite o texto antes de corrigir novamente.",
   empty_draft: "Rascunhos vazios não são salvos.",
-  duplicate_theme: "Ja existe um tema ativo com esse titulo.",
+  duplicate_theme: "Já existe um tema ativo com esse título.",
   invalid_theme_title: "Título do tema precisa ter pelo menos 8 caracteres.",
   invalid_theme_context: "Contexto do tema precisa ter pelo menos 20 caracteres.",
   invalid_supporting_text_type: "Escolha um tipo válido para o texto motivador.",
@@ -89,11 +89,16 @@ function errorFromPayload(payload: unknown, status: number) {
 }
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${publicEnv.apiUrl}${path}`, {
-    ...options,
-    headers: buildHeaders(options),
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${publicEnv.apiUrl}${path}`, {
+      ...options,
+      headers: buildHeaders(options),
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiClientError("Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.", 0, "network_error");
+  }
 
   const payload = await readJson(response);
 
