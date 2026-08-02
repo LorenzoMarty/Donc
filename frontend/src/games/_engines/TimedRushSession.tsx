@@ -11,7 +11,7 @@ import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adapt
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
-import { shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
+import { useReshuffledQuestions } from "@/hooks/useReshuffledQuestions";
 import { cn } from "@/utils";
 
 type AnswerLog = {
@@ -41,21 +41,29 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const [xpPulseKey, setXpPulseKey] = useState(0);
   const [answerLog, setAnswerLog] = useState<AnswerLog[]>([]);
   const [seconds, setSeconds] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(getRoundDuration(0));
+  const [timeLeft, setTimeLeft] = useState(getRoundDuration());
   const [result, setResult] = useState<GameCompletion | null>(null);
   const [leveledUp, setLeveledUp] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const { playCorrect, playWrong } = useGameSounds();
 
-  const questionPool = useMemo(() => {
+  // `attempt` força reordenar/reembaralhar a cada "Repetir" — sem isso o useMemo reaproveitava a
+  // mesma ordem/posição da 1ª tentativa em replays no mesmo componente montado.
+  const orderedPool = useMemo(() => {
     const pool = game.questions ?? [];
     const hub = game.hubs?.[0];
     const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
-    const ordered = hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : pool;
-    return ordered.map(shuffleQuestionOptions);
-  }, [game.questions, game.hubs, adaptive]);
+    return hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : pool;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.questions, game.hubs, adaptive, attempt]);
+  // Rodada infinita: `round` cresce sem parar e cicla pelo pool via módulo. Sem incluir a volta
+  // (`lap`) na chave, a ordem embaralhada do pool se repetia idêntica a cada nova volta na mesma
+  // sessão — a resposta caía sempre na mesma posição a partir da 2ª volta em diante.
+  const lap = orderedPool.length ? Math.floor(round / orderedPool.length) : 0;
+  const questionPool = useReshuffledQuestions(orderedPool, attempt + lap);
   const question = questionPool.length ? questionPool[round % questionPool.length] : undefined;
   const difficultyStage = Math.min(5, Math.floor(round / 5));
-  const roundDuration = getRoundDuration(round);
+  const roundDuration = getRoundDuration();
   const errors = answerLog.filter((answer) => !answer.correct);
   const correctCount = answerLog.length - errors.length;
   const accuracy = answerLog.length ? Math.round((correctCount / answerLog.length) * 100) : 100;
@@ -77,7 +85,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
     setRound(nextRound);
     setSelected(null);
     setFeedback(null);
-    setTimeLeft(getRoundDuration(nextRound));
+    setTimeLeft(getRoundDuration());
   }, [round]);
 
   const answer = useCallback(
@@ -154,9 +162,10 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
     setXpPulseKey(0);
     setAnswerLog([]);
     setSeconds(0);
-    setTimeLeft(getRoundDuration(0));
+    setTimeLeft(getRoundDuration());
     setResult(null);
     setLeveledUp(false);
+    setAttempt((value) => value + 1);
   }
 
   if (!question) {
@@ -592,8 +601,8 @@ function writeString(view: DataView, offset: number, value: string) {
   for (let i = 0; i < value.length; i += 1) view.setUint8(offset + i, value.charCodeAt(i));
 }
 
-function getRoundDuration(round: number) {
-  return Math.max(8, 16 - Math.floor(round / 5) * 2);
+function getRoundDuration() {
+  return 90;
 }
 
 function getLiveXpGain(combo: number, difficultyStage: number) {

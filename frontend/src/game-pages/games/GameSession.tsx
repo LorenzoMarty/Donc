@@ -19,7 +19,7 @@ import { CorrectorSession } from "@/games/_engines/CorrectorSession";
 import { EssayCollapseSession } from "@/games/_engines/EssayCollapseSession";
 import { SurvivalSession } from "@/games/_engines/SurvivalSession";
 import { TextSurgerySession } from "@/games/_engines/TextSurgerySession";
-import { shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
+import { useReshuffledQuestions } from "@/hooks/useReshuffledQuestions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -56,21 +56,24 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [result, setResult] = useState<ReturnType<typeof completeGame> | null>(null);
   const [seconds, setSeconds] = useState(0);
+  const [attempt, setAttempt] = useState(0);
 
   const game = getGameById(gameId, remoteGames);
   const category = getCategoryBySlug(categorySlug);
 
   // Questoes selecionadas por dificuldade compativel com a maestria do aluno no hub (quando ha
-  // sinal); sem sinal, cai no sorteio puro de sempre.
-  const questions = useMemo(() => {
+  // sinal); sem sinal, cai no sorteio puro de sempre. `attempt` força reordenar/reembaralhar a
+  // cada "Repetir" — sem isso, o useMemo reaproveitava a mesma ordem/posição da 1ª tentativa.
+  const orderedQuestions = useMemo(() => {
     if (!game?.questions) return [];
     const hub = game.hubs?.[0];
     const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
-    const ordered = hasSignal
+    return hasSignal
       ? selectItemsBySkill(game.questions, masteryForHub(adaptive, hub!), game.questions.length)
       : shuffle(game.questions);
-    return ordered.map(shuffleQuestionOptions);
-  }, [game, adaptive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, adaptive, attempt]);
+  const questions = useReshuffledQuestions(orderedQuestions, attempt);
 
   useEffect(() => {
     hydrateRemoteGames();
@@ -175,6 +178,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
     setAnswers([]);
     setResult(null);
     setSeconds(0);
+    setAttempt((value) => value + 1);
   }
 
   return (
