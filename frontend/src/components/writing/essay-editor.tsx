@@ -11,11 +11,15 @@ import { EssayTimer } from "@/components/writing/essay-timer";
 import { FloatingPostIts } from "@/components/writing/floating-post-its";
 import type { Essay, EssayTheme } from "@/services/api";
 import { useFreePostItsStore } from "@/stores/free-post-its-store";
-import { useHighlightsStore } from "@/stores/highlights-store";
+import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights-store";
 import { MARK_TOOL_LABEL, MARK_TOOL_STYLE, PEN_SWATCHES, type EssayMarkTool } from "@/lib/mark-tools";
 import { cn } from "@/utils";
 
 type EssayMark = { id: string; tool: EssayMarkTool; quote: string };
+
+// Referencia estavel: um novo `[]` a cada render faz o seletor do zustand achar que o
+// estado mudou (comparacao por referencia) e re-renderizar em loop infinito.
+const EMPTY_HIGHLIGHTS: MotivadorHighlight[] = [];
 
 function buildMarkSegments(content: string, marks: EssayMark[]) {
   type Segment = { text: string; mark: EssayMark | null };
@@ -99,7 +103,7 @@ export function EssayEditor({
   const activeTheme = theme ?? essay?.theme ?? null;
   const addFreePostIt = useFreePostItsStore((state) => state.addPostIt);
   const motivadorHighlights = useHighlightsStore((state) =>
-    activeTheme ? state.highlightsByTheme[activeTheme.id] ?? [] : [],
+    activeTheme ? state.highlightsByTheme[activeTheme.id] ?? EMPTY_HIGHLIGHTS : EMPTY_HIGHLIGHTS,
   );
   const clearHighlights = useHighlightsStore((state) => state.clearHighlights);
 
