@@ -4,16 +4,17 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import useSound from "use-sound";
-import { ArrowLeft, Check, Clock, Flame, Target, X, Zap } from "lucide-react";
+import { Check, Clock, Flame, X } from "lucide-react";
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { useReshuffledQuestions } from "@/hooks/useReshuffledQuestions";
-import { cn, formatMMSS } from "@/utils";
+import { cn } from "@/utils";
 
 /** Erros que encerram a rodada infinita antes do tempo acabar. */
 const MAX_ROUND_ERRORS = 3;
@@ -44,8 +45,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
   const [sessionXp, setSessionXp] = useState(0);
-  const [lastXpGain, setLastXpGain] = useState(0);
-  const [xpPulseKey, setXpPulseKey] = useState(0);
   const [answerLog, setAnswerLog] = useState<AnswerLog[]>([]);
   const [seconds, setSeconds] = useState(0);
   const [timeLeft, setTimeLeft] = useState(getRoundDuration());
@@ -73,7 +72,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const errors = useMemo(() => answerLog.filter((answer) => !answer.correct), [answerLog]);
   const correctCount = answerLog.length - errors.length;
   const accuracy = answerLog.length ? Math.round((correctCount / answerLog.length) * 100) : 100;
-  const progress = Math.min(100, Math.round((timeLeft / roundDuration) * 100));
 
   const finishRound = useCallback(
     (log = answerLog) => {
@@ -120,8 +118,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         setCombo(nextCombo);
         setMaxCombo((value) => Math.max(value, nextCombo));
         setSessionXp((value) => value + xpGain);
-        setLastXpGain(xpGain);
-        setXpPulseKey((value) => value + 1);
       } else {
         playWrong();
         setCombo(0);
@@ -163,8 +159,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
     setCombo(0);
     setMaxCombo(0);
     setSessionXp(0);
-    setLastXpGain(0);
-    setXpPulseKey(0);
     setAnswerLog([]);
     setSeconds(0);
     setTimeLeft(getRoundDuration());
@@ -184,145 +178,119 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   }
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <div className="space-y-5 md:space-y-6">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Button asChild variant="outline" className="mb-5">
-              <Link href={`/games/${category.slug}`}>
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Categoria
-              </Link>
-            </Button>
-            <Badge className="border-primary/20 bg-primary/10 text-primary">Modo infinito</Badge>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
-              {game.name}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
-          </div>
-          <div className="game-tile bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            Erre {MAX_ROUND_ERRORS} vezes ou encerre a rodada para registrar o resultado.
-          </div>
-        </header>
-
-        <RushHud
-          combo={combo}
-          xp={xp}
-          sessionXp={sessionXp}
-          lastXpGain={lastXpGain}
-          xpPulseKey={xpPulseKey}
-          timeLeft={timeLeft}
-          roundDuration={roundDuration}
-          round={round}
-          progress={progress}
-        />
-
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,20.625rem)]">
-          <main>
-            <AnimatePresence mode="wait">
-              {!result && (
-                <motion.section
-                  key={`${question.id}-${round}`}
-                  initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -14, scale: 0.98 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  className={cn(
-                    "game-surface relative overflow-hidden bg-card p-4 md:p-6",
-                    feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
-                  )}
-                >
-                  <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
-                  <div className="mb-5 flex flex-wrap items-center gap-2">
-                    <Badge className="border-primary/20 bg-primary/10 text-primary">{game.skill}</Badge>
-                    <Badge variant="outline">Velocidade {difficultyStage + 1}</Badge>
-                    <Badge variant="outline">Rodada {round + 1}</Badge>
-                  </div>
-
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Decida rápido</p>
-                  <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
-                    {question.prompt}
-                  </h2>
-
-                  <div className="mt-7 grid gap-3 lg:grid-cols-2">
-                    {question.options.map((option, index) => {
-                      const isSelected = selected === index;
-                      const isCorrectOption = feedback !== null && index === question.answerIndex;
-                      const isWrong = isSelected && feedback === "wrong";
-                      return (
-                        <motion.button
-                          key={`${question.id}-${option}`}
-                          type="button"
-                          onClick={() => answer(index)}
-                          disabled={feedback !== null}
-                          whileHover={feedback === null ? { y: -4, scale: 1.012 } : undefined}
-                          whileTap={feedback === null ? { scale: 0.985 } : undefined}
-                          className={cn(
-                            "game-tile min-h-24 bg-background/64 p-4 text-left transition-all duration-200 hover:bg-primary/10",
-                            isCorrectOption && "border-emerald-500/55 bg-emerald-500/10",
-                            isWrong && "border-destructive/55 bg-destructive/10",
-                          )}
-                        >
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">
-                              {index + 1}
-                            </span>
-                            {isCorrectOption ? (
-                              <Check className="h-5 w-5 text-emerald-700" aria-hidden="true" />
-                            ) : isWrong ? (
-                              <X className="h-5 w-5 text-red-700" aria-hidden="true" />
-                            ) : null}
-                          </div>
-                          <p className="text-base font-semibold leading-6 tracking-normal text-foreground">{option}</p>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-
-                  <AnimatePresence>
-                    {feedback && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        className={cn(
-                          "mt-5 rounded-md border p-4 text-sm leading-6",
-                          feedback === "correct"
-                            ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
-                            : "border-destructive/25 bg-destructive/10 text-red-800",
-                        )}
-                      >
-                        {feedback === "correct" ? "Boa. " : "Revise: "}
-                        {question.explanation}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.section>
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={roundDuration - timeLeft}
+      total={roundDuration}
+      xp={xp + sessionXp}
+      extraChips={
+        <>
+          <Chip>
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {timeLeft}s
+          </Chip>
+          <Chip>
+            <Flame className="h-3.5 w-3.5" aria-hidden="true" /> {combo}x
+          </Chip>
+          <Chip>{errors.length}/{MAX_ROUND_ERRORS} erros</Chip>
+        </>
+      }
+    >
+      <div className="force-light">
+        <AnimatePresence mode="wait">
+          {!result && (
+            <motion.section
+              key={`${question.id}-${round}`}
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -14, scale: 0.98 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className={cn(
+                "game-surface relative overflow-hidden bg-card p-4 md:p-6",
+                feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
               )}
-            </AnimatePresence>
-          </main>
-
-          <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-            <SidePanel title="Rodada atual" icon={<Target className="h-4 w-4" aria-hidden="true" />}>
-              <div className="grid grid-cols-2 gap-2">
-                <SideMetric label="Acertos" value={`${correctCount}`} />
-                <SideMetric label="Erros" value={`${errors.length}/${MAX_ROUND_ERRORS}`} />
-                <SideMetric label="Max combo" value={`${maxCombo}x`} />
-                <SideMetric label="Tempo" value={formatMMSS(seconds)} />
+            >
+              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
+              <div className="mb-5 flex flex-wrap items-center gap-2">
+                <Badge className="border-primary/20 bg-primary/10 text-primary">{game.skill}</Badge>
+                <Badge variant="outline">Velocidade {difficultyStage + 1}</Badge>
+                <Badge variant="outline">Rodada {round + 1}</Badge>
               </div>
+
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Decida rápido</p>
+              <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
+                {question.prompt}
+              </h2>
+
+              <div className="mt-7 grid gap-3 lg:grid-cols-2">
+                {question.options.map((option, index) => {
+                  const isSelected = selected === index;
+                  const isCorrectOption = feedback !== null && index === question.answerIndex;
+                  const isWrong = isSelected && feedback === "wrong";
+                  return (
+                    <motion.button
+                      key={`${question.id}-${option}`}
+                      type="button"
+                      onClick={() => answer(index)}
+                      disabled={feedback !== null}
+                      whileHover={feedback === null ? { y: -4, scale: 1.012 } : undefined}
+                      whileTap={feedback === null ? { scale: 0.985 } : undefined}
+                      className={cn(
+                        "game-tile min-h-24 bg-background/64 p-4 text-left transition-all duration-200 hover:bg-primary/10",
+                        isCorrectOption && "border-emerald-500/55 bg-emerald-500/10",
+                        isWrong && "border-destructive/55 bg-destructive/10",
+                      )}
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">
+                          {index + 1}
+                        </span>
+                        {isCorrectOption ? (
+                          <Check className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+                        ) : isWrong ? (
+                          <X className="h-5 w-5 text-red-700" aria-hidden="true" />
+                        ) : null}
+                      </div>
+                      <p className="text-base font-semibold leading-6 tracking-normal text-foreground">{option}</p>
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              <AnimatePresence>
+                {feedback && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className={cn(
+                      "mt-5 rounded-md border p-4 text-sm leading-6",
+                      feedback === "correct"
+                        ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
+                        : "border-destructive/25 bg-destructive/10 text-red-800",
+                    )}
+                  >
+                    {feedback === "correct" ? "Boa. " : "Revise: "}
+                    {question.explanation}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <Button
                 onClick={() => finishRound()}
                 disabled={answerLog.length === 0 || result !== null}
                 variant="outline"
-                className="mt-4 w-full"
+                className="mt-5"
               >
                 Encerrar rodada
               </Button>
-            </SidePanel>
-          </aside>
-        </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
       </div>
 
+      <div className="force-light">
       <EngineResult
         result={result}
         decoration={<ConfettiBurst />}
@@ -342,112 +310,8 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
           <SideMetric label="Erros" value={`${errors.length}`} />
         </div>
       </EngineResult>
-    </div>
-  );
-}
-
-function RushHud({
-  combo,
-  xp,
-  sessionXp,
-  lastXpGain,
-  xpPulseKey,
-  timeLeft,
-  roundDuration,
-  round,
-  progress,
-}: {
-  combo: number;
-  xp: number;
-  sessionXp: number;
-  lastXpGain: number;
-  xpPulseKey: number;
-  timeLeft: number;
-  roundDuration: number;
-  round: number;
-  progress: number;
-}) {
-  return (
-    <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
-      <div className="grid grid-cols-2 gap-2 xs:grid-cols-4 md:gap-3">
-        <HudMetric icon={<Flame className="h-4 w-4" aria-hidden="true" />} label="Combo" value={`${combo}x`} />
-        <HudMetric
-          icon={<Zap className="h-4 w-4" aria-hidden="true" />}
-          label="XP"
-          value={`${xp + sessionXp}`}
-          pulse={lastXpGain ? `+${lastXpGain}` : undefined}
-          pulseKey={xpPulseKey}
-        />
-        <HudMetric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Timer" value={`${timeLeft}s`} />
-        <HudMetric icon={<Target className="h-4 w-4" aria-hidden="true" />} label="Rodada" value={`${round + 1}`} />
       </div>
-
-      <div className="mt-4">
-        <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
-          <span>Progresso da rodada</span>
-          <span>
-            {timeLeft}s / {roundDuration}s
-          </span>
-        </div>
-        <div className="h-2.5 overflow-hidden rounded-full border border-border bg-muted/70">
-          <motion.div
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="h-full rounded-full bg-primary"
-            style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function HudMetric({
-  icon,
-  label,
-  value,
-  pulse,
-  pulseKey,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  pulse?: string;
-  pulseKey?: number;
-}) {
-  return (
-    <div className="game-tile relative bg-background/58 px-3 py-2">
-      <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="text-primary">{icon}</span>
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
-      <AnimatePresence>
-        {pulse && pulseKey ? (
-          <motion.span
-            key={pulseKey}
-            initial={{ opacity: 0, y: 8, scale: 0.9 }}
-            animate={{ opacity: 1, y: -4, scale: 1 }}
-            exit={{ opacity: 0, y: -18 }}
-            className="absolute right-3 top-2 text-xs font-semibold text-emerald-700"
-          >
-            {pulse}
-          </motion.span>
-        ) : null}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function SidePanel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section className="game-surface bg-card p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">{icon}</div>
-        <h2 className="text-lg font-semibold tracking-normal text-foreground">{title}</h2>
-      </div>
-      {children}
-    </section>
+    </GameSessionShell>
   );
 }
 

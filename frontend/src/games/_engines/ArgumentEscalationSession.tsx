@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, TrendingUp, X } from "lucide-react";
+import { Check, TrendingUp, X } from "lucide-react";
 
 import type { EscalationOption, GameCategory, GameCompletion, GameDefinition, SkillTag } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { shuffle } from "@/games/_engines/shuffleOptions";
-import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
-import { PageHeader, Surface } from "@/components/shared/premium-ui";
+import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
+import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -22,7 +22,6 @@ type Step = { theme: string; level: number; instruction: string; options: Escala
 export function ArgumentEscalationSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
-  const streak = useGameStore((state) => state.streak.current);
 
   const steps = useMemo<Step[]>(() => {
     const ladders = game.escalation?.ladders ?? [];
@@ -42,7 +41,6 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
   const [missed, setMissed] = useState<{ id: string; text: string }[]>([]);
 
   const current = steps[step];
-  const liveAccuracy = step ? Math.round((score / step) * 100) : 100;
   const maxLevel = useMemo(() => steps.reduce((m, s) => Math.max(m, s.level), 0), [steps]);
   const grade = pointsToGrade((score / Math.max(steps.length, 1)) * 4);
 
@@ -90,23 +88,15 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
   const showHints = current ? current.level <= 3 : false;
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Categoria
-            </Link>
-          </Button>
-        }
-      />
-
-      <SessionHUD accuracy={liveAccuracy} step={Math.min(step + (picked !== null ? 1 : 0), steps.length)} total={steps.length} seconds={0} streak={streak} xp={game.xpReward} />
-
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={step + (picked !== null ? 1 : 0)}
+      total={steps.length}
+      xp={game.xpReward}
+    >
+      <div className="force-light space-y-5 md:space-y-6">
       {current && (
         <motion.section key={step} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="game-surface bg-card p-4 md:p-6">
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -176,6 +166,7 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
         onRestart={restart}
         categorySlug={category.slug}
       />
-    </div>
+      </div>
+    </GameSessionShell>
   );
 }

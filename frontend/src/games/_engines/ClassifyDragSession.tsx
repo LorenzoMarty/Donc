@@ -16,14 +16,13 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { CSS as DndCss } from "@dnd-kit/utilities";
-import { ArrowLeft, Check, GripVertical, X } from "lucide-react";
+import { Check, GripVertical, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { ClassifyItem, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
-import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
-import { PageHeader } from "@/components/shared/premium-ui";
+import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -37,7 +36,6 @@ type Placement = Record<string, string>; // itemId -> "bank" | bucketId
  */
 export function ClassifyDragSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const streak = useGameStore((state) => state.streak.current);
   const adaptive = useGameStore((state) => state.adaptive);
   const payload = game.classify;
   const items = useMemo(
@@ -60,7 +58,6 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
   const placedCount = useMemo(() => items.filter((item) => placement[item.id] !== "bank").length, [items, placement]);
   const allPlaced = placedCount === items.length && items.length > 0;
   const correctCount = useMemo(() => items.filter((item) => placement[item.id] === item.bucketId).length, [items, placement]);
-  const liveAccuracy = items.length ? Math.round((correctCount / items.length) * 100) : 0;
   const wrongItems = useMemo(() => items.filter((item) => placement[item.id] !== item.bucketId), [items, placement]);
   const bankItems = useMemo(() => items.filter((item) => placement[item.id] === "bank"), [items, placement]);
 
@@ -96,30 +93,15 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
   }
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Categoria
-            </Link>
-          </Button>
-        }
-      />
-
-      <SessionHUD
-        accuracy={checked ? liveAccuracy : 100}
-        step={placedCount}
-        total={items.length}
-        seconds={0}
-        streak={streak}
-        xp={game.xpReward}
-      />
-
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={placedCount}
+      total={items.length}
+      xp={game.xpReward}
+    >
+      <div className="force-light space-y-5 md:space-y-6">
       <div className="game-tile bg-primary/5 p-4 text-sm leading-6 text-foreground/80">{payload.instruction}</div>
 
       <DndContext
@@ -178,7 +160,8 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
         onRestart={restart}
         categorySlug={category.slug}
       />
-    </div>
+      </div>
+    </GameSessionShell>
   );
 }
 

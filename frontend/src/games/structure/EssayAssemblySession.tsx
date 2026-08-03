@@ -19,9 +19,10 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Clock, GripVertical, Layers3, RotateCcw, Sparkles, Trophy } from "lucide-react";
+import { CheckCircle2, Clock, GripVertical, RotateCcw, Trophy } from "lucide-react";
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
+import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -52,13 +53,13 @@ const containerIds: ContainerId[] = ["bank", "intro", "development", "conclusion
 
 export function EssayAssemblySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const xp = useGameStore((state) => state.xp);
   const [levelId, setLevelId] = useState<AssemblyLevel["id"]>("easy");
   const level = essayLevels.find((item) => item.id === levelId) ?? essayLevels[0];
   const [board, setBoard] = useState<BoardState>(() => createInitialBoard(level));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState>("idle");
   const [validation, setValidation] = useState<ValidationResult>(() => evaluateBoard(createInitialBoard(level), level));
-  const [checks, setChecks] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [result, setResult] = useState<GameCompletion | null>(null);
   const [finalValidation, setFinalValidation] = useState<ValidationResult | null>(null);
@@ -84,7 +85,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
     setBoard(nextBoard);
     setValidation(evaluateBoard(nextBoard, nextLevel));
     setFeedback("idle");
-    setChecks(0);
     setSeconds(0);
     setResult(null);
     setFinalValidation(null);
@@ -169,7 +169,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
   function validate() {
     const nextValidation = evaluateBoard(board, level);
     setValidation(nextValidation);
-    setChecks((value) => value + 1);
     if (nextValidation.isPerfect) {
       setFeedback("correct");
       window.setTimeout(() => finish(nextValidation), 520);
@@ -190,7 +189,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
     setBoard(nextBoard);
     setValidation(evaluateBoard(nextBoard, level));
     setFeedback("idle");
-    setChecks(0);
     setSeconds(0);
     setResult(null);
     setFinalValidation(null);
@@ -200,23 +198,21 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
   const currentValidation = finalValidation ?? validation;
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <div className="space-y-5 md:space-y-6">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Button asChild variant="outline" className="mb-5">
-              <Link href={`/games/${category.slug}`}>
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Categoria
-              </Link>
-            </Button>
-            <Badge className="border-primary/20 bg-primary/10 text-primary">Drag and drop</Badge>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
-              {game.name}
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
-          </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={validation.correct}
+      total={validation.total}
+      xp={xp}
+      extraChips={
+        <Chip>
+          <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {formatMMSS(seconds)}
+        </Chip>
+      }
+    >
+      <div className="force-light">
+          <div className="mb-4 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {essayLevels.map((item) => (
               <button
                 key={item.id}
@@ -233,11 +229,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
               </button>
             ))}
           </div>
-        </header>
 
-        <AssemblyHud validation={validation} seconds={seconds} level={level} />
-
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,20.625rem)]">
           <motion.main
             animate={
               feedback === "wrong" ? { x: [0, -6, 6, -4, 4, 0] } : feedback === "correct" ? { scale: [1, 1.01, 1] } : { x: 0, scale: 1 }
@@ -303,36 +295,27 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
 
               <DragOverlay>{activeBlock ? <EssayBlockCard block={activeBlock} active /> : null}</DragOverlay>
             </DndContext>
+
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <Button onClick={validate}>
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                Validar estrutura
+              </Button>
+              <Button onClick={() => finish()} disabled={validation.correct === 0 || result !== null} variant="outline">
+                Finalizar tentativa
+              </Button>
+              <Button onClick={resetBoard} variant="outline">
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Reiniciar
+              </Button>
+            </div>
           </motion.main>
 
-          <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-            <SidePanel title="Controle" icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}>
-              <div className="grid grid-cols-2 gap-2">
-                <SideMetric label="Precisao" value={`${validation.accuracy}%`} />
-                <SideMetric label="Tempo" value={formatMMSS(seconds)} />
-                <SideMetric label="Checagens" value={`${checks}`} />
-                <SideMetric label="Blocos" value={`${level.blocks.length}`} />
-              </div>
-              <div className="mt-4 flex flex-col gap-2">
-                <Button onClick={validate}>
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                  Validar estrutura
-                </Button>
-                <Button onClick={() => finish()} disabled={validation.correct === 0 || result !== null} variant="outline">
-                  Finalizar tentativa
-                </Button>
-                <Button onClick={resetBoard} variant="outline">
-                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                  Reiniciar
-                </Button>
-              </div>
-            </SidePanel>
-          </aside>
-        </div>
+      <div className="force-light">
+        <ResultModal result={result} validation={currentValidation} seconds={seconds} categorySlug={category.slug} onRestart={resetBoard} />
       </div>
-
-      <ResultModal result={result} validation={currentValidation} seconds={seconds} categorySlug={category.slug} onRestart={resetBoard} />
-    </div>
+      </div>
+    </GameSessionShell>
   );
 }
 
@@ -456,54 +439,6 @@ function EssayBlockCard({
         </div>
       </div>
     </motion.article>
-  );
-}
-
-function AssemblyHud({ validation, seconds, level }: { validation: ValidationResult; seconds: number; level: AssemblyLevel }) {
-  return (
-    <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
-      <div className="grid gap-2 xs:grid-cols-3 md:gap-3">
-        <HudMetric icon={<Layers3 className="h-4 w-4" aria-hidden="true" />} label="Dificuldade" value={level.label} />
-        <HudMetric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Tempo" value={formatMMSS(seconds)} />
-        <HudMetric icon={<TargetIcon />} label="Precisao" value={`${validation.accuracy}%`} />
-      </div>
-      <div className="mt-4 h-2.5 overflow-hidden rounded-full border border-border bg-muted/70">
-        <motion.div
-          animate={{ width: `${validation.accuracy}%` }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="h-full rounded-full bg-primary"
-          style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.28))" }}
-        />
-      </div>
-    </section>
-  );
-}
-
-function TargetIcon() {
-  return <CheckCircle2 className="h-4 w-4" aria-hidden="true" />;
-}
-
-function HudMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="game-tile bg-background/58 px-3 py-2">
-      <p className="flex items-center gap-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="text-primary">{icon}</span>
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function SidePanel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <section className="game-surface bg-card p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <div className="grid h-8 w-8 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">{icon}</div>
-        <h2 className="text-lg font-semibold tracking-normal text-foreground">{title}</h2>
-      </div>
-      {children}
-    </section>
   );
 }
 
