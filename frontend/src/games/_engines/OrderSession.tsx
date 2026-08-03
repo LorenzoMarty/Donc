@@ -20,10 +20,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, GripVertical, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, GripVertical, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, OrderRound } from "@/features/gamification/types";
+import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -71,7 +72,9 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
   );
   const [cells, setCells] = useState<OrderCell[]>(initialCells);
 
-  // Reinicia as células ao trocar de rodada.
+  // Reinicia as células ao trocar de rodada. setState durante o render (não num efeito) é o
+  // padrão recomendado pelo React para resetar estado derivado de uma prop que mudou —
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const [trackedStep, setTrackedStep] = useState(step);
   if (trackedStep !== step) {
     setTrackedStep(step);
@@ -221,7 +224,14 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
             </div>
           </motion.section>
         ) : (
-          <ResultCard result={result} total={rounds.length} onRestart={restart} categorySlug={category.slug} />
+          <EngineResult
+            variant="inline"
+            result={result}
+            headline={`${result?.attempt.accuracy ?? 0}% de precisão`}
+            subline={`Você ordenou ${result?.attempt.score ?? 0} de ${rounds.length} rodadas.`}
+            onRestart={restart}
+            categorySlug={category.slug}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -267,49 +277,5 @@ function SortableRow({
       )}
       <span className="leading-6">{cell.text}</span>
     </li>
-  );
-}
-
-function ResultCard({
-  result,
-  total,
-  onRestart,
-  categorySlug,
-}: {
-  result: GameCompletion | null;
-  total: number;
-  onRestart: () => void;
-  categorySlug: string;
-}) {
-  return (
-    <motion.section
-      key="result"
-      initial={{ opacity: 0, scale: 0.96, y: 16 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      className="game-surface bg-card p-5 text-center md:p-7"
-    >
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
-        <Check className="h-8 w-8" aria-hidden="true" />
-      </div>
-      {result?.rankUp && (
-        <div className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-          Rank up - {result.rankName}
-        </div>
-      )}
-      <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessão concluída</p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisão</h2>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Você ordenou {result?.attempt.score ?? 0} de {total} rodadas e recebeu {result?.xpEarned ?? 0} XP.
-      </p>
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Button onClick={onRestart} variant="outline">
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          Repetir
-        </Button>
-        <Button asChild>
-          <Link href={`/games/${categorySlug}`}>Voltar para categoria</Link>
-        </Button>
-      </div>
-    </motion.section>
   );
 }

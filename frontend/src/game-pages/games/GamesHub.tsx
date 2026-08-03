@@ -1,19 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Gauge, Medal, Play, Sparkles, Star, Zap, type LucideIcon } from "lucide-react";
 
-import { getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
+import { getEnrichedCategories, getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
 import { masteryForHub, recommendHub } from "@/features/gamification/adaptive";
 import { getRankSnapshot } from "@/features/xp/xp";
-import { gamesForHub, symptomHubs } from "@/features/gamification/symptoms";
+import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGameStore } from "@/stores/game-store";
-
-const HUB_TINTS = ["#8b5cf6", "#0a84ff", "hsl(var(--primary))", "#e6820e", "#e5484d", "#14b8a6", "#8b5cf6"];
 
 export default function GamesHub() {
   const [ready, setReady] = useState(false);
@@ -33,14 +31,14 @@ export default function GamesHub() {
     hydrateRemoteGames();
   }, [hydrateRemoteGames]);
 
-  const games = getEnrichedGames(progress, remoteGames);
-  const recommended = getRecommendedGames(progress, remoteGames);
+  const games = useMemo(() => getEnrichedGames(progress, remoteGames), [progress, remoteGames]);
+  const categories = useMemo(() => getEnrichedCategories(progress, remoteGames), [progress, remoteGames]);
+  const recommended = useMemo(() => getRecommendedGames(progress, remoteGames), [progress, remoteGames]);
   const overallProgress = games.length ? Math.round(games.reduce((sum, game) => sum + game.progress, 0) / games.length) : 0;
 
   const recommendation = recommendHub(adaptive, games);
   const recommendedMission = recommendation.missionGameId ? games.find((game) => game.id === recommendation.missionGameId) : undefined;
-  const recommendedHub = symptomHubs.find((hub) => hub.id === recommendation.hub);
-  const recommendedMastery = recommendedHub ? masteryForHub(adaptive, recommendedHub.id) : 0;
+  const recommendedMastery = recommendation.hub ? masteryForHub(adaptive, recommendation.hub) : 0;
   const primaryGame = recommendedMission ?? recommended[0];
   const rank = getRankSnapshot(xp);
 
@@ -85,7 +83,7 @@ export default function GamesHub() {
         ))}
       </div>
 
-      {primaryGame && recommendedHub ? (
+      {primaryGame ? (
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -113,50 +111,23 @@ export default function GamesHub() {
           <div className="grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full border-[3px] border-dashed border-[hsl(var(--accent-300)/40%)]">
             <div className="text-center">
               <p className="text-[38px] font-bold leading-none">{recommendedMastery}%</p>
-              <p className="text-[12px] text-white/60">domínio neste hub</p>
+              <p className="text-[12px] text-white/60">de domínio</p>
             </div>
           </div>
         </motion.div>
       ) : null}
 
-      <section id="sintomas">
+      <section id="categorias">
         <div className="mb-3.5 flex items-center justify-between">
-          <h2 className="text-[17px] font-semibold">Hubs de treino</h2>
+          <h2 className="text-[17px] font-semibold">Categorias</h2>
           <span className="text-[13px] text-muted-foreground">
             Maestria geral <strong className="text-foreground">{overallProgress}%</strong>
           </span>
         </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3.5">
-          {symptomHubs.map((hub, index) => {
-            const HubIcon = hub.icon;
-            const mastery = masteryForHub(adaptive, hub.id);
-            const tint = HUB_TINTS[index % HUB_TINTS.length];
-            const isRecommended = hub.id === recommendation.hub;
-            return (
-              <Link
-                key={hub.id}
-                href={`/games/treino/${hub.id}`}
-                className="rounded-card bg-card p-5 shadow-soft transition-shadow hover:shadow-elevated"
-              >
-                <div className="mb-3.5 flex items-center justify-between">
-                  <span className="grid h-[46px] w-[46px] place-items-center rounded-[13px]" style={{ backgroundColor: `${tint}1a` }}>
-                    <HubIcon className="h-[22px] w-[22px]" style={{ color: tint }} aria-hidden="true" />
-                  </span>
-                  {isRecommended ? (
-                    <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">Recomendado</span>
-                  ) : null}
-                </div>
-                <h3 className="text-[15px] font-semibold leading-tight text-foreground">{hub.title}</h3>
-                <p className="mt-0.5 text-[12px] text-muted-foreground">{gamesForHub(games, hub).length} jogos</p>
-                <div className="mt-4 flex items-center gap-2.5">
-                  <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full" style={{ width: `${mastery}%`, backgroundColor: tint }} />
-                  </div>
-                  <span className="min-w-[34px] text-right text-[12px] font-bold tabular-nums text-foreground/70">{mastery}%</span>
-                </div>
-              </Link>
-            );
-          })}
+          {categories.map((category, index) => (
+            <CategoryCard key={category.id} category={category} index={index} />
+          ))}
         </div>
       </section>
     </div>

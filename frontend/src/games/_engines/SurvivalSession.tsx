@@ -46,7 +46,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
   const questions = useMemo<GameQuestion[]>(() => {
     const pool = game.survival?.poolGameIds?.length
       ? game.survival.poolGameIds.map((id) => getGameById(id)).filter(Boolean as unknown as (g: GameDefinition | undefined) => g is GameDefinition)
-      : getAllGames().filter((g) => g.id !== game.id && (g.engine === "quiz" || g.engine === "timed-rush"));
+      : getAllGames().filter((g) => g.id !== game.id && (g.questions?.length ?? 0) > 0);
     const all = pool.flatMap((g) => g.questions ?? []);
     return shuffle(all).slice(0, RUN_LENGTH).map(shuffleQuestionOptions);
     // eslint-disable-next-line react-hooks/exhaustive-deps

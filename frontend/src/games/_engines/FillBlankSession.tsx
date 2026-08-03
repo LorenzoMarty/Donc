@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, CornerDownLeft, RotateCcw, X } from "lucide-react";
+import { ArrowLeft, Check, CornerDownLeft, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, FillBlankRound } from "@/features/gamification/types";
+import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -209,7 +210,14 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
             </AnimatePresence>
           </motion.section>
         ) : (
-          <ResultCard result={result} total={rounds.length} onRestart={restart} categorySlug={category.slug} />
+          <EngineResult
+            variant="inline"
+            result={result}
+            headline={`${result?.attempt.accuracy ?? 0}% de precisão`}
+            subline={`Você acertou ${result?.attempt.score ?? 0} de ${rounds.length}.`}
+            onRestart={restart}
+            categorySlug={category.slug}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -220,48 +228,4 @@ function splitBlank(prompt: string): [string, string] {
   const index = prompt.indexOf("___");
   if (index === -1) return [prompt + " ", ""];
   return [prompt.slice(0, index), prompt.slice(index + 3)];
-}
-
-function ResultCard({
-  result,
-  total,
-  onRestart,
-  categorySlug,
-}: {
-  result: GameCompletion | null;
-  total: number;
-  onRestart: () => void;
-  categorySlug: string;
-}) {
-  return (
-    <motion.section
-      key="result"
-      initial={{ opacity: 0, scale: 0.96, y: 16 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      className="game-surface bg-card p-5 text-center md:p-7"
-    >
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
-        <Check className="h-8 w-8" aria-hidden="true" />
-      </div>
-      {result?.rankUp && (
-        <div className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-          Rank up - {result.rankName}
-        </div>
-      )}
-      <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessão concluída</p>
-      <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisão</h2>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-        Você acertou {result?.attempt.score ?? 0} de {total} e recebeu {result?.xpEarned ?? 0} XP.
-      </p>
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Button onClick={onRestart} variant="outline">
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          Repetir
-        </Button>
-        <Button asChild>
-          <Link href={`/games/${categorySlug}`}>Voltar para categoria</Link>
-        </Button>
-      </div>
-    </motion.section>
-  );
 }

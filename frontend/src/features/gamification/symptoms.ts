@@ -166,8 +166,15 @@ export function getSymptomHub(id: string): SymptomHub | undefined {
   return HUBS[id as SymptomHubId];
 }
 
+/** Cache por identidade do objeto — `gameTags` é pura sobre `game`, mas chamada repetidamente para
+ * os mesmos jogos (catálogo estático é reaproveitado entre renders). */
+const gameTagsCache = new WeakMap<GameDefinition, SkillTag[]>();
+
 /** Reúne todas as tags relevantes de um jogo (campo `tags` + tags dos payloads). */
 export function gameTags(game: GameDefinition): SkillTag[] {
+  const cached = gameTagsCache.get(game);
+  if (cached) return cached;
+
   const set = new Set<SkillTag>(game.tags ?? []);
   const push = (tags?: SkillTag[]) => tags?.forEach((t) => set.add(t));
   game.duel?.rounds.forEach((r) => push(r.tags));
@@ -180,7 +187,9 @@ export function gameTags(game: GameDefinition): SkillTag[] {
       if (typeof s !== "string") push(s.tags);
     }),
   );
-  return [...set];
+  const tags = [...set];
+  gameTagsCache.set(game, tags);
+  return tags;
 }
 
 /** Maestria (0–100) de uma tag: 100 quando sem erros; cai com a taxa de erro. (legado) */
