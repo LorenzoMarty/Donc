@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Gauge, Medal, Play, Sparkles, Star, Zap, type LucideIcon } from "lucide-react";
+import { Gauge, Medal, Play, Star, Zap, type LucideIcon } from "lucide-react";
 
 import { getEnrichedCategories, getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
 import { masteryForHub, recommendHub } from "@/features/gamification/adaptive";
@@ -55,19 +55,7 @@ export default function GamesHub() {
 
   return (
     <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow="Treino"
-        title="Micro-desafios para lapidar cada competência da escrita"
-        action={
-          <Link
-            href="/games/simulado"
-            className="flex items-center gap-2 rounded-control border border-border bg-card px-4 py-2.5 text-[14px] font-semibold text-foreground"
-          >
-            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-            Simulado adaptativo
-          </Link>
-        }
-      />
+      <PageHeader eyebrow="Treino" title="Micro-desafios para lapidar cada competência da escrita" />
 
       <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         {metrics.map((metric) => (

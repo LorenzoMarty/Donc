@@ -65,22 +65,6 @@ describe("buildWriterXray", () => {
     expect(xray.isEmpty).toBe(false);
   });
 
-  it("prefere erros recorrentes do learning_profile sobre o dashboard", () => {
-    const xray = buildWriterXray({
-      dashboard: fakeDashboard({ recurrent_errors: ["erro do dashboard"] }),
-      learningProfile: fakeProfile({ recurring_errors: ["erro do perfil"], has_data: true }),
-    });
-    expect(xray.recurringErrors).toEqual(["erro do perfil"]);
-  });
-
-  it("usa erros do dashboard quando o learning_profile não tem", () => {
-    const xray = buildWriterXray({
-      dashboard: fakeDashboard({ recurrent_errors: ["erro do dashboard"] }),
-      learningProfile: fakeProfile(),
-    });
-    expect(xray.recurringErrors).toEqual(["erro do dashboard"]);
-  });
-
   it("deriva competencyBars e flags de notas a partir do mastery_map", () => {
     const xray = buildWriterXray({
       dashboard: fakeDashboard({
