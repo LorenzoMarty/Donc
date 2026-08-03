@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 import { getCategoryBySlug, getGameById } from "@/features/gamification/catalog";
-import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
+import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import { EssayAssemblySession } from "@/games/structure/EssayAssemblySession";
 import { TimedRushSession } from "@/games/_engines/TimedRushSession";
 import { ClassifyDragSession } from "@/games/_engines/ClassifyDragSession";
@@ -19,6 +19,8 @@ import { CorrectorSession } from "@/games/_engines/CorrectorSession";
 import { EssayCollapseSession } from "@/games/_engines/EssayCollapseSession";
 import { SurvivalSession } from "@/games/_engines/SurvivalSession";
 import { TextSurgerySession } from "@/games/_engines/TextSurgerySession";
+import { readReturnTo } from "@/games/_engines/EngineResult";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { useReshuffledQuestions } from "@/hooks/useReshuffledQuestions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -28,22 +30,11 @@ import { useGameStore } from "@/stores/game-store";
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { cn } from "@/utils";
 
-function useReturnTo(): string | undefined {
-  if (typeof window === "undefined") return undefined;
-  return new URLSearchParams(window.location.search).get("returnTo") ?? undefined;
-}
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
+/** Delay (ms) antes de avançar para a próxima questão, exibindo o feedback certo/errado. */
+const NEXT_QUESTION_DELAY_MS = 620;
 
 export default function GameSession({ categorySlug, gameId }: { categorySlug: string; gameId: string }) {
-  const returnTo = useReturnTo();
+  const returnTo = readReturnTo();
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
   const adaptive = useGameStore((state) => state.adaptive);
@@ -66,11 +57,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   // cada "Repetir" — sem isso, o useMemo reaproveitava a mesma ordem/posição da 1ª tentativa.
   const orderedQuestions = useMemo(() => {
     if (!game?.questions) return [];
-    const hub = game.hubs?.[0];
-    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
-    return hasSignal
-      ? selectItemsBySkill(game.questions, masteryForHub(adaptive, hub!), game.questions.length)
-      : shuffle(game.questions);
+    return selectAdaptivePool(game, game.questions, adaptive, shuffle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game, adaptive, attempt]);
   const questions = useReshuffledQuestions(orderedQuestions, attempt);
@@ -169,7 +156,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
       const completion = completeGame(game, nextAnswers.filter(Boolean).length, questions.length, seconds);
       setResult(completion);
       trackEvent({ event_type: "game_completed", entity_id: game.id, entity_type: "game", duration_ms: seconds * 1000, meta: { accuracy: completion.attempt.accuracy, xp_earned: completion.xpEarned } });
-    }, 620);
+    }, NEXT_QUESTION_DELAY_MS);
   }
 
   function restart() {

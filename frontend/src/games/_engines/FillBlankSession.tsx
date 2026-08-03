@@ -5,23 +5,15 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, CornerDownLeft, RotateCcw, X } from "lucide-react";
 
-import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
+import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, FillBlankRound } from "@/features/gamification/types";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 /** Normaliza para comparacao tolerante: minusculas, sem acento, sem pontuacao de borda, espacos colapsados. */
 function normalize(value: string): string {
@@ -42,12 +34,10 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
   const completeGame = useGameStore((state) => state.completeGame);
   const streak = useGameStore((state) => state.streak.current);
   const adaptive = useGameStore((state) => state.adaptive);
-  const rounds = useMemo<FillBlankRound[]>(() => {
-    const pool = game.fillBlank?.rounds ?? [];
-    const hub = game.hubs?.[0];
-    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
-    return hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : shuffle(pool);
-  }, [game, adaptive]);
+  const rounds = useMemo<FillBlankRound[]>(
+    () => selectAdaptivePool(game, game.fillBlank?.rounds ?? [], adaptive, shuffle),
+    [game, adaptive],
+  );
 
   const [step, setStep] = useState(0);
   const [value, setValue] = useState("");

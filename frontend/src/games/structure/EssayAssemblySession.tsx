@@ -25,7 +25,7 @@ import type { GameCategory, GameCompletion, GameDefinition } from "@/features/ga
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
-import { cn } from "@/utils";
+import { cn, formatMMSS } from "@/utils";
 
 type SectionId = "intro" | "development" | "conclusion";
 type ContainerId = "bank" | SectionId;
@@ -309,7 +309,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
             <SidePanel title="Controle" icon={<Sparkles className="h-4 w-4" aria-hidden="true" />}>
               <div className="grid grid-cols-2 gap-2">
                 <SideMetric label="Precisao" value={`${validation.accuracy}%`} />
-                <SideMetric label="Tempo" value={formatTime(seconds)} />
+                <SideMetric label="Tempo" value={formatMMSS(seconds)} />
                 <SideMetric label="Checagens" value={`${checks}`} />
                 <SideMetric label="Blocos" value={`${level.blocks.length}`} />
               </div>
@@ -464,7 +464,7 @@ function AssemblyHud({ validation, seconds, level }: { validation: ValidationRes
     <section className="game-surface relative overflow-hidden bg-card p-4 md:p-5">
       <div className="grid gap-2 xs:grid-cols-3 md:gap-3">
         <HudMetric icon={<Layers3 className="h-4 w-4" aria-hidden="true" />} label="Dificuldade" value={level.label} />
-        <HudMetric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Tempo" value={formatTime(seconds)} />
+        <HudMetric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Tempo" value={formatMMSS(seconds)} />
         <HudMetric icon={<TargetIcon />} label="Precisao" value={`${validation.accuracy}%`} />
       </div>
       <div className="mt-4 h-2.5 overflow-hidden rounded-full border border-border bg-muted/70">
@@ -558,7 +558,7 @@ function ResultModal({
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <SideMetric label="Tempo" value={formatTime(seconds)} />
+              <SideMetric label="Tempo" value={formatMMSS(seconds)} />
               <SideMetric label="Precisao" value={`${validation.accuracy}%`} />
               <SideMetric label="XP" value={`+${result.xpEarned}`} />
               <SideMetric label="Acertos" value={`${validation.correct}/${validation.total}`} />
@@ -649,10 +649,6 @@ function createInitialBoard(level: AssemblyLevel): BoardState {
     development: [],
     conclusion: [],
   };
-}
-
-function formatTime(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 const essayLevels: AssemblyLevel[] = [

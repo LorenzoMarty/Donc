@@ -8,6 +8,8 @@ import { ArrowLeft, Check, Swords, X } from "lucide-react";
 import type { DuelRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
+import { shuffle } from "@/games/_engines/shuffleOptions";
+import { shuffleDuelSide } from "@/games/_engines/shuffleDuelSide";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -15,21 +17,19 @@ import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
 /** Engine `duel`: duas versões próximas; escolher a melhor e perceber a dimensão decisiva. */
 export function DuelSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const streak = useGameStore((state) => state.streak.current);
-  const rounds = useMemo<DuelRound[]>(() => shuffle(game.duel?.rounds ?? []), [game.duel]);
+  const [attempt, setAttempt] = useState(0);
+  // `attempt` força reordenar/reembaralhar lado a/b a cada "Repetir" — sem isso o useMemo
+  // reaproveitava a mesma ordem/lado da 1ª tentativa em replays no mesmo componente montado.
+  const rounds = useMemo<DuelRound[]>(
+    () => shuffle(game.duel?.rounds ?? []).map(shuffleDuelSide),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [game.duel, attempt],
+  );
 
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<"a" | "b" | null>(null);
@@ -39,6 +39,7 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
 
   const round = rounds[step];
   const liveAccuracy = step ? Math.round((score / step) * 100) : 100;
+  const grade = pointsToGrade((score / Math.max(rounds.length, 1)) * 4);
 
   if (!round && !result) {
     return (
@@ -75,6 +76,7 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
     setScore(0);
     setMissed([]);
     setResult(null);
+    setAttempt((value) => value + 1);
   }
 
   return (
@@ -159,8 +161,8 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
 
       <EngineResult
         result={result}
-        grade={pointsToGrade((score / Math.max(rounds.length, 1)) * 4)}
-        headline={GRADE_LABEL[pointsToGrade((score / Math.max(rounds.length, 1)) * 4)]}
+        grade={grade}
+        headline={GRADE_LABEL[grade]}
         subline={`Você percebeu a versão de maior qualidade em ${score} de ${rounds.length} duelos. Foco: naturalidade e profundidade, não acerto bruto.`}
         review={missed}
         onRestart={restart}

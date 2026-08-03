@@ -87,6 +87,22 @@ export function masteryForHub(profile: AdaptiveProfile, hub: SymptomHubId): numb
   return profile.mastery[hub] ?? 0;
 }
 
+/**
+ * Seleciona o pool de itens de uma engine: prioriza por maestria (`selectItemsBySkill`) quando há
+ * sinal cognitivo no hub do jogo, senão embaralha puro. Usada pelas engines com campo `difficulty`
+ * discreto (quiz, classify, fill-blank, order, timed-rush).
+ */
+export function selectAdaptivePool<T extends { difficulty?: ItemDifficulty }>(
+  game: GameDefinition,
+  pool: T[],
+  profile: AdaptiveProfile,
+  shuffleFn: (items: T[]) => T[],
+): T[] {
+  const hub = game.hubs?.[0];
+  const hasSignal = hub ? (profile.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(profile, hub) > 0 : false;
+  return hasSignal ? selectItemsBySkill(pool, masteryForHub(profile, hub!), pool.length) : shuffleFn(pool);
+}
+
 const WEAKNESS_RELEVANCE_THRESHOLD = 0.05;
 
 /** Todos os hubs ordenados do mais fraco ao mais forte (desempate por menor maestria). */

@@ -7,6 +7,7 @@ import { ArrowLeft, Check, Stethoscope, X } from "lucide-react";
 import type { CorrectorCase, GameCategory, GameCompletion, GameDefinition, SkillTag } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +15,9 @@ import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+function competencyTag(competency: string): SkillTag {
+  return competency.toLowerCase() as SkillTag;
 }
-
-const COMPETENCY_TAG: Record<string, SkillTag> = { C1: "c1", C2: "c2", C3: "c3", C4: "c4", C5: "c5" };
 
 /** Engine `corrector`: marcar os problemas realmente presentes no parágrafo (precisão + recall). */
 export function CorrectorSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
@@ -73,7 +67,7 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
     for (const candidate of current.candidates) {
       const marked = selected.has(candidate.id);
       if (marked === candidate.present) hits += 1;
-      if (candidate.present) tags.add(COMPETENCY_TAG[candidate.competency]);
+      if (candidate.present) tags.add(competencyTag(candidate.competency));
     }
     // Qualidade diagnóstica do caso → nota S/A/B/C, alimentando os sinais cognitivos.
     const caseGrade = pointsToGrade((hits / Math.max(current.candidates.length, 1)) * 4);
@@ -103,6 +97,7 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
   }
 
   const liveAccuracy = candidateTotal ? Math.round((correctTotal / candidateTotal) * 100) : 100;
+  const grade = pointsToGrade((correctTotal / Math.max(candidateTotal, 1)) * 4);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -180,8 +175,8 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
 
       <EngineResult
         result={result}
-        grade={pointsToGrade((correctTotal / Math.max(candidateTotal, 1)) * 4)}
-        headline={GRADE_LABEL[pointsToGrade((correctTotal / Math.max(candidateTotal, 1)) * 4)]}
+        grade={grade}
+        headline={GRADE_LABEL[grade]}
         subline={`Você leu a matriz com precisão em ${correctTotal} de ${candidateTotal} classificações. Foco: enxergar o que realmente está presente.`}
         onRestart={restart}
         categorySlug={category.slug}

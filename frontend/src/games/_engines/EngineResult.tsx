@@ -9,7 +9,8 @@ import { GRADE_LABEL, GRADE_TONE } from "@/games/_engines/grade";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils";
 
-function readReturnTo(): string | undefined {
+/** Lê `?returnTo=` da URL atual — destino para "voltar"/"próximo exercício" após a sessão. */
+export function readReturnTo(): string | undefined {
   if (typeof window === "undefined") return undefined;
   return new URLSearchParams(window.location.search).get("returnTo") ?? undefined;
 }

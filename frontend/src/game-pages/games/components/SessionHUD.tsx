@@ -3,6 +3,7 @@
 import { Clock, Flame, Route, Zap, type LucideIcon } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
+import { formatMMSS } from "@/utils";
 
 export function SessionHUD({
   accuracy,
@@ -26,7 +27,7 @@ export function SessionHUD({
         <HudMetric icon={Zap} label="XP" value={xp ? `+${xp}` : `${accuracy}%`} />
         <HudMetric icon={Route} label="Progresso" value={`${step}/${total}`} />
         <HudMetric icon={Flame} label="Combo" value={`${streak}x`} />
-        <HudMetric icon={Clock} label="Tempo" value={`${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`} />
+        <HudMetric icon={Clock} label="Tempo" value={formatMMSS(seconds)} />
       </div>
       <Progress value={progress} className="mt-3" />
     </div>

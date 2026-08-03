@@ -12,12 +12,7 @@ import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
-
-function useStepParam(): number {
-  if (typeof window === "undefined") return 0;
-  const raw = Number(new URLSearchParams(window.location.search).get("step") ?? "0");
-  return Number.isFinite(raw) && raw >= 0 ? raw : 0;
-}
+import { useStepParam } from "@/utils";
 
 /**
  * Simulado adaptativo cross-sintoma: mesma mecânica de redirecionamento encadeado do

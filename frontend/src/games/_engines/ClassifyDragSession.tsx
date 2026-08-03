@@ -19,8 +19,9 @@ import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, GripVertical, RotateCcw, Trophy, X } from "lucide-react";
 
-import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
+import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { ClassifyItem, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -29,15 +30,6 @@ import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 type Placement = Record<string, string>; // itemId -> "bank" | bucketId
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 /**
  * Engine `classify`: arrastar cada item para o balde correto. Conferir revela
@@ -48,12 +40,10 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
   const streak = useGameStore((state) => state.streak.current);
   const adaptive = useGameStore((state) => state.adaptive);
   const payload = game.classify;
-  const items = useMemo(() => {
-    const pool = payload?.items ?? [];
-    const hub = game.hubs?.[0];
-    const hasSignal = hub ? (adaptive.weaknessSignals[hub] ?? 0) > 0 || masteryForHub(adaptive, hub) > 0 : false;
-    return hasSignal ? selectItemsBySkill(pool, masteryForHub(adaptive, hub!), pool.length) : shuffle(pool);
-  }, [payload, game, adaptive]);
+  const items = useMemo(
+    () => selectAdaptivePool(game, payload?.items ?? [], adaptive, shuffle),
+    [payload, game, adaptive],
+  );
   const buckets = payload?.buckets ?? [];
 
   const [placement, setPlacement] = useState<Placement>(() => Object.fromEntries(items.map((item) => [item.id, "bank"])));

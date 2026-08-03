@@ -12,7 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { useReshuffledQuestions } from "@/hooks/useReshuffledQuestions";
-import { cn } from "@/utils";
+import { cn, formatMMSS } from "@/utils";
+
+/** Erros que encerram a rodada infinita antes do tempo acabar. */
+const MAX_ROUND_ERRORS = 3;
+
+/** Delay (ms) antes de avançar para a próxima rodada, exibindo o feedback certo/errado. */
+const NEXT_ROUND_DELAY_MS = { correct: 620, wrong: 1250 };
 
 type AnswerLog = {
   questionId: string;
@@ -124,13 +130,13 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
 
       window.setTimeout(
         () => {
-          if (nextErrors >= 3) {
+          if (nextErrors >= MAX_ROUND_ERRORS) {
             finishRound(nextLog);
             return;
           }
           goNextRound();
         },
-        isCorrect ? 620 : 1250,
+        isCorrect ? NEXT_ROUND_DELAY_MS.correct : NEXT_ROUND_DELAY_MS.wrong,
       );
     },
     [answerLog, combo, difficultyStage, feedback, finishRound, goNextRound, playCorrect, playWrong, question, result, selected],
@@ -197,7 +203,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">{game.description}</p>
           </div>
           <div className="game-tile bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            Erre 3 vezes ou encerre a rodada para registrar o resultado.
+            Erre {MAX_ROUND_ERRORS} vezes ou encerre a rodada para registrar o resultado.
           </div>
         </header>
 
@@ -302,9 +308,9 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
             <SidePanel title="Rodada atual" icon={<Target className="h-4 w-4" aria-hidden="true" />}>
               <div className="grid grid-cols-2 gap-2">
                 <SideMetric label="Acertos" value={`${correctCount}`} />
-                <SideMetric label="Erros" value={`${errors.length}/3`} />
+                <SideMetric label="Erros" value={`${errors.length}/${MAX_ROUND_ERRORS}`} />
                 <SideMetric label="Max combo" value={`${maxCombo}x`} />
-                <SideMetric label="Tempo" value={formatTime(seconds)} />
+                <SideMetric label="Tempo" value={formatMMSS(seconds)} />
               </div>
               <Button
                 onClick={() => finishRound()}
@@ -601,16 +607,18 @@ function writeString(view: DataView, offset: number, value: string) {
   for (let i = 0; i < value.length; i += 1) view.setUint8(offset + i, value.charCodeAt(i));
 }
 
+const ROUND_DURATION_SECONDS = 90;
 function getRoundDuration() {
-  return 90;
+  return ROUND_DURATION_SECONDS;
 }
 
+/** XP ao vivo por acerto: base + bônus de combo (capado) + bônus de dificuldade (velocidade). */
+const LIVE_XP_BASE = 4;
+const LIVE_XP_COMBO_MULTIPLIER = 2;
+const LIVE_XP_COMBO_CAP = 12;
+const LIVE_XP_DIFFICULTY_MULTIPLIER = 2;
 function getLiveXpGain(combo: number, difficultyStage: number) {
-  return 4 + Math.min(12, combo * 2) + difficultyStage * 2;
-}
-
-function formatTime(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  return LIVE_XP_BASE + Math.min(LIVE_XP_COMBO_CAP, combo * LIVE_XP_COMBO_MULTIPLIER) + difficultyStage * LIVE_XP_DIFFICULTY_MULTIPLIER;
 }
 
 const confettiPieces = [

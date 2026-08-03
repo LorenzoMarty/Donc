@@ -8,21 +8,13 @@ import { ArrowLeft, Bot, UserRound } from "lucide-react";
 import type { ArtificialityRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 /** Engine `artificiality`: detectar trecho autêntico × artificial e o defeito dominante. */
 export function ArtificialitySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
@@ -42,6 +34,7 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
   const round = rounds[step];
   const flawOptions = useMemo(() => (round?.flaw ? shuffle(round.flaw.options) : []), [round]);
   const liveAccuracy = step ? Math.round((score / step) * 100) : 100;
+  const grade = pointsToGrade((score / Math.max(rounds.length, 1)) * 4);
 
   if (!round && !result) {
     return (
@@ -184,8 +177,8 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
 
       <EngineResult
         result={result}
-        grade={pointsToGrade((score / Math.max(rounds.length, 1)) * 4)}
-        headline={GRADE_LABEL[pointsToGrade((score / Math.max(rounds.length, 1)) * 4)]}
+        grade={grade}
+        headline={GRADE_LABEL[grade]}
         subline={`Você distinguiu o autêntico do artificial em ${score} de ${rounds.length} trechos. Foco: leitura crítica de naturalidade.`}
         review={missed}
         onRestart={restart}
