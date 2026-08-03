@@ -11,6 +11,7 @@ import { ArrowLeft, Check, GripVertical, Wrench, X } from "lucide-react";
 import type { CollapseRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -19,15 +20,6 @@ import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 type Cell = { id: string; correctIndex: number; text: string };
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 /** Engine `essay-collapse`: reconstruir uma redação degradada (reordenar + reconectar). */
 export function EssayCollapseSession({ game, category }: { game: GameDefinition; category: GameCategory }) {

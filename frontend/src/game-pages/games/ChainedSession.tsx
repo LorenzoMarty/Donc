@@ -11,12 +11,7 @@ import { getSymptomHub } from "@/features/gamification/symptoms";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
-
-function useStepParam(): number {
-  if (typeof window === "undefined") return 0;
-  const raw = Number(new URLSearchParams(window.location.search).get("step") ?? "0");
-  return Number.isFinite(raw) && raw >= 0 ? raw : 0;
-}
+import { useStepParam } from "@/utils";
 
 /**
  * Sessão de treino contínua: encadeia os jogos do plano adaptativo sem voltar para a tela do

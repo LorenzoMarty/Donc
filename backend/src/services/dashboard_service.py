@@ -239,8 +239,8 @@ class DashboardService:
                     counter[error] += 1
         if not counter:
             return [
-                "Ainda faltam correcoes suficientes para detectar padroes.",
-                "Envie novas redacoes para mapear erros recorrentes por competencia.",
+                "Ainda faltam correções suficientes para detectar padrões.",
+                "Envie novas redações para mapear erros recorrentes por competência.",
             ]
         return [item for item, _ in counter.most_common(4)]
 

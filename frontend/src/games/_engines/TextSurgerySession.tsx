@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2, Scissors, Sparkles } from "lucide-react";
 import type { Grade, GameCategory, GameCompletion, GameDefinition, SurgeryCase, SurgerySegment } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, GRADE_TONE, pointsToGrade, gradeToPoints, summariseGrades } from "@/games/_engines/grade";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -21,15 +22,6 @@ type RewriteEval = { grade: Grade; tecnica: number; naturalidade: number; sofist
 
 function isSlot(segment: SurgerySegment): segment is Slot {
   return typeof segment !== "string";
-}
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
 }
 
 /** Engine `text-surgery`: restaurar um texto degradado, slot a slot (escolha curada + reescrita por IA). */

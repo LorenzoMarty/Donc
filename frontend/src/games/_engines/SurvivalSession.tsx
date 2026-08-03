@@ -8,7 +8,7 @@ import { ArrowLeft, Check, Clock, Flame, Heart, X, Zap } from "lucide-react";
 import { getAllGames, getGameById } from "@/features/gamification/catalog";
 import type { GameCategory, GameCompletion, GameDefinition, GameQuestion } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
-import { shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
+import { shuffle, shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -17,18 +17,22 @@ import { cn } from "@/utils";
 const RUN_LENGTH = 30;
 const MAX_STRIKES = 5;
 
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+/** Duração da rodada (s): começa em `ROUND_DURATION_START` e cai 1s a cada `ROUND_DURATION_STEP`
+ * itens respondidos, sem nunca ficar abaixo de `ROUND_DURATION_MIN` — pressão crescente. */
+const ROUND_DURATION_MIN = 5;
+const ROUND_DURATION_START = 12;
+const ROUND_DURATION_STEP = 5;
+function roundDuration(index: number) {
+  return Math.max(ROUND_DURATION_MIN, ROUND_DURATION_START - Math.floor(index / ROUND_DURATION_STEP));
 }
 
-function roundDuration(index: number) {
-  return Math.max(5, 12 - Math.floor(index / 5));
-}
+/** XP ao vivo por acerto: base + bônus de combo (capado). */
+const LIVE_XP_BASE = 3;
+const LIVE_XP_COMBO_MULTIPLIER = 2;
+const LIVE_XP_COMBO_CAP = 10;
+
+/** Delay (ms) antes de avançar para o próximo item, exibindo o feedback certo/errado. */
+const NEXT_ROUND_DELAY_MS = { correct: 480, wrong: 900 };
 
 /** Engine `survival`: maratona agregada de vários jogos, timer agressivo e vidas limitadas. */
 export function SurvivalSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
@@ -81,7 +85,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
         setScore(nextScore);
         setCombo(nextCombo);
         setMaxCombo((v) => Math.max(v, nextCombo));
-        setSessionXp((v) => v + 3 + Math.min(10, nextCombo * 2));
+        setSessionXp((v) => v + LIVE_XP_BASE + Math.min(LIVE_XP_COMBO_CAP, nextCombo * LIVE_XP_COMBO_MULTIPLIER));
       } else {
         setStrikes(nextStrikes);
         setCombo(0);
@@ -95,7 +99,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
         setIndex(answered);
         setSelected(null);
         setTimeLeft(roundDuration(answered));
-      }, correct ? 480 : 900);
+      }, correct ? NEXT_ROUND_DELAY_MS.correct : NEXT_ROUND_DELAY_MS.wrong);
     },
     [combo, finish, index, question, questions.length, result, score, selected, strikes],
   );

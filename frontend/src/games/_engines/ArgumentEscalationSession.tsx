@@ -8,6 +8,7 @@ import { ArrowLeft, Check, TrendingUp, X } from "lucide-react";
 import type { EscalationOption, GameCategory, GameCompletion, GameDefinition, SkillTag } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
+import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
@@ -16,15 +17,6 @@ import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 type Step = { theme: string; level: number; instruction: string; options: EscalationOption[]; tags?: SkillTag[] };
-
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
 
 /** Engine `argument-escalation`: subir a escada da tese, do raso ao sofisticado. */
 export function ArgumentEscalationSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
@@ -52,6 +44,7 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
   const current = steps[step];
   const liveAccuracy = step ? Math.round((score / step) * 100) : 100;
   const maxLevel = useMemo(() => steps.reduce((m, s) => Math.max(m, s.level), 0), [steps]);
+  const grade = pointsToGrade((score / Math.max(steps.length, 1)) * 4);
 
   if (!current && !result) {
     return (
@@ -176,8 +169,8 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
 
       <EngineResult
         result={result}
-        grade={pointsToGrade((score / Math.max(steps.length, 1)) * 4)}
-        headline={GRADE_LABEL[pointsToGrade((score / Math.max(steps.length, 1)) * 4)]}
+        grade={grade}
+        headline={GRADE_LABEL[grade]}
         subline={`Você sustentou a progressão em ${score} de ${steps.length} degraus. Foco: aprofundar de verdade, não só responder.`}
         review={missed}
         onRestart={restart}
