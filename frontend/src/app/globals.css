@@ -117,11 +117,6 @@
   --accent-800: var(--green-800);
   --accent-900: var(--green-900);
 
-  /* Matiz/saturação pro fundo escuro da sessão de jogo (.dark), sobrescrito por src/lib/accent.ts
-     conforme a cor escolhida em /perfil — default aqui é só fallback pré-hidratação. */
-  --accent-dark-h: 131;
-  --accent-dark-s: 22%;
-
   --secondary: var(--neutral-50);
   --secondary-foreground: var(--neutral-800);
   --muted: 220 44% 97%;
@@ -173,21 +168,23 @@
 
 /* ---- Dark theme (ver src/lib/appearance.ts / next-themes, attribute="class") ---- */
 .dark {
-  /* Tom escuro derivado da cor de marca ativa (--accent-dark-h/s, ver lib/accent.ts) — segue a
-     accent color escolhida em /perfil, nunca um navy/preto genérico fixo. */
-  --dark-fg: var(--accent-dark-h) var(--accent-dark-s) 8%;
-  --background: var(--accent-dark-h) var(--accent-dark-s) 8%;
+  /* Fundo neutro fixo (não segue a accent — commit 2d17075, restaurado a pedido do usuário: o
+     fundo tingido pela accent ficava "enjoativo" junto com os elementos accent-coloridos abaixo).
+     Só primary/accent/success/ring seguem a accent ativa — o contraste accent-sobre-neutro é o
+     efeito desejado. */
+  --dark-fg: 224 30% 10%;
+  --background: 224 30% 9%;
   --foreground: var(--neutral-100);
-  --card: var(--accent-dark-h) var(--accent-dark-s) 13%;
+  --card: 224 26% 13%;
   --card-foreground: var(--neutral-100);
-  --popover: var(--accent-dark-h) var(--accent-dark-s) 13%;
+  --popover: 224 26% 13%;
   --popover-foreground: var(--neutral-100);
   --primary: var(--accent-400);
   --primary-foreground: var(--dark-fg);
 
-  --secondary: var(--accent-dark-h) var(--accent-dark-s) 17%;
+  --secondary: 224 22% 18%;
   --secondary-foreground: var(--neutral-100);
-  --muted: var(--accent-dark-h) calc(var(--accent-dark-s) - 4%) 15%;
+  --muted: 224 22% 16%;
   --muted-foreground: var(--neutral-400);
   --accent: var(--accent-400);
   --accent-foreground: var(--dark-fg);
@@ -206,8 +203,8 @@
   --highlight-tint: 253 45% 24%;
   --destructive: 354 70% 62%;
   --destructive-foreground: var(--dark-fg);
-  --border: var(--accent-dark-h) calc(var(--accent-dark-s) - 8%) 20%;
-  --input: var(--accent-dark-h) calc(var(--accent-dark-s) - 8%) 20%;
+  --border: 224 18% 22%;
+  --input: 224 18% 22%;
   --ring: var(--accent-400);
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
@@ -217,13 +214,50 @@
   color-scheme: dark;
 }
 
-/* ---- Reestabelece o tema claro dentro de um `.dark` ancestor (ex.: card de conteúdo do jogo
-   dentro do shell escuro da sessão — só o "chrome" ao redor é escuro, o conteúdo continua claro). */
-.dark .force-light {
+/* Painel do shell de jogo: no tema global Claro, o chrome (área ao redor do card creme de
+   conteúdo) vira branco — não fica mais escuro dentro de uma tela clara. Reestabelece os tokens
+   claros aqui (como `.force-light` faz pro conteúdo) pra header/chips/progresso ficarem legíveis
+   sobre o branco. No tema Escuro global mantém o chrome escuro padrão (regra não se aplica). */
+html:not(.dark) .game-shell-panel {
+  background-color: hsl(0 0% 100%);
+  color: hsl(var(--neutral-800));
+  border-color: hsl(var(--neutral-200));
+  box-shadow: 0 1px 2px rgba(20, 30, 55, 0.04), 0 12px 28px -18px rgba(30, 30, 40, 0.28);
+
+  --background: 0 0% 100%;
+  --foreground: var(--neutral-800);
+  --muted: 220 44% 97%;
+  --muted-foreground: var(--neutral-500);
+  --primary: var(--accent-500);
+  --primary-foreground: 0 0% 100%;
+  --secondary: var(--neutral-50);
+  --secondary-foreground: var(--neutral-800);
+  --border: var(--neutral-200);
+  --ring: var(--accent-500);
+}
+
+/* ---- Card de conteúdo do jogo (`.force-light`, dentro do `.dark` local do GameSessionShell) ----
+   Acompanha o tema GLOBAL (Aparência → Claro/Escuro/Sistema, next-themes em <html>), não o `.dark`
+   local do shell (que fica sempre escuro independente do tema global). Duas variantes: */
+
+/* Tema global Escuro: o chrome do shell já usa --background (8% L); o card usa a superfície --card
+   do próprio tema escuro (13% L, já tingida pela accent ativa) — contraste sem forçar claro. */
+html.dark .force-light {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-radius: 20px;
+}
+
+/* Tema global Claro (padrão): o `.dark` do shell é só local (chrome), então sem isso o conteúdo
+   herdaria os tokens escuros do ancestor. Reestabelece o tema claro aqui — mas com --primary/
+   --accent/--success/--ring seguindo a accent ativa (`--accent-*`, ver lib/accent.ts), nunca verde
+   fixo. */
+html:not(.dark) .dark .force-light {
   /* Pintura real, não só a variável — sem isso, filhos com bg-x/opacidade (translúcidos) mostram
      o fundo escuro real do `.dark` ancestor por trás, deixando texto ilegível. */
   background-color: hsl(42 26% 93%);
   color: hsl(var(--neutral-800));
+  border-radius: 20px;
 
   --background: 42 26% 93%;
   --foreground: var(--neutral-800);
@@ -231,16 +265,16 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: var(--green-500);
+  --primary: var(--accent-500);
   --primary-foreground: 0 0% 100%;
 
   --secondary: var(--neutral-50);
   --secondary-foreground: var(--neutral-800);
   --muted: 220 44% 97%;
   --muted-foreground: var(--neutral-500);
-  --accent: 134 61% 41%;
+  --accent: var(--accent-500);
   --accent-foreground: 0 0% 100%;
-  --success: var(--green-600);
+  --success: var(--accent-600);
   --success-foreground: 0 0% 100%;
   --warning: 38 92% 50%;
   --warning-foreground: 0 0% 100%;
@@ -257,7 +291,7 @@
   --destructive-foreground: 0 0% 100%;
   --border: var(--neutral-200);
   --input: var(--neutral-200);
-  --ring: var(--green-500);
+  --ring: var(--accent-500);
 
   --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04), 0 12px 28px -18px rgba(30, 30, 40, 0.28);
   --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);

@@ -101,52 +101,56 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
       total={items.length}
       xp={game.xpReward}
     >
-      <div className="force-light space-y-5 md:space-y-6">
-      <div className="game-tile bg-primary/5 p-4 text-sm leading-6 text-foreground/80">{payload.instruction}</div>
+      <div className="force-light">
+      <div className="mx-auto max-w-5xl text-center">
+        <p className="font-display text-lg leading-7 md:text-xl">{payload.instruction}</p>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={(event: DragStartEvent) => setActiveId(String(event.active.id))}
-        onDragEnd={onDragEnd}
-        onDragCancel={() => setActiveId(null)}
-      >
-        <Bank id="bank">
-          {bankItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Todos os itens foram distribuídos.</p>
-          ) : (
-            bankItems.map((item) => <DraggableChip key={item.id} item={item} disabled={checked} />)
-          )}
-        </Bank>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={(event: DragStartEvent) => setActiveId(String(event.active.id))}
+          onDragEnd={onDragEnd}
+          onDragCancel={() => setActiveId(null)}
+        >
+          <div className="mt-6 text-left">
+            <Bank id="bank">
+              {bankItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Todos os itens foram distribuídos.</p>
+              ) : (
+                bankItems.map((item) => <DraggableChip key={item.id} item={item} disabled={checked} />)
+              )}
+            </Bank>
+          </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {buckets.map((bucket) => {
-            const bucketItems = items.filter((item) => placement[item.id] === bucket.id);
-            return (
-              <BucketZone key={bucket.id} id={bucket.id} label={bucket.label} hint={bucket.hint} count={bucketItems.length}>
-                {bucketItems.map((item) => (
-                  <DraggableChip
-                    key={item.id}
-                    item={item}
-                    disabled={checked}
-                    verdict={checked ? (placement[item.id] === item.bucketId ? "correct" : "wrong") : undefined}
-                  />
-                ))}
-              </BucketZone>
-            );
-          })}
-        </div>
+          <div className="mt-4 grid gap-3 text-left md:grid-cols-2 xl:grid-cols-3">
+            {buckets.map((bucket) => {
+              const bucketItems = items.filter((item) => placement[item.id] === bucket.id);
+              return (
+                <BucketZone key={bucket.id} id={bucket.id} label={bucket.label} hint={bucket.hint} count={bucketItems.length}>
+                  {bucketItems.map((item) => (
+                    <DraggableChip
+                      key={item.id}
+                      item={item}
+                      disabled={checked}
+                      verdict={checked ? (placement[item.id] === item.bucketId ? "correct" : "wrong") : undefined}
+                    />
+                  ))}
+                </BucketZone>
+              );
+            })}
+          </div>
 
-        <DragOverlay>
-          {activeId ? <ChipBody text={itemMap.get(activeId)?.text ?? ""} dragging /> : null}
-        </DragOverlay>
-      </DndContext>
+          <DragOverlay>
+            {activeId ? <ChipBody text={itemMap.get(activeId)?.text ?? ""} dragging /> : null}
+          </DragOverlay>
+        </DndContext>
 
-      {!checked && (
-        <Button onClick={check} disabled={!allPlaced} className="w-full sm:w-auto">
-          Conferir classificação
-        </Button>
-      )}
+        {!checked && (
+          <Button onClick={check} disabled={!allPlaced} className="mt-6 w-full sm:w-auto">
+            Conferir classificação
+          </Button>
+        )}
+      </div>
 
       <EngineResult
         result={result}
@@ -171,12 +175,12 @@ function Bank({ id, children }: { id: string; children: React.ReactNode }) {
     <section
       ref={setNodeRef}
       className={cn(
-        "game-surface flex min-h-20 flex-wrap gap-2 bg-card p-4 transition-colors",
+        "min-h-20 rounded-2xl border border-border bg-card p-4 shadow-soft transition-colors",
         isOver && "border-primary/60 bg-primary/5",
       )}
     >
-      <p className="w-full text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Banco de itens</p>
-      {children}
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Banco de itens</p>
+      <div className="grid gap-2 sm:grid-cols-2">{children}</div>
     </section>
   );
 }
@@ -199,7 +203,7 @@ function BucketZone({
     <section
       ref={setNodeRef}
       className={cn(
-        "game-surface flex min-h-36 flex-col gap-2 bg-card p-4 transition-colors",
+        "flex min-h-36 flex-col gap-2 rounded-2xl border border-border bg-card p-4 shadow-soft transition-colors",
         isOver && "border-primary/60 bg-primary/5",
       )}
     >

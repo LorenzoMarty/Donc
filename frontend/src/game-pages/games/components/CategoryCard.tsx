@@ -20,7 +20,7 @@ export function CategoryCard({ category, index }: { category: GameCategory; inde
     >
       <Link
         href={`/games/${category.slug}`}
-        className="game-surface block h-full bg-background/58 p-4 text-foreground outline-none transition-all duration-300 hover:bg-muted/62 focus-visible:ring-2 focus-visible:ring-primary/45 md:p-5"
+        className="game-surface block h-full bg-card p-4 text-foreground outline-none transition-all duration-300 hover:bg-muted/62 focus-visible:ring-2 focus-visible:ring-primary/45 md:p-5"
       >
         <div
           className="grid h-14 w-14 place-items-center rounded-control"

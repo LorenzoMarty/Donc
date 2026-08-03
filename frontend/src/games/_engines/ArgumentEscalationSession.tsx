@@ -117,7 +117,7 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
             ))}
           </div>
 
-          <h2 className="text-lg font-semibold leading-7 tracking-normal md:text-xl">{current.instruction}</h2>
+          <h2 className="font-display text-xl font-semibold leading-7 tracking-normal md:text-2xl">{current.instruction}</h2>
           {!showHints && <p className="mt-1 text-xs text-muted-foreground">Sem dicas neste patamar — escolha pela profundidade real.</p>}
 
           <div className="mt-5 grid gap-3">

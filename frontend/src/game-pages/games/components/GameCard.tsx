@@ -37,8 +37,8 @@ function GameCard({ game, progress, variant = "default", index = 0, className }:
       }}
       whileTap={{ scale: 0.985 }}
       className={cn(
-        "game-surface group relative flex h-full min-w-0 flex-col overflow-hidden bg-card text-foreground transition-colors duration-300 hover:border-primary/45",
-        variant === "compact" ? "p-3" : "p-4",
+        "game-surface group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] bg-card text-foreground transition-colors duration-300 hover:border-primary/45",
+        variant === "compact" ? "p-3.5" : "p-5",
         className,
       )}
     >
@@ -55,21 +55,18 @@ function GameCard({ game, progress, variant = "default", index = 0, className }:
         compact={variant === "compact"}
       />
 
-      <div className="mt-4 flex flex-1 flex-col">
+      <div className="mt-3.5 flex flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge className="border-primary/20 bg-primary/10 text-primary">{category?.name ?? game.category}</Badge>
-        </div>
-
-        <div className="mt-3">
-          <h3 className={cn("font-semibold tracking-normal text-foreground", variant === "compact" ? "text-lg" : "text-xl")}>
+          <h3 className={cn("font-display font-semibold tracking-normal text-foreground", variant === "compact" ? "text-lg" : "text-xl")}>
             {game.name}
           </h3>
-          <p className="text-safe mt-2 text-sm leading-6 text-muted-foreground">
-            {game.description}
-          </p>
+          <Badge className="border-primary/20 bg-primary/10 text-primary">{category?.name ?? game.category}</Badge>
         </div>
+        <p className="text-safe mt-2 text-sm leading-6 text-muted-foreground">
+          {game.description}
+        </p>
 
-        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="mt-3.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <GameMetric icon={<Trophy className="h-3.5 w-3.5" aria-hidden="true" />} label="Nivel" value={game.difficulty} />
           <GameMetric icon={<Zap className="h-3.5 w-3.5" aria-hidden="true" />} label="XP" value={`+${game.xpReward}`} />
           <GameMetric icon={<Clock className="h-3.5 w-3.5" aria-hidden="true" />} label="Tempo" value={game.estimatedTime} />
@@ -130,18 +127,15 @@ function GameThumbnail({ game, icon, accent, compact }: { game: GameDefinition; 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-md border border-border bg-background/64",
+        "relative overflow-hidden rounded-control border border-border bg-background/64",
         compact ? "aspect-[16/8]" : "aspect-[16/9]",
       )}
     >
-      <div className="absolute inset-0 bg-primary/10 opacity-80" style={{ backgroundColor: accent }} aria-hidden="true" />
-      <div className="absolute inset-0 bg-card/70" aria-hidden="true" />
-      <div className="absolute -bottom-10 left-6 h-28 w-28 rotate-45 rounded-2xl border border-primary/20 bg-primary/10" />
-      <div className="absolute bottom-4 right-4 h-16 w-24 -skew-x-12 rounded-md border border-border bg-card/70" />
+      <div className="absolute inset-0 opacity-15" style={{ backgroundColor: accent }} aria-hidden="true" />
 
       <div className="relative flex h-full flex-col justify-between p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">{icon}</div>
+          <div className="grid h-11 w-11 place-items-center rounded-control border border-primary/25 bg-primary/12 text-primary">{icon}</div>
           <span className="game-chip inline-flex items-center gap-1 bg-card/80 px-2.5 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
             treino
