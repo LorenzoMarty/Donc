@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import useSound from "use-sound";
-import { ArrowLeft, Check, Clock, Flame, RotateCcw, Target, Trophy, X, Zap } from "lucide-react";
+import { ArrowLeft, Check, Clock, Flame, Target, X, Zap } from "lucide-react";
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
+import { EngineResult } from "@/games/_engines/EngineResult";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -49,7 +50,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const [seconds, setSeconds] = useState(0);
   const [timeLeft, setTimeLeft] = useState(getRoundDuration());
   const [result, setResult] = useState<GameCompletion | null>(null);
-  const [leveledUp, setLeveledUp] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const { playCorrect, playWrong } = useGameSounds();
 
@@ -70,7 +70,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
   const question = questionPool.length ? questionPool[round % questionPool.length] : undefined;
   const difficultyStage = Math.min(5, Math.floor(round / 5));
   const roundDuration = getRoundDuration();
-  const errors = answerLog.filter((answer) => !answer.correct);
+  const errors = useMemo(() => answerLog.filter((answer) => !answer.correct), [answerLog]);
   const correctCount = answerLog.length - errors.length;
   const accuracy = answerLog.length ? Math.round((correctCount / answerLog.length) * 100) : 100;
   const progress = Math.min(100, Math.round((timeLeft / roundDuration) * 100));
@@ -80,7 +80,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
       if (result || log.length === 0) return;
       const score = log.filter((answer) => answer.correct).length;
       const completion = completeGame(game, score, log.length, seconds);
-      setLeveledUp(completion.rankUp);
       setResult(completion);
     },
     [answerLog, completeGame, game, result, seconds],
@@ -170,7 +169,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
     setSeconds(0);
     setTimeLeft(getRoundDuration());
     setResult(null);
-    setLeveledUp(false);
     setAttempt((value) => value + 1);
   }
 
@@ -325,15 +323,25 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         </div>
       </div>
 
-      <ResultModal
+      <EngineResult
         result={result}
-        accuracy={accuracy}
-        maxCombo={maxCombo}
-        errors={errors}
-        leveledUp={leveledUp}
+        decoration={<ConfettiBurst />}
+        eyebrow="Rodada finalizada"
+        headline={`+${result?.xpEarned ?? 0} XP`}
+        review={errors.slice(0, 3).map((error) => ({
+          id: error.questionId,
+          text: `${error.selected} -> correto: ${error.correctAnswer} — ${error.explanation}`,
+        }))}
         onRestart={restart}
         categorySlug={category.slug}
-      />
+      >
+        <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SideMetric label="XP ganho" value={`+${result?.xpEarned ?? 0}`} />
+          <SideMetric label="Max combo" value={`${maxCombo}x`} />
+          <SideMetric label="Acerto" value={`${accuracy}%`} />
+          <SideMetric label="Erros" value={`${errors.length}`} />
+        </div>
+      </EngineResult>
     </div>
   );
 }
@@ -449,95 +457,6 @@ function SideMetric({ label, value }: { label: string; value: string }) {
       <p className="text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>
-  );
-}
-
-function ResultModal({
-  result,
-  accuracy,
-  maxCombo,
-  errors,
-  leveledUp,
-  onRestart,
-  categorySlug,
-}: {
-  result: GameCompletion | null;
-  accuracy: number;
-  maxCombo: number;
-  errors: AnswerLog[];
-  leveledUp: boolean;
-  onRestart: () => void;
-  categorySlug: string;
-}) {
-  return (
-    <AnimatePresence>
-      {result && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] grid place-items-center bg-foreground/28 p-3 backdrop-blur-sm xs:p-4"
-        >
-          <motion.section
-            initial={{ opacity: 0, y: 24, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-2xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
-          >
-            <ConfettiBurst />
-            <div className="relative text-center">
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
-                <Trophy className="h-8 w-8" aria-hidden="true" />
-              </div>
-              {leveledUp && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.88 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary"
-                >
-                  Rank up - {result.rankName}
-                </motion.div>
-              )}
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Rodada finalizada</p>
-              <h2 className="mt-2 text-4xl font-semibold tracking-normal">+{result.xpEarned} XP</h2>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <SideMetric label="XP ganho" value={`+${result.xpEarned}`} />
-              <SideMetric label="Max combo" value={`${maxCombo}x`} />
-              <SideMetric label="Acerto" value={`${accuracy}%`} />
-              <SideMetric label="Erros" value={`${errors.length}`} />
-            </div>
-
-            {errors.length > 0 && (
-              <div className="game-tile mt-5 border-destructive/20 bg-destructive/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Erros para revisar</p>
-                <div className="mt-3 space-y-3">
-                  {errors.slice(0, 3).map((error) => (
-                    <div key={error.questionId} className="text-sm leading-6 text-muted-foreground">
-                      <p className="font-semibold text-foreground">
-                        {error.selected} {"->"} correto: {error.correctAnswer}
-                      </p>
-                      <p className="text-muted-foreground">{error.explanation}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <Button onClick={onRestart}>
-                <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                Jogar novamente
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={`/games/${categorySlug}`}>Voltar à categoria</Link>
-              </Button>
-            </div>
-          </motion.section>
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }
 

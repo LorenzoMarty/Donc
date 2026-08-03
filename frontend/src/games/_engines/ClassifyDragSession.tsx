@@ -16,11 +16,11 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { CSS as DndCss } from "@dnd-kit/utilities";
-import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, GripVertical, RotateCcw, Trophy, X } from "lucide-react";
+import { ArrowLeft, Check, GripVertical, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { ClassifyItem, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
+import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
 import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
 import { PageHeader } from "@/components/shared/premium-ui";
@@ -57,10 +57,12 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
   );
 
   const itemMap = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
-  const placedCount = items.filter((item) => placement[item.id] !== "bank").length;
+  const placedCount = useMemo(() => items.filter((item) => placement[item.id] !== "bank").length, [items, placement]);
   const allPlaced = placedCount === items.length && items.length > 0;
-  const correctCount = items.filter((item) => placement[item.id] === item.bucketId).length;
+  const correctCount = useMemo(() => items.filter((item) => placement[item.id] === item.bucketId).length, [items, placement]);
   const liveAccuracy = items.length ? Math.round((correctCount / items.length) * 100) : 0;
+  const wrongItems = useMemo(() => items.filter((item) => placement[item.id] !== item.bucketId), [items, placement]);
+  const bankItems = useMemo(() => items.filter((item) => placement[item.id] === "bank"), [items, placement]);
 
   if (!payload || items.length === 0) {
     return (
@@ -92,8 +94,6 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
     setChecked(false);
     setResult(null);
   }
-
-  const bankItems = items.filter((item) => placement[item.id] === "bank");
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -166,11 +166,15 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
         </Button>
       )}
 
-      <ResultModal
+      <EngineResult
         result={result}
-        total={items.length}
-        items={items}
-        placement={placement}
+        eyebrow="Classificação conferida"
+        headline={`${result?.attempt.accuracy ?? 0}% de acerto`}
+        subline={`${result?.attempt.score ?? 0} de ${items.length} no balde certo.`}
+        review={wrongItems.map((item) => ({
+          id: item.id,
+          text: item.explanation ? `${item.text} — ${item.explanation}` : item.text,
+        }))}
         onRestart={restart}
         categorySlug={category.slug}
       />
@@ -267,82 +271,5 @@ function ChipBody({ text, dragging }: { text: string; dragging?: boolean }) {
       <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="leading-5">{text}</span>
     </div>
-  );
-}
-
-function ResultModal({
-  result,
-  total,
-  items,
-  placement,
-  onRestart,
-  categorySlug,
-}: {
-  result: GameCompletion | null;
-  total: number;
-  items: ClassifyItem[];
-  placement: Placement;
-  onRestart: () => void;
-  categorySlug: string;
-}) {
-  const wrong = items.filter((item) => placement[item.id] !== item.bucketId);
-  return (
-    <AnimatePresence>
-      {result && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] grid place-items-center bg-foreground/28 p-3 backdrop-blur-sm xs:p-4"
-        >
-          <motion.section
-            initial={{ opacity: 0, y: 24, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-2xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
-          >
-            <div className="text-center">
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
-                <Trophy className="h-8 w-8" aria-hidden="true" />
-              </div>
-              {result.rankUp && (
-                <div className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                  Rank up - {result.rankName}
-                </div>
-              )}
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Classificação conferida</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result.attempt.accuracy}% de acerto</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {result.attempt.score} de {total} no balde certo · +{result.xpEarned} XP
-              </p>
-            </div>
-
-            {wrong.length > 0 && (
-              <div className="game-tile mt-5 border-destructive/20 bg-destructive/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-700">Itens para revisar</p>
-                <div className="mt-3 space-y-2">
-                  {wrong.map((item) => (
-                    <p key={item.id} className="text-sm leading-6 text-muted-foreground">
-                      <span className="font-semibold text-foreground">{item.text}</span>
-                      {item.explanation ? ` — ${item.explanation}` : ""}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-              <Button onClick={onRestart}>
-                <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                Tentar de novo
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={`/games/${categorySlug}`}>Voltar à categoria</Link>
-              </Button>
-            </div>
-          </motion.section>
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }

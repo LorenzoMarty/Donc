@@ -42,6 +42,9 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
     [round],
   );
   const [cells, setCells] = useState<Cell[]>(initialCells);
+  // setState durante o render (não num efeito) é o padrão recomendado pelo React pra resetar
+  // estado derivado de uma prop que mudou —
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const [trackedStep, setTrackedStep] = useState(step);
   if (trackedStep !== step) {
     setTrackedStep(step);

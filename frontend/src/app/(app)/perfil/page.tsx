@@ -8,7 +8,6 @@ import { ArrowRight, Flame, GraduationCap, Medal, Zap } from "lucide-react";
 import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
-import { HubMastery } from "@/app/(app)/perfil/components/hub-mastery";
 import { WriterXraySection } from "@/app/(app)/perfil/components/writer-xray";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -90,8 +89,6 @@ export default function ProfilePage() {
       </Surface>
 
       <WriterXraySection xray={xray} loading={loading} />
-
-      <HubMastery />
 
       <AccentSettings />
 

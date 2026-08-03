@@ -15,10 +15,9 @@ import { useGameStore } from "@/stores/game-store";
 import { useStepParam } from "@/utils";
 
 /**
- * Simulado adaptativo cross-sintoma: mesma mecânica de redirecionamento encadeado do
- * `ChainedSession` (cada jogo continua sendo a página `GameSession` já existente), mas o plano
- * vem de `buildAdaptiveSimulado` (mistura hubs ponderada pelas fraquezas do aluno) em vez de um
- * único hub.
+ * Simulado adaptativo cross-sintoma: encadeia jogos via redirecionamento por `?step=` (cada jogo
+ * continua sendo a página `GameSession` já existente). O plano vem de `buildAdaptiveSimulado`
+ * (mistura hubs ponderada pelas fraquezas do aluno) em vez de um único hub.
  */
 export default function SimuladoSession() {
   const step = useStepParam();
