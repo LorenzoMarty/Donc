@@ -212,24 +212,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
       }
     >
       <div className="force-light">
-          <div className="mb-4 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            {essayLevels.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => changeLevel(item.id)}
-                className={cn(
-                  "min-h-11 rounded-md border px-4 py-2 text-sm font-semibold transition-all",
-                  level.id === item.id
-                    ? "border-primary/50 bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/35 hover:bg-primary/10 hover:text-foreground",
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
           <motion.main
             animate={
               feedback === "wrong" ? { x: [0, -6, 6, -4, 4, 0] } : feedback === "correct" ? { scale: [1, 1.01, 1] } : { x: 0, scale: 1 }
@@ -241,9 +223,26 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
             )}
           >
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
+            <div className="mb-4 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              {essayLevels.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => changeLevel(item.id)}
+                  className={cn(
+                    "min-h-11 rounded-md border px-4 py-2 text-sm font-semibold transition-all",
+                    level.id === item.id
+                      ? "border-primary/50 bg-primary text-primary-foreground"
+                      : "border-border bg-background/64 text-muted-foreground hover:border-primary/35 hover:bg-primary/10 hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{level.title}</p>
-              <h2 className="mt-2 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
+              <h2 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
                 Organize a estrutura da redação
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{level.description}</p>

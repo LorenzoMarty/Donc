@@ -111,7 +111,7 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
               Complete a lacuna · {step + 1} de {rounds.length}
             </p>
 
-            <p className="mt-4 text-xl font-semibold leading-9 tracking-normal md:text-2xl">
+            <p className="mt-4 font-display text-2xl font-semibold leading-9 tracking-normal md:text-3xl">
               {before}
               <span
                 className={cn(

@@ -7,11 +7,12 @@ import { readReturnTo } from "@/games/_engines/EngineResult";
 import { cn } from "@/utils";
 
 /**
- * Chrome escuro e compacto da sessão de jogo (fecha, contexto, progresso, chips de métrica) —
- * substitui o antigo `PageHeader` + `SessionHUD` claros. Escopo local via classe `.dark` (mesmos
- * tokens do tema escuro do projeto, nunca ligado globalmente) — só a sessão de jogo fica escura,
- * o resto do app continua claro. O conteúdo do jogo em si (`children`) deve usar um card
- * explicitamente claro (`bg-white`), não `bg-card`/`game-surface`, pra não herdar os tokens escuros.
+ * Chrome escuro da sessão de jogo (fecha, contexto, progresso, chips de métrica) — painel único
+ * arredondado (não faixa full-bleed), envolvendo header + progresso + conteúdo na mesma superfície
+ * contínua. Escopo local via classe `.dark` (mesmos tokens do tema escuro do projeto, nunca ligado
+ * globalmente) — só a sessão de jogo fica escura, o resto do app continua claro. O conteúdo do
+ * jogo em si (`children`) deve usar um card explicitamente claro (`bg-card`/`.force-light`), não
+ * herdar os tokens escuros diretamente.
  */
 export function GameSessionShell({
   categoryName,
@@ -37,8 +38,8 @@ export function GameSessionShell({
   const progress = total > 0 ? Math.round((Math.min(step, total) / total) * 100) : 0;
 
   return (
-    <div className="dark bg-background px-3 text-foreground md:px-4">
-      <div className="flex items-center justify-between gap-3 py-3 md:py-4">
+    <div className="game-shell-panel dark rounded-[28px] border border-border/50 bg-background px-4 py-4 text-foreground shadow-elevated md:px-8 md:py-6">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <Link
             href={returnTo ?? `/games/${categorySlug}`}
@@ -60,11 +61,11 @@ export function GameSessionShell({
         </div>
       </div>
 
-      <div className="h-1 w-full bg-muted/40">
-        <div className="h-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+      <div className="mt-3 h-1 w-full rounded-full bg-muted/40 md:mt-4">
+        <div className="h-full rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="pt-3 md:pt-6">{children}</div>
+      <div className="pt-4 md:pt-6">{children}</div>
     </div>
   );
 }

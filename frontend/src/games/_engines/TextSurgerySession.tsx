@@ -138,7 +138,7 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
           <p className="text-sm leading-6 text-foreground/80">{current.brief}</p>
 
           {/* Texto com slots inline */}
-          <p className="mt-4 rounded-md border border-border bg-background/64 p-4 text-base leading-8">
+          <p className="mt-4 rounded-md border border-border bg-background/64 p-4 font-display text-lg leading-9 md:text-xl">
             {current.segments.map((segment, i) => {
               if (typeof segment === "string") return <span key={i}>{segment}</span>;
               const done = resolved[segment.slotId];

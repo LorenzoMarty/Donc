@@ -162,10 +162,13 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
     >
       <div className="force-light">
       {question && !finishedRef && (
+        <div className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col items-center justify-center text-center md:min-h-[75dvh]">
         <AnimatePresence mode="wait">
-          <motion.section key={index} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="game-surface bg-card p-4 md:p-6">
-            <h2 className="text-xl font-semibold leading-7 tracking-normal md:text-2xl">{question.prompt}</h2>
-            <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          <motion.div key={index} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="w-full">
+            <div className="rounded-3xl bg-card px-8 py-6 shadow-elevated md:px-12 md:py-10">
+              <h2 className="font-display text-2xl font-semibold leading-snug tracking-normal md:text-4xl">{question.prompt}</h2>
+            </div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {question.options.map((option, i) => {
                 const isRight = selected !== null && i === question.answerIndex;
                 const isWrong = selected === i && i !== question.answerIndex;
@@ -176,26 +179,26 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
                     onClick={() => answer(i)}
                     disabled={selected !== null}
                     className={cn(
-                      "game-tile min-h-20 bg-background/64 p-4 text-left text-sm font-medium leading-6 transition-colors",
+                      "min-h-16 rounded-2xl border border-border bg-card px-6 py-5 text-left text-base font-medium leading-6 shadow-soft transition-colors md:text-lg",
                       selected === null && "hover:border-primary/50 hover:bg-primary/5",
                       isRight && "border-emerald-500/55 bg-emerald-500/10",
                       isWrong && "border-destructive/55 bg-destructive/10",
                     )}
                   >
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="grid h-7 w-7 place-items-center rounded-md border border-border bg-card text-xs font-semibold">{i + 1}</span>
-                      {isRight ? <Check className="h-4 w-4 text-emerald-700" aria-hidden="true" /> : isWrong ? <X className="h-4 w-4 text-red-700" aria-hidden="true" /> : null}
+                    <div className="flex items-center justify-between gap-3">
+                      <span>{option}</span>
+                      {isRight ? <Check className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden="true" /> : isWrong ? <X className="h-5 w-5 shrink-0 text-red-700" aria-hidden="true" /> : null}
                     </div>
-                    {option}
                   </button>
                 );
               })}
             </div>
             {selected !== null && question.explanation && (
-              <p className="mt-4 rounded-md border border-primary/15 bg-primary/5 p-3 text-sm leading-6 text-muted-foreground">{question.explanation}</p>
+              <p className="mt-5 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-left text-sm leading-6 text-muted-foreground">{question.explanation}</p>
             )}
-          </motion.section>
+          </motion.div>
         </AnimatePresence>
+        </div>
       )}
 
       <div className="force-light">

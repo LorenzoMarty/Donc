@@ -129,7 +129,7 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
           <Badge className="mb-3 border-primary/20 bg-primary/10 text-primary">
             <Wrench className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Reconstrução {step + 1}/{rounds.length}
           </Badge>
-          <p className="text-sm leading-6 text-foreground/80">{round.brief}</p>
+          <p className="font-display text-lg leading-7 md:text-xl">{round.brief}</p>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={cells.map((c) => c.id)} strategy={verticalListSortingStrategy}>

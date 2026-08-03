@@ -93,25 +93,27 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
       xp={game.xpReward}
     >
       <div className="force-light">
-        <main>
+        <main className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col items-center justify-center text-center md:min-h-[75dvh]">
           <AnimatePresence mode="wait">
             {!result && question ? (
-              <motion.section
+              <motion.div
                 key={question.id}
                 initial={{ opacity: 0, y: 18, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
                 transition={{ duration: 0.24, ease: "easeOut" }}
-                className="game-surface bg-card p-4 md:p-6"
+                className="w-full"
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Questao {step + 1} de {questions.length}
                 </p>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal md:text-3xl">
-                  {question.prompt}
-                </h2>
+                <div className="mt-4 rounded-3xl bg-card px-8 py-6 shadow-elevated md:px-12 md:py-10">
+                  <h2 className="font-display text-2xl font-semibold leading-snug tracking-normal md:text-4xl">
+                    {question.prompt}
+                  </h2>
+                </div>
 
-                <div className="mt-6 grid gap-3 lg:grid-cols-2">
+                <div className="mt-8 grid gap-3 sm:grid-cols-2">
                   {question.options.map((option, index) => {
                     const isSelected = selected === index;
                     const isCorrect = selected !== null && index === question.answerIndex;
@@ -132,22 +134,19 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
                         }
                         transition={{ duration: 0.38, ease: "easeOut" }}
                         className={cn(
-                          "game-tile min-h-24 bg-background/64 p-4 text-left transition-colors",
+                          "min-h-16 rounded-2xl border border-border bg-card px-6 py-5 text-left text-base font-semibold leading-6 shadow-soft transition-colors md:text-lg",
                           isCorrect && "border-primary/70 bg-primary/18",
                           isWrong && "border-destructive/50 bg-destructive/10",
                         )}
                       >
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">
-                            {index + 1}
-                          </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>{option}</span>
                           {isCorrect ? (
-                            <CheckCircle2 className="h-5 w-5 text-primary" />
+                            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
                           ) : isWrong ? (
-                            <XCircle className="h-5 w-5 text-destructive" />
+                            <XCircle className="h-5 w-5 shrink-0 text-destructive" />
                           ) : null}
                         </div>
-                        <p className="text-sm font-semibold leading-6">{option}</p>
                       </motion.button>
                     );
                   })}
@@ -157,18 +156,18 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="game-tile mt-5 bg-primary/10 p-4 text-sm leading-6"
+                    className="mt-5 rounded-2xl bg-primary/10 p-4 text-sm leading-6"
                   >
                     {question.explanation}
                   </motion.div>
                 )}
-              </motion.section>
+              </motion.div>
             ) : (
-              <motion.section
+              <motion.div
                 key="result"
                 initial={{ opacity: 0, scale: 0.96, y: 16 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="game-surface bg-card p-5 text-center md:p-7"
+                className="w-full rounded-3xl bg-card px-5 py-6 shadow-elevated md:px-7 md:py-8"
               >
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
                   <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
@@ -189,7 +188,7 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
                     </Link>
                   </Button>
                 </div>
-              </motion.section>
+              </motion.div>
             )}
           </AnimatePresence>
         </main>

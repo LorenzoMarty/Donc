@@ -86,23 +86,26 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
       total={rounds.length}
       xp={game.xpReward}
     >
-      <div className="force-light space-y-5 md:space-y-6">
+      <div className="force-light">
       {round && (
-        <motion.section
+        <div className="mx-auto max-w-2xl">
+        <motion.div
           key={round.id}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="game-surface bg-card p-4 md:p-6"
+          className="w-full text-center"
         >
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
             <Badge className="border-primary/20 bg-primary/10 text-primary">
               <Swords className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Duelo {step + 1}/{rounds.length}
             </Badge>
             <Badge variant="outline">Critério oculto: decida e descubra</Badge>
           </div>
-          <p className="text-sm leading-6 text-foreground/80">{round.context}</p>
+          <div className="rounded-3xl bg-card px-8 py-6 shadow-elevated md:px-12 md:py-10">
+            <p className="font-display text-xl leading-snug tracking-normal md:text-2xl">{round.context}</p>
+          </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="mt-8 grid gap-3 md:grid-cols-2">
             {(["a", "b"] as const).map((side) => {
               const isWinner = picked && side === round.winner;
               const isWrongPick = picked === side && side !== round.winner;
@@ -113,7 +116,7 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
                   onClick={() => choose(side)}
                   disabled={picked !== null}
                   className={cn(
-                    "game-tile bg-background/64 p-4 text-left text-sm leading-6 transition-colors",
+                    "rounded-2xl border border-border bg-card p-5 text-left text-sm leading-6 shadow-soft transition-colors",
                     picked === null && "hover:border-primary/50 hover:bg-primary/5",
                     isWinner && "border-emerald-500/55 bg-emerald-500/10",
                     isWrongPick && "border-destructive/55 bg-destructive/10",
@@ -134,7 +137,7 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-5 rounded-md border border-primary/20 bg-primary/5 p-4 text-sm leading-6"
+                className="mt-5 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-left text-sm leading-6"
               >
                 <p className="font-semibold text-foreground">
                   Melhor: versão {round.winner.toUpperCase()} · dimensão decisiva: {round.dimension}
@@ -146,7 +149,8 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.section>
+        </motion.div>
+        </div>
       )}
 
       <EngineResult

@@ -101,36 +101,47 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
       total={rounds.length}
       xp={game.xpReward}
     >
-      <div className="force-light space-y-5 md:space-y-6">
+      <div className="force-light">
       {round && (
-        <motion.section key={round.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="game-surface bg-card p-4 md:p-6">
-          <Badge className="mb-3 border-primary/20 bg-primary/10 text-primary">Trecho {step + 1}/{rounds.length}</Badge>
-          <blockquote className="rounded-md border border-border bg-background/64 p-4 text-base leading-7">{round.passage}</blockquote>
+        <div className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col items-center justify-center text-center md:min-h-[75dvh]">
+        <motion.div key={round.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+          <Badge className="mb-4 border-primary/20 bg-primary/10 text-primary">Trecho {step + 1}/{rounds.length}</Badge>
+          <blockquote className="rounded-3xl bg-card px-8 py-6 text-left font-display text-xl leading-8 shadow-elevated md:px-12 md:py-10 md:text-2xl">
+            {round.passage}
+          </blockquote>
 
           {phase === "verdict" && (
             <>
-              <p className="mt-5 text-sm font-medium text-muted-foreground">Este trecho soa autêntico ou artificial?</p>
+              <p className="mt-6 text-sm font-medium text-muted-foreground">Este trecho soa autêntico ou artificial?</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Button variant="outline" className="h-auto py-3" onClick={() => chooseVerdict("humano")}>
+                <button
+                  type="button"
+                  onClick={() => chooseVerdict("humano")}
+                  className="flex min-h-16 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-6 py-5 text-base font-semibold shadow-soft transition-colors hover:border-primary/50 hover:bg-primary/5"
+                >
                   <UserRound className="h-4 w-4" aria-hidden="true" /> Autêntico
-                </Button>
-                <Button variant="outline" className="h-auto py-3" onClick={() => chooseVerdict("artificial")}>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => chooseVerdict("artificial")}
+                  className="flex min-h-16 items-center justify-center gap-2 rounded-2xl border border-border bg-card px-6 py-5 text-base font-semibold shadow-soft transition-colors hover:border-primary/50 hover:bg-primary/5"
+                >
                   <Bot className="h-4 w-4" aria-hidden="true" /> Artificial
-                </Button>
+                </button>
               </div>
             </>
           )}
 
           {phase === "flaw" && round.flaw && (
             <>
-              <p className="mt-5 text-sm font-medium text-muted-foreground">Correto — é artificial. Qual o defeito dominante?</p>
+              <p className="mt-6 text-sm font-medium text-muted-foreground">Correto — é artificial. Qual o defeito dominante?</p>
               <div className="mt-3 grid gap-2">
                 {flawOptions.map((option) => (
                   <button
                     key={option.id}
                     type="button"
                     onClick={() => chooseFlaw(option.id)}
-                    className="game-tile bg-background/64 p-3 text-left text-sm transition-colors hover:border-primary/50 hover:bg-primary/5"
+                    className="min-h-14 rounded-2xl border border-border bg-card px-5 py-3 text-left text-sm shadow-soft transition-colors hover:border-primary/50 hover:bg-primary/5"
                   >
                     {option.label}
                   </button>
@@ -145,7 +156,7 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                  "mt-5 rounded-md border p-4 text-sm leading-6",
+                  "mt-5 rounded-2xl border p-4 text-left text-sm leading-6",
                   verdictOk && (flawPick === null || round.flaw?.options.find((o) => o.id === flawPick)?.correct)
                     ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
                     : "border-destructive/25 bg-destructive/10 text-red-800",
@@ -162,7 +173,8 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.section>
+        </motion.div>
+        </div>
       )}
 
       <EngineResult

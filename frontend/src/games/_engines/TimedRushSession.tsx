@@ -198,32 +198,36 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
       }
     >
       <div className="force-light">
+        <div className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col items-center justify-center text-center md:min-h-[75dvh]">
         <AnimatePresence mode="wait">
           {!result && (
-            <motion.section
+            <motion.div
               key={`${question.id}-${round}`}
               initial={{ opacity: 0, y: 18, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -14, scale: 0.98 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className={cn(
-                "game-surface relative overflow-hidden bg-card p-4 md:p-6",
-                feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
-              )}
+              className="w-full"
             >
-              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
-              <div className="mb-5 flex flex-wrap items-center gap-2">
+              <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
                 <Badge className="border-primary/20 bg-primary/10 text-primary">{game.skill}</Badge>
                 <Badge variant="outline">Velocidade {difficultyStage + 1}</Badge>
                 <Badge variant="outline">Rodada {round + 1}</Badge>
               </div>
 
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Decida rápido</p>
-              <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-normal text-foreground md:text-3xl">
-                {question.prompt}
-              </h2>
+              <div
+                className={cn(
+                  "mt-4 rounded-3xl border bg-card px-8 py-6 shadow-elevated md:px-12 md:py-10",
+                  feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "border-transparent",
+                )}
+              >
+                <h2 className="font-display text-2xl font-semibold leading-snug tracking-normal text-foreground md:text-4xl">
+                  {question.prompt}
+                </h2>
+              </div>
 
-              <div className="mt-7 grid gap-3 lg:grid-cols-2">
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 {question.options.map((option, index) => {
                   const isSelected = selected === index;
                   const isCorrectOption = feedback !== null && index === question.answerIndex;
@@ -237,22 +241,19 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
                       whileHover={feedback === null ? { y: -4, scale: 1.012 } : undefined}
                       whileTap={feedback === null ? { scale: 0.985 } : undefined}
                       className={cn(
-                        "game-tile min-h-24 bg-background/64 p-4 text-left transition-all duration-200 hover:bg-primary/10",
+                        "min-h-16 rounded-2xl border border-border bg-card px-6 py-5 text-left text-base font-semibold leading-6 tracking-normal text-foreground shadow-soft transition-all duration-200 hover:bg-primary/10 md:text-lg",
                         isCorrectOption && "border-emerald-500/55 bg-emerald-500/10",
                         isWrong && "border-destructive/55 bg-destructive/10",
                       )}
                     >
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <span className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-sm font-semibold">
-                          {index + 1}
-                        </span>
+                      <div className="flex items-center justify-between gap-3">
+                        <span>{option}</span>
                         {isCorrectOption ? (
-                          <Check className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+                          <Check className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden="true" />
                         ) : isWrong ? (
-                          <X className="h-5 w-5 text-red-700" aria-hidden="true" />
+                          <X className="h-5 w-5 shrink-0 text-red-700" aria-hidden="true" />
                         ) : null}
                       </div>
-                      <p className="text-base font-semibold leading-6 tracking-normal text-foreground">{option}</p>
                     </motion.button>
                   );
                 })}
@@ -265,7 +266,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     className={cn(
-                      "mt-5 rounded-md border p-4 text-sm leading-6",
+                      "mt-5 rounded-2xl border p-4 text-left text-sm leading-6",
                       feedback === "correct"
                         ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
                         : "border-destructive/25 bg-destructive/10 text-red-800",
@@ -285,9 +286,10 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
               >
                 Encerrar rodada
               </Button>
-            </motion.section>
+            </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
 
       <div className="force-light">

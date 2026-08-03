@@ -112,7 +112,7 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
           <Badge className="mb-3 border-primary/20 bg-primary/10 text-primary">
             <Stethoscope className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Caso {step + 1}/{cases.length}
           </Badge>
-          <blockquote className="rounded-md border border-border bg-background/64 p-4 text-base leading-7">{current.paragraph}</blockquote>
+          <blockquote className="rounded-md border border-border bg-background/64 p-4 font-display text-lg leading-8 md:text-xl">{current.paragraph}</blockquote>
           <p className="mt-4 text-sm font-medium text-muted-foreground">Marque todos os problemas realmente presentes (há distratores):</p>
 
           <div className="mt-3 grid gap-2">

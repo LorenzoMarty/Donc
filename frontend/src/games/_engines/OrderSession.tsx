@@ -151,7 +151,7 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
             transition={{ duration: 0.24, ease: "easeOut" }}
             className="force-light game-surface bg-card p-4 text-foreground md:p-6"
           >
-            <h2 className="text-lg font-semibold leading-7 tracking-normal md:text-xl">{round.instruction}</h2>
+            <h2 className="font-display text-xl font-semibold leading-7 tracking-normal md:text-2xl">{round.instruction}</h2>
             <p className="mt-2 text-sm text-muted-foreground">Arraste para ordenar de cima para baixo.</p>
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
