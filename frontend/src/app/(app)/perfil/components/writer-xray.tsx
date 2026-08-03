@@ -89,26 +89,15 @@ export function WriterXraySection({ xray, loading }: { xray: WriterXray | null; 
         </Surface>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        {xray.recurringErrors.length ? (
-          <ListSurface
-            eyebrow="Erros recorrentes"
-            title="O que aparece em mais de uma redação"
-            icon={TriangleAlert}
-            tone="warning"
-            items={xray.recurringErrors}
-          />
-        ) : null}
-        {xray.recommendations.length ? (
-          <ListSurface
-            eyebrow="Recomendações"
-            title="Próximos passos de treino"
-            icon={Lightbulb}
-            tone="highlight"
-            items={xray.recommendations}
-          />
-        ) : null}
-      </section>
+      {xray.recommendations.length ? (
+        <ListSurface
+          eyebrow="Recomendações"
+          title="Próximos passos de treino"
+          icon={Lightbulb}
+          tone="highlight"
+          items={xray.recommendations}
+        />
+      ) : null}
 
       {xray.repertories.length ? (
         <Surface>

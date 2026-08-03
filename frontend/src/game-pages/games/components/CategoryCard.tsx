@@ -21,7 +21,7 @@ export function CategoryCard({ category, index }: { category: GameCategory; inde
     >
       <Link
         href={`/games/${category.slug}`}
-        className="game-tile relative block h-full overflow-hidden bg-background/58 p-4 text-foreground outline-none transition-all duration-300 hover:bg-muted/62 focus-visible:ring-2 focus-visible:ring-primary/45 md:p-5"
+        className="game-surface relative block h-full overflow-hidden bg-background/58 p-4 text-foreground outline-none transition-all duration-300 hover:bg-muted/62 focus-visible:ring-2 focus-visible:ring-primary/45 md:p-5"
       >
         <div
           className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-25 blur-3xl transition-opacity duration-300 group-hover:opacity-45"

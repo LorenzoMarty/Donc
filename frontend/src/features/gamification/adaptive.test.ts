@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 
 import {
   applyEvent,
-  buildAdaptiveSimulado,
   deriveHubsFromTags,
   dominantWeakness,
   emptyAdaptiveProfile,
@@ -250,46 +249,3 @@ describe("selectItemsBySkill", () => {
   });
 });
 
-function fakeQuestion(id: string, difficulty: ItemDifficulty) {
-  return { id, prompt: id, options: ["a", "b"], answerIndex: 0, explanation: "", difficulty };
-}
-
-describe("buildAdaptiveSimulado", () => {
-  const games: GameDefinition[] = [
-    fakeGame({
-      id: "g-robotico",
-      hubs: ["texto-robotico"],
-      questions: [fakeQuestion("q1", "facil"), fakeQuestion("q2", "media")],
-    }),
-    fakeGame({
-      id: "g-aprofunda",
-      hubs: ["nao-aprofunda"],
-      questions: [fakeQuestion("q3", "facil"), fakeQuestion("q4", "media")],
-    }),
-  ];
-
-  it("prioriza os hubs mais fracos do perfil", () => {
-    let p = emptyAdaptiveProfile();
-    p = applyEvent(p, { type: "SHALLOW_ARGUMENT", severity: 0.9, hub: "nao-aprofunda", at: AT });
-    const blocks = buildAdaptiveSimulado(games, p, { hubCount: 2, itemsPerHub: 2 });
-    expect(blocks[0]?.hub).toBe("nao-aprofunda");
-  });
-
-  it("sem sinal, ainda retorna blocos (fallback aleatório)", () => {
-    const blocks = buildAdaptiveSimulado(games, emptyAdaptiveProfile(), { hubCount: 2, itemsPerHub: 2 });
-    expect(blocks.length).toBeGreaterThan(0);
-  });
-
-  it("não repete hub entre blocos", () => {
-    const blocks = buildAdaptiveSimulado(games, emptyAdaptiveProfile(), { hubCount: 7, itemsPerHub: 2 });
-    const hubs = blocks.map((b) => b.hub);
-    expect(new Set(hubs).size).toBe(hubs.length);
-  });
-
-  it("respeita itemsPerHub", () => {
-    let p = emptyAdaptiveProfile();
-    p = applyEvent(p, { type: "SHALLOW_ARGUMENT", severity: 0.9, hub: "nao-aprofunda", at: AT });
-    const blocks = buildAdaptiveSimulado(games, p, { hubCount: 1, itemsPerHub: 1 });
-    expect(blocks[0]?.items).toHaveLength(1);
-  });
-});

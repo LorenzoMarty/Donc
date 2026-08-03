@@ -25,7 +25,6 @@ export type WriterXray = {
   trend: { label: string; score: number }[];
   competencyTrend: { label: string; c1: number; c2: number; c3: number; c4: number; c5: number }[];
   weakCompetencies: WeakCompetency[];
-  recurringErrors: string[];
   recommendations: string[];
   repertories: string[];
   hasScores: boolean;
@@ -63,10 +62,6 @@ export function buildWriterXray({
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count);
 
-  // Erros recorrentes: preferir a fonte de IA (learning_profile), cair para o agregado do dashboard.
-  const recurringErrors =
-    learningProfile?.recurring_errors?.length ? learningProfile.recurring_errors : dashboard?.recurrent_errors ?? [];
-
   const recommendations = learningProfile?.recommendations ?? [];
   const repertories = learningProfile?.repertories_used ?? [];
 
@@ -74,7 +69,7 @@ export function buildWriterXray({
   const hasTrend = trend.length > 0;
   const hasCompetencyTrend = competencyTrend.length > 0;
   const hasProfileData = Boolean(
-    learningProfile?.has_data || weakCompetencies.length || recurringErrors.length || recommendations.length || repertories.length,
+    learningProfile?.has_data || weakCompetencies.length || recommendations.length || repertories.length,
   );
 
   return {
@@ -82,7 +77,6 @@ export function buildWriterXray({
     trend,
     competencyTrend,
     weakCompetencies,
-    recurringErrors,
     recommendations,
     repertories,
     hasScores,

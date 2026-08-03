@@ -355,47 +355,6 @@ export function selectItemsBySkill<T extends { difficulty?: ItemDifficulty }>(
   return selected.sort((a, b) => diffOrder[a.difficulty ?? "media"] - diffOrder[b.difficulty ?? "media"]);
 }
 
-/** Um bloco do simulado: um jogo (com seus itens já recortados) representando um hub. */
-export type SimuladoBlock = {
-  hub: SymptomHubId;
-  game: GameDefinition;
-  items: unknown[];
-};
-
-/** Pool de itens "atômicos" (pergunta única) de um jogo, na primeira fonte disponível. */
-function itemPoolForGame(game: GameDefinition): { difficulty?: ItemDifficulty }[] {
-  return game.questions ?? game.classify?.items ?? game.order?.rounds ?? game.fillBlank?.rounds ?? [];
-}
-
-/**
- * Simulado adaptativo cross-sintoma: prioriza os hubs mais fracos do aluno (via
- * `rankHubsByWeakness`), escolhe 1 jogo por hub (`missionForHub`, com fallback em
- * `selectGamesForHub`) e recorta os itens de cada jogo por `selectItemsBySkill` — mistura
- * ponderada pela fraqueza + progressão de dificuldade dentro de cada bloco.
- */
-export function buildAdaptiveSimulado(
-  games: GameDefinition[],
-  profile: AdaptiveProfile,
-  opts?: { hubCount?: number; itemsPerHub?: number },
-): SimuladoBlock[] {
-  const hubCount = opts?.hubCount ?? 4;
-  const itemsPerHub = opts?.itemsPerHub ?? 5;
-
-  const ranked = rankHubsByWeakness(profile);
-  const hasSignal = ranked.some((hub) => (profile.weaknessSignals[hub] ?? 0) > WEAKNESS_RELEVANCE_THRESHOLD);
-  const hubs = hasSignal ? ranked.slice(0, hubCount) : shuffleTail([...HUB_IDS]).slice(0, hubCount);
-
-  const blocks: SimuladoBlock[] = [];
-  for (const hub of hubs) {
-    const game = missionForHub(hub, games) ?? selectGamesForHub(hub, games, profile, 1)[0];
-    if (!game) continue;
-    const items = itemPoolForGame(game);
-    if (!items.length) continue;
-    blocks.push({ hub, game, items: selectItemsBySkill(items, masteryForHub(profile, hub), itemsPerHub) });
-  }
-  return blocks;
-}
-
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }

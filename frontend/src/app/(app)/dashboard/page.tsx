@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Bell, Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
+import { Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -87,13 +87,6 @@ export default function DashboardPage() {
             <span aria-hidden="true">🔥</span>
             {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
           </div>
-          <button
-            type="button"
-            aria-label="Notificações"
-            className="grid h-10 w-10 place-items-center rounded-control border border-border bg-card text-muted-foreground shadow-soft transition-colors hover:text-primary"
-          >
-            <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
-          </button>
         </div>
       </section>
 
