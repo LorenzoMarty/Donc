@@ -37,8 +37,8 @@ export function GameSessionShell({
   const progress = total > 0 ? Math.round((Math.min(step, total) / total) * 100) : 0;
 
   return (
-    <div className="dark min-h-[calc(100dvh-var(--app-page-gap,1rem)*2)] rounded-card bg-background text-foreground">
-      <div className="flex items-center justify-between gap-3 p-3 md:p-4">
+    <div className="dark bg-background px-3 text-foreground md:px-4">
+      <div className="flex items-center justify-between gap-3 py-3 md:py-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <Link
             href={returnTo ?? `/games/${categorySlug}`}
@@ -64,7 +64,7 @@ export function GameSessionShell({
         <div className="h-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="p-3 md:p-6">{children}</div>
+      <div className="pt-3 md:pt-6">{children}</div>
     </div>
   );
 }

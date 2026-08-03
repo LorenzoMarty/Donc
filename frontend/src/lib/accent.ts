@@ -26,6 +26,17 @@ export const ACCENT_OPTIONS: AccentOption[] = [
 
 export const DEFAULT_ACCENT = ACCENT_OPTIONS[0].hex;
 
+/** Matiz/saturação por accent pra derivar o fundo escuro da sessão de jogo (`.dark`, ver
+ * globals.css) — desaturado o bastante pra servir de superfície grande, não um chip vívido. */
+const ACCENT_DARK_HS: Record<AccentOption["key"], { h: number; s: number }> = {
+  green: { h: 131, s: 22 },
+  blue: { h: 210, s: 30 },
+  purple: { h: 258, s: 25 },
+  orange: { h: 32, s: 22 },
+  red: { h: 358, s: 25 },
+  teal: { h: 173, s: 25 },
+};
+
 function optionForHex(hex: string | null | undefined): AccentOption {
   const lower = hex?.toLowerCase();
   return ACCENT_OPTIONS.find((option) => option.hex.toLowerCase() === lower) ?? ACCENT_OPTIONS[0];
@@ -64,6 +75,9 @@ export function applyAccent(hex: string): void {
   for (const step of ACCENT_STEPS) {
     root.style.setProperty(`--accent-${step}`, `var(--${key}-${step})`);
   }
+  const dark = ACCENT_DARK_HS[key];
+  root.style.setProperty("--accent-dark-h", `${dark.h}`);
+  root.style.setProperty("--accent-dark-s", `${dark.s}%`);
 }
 
 /**
@@ -73,6 +87,7 @@ export function applyAccent(hex: string): void {
 export const ACCENT_INIT_SCRIPT = `(function(){try{
 var d=${JSON.stringify(DEFAULT_ACCENT)};
 var map=${JSON.stringify(Object.fromEntries(ACCENT_OPTIONS.map((o) => [o.hex.toLowerCase(), o.key])))};
+var dark=${JSON.stringify(ACCENT_DARK_HS)};
 var raw=localStorage.getItem(${JSON.stringify(ACCENT_KEY)});
 var hex=(raw&&map[String(raw).toLowerCase()])?raw:d;
 var key=map[hex.toLowerCase()]||'green';
@@ -82,4 +97,6 @@ e.style.setProperty('--primary','var(--'+key+'-500)');
 e.style.setProperty('--ring','var(--'+key+'-500)');
 e.style.setProperty('--accent','var(--'+key+'-500)');
 for(var i=0;i<steps.length;i++){e.style.setProperty('--accent-'+steps[i],'var(--'+key+'-'+steps[i]+')');}
+e.style.setProperty('--accent-dark-h',String(dark[key].h));
+e.style.setProperty('--accent-dark-s',dark[key].s+'%');
 }catch(_){}})();`;

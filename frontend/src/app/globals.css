@@ -117,6 +117,11 @@
   --accent-800: var(--green-800);
   --accent-900: var(--green-900);
 
+  /* Matiz/saturação pro fundo escuro da sessão de jogo (.dark), sobrescrito por src/lib/accent.ts
+     conforme a cor escolhida em /perfil — default aqui é só fallback pré-hidratação. */
+  --accent-dark-h: 131;
+  --accent-dark-s: 22%;
+
   --secondary: var(--neutral-50);
   --secondary-foreground: var(--neutral-800);
   --muted: 220 44% 97%;
@@ -168,41 +173,42 @@
 
 /* ---- Dark theme (ver src/lib/appearance.ts / next-themes, attribute="class") ---- */
 .dark {
-  /* Tom escuro derivado do verde da marca (hue ~145, mesma família de --green-500), não um
-     navy/preto genérico — pedido explícito do usuário ao ver o shell escuro pela primeira vez. */
-  --background: 145 20% 8%;
+  /* Tom escuro derivado da cor de marca ativa (--accent-dark-h/s, ver lib/accent.ts) — segue a
+     accent color escolhida em /perfil, nunca um navy/preto genérico fixo. */
+  --dark-fg: var(--accent-dark-h) var(--accent-dark-s) 8%;
+  --background: var(--accent-dark-h) var(--accent-dark-s) 8%;
   --foreground: var(--neutral-100);
-  --card: 145 16% 13%;
+  --card: var(--accent-dark-h) var(--accent-dark-s) 13%;
   --card-foreground: var(--neutral-100);
-  --popover: 145 16% 13%;
+  --popover: var(--accent-dark-h) var(--accent-dark-s) 13%;
   --popover-foreground: var(--neutral-100);
-  --primary: var(--green-400);
-  --primary-foreground: 145 20% 8%;
+  --primary: var(--accent-400);
+  --primary-foreground: var(--dark-fg);
 
-  --secondary: 145 14% 17%;
+  --secondary: var(--accent-dark-h) var(--accent-dark-s) 17%;
   --secondary-foreground: var(--neutral-100);
-  --muted: 145 14% 15%;
+  --muted: var(--accent-dark-h) calc(var(--accent-dark-s) - 4%) 15%;
   --muted-foreground: var(--neutral-400);
-  --accent: 134 55% 55%;
-  --accent-foreground: 145 20% 8%;
-  --success: var(--green-400);
-  --success-foreground: 145 20% 8%;
+  --accent: var(--accent-400);
+  --accent-foreground: var(--dark-fg);
+  --success: var(--accent-400);
+  --success-foreground: var(--dark-fg);
   --warning: 38 92% 58%;
-  --warning-foreground: 145 20% 8%;
+  --warning-foreground: var(--dark-fg);
   --streak: 32 85% 60%;
-  --streak-foreground: 145 20% 8%;
+  --streak-foreground: var(--dark-fg);
   --streak-tint: 32 40% 20%;
   --info: 221 82% 68%;
-  --info-foreground: 145 20% 8%;
+  --info-foreground: var(--dark-fg);
   --info-tint: 221 45% 22%;
   --highlight: 253 91% 78%;
-  --highlight-foreground: 145 20% 8%;
+  --highlight-foreground: var(--dark-fg);
   --highlight-tint: 253 45% 24%;
   --destructive: 354 70% 62%;
-  --destructive-foreground: 145 20% 8%;
-  --border: 145 12% 20%;
-  --input: 145 12% 20%;
-  --ring: var(--green-400);
+  --destructive-foreground: var(--dark-fg);
+  --border: var(--accent-dark-h) calc(var(--accent-dark-s) - 8%) 20%;
+  --input: var(--accent-dark-h) calc(var(--accent-dark-s) - 8%) 20%;
+  --ring: var(--accent-400);
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
   --shadow-elevated: 0 12px 36px rgba(0, 0, 0, 0.45);
