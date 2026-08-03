@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, Clock, Flame, Heart, X, Zap } from "lucide-react";
+import { Check, Clock, Flame, Heart, X } from "lucide-react";
 
 import { getAllGames, getGameById } from "@/features/gamification/catalog";
 import type { GameCategory, GameCompletion, GameDefinition, GameQuestion } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle, shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
-import { PageHeader } from "@/components/shared/premium-ui";
+import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
@@ -139,33 +139,28 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
   }
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Categoria
-            </Link>
-          </Button>
-        }
-      />
-
-      <section className="game-surface bg-card p-4 md:p-5">
-        <div className="grid grid-cols-2 gap-2 xs:grid-cols-4">
-          <Metric icon={<Heart className="h-4 w-4" aria-hidden="true" />} label="Vidas" value={`${MAX_STRIKES - strikes}`} />
-          <Metric icon={<Flame className="h-4 w-4" aria-hidden="true" />} label="Combo" value={`${combo}x`} />
-          <Metric icon={<Zap className="h-4 w-4" aria-hidden="true" />} label="XP" value={`${xp + sessionXp}`} />
-          <Metric icon={<Clock className="h-4 w-4" aria-hidden="true" />} label="Timer" value={`${timeLeft}s`} />
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.round((index / questions.length) * 100)}%` }} />
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">Item {Math.min(index + 1, questions.length)} de {questions.length} · {MAX_STRIKES} vidas · velocidade crescente</p>
-      </section>
-
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={index}
+      total={questions.length}
+      xp={xp + sessionXp}
+      extraChips={
+        <>
+          <Chip>
+            <Heart className="h-3.5 w-3.5" aria-hidden="true" /> {MAX_STRIKES - strikes}
+          </Chip>
+          <Chip>
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {timeLeft}s
+          </Chip>
+          <Chip>
+            <Flame className="h-3.5 w-3.5" aria-hidden="true" /> {combo}x
+          </Chip>
+        </>
+      }
+    >
+      <div className="force-light">
       {question && !finishedRef && (
         <AnimatePresence mode="wait">
           <motion.section key={index} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="game-surface bg-card p-4 md:p-6">
@@ -203,25 +198,16 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
         </AnimatePresence>
       )}
 
-      <EngineResult
-        result={result}
-        headline={`${score} acertos`}
-        subline={`Combo máximo ${maxCombo}x · ${strikes >= MAX_STRIKES ? "vidas esgotadas" : "maratona concluída"}.`}
-        onRestart={restart}
-        categorySlug={category.slug}
-      />
-    </div>
-  );
-}
-
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="game-tile bg-background/58 px-3 py-2">
-      <p className="flex items-center gap-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        <span className="text-primary">{icon}</span>
-        {label}
-      </p>
-      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
-    </div>
+      <div className="force-light">
+        <EngineResult
+          result={result}
+          headline={`${score} acertos`}
+          subline={`Combo máximo ${maxCombo}x · ${strikes >= MAX_STRIKES ? "vidas esgotadas" : "maratona concluída"}.`}
+          onRestart={restart}
+          categorySlug={category.slug}
+        />
+      </div>
+      </div>
+    </GameSessionShell>
   );
 }

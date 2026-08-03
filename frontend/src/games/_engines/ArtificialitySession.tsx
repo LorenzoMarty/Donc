@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Bot, UserRound } from "lucide-react";
+import { Bot, UserRound } from "lucide-react";
 
 import type { ArtificialityRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { shuffle } from "@/games/_engines/shuffleOptions";
-import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
-import { PageHeader, Surface } from "@/components/shared/premium-ui";
+import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
+import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -20,7 +20,6 @@ import { cn } from "@/utils";
 export function ArtificialitySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
-  const streak = useGameStore((state) => state.streak.current);
   const rounds = useMemo<ArtificialityRound[]>(() => shuffle(game.artificiality?.rounds ?? []), [game.artificiality]);
 
   const [step, setStep] = useState(0);
@@ -33,7 +32,6 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
 
   const round = rounds[step];
   const flawOptions = useMemo(() => (round?.flaw ? shuffle(round.flaw.options) : []), [round]);
-  const liveAccuracy = step ? Math.round((score / step) * 100) : 100;
   const grade = pointsToGrade((score / Math.max(rounds.length, 1)) * 4);
 
   if (!round && !result) {
@@ -95,23 +93,15 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
   }
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Categoria
-            </Link>
-          </Button>
-        }
-      />
-
-      <SessionHUD accuracy={liveAccuracy} step={Math.min(step + (phase === "done" ? 1 : 0), rounds.length)} total={rounds.length} seconds={0} streak={streak} xp={game.xpReward} />
-
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={step + (phase === "done" ? 1 : 0)}
+      total={rounds.length}
+      xp={game.xpReward}
+    >
+      <div className="force-light space-y-5 md:space-y-6">
       {round && (
         <motion.section key={round.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="game-surface bg-card p-4 md:p-6">
           <Badge className="mb-3 border-primary/20 bg-primary/10 text-primary">Trecho {step + 1}/{rounds.length}</Badge>
@@ -184,6 +174,7 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
         onRestart={restart}
         categorySlug={category.slug}
       />
-    </div>
+      </div>
+    </GameSessionShell>
   );
 }

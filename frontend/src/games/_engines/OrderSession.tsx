@@ -20,15 +20,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, GripVertical, X } from "lucide-react";
+import { Check, GripVertical, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, OrderRound } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
-import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
-import { PageHeader, Surface } from "@/components/shared/premium-ui";
-import { Badge } from "@/components/ui/badge";
+import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
+import { Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
@@ -53,7 +52,6 @@ function shuffleCells(cells: OrderCell[]): OrderCell[] {
  */
 export function OrderSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const streak = useGameStore((state) => state.streak.current);
   const adaptive = useGameStore((state) => state.adaptive);
   const rounds = useMemo<OrderRound[]>(
     () => selectAdaptivePool(game, game.order?.rounds ?? [], adaptive, shuffle),
@@ -134,33 +132,15 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
     setCells(initialCells);
   }
 
-  const liveAccuracy = step ? Math.round((score / step) * 100) : 100;
-
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Categoria
-            </Link>
-          </Button>
-        }
-      />
-
-      <SessionHUD
-        accuracy={liveAccuracy}
-        step={Math.min(step + (verdict ? 1 : 0), rounds.length)}
-        total={rounds.length}
-        seconds={0}
-        streak={streak}
-        xp={game.xpReward}
-      />
-
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={step + (verdict ? 1 : 0)}
+      total={rounds.length}
+      xp={game.xpReward}
+    >
       <AnimatePresence mode="wait">
         {!result && round ? (
           <motion.section
@@ -169,14 +149,8 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.24, ease: "easeOut" }}
-            className="game-surface bg-card p-4 md:p-6"
+            className="force-light game-surface bg-card p-4 text-foreground md:p-6"
           >
-            <div className="mb-4 flex flex-wrap gap-2">
-              <Badge variant="secondary">{game.difficulty}</Badge>
-              <Badge variant="outline">
-                Rodada {step + 1} de {rounds.length}
-              </Badge>
-            </div>
             <h2 className="text-lg font-semibold leading-7 tracking-normal md:text-xl">{round.instruction}</h2>
             <p className="mt-2 text-sm text-muted-foreground">Arraste para ordenar de cima para baixo.</p>
 
@@ -224,17 +198,19 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
             </div>
           </motion.section>
         ) : (
-          <EngineResult
-            variant="inline"
-            result={result}
-            headline={`${result?.attempt.accuracy ?? 0}% de precisão`}
-            subline={`Você ordenou ${result?.attempt.score ?? 0} de ${rounds.length} rodadas.`}
-            onRestart={restart}
-            categorySlug={category.slug}
-          />
+          <div className="force-light">
+            <EngineResult
+              variant="inline"
+              result={result}
+              headline={`${result?.attempt.accuracy ?? 0}% de precisão`}
+              subline={`Você ordenou ${result?.attempt.score ?? 0} de ${rounds.length} rodadas.`}
+              onRestart={restart}
+              categorySlug={category.slug}
+            />
+          </div>
         )}
       </AnimatePresence>
-    </div>
+    </GameSessionShell>
   );
 }
 

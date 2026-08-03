@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Loader2, Scissors, Sparkles } from "lucide-react";
+import { Loader2, Scissors, Sparkles } from "lucide-react";
 
 import type { Grade, GameCategory, GameCompletion, GameDefinition, SurgeryCase, SurgerySegment } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, GRADE_TONE, pointsToGrade, gradeToPoints, summariseGrades } from "@/games/_engines/grade";
 import { shuffle } from "@/games/_engines/shuffleOptions";
-import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
-import { PageHeader, Surface } from "@/components/shared/premium-ui";
+import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
+import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/http-client";
@@ -28,7 +28,6 @@ function isSlot(segment: SurgerySegment): segment is Slot {
 export function TextSurgerySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
-  const streak = useGameStore((state) => state.streak.current);
   const cases = useMemo<SurgeryCase[]>(() => game.textSurgery?.cases ?? [], [game.textSurgery]);
 
   const [caseIndex, setCaseIndex] = useState(0);
@@ -122,22 +121,15 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
   const doneSlots = grades.length;
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={`/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Categoria
-            </Link>
-          </Button>
-        }
-      />
-
-      <SessionHUD accuracy={gradeToPoints(avgGrade) * 25} step={doneSlots} total={totalSlots} seconds={0} streak={streak} xp={game.xpReward} />
-
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={doneSlots}
+      total={totalSlots}
+      xp={game.xpReward}
+    >
+      <div className="force-light space-y-5 md:space-y-6">
       {current && (
         <section className="game-surface bg-card p-4 md:p-6">
           <Badge className="mb-3 border-primary/20 bg-primary/10 text-primary">
@@ -247,7 +239,8 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
         onRestart={restart}
         categorySlug={category.slug}
       />
-    </div>
+      </div>
+    </GameSessionShell>
   );
 }
 

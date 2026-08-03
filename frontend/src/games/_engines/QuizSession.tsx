@@ -3,16 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
+import { CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameDefinition } from "@/features/gamification/types";
 import { readReturnTo } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
+import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
 import { useReshuffledQuestions } from "@/hooks/useReshuffledQuestions";
-import { SessionHUD } from "@/game-pages/games/components/SessionHUD";
-import { PageHeader, Surface } from "@/components/shared/premium-ui";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { useTrackEvent } from "@/hooks/use-track-event";
@@ -25,7 +23,6 @@ const NEXT_QUESTION_DELAY_MS = 620;
 export function QuizSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const returnTo = readReturnTo();
   const completeGame = useGameStore((state) => state.completeGame);
-  const streak = useGameStore((state) => state.streak.current);
   const adaptive = useGameStore((state) => state.adaptive);
   const trackEvent = useTrackEvent();
   const [step, setStep] = useState(0);
@@ -57,8 +54,6 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
   }, [game.id]);
 
   const question = questions[step];
-  const score = answers.filter(Boolean).length;
-  const liveAccuracy = answers.length ? Math.round((score / answers.length) * 100) : 100;
 
   function answer(index: number) {
     if (!question || selected !== null || result) return;
@@ -89,31 +84,15 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
   }
 
   return (
-    <div className="space-y-5 md:space-y-6">
-      <PageHeader
-        eyebrow={category.name}
-        title={game.name}
-        description={game.description}
-        action={
-          <Button asChild variant="outline">
-            <Link href={returnTo ?? `/games/${category.slug}`}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              {returnTo ? "Treino" : "Categoria"}
-            </Link>
-          </Button>
-        }
-      />
-
-      <SessionHUD
-        accuracy={liveAccuracy}
-        step={Math.min(step + 1, questions.length)}
-        total={questions.length}
-        seconds={seconds}
-        streak={streak}
-        xp={game.xpReward}
-      />
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,330px)]">
+    <GameSessionShell
+      categoryName={category.name}
+      categorySlug={category.slug}
+      title={game.name}
+      step={Math.min(step + 1, questions.length)}
+      total={questions.length}
+      xp={game.xpReward}
+    >
+      <div className="force-light">
         <main>
           <AnimatePresence mode="wait">
             {!result && question ? (
@@ -125,10 +104,6 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
                 transition={{ duration: 0.24, ease: "easeOut" }}
                 className="game-surface bg-card p-4 md:p-6"
               >
-                <div className="mb-5 flex flex-wrap gap-2">
-                  <Badge variant="secondary">{game.difficulty}</Badge>
-                  <Badge variant="outline">{game.estimatedTime}</Badge>
-                </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Questao {step + 1} de {questions.length}
                 </p>
@@ -218,28 +193,7 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
             )}
           </AnimatePresence>
         </main>
-
-        <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-          <Surface>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Objetivo</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal">{game.skill}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Concluir com alta precisao aumenta o dominio registrado. Repetir no mesmo dia concede XP reduzido.
-            </p>
-          </Surface>
-          <Surface>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Feedback</p>
-            <div className="mt-3 space-y-2">
-              <div className="game-tile bg-background/58 p-3 text-sm text-muted-foreground">
-                Resposta correta libera explicacao imediata.
-              </div>
-              <div className="game-tile bg-background/58 p-3 text-sm text-muted-foreground">
-                O melhor desempenho define seu progresso no card.
-              </div>
-            </div>
-          </Surface>
-        </aside>
       </div>
-    </div>
+    </GameSessionShell>
   );
 }

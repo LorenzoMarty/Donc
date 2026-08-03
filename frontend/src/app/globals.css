@@ -168,38 +168,40 @@
 
 /* ---- Dark theme (ver src/lib/appearance.ts / next-themes, attribute="class") ---- */
 .dark {
-  --background: 224 30% 9%;
+  /* Tom escuro derivado do verde da marca (hue ~145, mesma família de --green-500), não um
+     navy/preto genérico — pedido explícito do usuário ao ver o shell escuro pela primeira vez. */
+  --background: 145 20% 8%;
   --foreground: var(--neutral-100);
-  --card: 224 26% 13%;
+  --card: 145 16% 13%;
   --card-foreground: var(--neutral-100);
-  --popover: 224 26% 13%;
+  --popover: 145 16% 13%;
   --popover-foreground: var(--neutral-100);
   --primary: var(--green-400);
-  --primary-foreground: 224 30% 10%;
+  --primary-foreground: 145 20% 8%;
 
-  --secondary: 224 22% 18%;
+  --secondary: 145 14% 17%;
   --secondary-foreground: var(--neutral-100);
-  --muted: 224 22% 16%;
+  --muted: 145 14% 15%;
   --muted-foreground: var(--neutral-400);
   --accent: 134 55% 55%;
-  --accent-foreground: 224 30% 10%;
+  --accent-foreground: 145 20% 8%;
   --success: var(--green-400);
-  --success-foreground: 224 30% 10%;
+  --success-foreground: 145 20% 8%;
   --warning: 38 92% 58%;
-  --warning-foreground: 224 30% 10%;
+  --warning-foreground: 145 20% 8%;
   --streak: 32 85% 60%;
-  --streak-foreground: 224 30% 10%;
+  --streak-foreground: 145 20% 8%;
   --streak-tint: 32 40% 20%;
   --info: 221 82% 68%;
-  --info-foreground: 224 30% 10%;
+  --info-foreground: 145 20% 8%;
   --info-tint: 221 45% 22%;
   --highlight: 253 91% 78%;
-  --highlight-foreground: 224 30% 10%;
+  --highlight-foreground: 145 20% 8%;
   --highlight-tint: 253 45% 24%;
   --destructive: 354 70% 62%;
-  --destructive-foreground: 224 30% 10%;
-  --border: 224 18% 22%;
-  --input: 224 18% 22%;
+  --destructive-foreground: 145 20% 8%;
+  --border: 145 12% 20%;
+  --input: 145 12% 20%;
   --ring: var(--green-400);
 
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -18px rgba(0, 0, 0, 0.6);
@@ -207,6 +209,55 @@
   --shadow-control: 0 10px 24px hsl(var(--primary) / 0.28);
 
   color-scheme: dark;
+}
+
+/* ---- Reestabelece o tema claro dentro de um `.dark` ancestor (ex.: card de conteúdo do jogo
+   dentro do shell escuro da sessão — só o "chrome" ao redor é escuro, o conteúdo continua claro). */
+.dark .force-light {
+  /* Pintura real, não só a variável — sem isso, filhos com bg-x/opacidade (translúcidos) mostram
+     o fundo escuro real do `.dark` ancestor por trás, deixando texto ilegível. */
+  background-color: hsl(42 26% 93%);
+  color: hsl(var(--neutral-800));
+
+  --background: 42 26% 93%;
+  --foreground: var(--neutral-800);
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 20%;
+  --primary: var(--green-500);
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: var(--neutral-50);
+  --secondary-foreground: var(--neutral-800);
+  --muted: 220 44% 97%;
+  --muted-foreground: var(--neutral-500);
+  --accent: 134 61% 41%;
+  --accent-foreground: 0 0% 100%;
+  --success: var(--green-600);
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --streak: var(--streak-500);
+  --streak-foreground: 0 0% 100%;
+  --streak-tint: 32 85% 94%;
+  --info: var(--info-500);
+  --info-foreground: 0 0% 100%;
+  --info-tint: 221 82% 95%;
+  --highlight: var(--highlight-500);
+  --highlight-foreground: 0 0% 100%;
+  --highlight-tint: 253 91% 96%;
+  --destructive: 354 70% 54%;
+  --destructive-foreground: 0 0% 100%;
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+  --ring: var(--green-500);
+
+  --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04), 0 12px 28px -18px rgba(30, 30, 40, 0.28);
+  --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
+  --shadow-control: 0 10px 24px hsl(var(--primary) / 0.16);
+
+  color-scheme: light;
 }
 
 * {
