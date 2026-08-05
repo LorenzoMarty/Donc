@@ -155,7 +155,7 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
                   key={i}
                   className={cn(
                     "mx-0.5 rounded px-1.5 py-0.5 align-baseline",
-                    isCurrent ? "bg-primary/15 text-primary ring-2 ring-primary/40" : "bg-muted text-muted-foreground",
+                    isCurrent ? "bg-primary/15 text-primary ring-2 ring-primary/40" : "bg-background/64 text-muted-foreground",
                   )}
                 >
                   {isCurrent ? "◆ aqui" : "____"}
