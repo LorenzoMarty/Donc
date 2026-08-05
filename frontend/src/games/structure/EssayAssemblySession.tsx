@@ -340,7 +340,7 @@ function DropZone({
     <section
       ref={setNodeRef}
       className={cn(
-        "game-tile min-h-52 bg-background/58 p-3 transition-all duration-200",
+        "game-tile min-h-52 bg-card p-3 transition-all duration-200",
         isOver && "border-primary/55 bg-primary/10",
         sectionStatus === "correct" && "border-emerald-500/35 bg-emerald-500/10",
         sectionStatus === "wrong" && "border-destructive/35 bg-destructive/10",
@@ -418,8 +418,8 @@ function EssayBlockCard({
       exit={{ opacity: 0, scale: 0.98 }}
       style={style}
       className={cn(
-        "game-tile touch-none bg-card p-3 text-sm leading-6 text-foreground transition-colors",
-        active && "border-primary/45 bg-background shadow-lg",
+        "game-tile touch-none bg-background/70 p-3 text-sm leading-6 text-foreground transition-colors",
+        active && "border-primary/45 bg-card shadow-lg",
         block.distractor && "bg-muted/50 text-muted-foreground",
       )}
     >
@@ -443,7 +443,7 @@ function EssayBlockCard({
 
 function SideMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="game-tile bg-background/58 p-3">
+    <div className="game-tile bg-card p-3">
       <p className="text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
     </div>

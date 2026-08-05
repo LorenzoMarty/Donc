@@ -145,7 +145,7 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
             <div className="mt-5 space-y-3">
               <p className="text-sm font-medium text-muted-foreground">Reconecte os trechos escolhendo o operador correto:</p>
               {round.connectors.map((connector) => (
-                <div key={connector.slotId} className="rounded-md border border-border bg-background/64 p-3 text-sm">
+                <div key={connector.slotId} className="rounded-md border border-border bg-card p-3 text-sm">
                   <p className="text-foreground/80">
                     …{connector.before} <span className="font-semibold text-primary">[?]</span> {connector.after}…
                   </p>
@@ -162,7 +162,7 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
                           onClick={() => setConnectorPicks((p) => ({ ...p, [connector.slotId]: oi }))}
                           className={cn(
                             "rounded-md border px-3 py-1.5 text-sm transition-colors",
-                            !checked && isPicked ? "border-primary bg-primary/10" : "border-border bg-card",
+                            !checked && isPicked ? "border-primary bg-primary/10" : "border-border bg-background/70",
                             reveal && "border-emerald-500/55 bg-emerald-500/10",
                             wrong && "border-destructive/55 bg-destructive/10",
                           )}
