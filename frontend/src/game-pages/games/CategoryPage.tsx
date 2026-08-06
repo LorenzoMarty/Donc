@@ -14,6 +14,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
   const category = getCategoryBySlug(categorySlug);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
+  const progress = useGameStore((state) => state.progress);
 
   useEffect(() => {
     hydrateRemoteGames();
@@ -64,7 +65,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
         </p>
       </div>
 
-      <GameCardGrid games={games} progress={{}} />
+      <GameCardGrid games={games} progress={progress} />
     </div>
   );
 }
