@@ -151,5 +151,35 @@ Backend:
 - Entrada ASGI `src.main:app`
 - Porta dinamica via `PORT`
 - Vercel usa `backend/vercel.json` e `src/index.py`
+- `buildCommand` do `backend/vercel.json` roda `alembic upgrade head` automaticamente antes do
+  backend subir — toda migration nova precisa estar commitada em `alembic/versions/` antes do
+  deploy, não é mais um passo manual separado.
+
+## Runbook: deploy quebrado / migration / rollback
+
+**Deploy do backend falhou no passo de migration (`alembic upgrade head`):**
+1. Veja o log do build na Vercel — o erro do Alembic aparece ali (migration com SQL inválido,
+   conflito de schema, ou banco inacessível).
+2. Se for erro de SQL na migration nova: corrija a migration, commit novo, redeploy — não edite
+   uma migration já aplicada em produção.
+3. Se for banco inacessível: confira `DATABASE_URL` nas env vars do projeto na Vercel.
+4. O deploy não promove pra produção se o build falhar — a versão anterior continua no ar.
+
+**Reverter uma migration manualmente** (ex.: migration aplicou mas o app quebrou por outro motivo):
+```bash
+alembic downgrade -1   # roda contra o DATABASE_URL do ambiente-alvo
+```
+Depois, reverta o código (rollback de versão, ver abaixo) — código velho não deve rodar contra
+schema novo nem vice-versa por mais tempo que o necessário.
+
+**Rollback de versão no Vercel:**
+1. No dashboard do projeto (frontend ou backend), aba "Deployments".
+2. Ache o último deployment saudável, clique em "..." → "Promote to Production".
+3. Se o rollback envolve reverter uma migration de schema também, rode o `alembic downgrade`
+   acima **antes** de promover o deployment antigo — código antigo esperando schema antigo.
+
+**Deploy do frontend falhou em `npm ci` (lockfile fora de sincronia):**
+Rode `npm install` dentro de `frontend/` localmente (não na raiz do monorepo — o workspace da raiz
+mascara o problema), confira o diff de `frontend/package-lock.json`, commit, redeploy.
 
 O Dockerfile do frontend usa build standalone do Next.js. O Dockerfile do backend inicia `uvicorn src.main:app` com porta dinamica.

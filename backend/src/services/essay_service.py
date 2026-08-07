@@ -199,6 +199,9 @@ class EssayService:
         self.db.add(version)
         essay.versions.append(version)
         self.db.flush()
+        # `result.inline_annotations` é `list[InlineAnnotation]` (EssayCorrectionResult) — pylint
+        # não infere isso corretamente através do alias EssayAIResult / retorno do workflow.
+        # pylint: disable-next=not-an-iterable
         annotations_payload = [a.model_dump() for a in result.inline_annotations] if result.inline_annotations else None
         self.db.add(
             EssayVersionCorrection(

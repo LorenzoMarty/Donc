@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     usd_brl_rate_ttl_hours: int = 6
     ai_rate_limit_per_minute: int = 20
     seed_demo_data: bool = False
+    seed_admin_password: str = "12345678"  # default só para dev local; sobrescreva via env em qualquer ambiente compartilhado
     frontend_origin: str = "http://localhost:3000"
     environment: str = "development"
 

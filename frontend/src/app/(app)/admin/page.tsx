@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type AdminMetrics } from "@/services/api";
 import type { AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
 
@@ -34,6 +35,7 @@ const EMPTY_TELEMETRY: AITelemetry = {
 };
 
 export default function AdminPage() {
+  const { user, loading: authLoading } = useAuth();
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [telemetry, setTelemetry] = useState<AITelemetry | null>(null);
@@ -45,7 +47,11 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
 
+  const isAdmin = user?.role === "admin";
+
   useEffect(() => {
+    if (authLoading || !isAdmin) return;
+
     Promise.allSettled([
       apiFetch<AdminMetrics>("/admin/metrics"),
       apiFetch<AdminUser[]>("/admin/users"),
@@ -69,10 +75,14 @@ export default function AdminPage() {
       if (c.status === "fulfilled") setModules(c.value);
       if (th.status === "fulfilled") setThemes(th.value);
     });
-  }, []);
+  }, [authLoading, isAdmin]);
 
-  if (error) {
-    return <PageHeader eyebrow="Admin" title="Painel indisponível" description={error} />;
+  if (authLoading) {
+    return <LoadingCard />;
+  }
+
+  if (!isAdmin || error) {
+    return <PageHeader eyebrow="Admin" title="Painel indisponível" description={!isAdmin ? "Acesso restrito a administradores." : error} />;
   }
 
   if (!metrics || !telemetry || !activity) {

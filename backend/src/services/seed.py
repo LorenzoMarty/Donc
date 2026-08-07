@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.config.security import get_password_hash
+from src.config.settings import settings
 from src.models import (
     Difficulty,
     Essay,
@@ -468,7 +469,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
     admin = User(
         name="Admin Donc ENEM",
         email="admin@demo.com",
-        hashed_password=get_password_hash("12345678"),
+        hashed_password=get_password_hash(settings.seed_admin_password),
         role=UserRole.ADMIN,
         streak_days=18,
         daily_goal_minutes=60,
