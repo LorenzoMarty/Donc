@@ -65,6 +65,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       logout: () => {
         clearSession();
         setUser(null);
+        // Hard reload intencional: garante que nenhum estado de sessão anterior (React Query,
+        // caches em memória) sobreviva no client após logout.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = "/login";
       },
     }),

@@ -1,8 +1,24 @@
+import re
+
 from datetime import datetime
 
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+# Defesa em profundidade: o frontend (React) já escapa esses campos ao renderizar, então isso não
+# é explorável hoje — mas o backend não deve depender só do consumidor atual pra ser seguro.
+_DANGEROUS_HTML_PATTERN = re.compile(
+    r"<\s*(script|iframe|object|embed|link|style)\b|\bon\w+\s*=|javascript\s*:(?!\s)",
+    re.IGNORECASE,
+)
+
+
+def _reject_dangerous_html(value: str) -> str:
+    if _DANGEROUS_HTML_PATTERN.search(value):
+        raise ValueError("Conteúdo não pode conter tags/atributos de script ou HTML executável.")
+    return value
 
 
 SUPPORTING_TEXT_TYPES = (
@@ -64,6 +80,8 @@ class EssayCreateRequest(BaseModel):
     title: str = Field(min_length=4, max_length=220)
     content: str = Field(default="", max_length=20000)
 
+    _validate_no_dangerous_html = field_validator("title", "content")(_reject_dangerous_html)
+
 
 class EssayThemeGenerateRequest(BaseModel):
     focus: str | None = Field(default=None, max_length=160)
@@ -72,6 +90,8 @@ class EssayThemeGenerateRequest(BaseModel):
 class EssayAutosaveRequest(BaseModel):
     title: str = Field(min_length=4, max_length=220)
     content: str = Field(max_length=20000)
+
+    _validate_no_dangerous_html = field_validator("title", "content")(_reject_dangerous_html)
 
 
 class EssayCorrectionRead(BaseModel):

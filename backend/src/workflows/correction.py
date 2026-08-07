@@ -18,7 +18,7 @@ from src.agents.intervention import InterventionAnalyzerAgent
 from src.agents.output_mapper import OutputMapper
 from src.agents.preprocessor import PreProcessor
 from src.agents.repertoire_v2 import RepertoireAnalyzerV2Agent
-from src.agents.schemas import EssayCorrectionResult, PipelineAnalyses
+from src.agents.schemas import EliminationGateOutput, EssayCorrectionResult, PipelineAnalyses, PreProcessorOutput
 from src.agents.score_auditor import ScoreAuditor
 from src.agents.theme_analyzer import ThemeAnalyzerAgent
 from src.agents.thesis_v2 import ThesisAnalyzerAgent
@@ -232,10 +232,9 @@ class CorrectionOrchestratorWorkflow:
             self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error, runner=runner)
 
     @staticmethod
-    def _zero_analyses(pre: "PreProcessorOutput", gate: "EliminationGateOutput") -> "PipelineAnalyses":
+    def _zero_analyses(pre: PreProcessorOutput, gate: EliminationGateOutput) -> PipelineAnalyses:
         from src.agents.schemas import (
             ArgumentationAnalysisV2,
-            EliminationGateOutput as _Gate,
             GrammarAnalysisV2,
             InterventionAnalysisV2,
             InterventionElements,

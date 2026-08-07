@@ -82,6 +82,8 @@ def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), 
         kind="essay_correction",
         request_payload={"essay_id": essay_id},
     )
+    essay.last_ai_job_id = job.id
+    db.commit()
     enqueued = enqueue_correct_essay(job.id)
     if not enqueued:
         run_correct_essay_job(job.id)
@@ -90,22 +92,12 @@ def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), 
 
 @router.get("/{essay_id}/job", response_model=ApiResponse[JobStatusRead])
 def essay_job_status(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[JobStatusRead]:
-    # Filtra pelo essay_id guardado em request_payload — não basta o job mais recente do usuário,
-    # senão o polling de uma redação pode retornar o job (e a redação) de outra.
-    jobs = (
-        db.query(AIJob)
-        .filter(
-            AIJob.user_id == current_user.id,
-            AIJob.kind == "essay_correction",
-        )
-        .order_by(AIJob.created_at.desc())
-        .all()
-    )
-    job = next(
-        (j for j in jobs if int((j.request_payload or {}).get("essay_id", -1)) == essay_id),
-        None,
-    )
-    if not job:
+    # `essay.last_ai_job_id` é gravado no momento em que o job é criado (submit/reprocess) —
+    # não precisa inferir "o job mais recente" via ordenação: `ai_jobs.id` é UUID (sem ordem
+    # temporal) e `created_at` pode colidir entre o job antigo e o novo de um reprocess rápido.
+    essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
+    job = db.get(AIJob, essay.last_ai_job_id) if essay.last_ai_job_id else None
+    if not job or job.user_id != current_user.id:
         from src.middlewares.errors import AppError
         raise AppError("Nenhum job encontrado para essa redação.", status_code=404, code="ai_job_not_found")
     essay_read: EssayRead | None = None
@@ -151,6 +143,8 @@ def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user
         kind="essay_correction",
         request_payload={"essay_id": essay_id},
     )
+    essay.last_ai_job_id = job.id
+    db.commit()
     enqueued = enqueue_correct_essay(job.id)
     if not enqueued:
         run_correct_essay_job(job.id)
