@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { Surface } from "@/components/shared/premium-ui";
@@ -24,74 +24,84 @@ const STATE_LABEL: Record<PhaseNodeState, string> = {
 
 const LEGEND_ORDER: PhaseNodeState[] = ["mestre", "praticante", "aprendiz", "bloqueado"];
 
-// Caminho em "linhas de metrô": colunas fixas, linhas alternando direção — trechos horizontais
-// dentro de cada linha, verticais na virada de linha (mesma coluna), curvados nos cantos.
-const ROW_LENGTHS = [3, 2, 3, 2];
-const COLUMNS = [30, 110, 190, 270];
-const ROW_HEIGHT = 58;
-const TOP_MARGIN = 30;
-const BOTTOM_MARGIN = 30;
-const NODE_RADIUS = 10;
-const CORNER_RADIUS = 16;
-const VIEW_WIDTH = 320;
+// Grafo abstrato organizado em petalas: cada categoria vira um cluster próprio distribuído em
+// círculo; dentro do cluster os nós usam espiral áurea + jitter determinístico. Isso mantém as
+// conexões (mesma categoria) curtas e locais, evitando a teia cruzando o card inteiro.
+const VIEW_WIDTH = 420;
+const VIEW_HEIGHT = 340;
+const NODE_RADIUS = 7;
+const CLUSTER_ORBIT = 125;
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+const CATEGORY_ORDER = ["estrutura", "coesao", "argumentacao", "repertorio", "gramatica", "competencias-enem", "desafios-diarios"];
 
 type LaidOutNode = { x: number; y: number; node: PhaseNode };
 
-function layoutNodes(nodes: PhaseNode[]): LaidOutNode[] {
-  const points: LaidOutNode[] = [];
-  let colIndex = 0;
-  let direction: 1 | -1 = 1;
-  let row = 0;
-  let cursor = 0;
-
-  for (const length of ROW_LENGTHS) {
-    if (cursor >= nodes.length) break;
-    const y = TOP_MARGIN + row * ROW_HEIGHT;
-    const rowCols = Array.from({ length }, (_, i) => (direction === 1 ? colIndex + i : colIndex - i));
-    for (const col of rowCols) {
-      if (cursor >= nodes.length) break;
-      points.push({ x: COLUMNS[col], y, node: nodes[cursor] });
-      cursor++;
-    }
-    colIndex = rowCols[rowCols.length - 1] ?? colIndex;
-    direction = direction === 1 ? -1 : 1;
-    row++;
+function hash01(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+function scatterNodes(nodes: PhaseNode[]): LaidOutNode[] {
+  const groups = new Map<string, PhaseNode[]>();
+  for (const node of nodes) {
+    const group = groups.get(node.category) ?? [];
+    group.push(node);
+    groups.set(node.category, group);
+  }
+  const categories = [...CATEGORY_ORDER.filter((cat) => groups.has(cat)), ...[...groups.keys()].filter((cat) => !CATEGORY_ORDER.includes(cat))];
+
+  const cx = VIEW_WIDTH / 2;
+  const cy = VIEW_HEIGHT / 2;
+  const points: LaidOutNode[] = [];
+
+  categories.forEach((category, ci) => {
+    const group = groups.get(category)!;
+    const clusterAngle = (ci / categories.length) * Math.PI * 2 - Math.PI / 2;
+    const clusterCx = cx + Math.cos(clusterAngle) * CLUSTER_ORBIT;
+    const clusterCy = cy + Math.sin(clusterAngle) * CLUSTER_ORBIT;
+    const clusterRadius = 24 + group.length * 4;
+
+    group.forEach((node, i) => {
+      const t = group.length <= 1 ? 0 : i / (group.length - 1);
+      const radius = clusterRadius * Math.sqrt(t);
+      const angle = i * GOLDEN_ANGLE + (hash01(`${node.gameId}-a`) - 0.5) * 0.6;
+      const jitter = (hash01(`${node.gameId}-r`) - 0.5) * 6;
+      const r = Math.max(0, radius + jitter);
+      points.push({ x: clusterCx + Math.cos(angle) * r, y: clusterCy + Math.sin(angle) * r, node });
+    });
+  });
+
   return points;
 }
 
-function pointTowards(from: { x: number; y: number }, to: { x: number; y: number }, dist: number) {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const t = Math.min(dist, len) / len;
-  return { x: from.x + dx * t, y: from.y + dy * t };
-}
-
-function roundedPath(points: { x: number; y: number }[], radius: number): string {
-  if (points.length < 2) return "";
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length - 1; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const next = points[i + 1];
-    const into = pointTowards(curr, prev, radius);
-    const out = pointTowards(curr, next, radius);
-    d += ` L ${into.x} ${into.y} Q ${curr.x} ${curr.y} ${out.x} ${out.y}`;
+function categoryLinks(points: LaidOutNode[]): { key: string; x1: number; y1: number; x2: number; y2: number }[] {
+  const groups = new Map<string, LaidOutNode[]>();
+  for (const point of points) {
+    const group = groups.get(point.node.category) ?? [];
+    group.push(point);
+    groups.set(point.node.category, group);
   }
-  const last = points[points.length - 1];
-  d += ` L ${last.x} ${last.y}`;
-  return d;
+  const links: { key: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+  for (const group of groups.values()) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        links.push({ key: `${group[i].node.gameId}-${group[j].node.gameId}`, x1: group[i].x, y1: group[i].y, x2: group[j].x, y2: group[j].y });
+      }
+    }
+  }
+  return links;
 }
 
 export function PhaseMapCard({ progress }: { progress: Record<string, GameProgress> }) {
   const { nodes, nextGame } = useMemo(() => buildPhaseMap(progress), [progress]);
-  const points = useMemo(() => layoutNodes(nodes), [nodes]);
-  const height = points.length ? Math.max(...points.map((p) => p.y)) + BOTTOM_MARGIN : 140;
-
-  const lastPlayedIndex = points.reduce((acc, p, i) => (p.node.played ? i : acc), -1);
-  const solidPoints = points.slice(0, Math.max(lastPlayedIndex + 1, 0));
-  const dashedPoints = points.slice(Math.max(lastPlayedIndex, 0));
+  const points = useMemo(() => scatterNodes(nodes), [nodes]);
+  const links = useMemo(() => categoryLinks(points), [points]);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const hovered = points.find((p) => p.node.gameId === hoveredId);
 
   return (
     <Surface>
@@ -113,27 +123,44 @@ export function PhaseMapCard({ progress }: { progress: Record<string, GameProgre
 
       {points.length ? (
         <>
-          <svg viewBox={`0 0 ${VIEW_WIDTH} ${height}`} className="w-full" role="img" aria-label="Mapa de fases jogadas e recomendadas">
-            {dashedPoints.length > 1 ? (
-              <path
-                d={roundedPath(dashedPoints, CORNER_RADIUS)}
-                fill="none"
-                stroke="hsl(var(--border))"
+          <svg viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} className="w-full" role="img" aria-label="Mapa de fases: todos os jogos por nível de domínio">
+            {links.map((link) => (
+              <line key={link.key} x1={link.x1} y1={link.y1} x2={link.x2} y2={link.y2} stroke="hsl(var(--border))" strokeWidth={1} />
+            ))}
+            {points.map((p) => (
+              <circle
+                key={p.node.gameId}
+                cx={p.x}
+                cy={p.y}
+                r={NODE_RADIUS}
+                fill={STATE_COLOR[p.node.state]}
+                stroke="hsl(var(--card))"
                 strokeWidth={2}
-                strokeDasharray="4 6"
-                strokeLinecap="round"
-              />
-            ) : null}
-            {solidPoints.length > 1 ? (
-              <path d={roundedPath(solidPoints, CORNER_RADIUS)} fill="none" stroke="hsl(var(--border))" strokeWidth={2} strokeLinecap="round" />
-            ) : null}
-            {points.map((p, i) => (
-              <circle key={`${p.node.gameId}-${i}`} cx={p.x} cy={p.y} r={NODE_RADIUS} fill={STATE_COLOR[p.node.state]} stroke="hsl(var(--card))" strokeWidth={3}>
+                className="cursor-default"
+                onMouseEnter={() => setHoveredId(p.node.gameId)}
+                onMouseLeave={() => setHoveredId((current) => (current === p.node.gameId ? null : current))}
+              >
                 <title>
                   {p.node.name} — {STATE_LABEL[p.node.state]}
                 </title>
               </circle>
             ))}
+            {hovered ? (
+              <text
+                x={hovered.x}
+                y={hovered.y - NODE_RADIUS - 6}
+                textAnchor="middle"
+                fontSize={11}
+                fontWeight={600}
+                fill="hsl(var(--foreground))"
+                stroke="hsl(var(--card))"
+                strokeWidth={4}
+                paintOrder="stroke"
+                pointerEvents="none"
+              >
+                {hovered.node.name}
+              </text>
+            ) : null}
           </svg>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
             {LEGEND_ORDER.map((state) => (
