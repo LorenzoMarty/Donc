@@ -23,7 +23,6 @@ import { CheckCircle2, Clock, GripVertical, RotateCcw, Trophy } from "lucide-rea
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn, formatMMSS } from "@/utils";
@@ -53,7 +52,6 @@ const containerIds: ContainerId[] = ["bank", "intro", "development", "conclusion
 
 export function EssayAssemblySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const xp = useGameStore((state) => state.xp);
   const [levelId, setLevelId] = useState<AssemblyLevel["id"]>("easy");
   const level = essayLevels.find((item) => item.id === levelId) ?? essayLevels[0];
   const [board, setBoard] = useState<BoardState>(() => createInitialBoard(level));
@@ -204,7 +202,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
       title={game.name}
       step={validation.correct}
       total={validation.total}
-      xp={xp}
       extraChips={
         <Chip>
           <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {formatMMSS(seconds)}
@@ -478,7 +475,6 @@ function ResultModal({
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             className="game-surface mobile-scroll relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto bg-card p-4 text-foreground xs:p-5 md:p-6"
           >
-            {result.rankUp && <ConfettiBurst />}
             <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-primary/45" aria-hidden="true" />
             <div className="text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
@@ -486,15 +482,11 @@ function ResultModal({
               </div>
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tentativa finalizada</p>
               <h2 className="mt-2 text-4xl font-semibold tracking-normal">Monte a Redacao</h2>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {result.rankUp && <Badge className="border-primary/25 bg-primary/10 text-primary">Rank up - {result.rankName}</Badge>}
-              </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-6 grid grid-cols-3 gap-3">
               <SideMetric label="Tempo" value={formatMMSS(seconds)} />
               <SideMetric label="Precisao" value={`${validation.accuracy}%`} />
-              <SideMetric label="XP" value={`+${result.xpEarned}`} />
               <SideMetric label="Acertos" value={`${validation.correct}/${validation.total}`} />
             </div>
 
@@ -511,26 +503,6 @@ function ResultModal({
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-function ConfettiBurst() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {confettiPieces.map((piece, index) => (
-        <motion.span
-          key={`${piece.left}-${piece.delay}`}
-          initial={{ opacity: 0, y: -12, rotate: 0 }}
-          animate={{ opacity: [0, 1, 0], y: 150 + piece.travel, rotate: piece.rotate }}
-          transition={{ delay: piece.delay, duration: 1.15, ease: "easeOut" }}
-          className={cn(
-            "absolute top-0 h-2 w-1 rounded-full",
-            index % 3 === 0 ? "bg-primary" : index % 3 === 1 ? "bg-primary/10" : "bg-zinc-100",
-          )}
-          style={{ left: `${piece.left}%` }}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -709,13 +681,3 @@ const shuffledIds: Record<AssemblyLevel["id"], string[]> = {
     "hard-arg2",
   ],
 };
-
-const confettiPieces = [
-  { left: 12, delay: 0.04, travel: 18, rotate: 100 },
-  { left: 22, delay: 0.1, travel: 34, rotate: -110 },
-  { left: 34, delay: 0.02, travel: 26, rotate: 150 },
-  { left: 46, delay: 0.15, travel: 42, rotate: -150 },
-  { left: 58, delay: 0.07, travel: 28, rotate: 130 },
-  { left: 70, delay: 0.13, travel: 38, rotate: -100 },
-  { left: 82, delay: 0.09, travel: 24, rotate: 120 },
-];

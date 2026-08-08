@@ -95,7 +95,6 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
       title={game.name}
       step={step + (verdict ? 1 : 0)}
       total={rounds.length}
-      xp={game.xpReward}
     >
       <AnimatePresence mode="wait">
         {!result && round ? (

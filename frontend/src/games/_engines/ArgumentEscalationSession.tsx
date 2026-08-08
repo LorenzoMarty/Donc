@@ -94,7 +94,6 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
       title={game.name}
       step={step + (picked !== null ? 1 : 0)}
       total={steps.length}
-      xp={game.xpReward}
     >
       <div className="force-light space-y-5 md:space-y-6">
       {current && (

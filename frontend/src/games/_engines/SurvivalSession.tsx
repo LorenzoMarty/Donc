@@ -26,18 +26,12 @@ function roundDuration(index: number) {
   return Math.max(ROUND_DURATION_MIN, ROUND_DURATION_START - Math.floor(index / ROUND_DURATION_STEP));
 }
 
-/** XP ao vivo por acerto: base + bônus de combo (capado). */
-const LIVE_XP_BASE = 3;
-const LIVE_XP_COMBO_MULTIPLIER = 2;
-const LIVE_XP_COMBO_CAP = 10;
-
 /** Delay (ms) antes de avançar para o próximo item, exibindo o feedback certo/errado. */
 const NEXT_ROUND_DELAY_MS = { correct: 480, wrong: 900 };
 
 /** Engine `survival`: maratona agregada de vários jogos, timer agressivo e vidas limitadas. */
 export function SurvivalSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const xp = useGameStore((state) => state.xp);
 
   const [attempt, setAttempt] = useState(0);
   // `attempt` força reembaralhar (pool e alternativas) a cada "Repetir" — sem isso o useMemo
@@ -58,7 +52,6 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
   const [maxCombo, setMaxCombo] = useState(0);
   const [strikes, setStrikes] = useState(0);
   const [score, setScore] = useState(0);
-  const [sessionXp, setSessionXp] = useState(0);
   const [timeLeft, setTimeLeft] = useState(roundDuration(0));
   const [result, setResult] = useState<GameCompletion | null>(null);
 
@@ -85,7 +78,6 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
         setScore(nextScore);
         setCombo(nextCombo);
         setMaxCombo((v) => Math.max(v, nextCombo));
-        setSessionXp((v) => v + LIVE_XP_BASE + Math.min(LIVE_XP_COMBO_CAP, nextCombo * LIVE_XP_COMBO_MULTIPLIER));
       } else {
         setStrikes(nextStrikes);
         setCombo(0);
@@ -123,7 +115,6 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
     setMaxCombo(0);
     setStrikes(0);
     setScore(0);
-    setSessionXp(0);
     setTimeLeft(roundDuration(0));
     setResult(null);
     setAttempt((value) => value + 1);
@@ -145,7 +136,6 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
       title={game.name}
       step={index}
       total={questions.length}
-      xp={xp + sessionXp}
       extraChips={
         <>
           <Chip>

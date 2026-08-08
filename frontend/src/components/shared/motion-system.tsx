@@ -57,7 +57,7 @@ export function AnimatedGameCard({
   );
 }
 
-export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boolean; title?: string; xp?: number }) {
+export function RewardAnimation({ show, title = "Boa!" }: { show: boolean; title?: string }) {
   return (
     <AnimatePresence>
       {show && (
@@ -83,7 +83,6 @@ export function RewardAnimation({ show, title = "Boa!", xp = 30 }: { show: boole
             />
             <Trophy className="relative mx-auto h-7 w-7 text-primary" aria-hidden="true" />
             <p className="relative mt-2 text-lg font-semibold">{title}</p>
-            <p className="relative text-sm font-semibold text-primary">progresso +{xp}</p>
           </motion.div>
         </motion.div>
       )}

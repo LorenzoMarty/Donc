@@ -3,7 +3,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { getRankForXp, calculateXpReward } from "@/features/xp/xp";
 import { mapPublishedGame } from "@/features/gamification/catalog";
 import { applyEvent, emptyAdaptiveProfile, eventsForOutcome, tagOutcomeToEvents } from "@/features/gamification/adaptive";
 import type { CognitiveDecision } from "@/features/gamification/adaptive";
@@ -13,8 +12,19 @@ import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
 
+/**
+ * Valor interno usado só para preencher o histórico de tentativas (`GameAttempt.xpEarned`) e o
+ * payload de sincronização com o backend (`/games/complete`) — não existe mais total de XP nem
+ * rank client-side; nada consome este número na UI.
+ */
+function calculateXpEarned(game: GameDefinition, isRepeatToday: boolean, accuracy: number): number {
+  const accuracyMultiplier = accuracy >= 90 ? 1.15 : accuracy >= 70 ? 1 : 0.72;
+  const base = Math.round(game.xpReward * accuracyMultiplier);
+  if (!isRepeatToday) return base;
+  return Math.max(5, Math.round(base * 0.25));
+}
+
 type GameStore = {
-  xp: number;
   streak: StreakState;
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
@@ -42,7 +52,6 @@ const initialStreak: StreakState = {
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
-      xp: 0,
       streak: initialStreak,
       attempts: [],
       progress: {},
@@ -114,8 +123,8 @@ export const useGameStore = create<GameStore>()(
         }
       },
       exportProgress: () => {
-        const { xp, streak, attempts, progress, skills } = get();
-        const blob = new Blob([JSON.stringify({ xp, streak, attempts, progress, skills, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
+        const { streak, attempts, progress, skills } = get();
+        const blob = new Blob([JSON.stringify({ streak, attempts, progress, skills, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -125,9 +134,8 @@ export const useGameStore = create<GameStore>()(
       },
       importProgress: (json) => {
         try {
-          const parsed = JSON.parse(json) as { xp?: number; streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress>; skills?: SkillProfile };
+          const parsed = JSON.parse(json) as { streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress>; skills?: SkillProfile };
           set({
-            xp: typeof parsed.xp === "number" ? parsed.xp : get().xp,
             streak: parsed.streak ?? get().streak,
             attempts: Array.isArray(parsed.attempts) ? parsed.attempts : get().attempts,
             progress: parsed.progress && typeof parsed.progress === "object" ? parsed.progress : get().progress,
@@ -144,7 +152,7 @@ export const useGameStore = create<GameStore>()(
         const currentProgress = state.progress[game.id];
         const isRepeatToday = currentProgress?.lastPlayedAt?.slice(0, 10) === dateKey;
         const accuracy = total ? Math.round((score / total) * 100) : 0;
-        const xpEarned = calculateXpReward(game, isRepeatToday, accuracy);
+        const xpEarned = calculateXpEarned(game, isRepeatToday, accuracy);
         const nextStreak = updateStreak(state.streak, dateKey);
         const nextProgressValue = Math.max(currentProgress?.progress ?? 0, accuracy);
         const attempt: GameAttempt = {
@@ -159,7 +167,6 @@ export const useGameStore = create<GameStore>()(
           durationSeconds,
         };
         const nextAttempts = [attempt, ...state.attempts].slice(0, 80);
-        const nextXp = state.xp + xpEarned;
         const nextProgress = {
           ...state.progress,
           [game.id]: {
@@ -172,11 +179,7 @@ export const useGameStore = create<GameStore>()(
             lastPlayedAt: attempt.playedAt,
           },
         };
-        const previousRank = getRankForXp(state.xp);
-        const nextRank = getRankForXp(nextXp);
-
         set({
-          xp: nextXp,
           streak: nextStreak,
           attempts: nextAttempts,
           progress: nextProgress,
@@ -197,14 +200,7 @@ export const useGameStore = create<GameStore>()(
           }),
         }).catch(() => undefined);
 
-        return {
-          attempt,
-          xpEarned,
-          xpBefore: state.xp,
-          xpAfter: nextXp,
-          rankUp: previousRank.id !== nextRank.id,
-          rankName: nextRank.name,
-        };
+        return { attempt };
       },
     }),
     {
@@ -212,7 +208,7 @@ export const useGameStore = create<GameStore>()(
       version: 2,
       storage: createJSONStorage(() => localStorage),
       // v2: AdaptiveProfile mudou para 7 hubs pt-BR. Reinicia o perfil cognitivo preservando
-      // xp/streak/attempts/progress/skills. attempts/errors seguem só como compat legada.
+      // streak/attempts/progress/skills. attempts/errors seguem só como compat legada.
       migrate: (persisted, from) => {
         const state = (persisted ?? {}) as Partial<GameStore>;
         if (from < 2) {
@@ -221,7 +217,6 @@ export const useGameStore = create<GameStore>()(
         return state;
       },
       partialize: (state) => ({
-        xp: state.xp,
         streak: state.streak,
         attempts: state.attempts,
         progress: state.progress,

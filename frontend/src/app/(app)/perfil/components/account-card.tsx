@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { KeyRound, Medal, Pencil } from "lucide-react";
+import { KeyRound, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 import { Surface } from "@/components/shared/premium-ui";
@@ -9,19 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
-import { Progress } from "@/components/ui/progress";
-import { getRankSnapshot } from "@/features/xp/xp";
 import { useAuth } from "@/providers/app-providers";
 import { ApiClientError, authApi } from "@/services/api";
-import { useGameStore } from "@/stores/game-store";
 import { initials } from "@/utils";
 
 export function AccountCard() {
   const { user, refresh } = useAuth();
   const [editingName, setEditingName] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const xp = useGameStore((state) => state.xp);
-  const rank = getRankSnapshot(xp);
 
   return (
     <Surface className="bg-primary text-primary-foreground">
@@ -31,24 +26,11 @@ export function AccountCard() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground/62">Aluno Donc ENEM</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2.5">
-            <h2 className="font-display text-safe text-[28px] font-medium tracking-normal">{user?.name ?? "Aluno"}</h2>
-            <span className="flex items-center gap-1.5 rounded-md bg-white/18 px-2.5 py-1 text-[12px] font-bold">
-              <Medal className="h-3.5 w-3.5" aria-hidden="true" />
-              Rank {rank.current.name}
-            </span>
-          </div>
+          <h2 className="font-display text-safe text-[28px] font-medium tracking-normal">{user?.name ?? "Aluno"}</h2>
           <p className="text-safe mt-1 text-sm text-foreground/70">{user?.email}</p>
           {user?.created_at ? (
             <p className="mt-1 text-xs text-foreground/55">Membro desde {formatMemberSince(user.created_at)}</p>
           ) : null}
-          <div className="mt-3 max-w-xs">
-            <div className="mb-1 flex items-center justify-between gap-2 text-xs font-semibold text-foreground/70">
-              <span>{xp.toLocaleString("pt-BR")} XP</span>
-              <span>{rank.next ? `Próximo: ${rank.next.name} · ${rank.next.minXp.toLocaleString("pt-BR")}` : "Nível máximo"}</span>
-            </div>
-            <Progress value={rank.progress} className="h-2 bg-white/18 [&>div]:bg-white" />
-          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               size="sm"

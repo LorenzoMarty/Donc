@@ -369,9 +369,4 @@ export type StreakState = {
 
 export type GameCompletion = {
   attempt: GameAttempt;
-  xpEarned: number;
-  xpBefore: number;
-  xpAfter: number;
-  rankUp: boolean;
-  rankName: string;
 };
