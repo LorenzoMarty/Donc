@@ -1,6 +1,24 @@
 "use client";
 
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export function ScoreAreaChart({ data }: { data: { label: string; score: number }[] }) {
   return (
@@ -44,6 +62,22 @@ export function CompetencyTrendChart({
             <Line key={series.key} type="monotone" dataKey={series.key} name={series.label} stroke={series.color} strokeWidth={2} dot={false} />
           ))}
         </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function CompetencyRadarChart({ data }: { data: { competency: string; value: number }[] }) {
+  return (
+    <div className="h-64 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadarChart data={data} margin={{ top: 8, right: 24, bottom: 8, left: 24 }}>
+          <PolarGrid stroke="hsl(var(--border))" />
+          <PolarAngleAxis dataKey="competency" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+          <PolarRadiusAxis domain={[0, 200]} tickCount={3} axisLine={false} tick={false} />
+          <Tooltip contentStyle={{ borderRadius: 8, borderColor: "hsl(var(--border))", background: "hsl(var(--card))" }} />
+          <Radar dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fill="hsl(var(--primary))" fillOpacity={0.22} />
+        </RadarChart>
       </ResponsiveContainer>
     </div>
   );
