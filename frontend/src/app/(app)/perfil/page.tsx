@@ -8,6 +8,7 @@ import { ArrowRight, Flame, GraduationCap, Medal, Zap } from "lucide-react";
 import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
+import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
 import { WriterXraySection } from "@/app/(app)/perfil/components/writer-xray";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,12 @@ import { Progress } from "@/components/ui/progress";
 import { buildWriterXray, type WriterXray } from "@/features/profile/writer-xray";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type Dashboard, type EssayHistory, type LearningProfile } from "@/services/api";
+import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const gameProgress = useGameStore((state) => state.progress);
 
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [learningProfile, setLearningProfile] = useState<LearningProfile | null>(null);
@@ -90,9 +93,12 @@ export default function ProfilePage() {
 
       <WriterXraySection xray={xray} loading={loading} />
 
-      <AccentSettings />
+      <section className="grid gap-4 xl:grid-cols-2">
+        <PhaseMapCard progress={gameProgress} />
+        <AppearanceSettings />
+      </section>
 
-      <AppearanceSettings />
+      <AccentSettings />
     </div>
   );
 }
