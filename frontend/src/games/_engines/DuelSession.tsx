@@ -84,7 +84,6 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
       title={game.name}
       step={step + (picked ? 1 : 0)}
       total={rounds.length}
-      xp={game.xpReward}
     >
       <div className="force-light">
       {round && (

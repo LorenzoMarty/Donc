@@ -99,7 +99,6 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
       title={game.name}
       step={step + (phase === "done" ? 1 : 0)}
       total={rounds.length}
-      xp={game.xpReward}
     >
       <div className="force-light">
       {round && (

@@ -121,7 +121,6 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
       title={game.name}
       step={step + (checked ? 1 : 0)}
       total={rounds.length}
-      xp={game.xpReward}
     >
       <div className="force-light space-y-5 md:space-y-6">
       {round && (

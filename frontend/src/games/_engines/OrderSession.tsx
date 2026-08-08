@@ -139,7 +139,6 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
       title={game.name}
       step={step + (verdict ? 1 : 0)}
       total={rounds.length}
-      xp={game.xpReward}
     >
       <AnimatePresence mode="wait">
         {!result && round ? (

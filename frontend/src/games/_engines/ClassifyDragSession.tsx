@@ -99,7 +99,6 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
       title={game.name}
       step={placedCount}
       total={items.length}
-      xp={game.xpReward}
     >
       <div className="force-light">
       <div className="mx-auto max-w-5xl text-center">

@@ -70,17 +70,11 @@ export function EngineResult({
             <Trophy className="h-8 w-8" aria-hidden="true" />
           </div>
         )}
-        {result.rankUp && (
-          <div className="mx-auto mt-4 w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            Rank up - {result.rankName}
-          </div>
-        )}
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {eyebrow ?? (grade ? GRADE_LABEL[grade] : "Sessão concluída")}
         </p>
         <h2 className="mt-2 text-3xl font-semibold tracking-normal">{headline ?? `${result.attempt.accuracy}%`}</h2>
         {subline && <p className="mt-2 text-sm leading-6 text-muted-foreground">{subline}</p>}
-        <p className="mt-1 text-sm font-medium text-primary">+{result.xpEarned} XP</p>
       </div>
 
       {children}

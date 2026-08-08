@@ -20,7 +20,6 @@ export function GameSessionShell({
   title,
   step,
   total,
-  xp,
   extraChips,
   children,
 }: {
@@ -29,7 +28,6 @@ export function GameSessionShell({
   title: string;
   step: number;
   total: number;
-  xp: number;
   /** Chip extra específico do engine (timer/vidas) — só nos que já têm isso de verdade. */
   extraChips?: React.ReactNode;
   children: React.ReactNode;
@@ -57,7 +55,6 @@ export function GameSessionShell({
         <div className="flex shrink-0 items-center gap-2">
           {extraChips}
           <Chip>{Math.min(step, total)}/{total}</Chip>
-          <Chip>★ {xp} XP</Chip>
         </div>
       </div>
 

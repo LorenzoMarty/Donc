@@ -104,7 +104,6 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
       title={game.name}
       step={step + (checked ? 1 : 0)}
       total={cases.length}
-      xp={game.xpReward}
     >
       <div className="force-light space-y-5 md:space-y-6">
       {current && (

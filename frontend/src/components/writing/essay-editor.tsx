@@ -180,7 +180,7 @@ export function EssayEditor({
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col rounded-card bg-card shadow-soft md:h-dvh md:overflow-hidden md:rounded-none md:shadow-none"
     >
-      <RewardAnimation show={showSaved} title="Rascunho salvo" xp={0} />
+      <RewardAnimation show={showSaved} title="Rascunho salvo" />
 
       <div className="flex min-h-0 flex-1 flex-col bg-background">
         <header className="flex items-start gap-4 bg-transparent px-4 pb-2 pt-4 md:px-8">

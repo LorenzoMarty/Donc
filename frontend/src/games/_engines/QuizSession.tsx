@@ -70,7 +70,7 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
       setAnswers(nextAnswers);
       const completion = completeGame(game, nextAnswers.filter(Boolean).length, questions.length, seconds);
       setResult(completion);
-      trackEvent({ event_type: "game_completed", entity_id: game.id, entity_type: "game", duration_ms: seconds * 1000, meta: { accuracy: completion.attempt.accuracy, xp_earned: completion.xpEarned } });
+      trackEvent({ event_type: "game_completed", entity_id: game.id, entity_type: "game", duration_ms: seconds * 1000, meta: { accuracy: completion.attempt.accuracy } });
     }, NEXT_QUESTION_DELAY_MS);
   }
 
@@ -90,7 +90,6 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
       title={game.name}
       step={Math.min(step + 1, questions.length)}
       total={questions.length}
-      xp={game.xpReward}
     >
       <div className="force-light">
         <main className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col items-center justify-center text-center md:min-h-[75dvh]">
@@ -174,9 +173,6 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
                 </div>
                 <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessão concluída</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisão</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Você recebeu {result?.xpEarned ?? 0} pontos secundários nesta conclusão.
-                </p>
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
                   <Button onClick={restart} variant="outline">
                     <RotateCcw className="h-4 w-4" aria-hidden="true" />

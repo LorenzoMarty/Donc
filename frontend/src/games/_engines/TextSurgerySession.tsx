@@ -127,7 +127,6 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
       title={game.name}
       step={doneSlots}
       total={totalSlots}
-      xp={game.xpReward}
     >
       <div className="force-light space-y-5 md:space-y-6">
       {current && (

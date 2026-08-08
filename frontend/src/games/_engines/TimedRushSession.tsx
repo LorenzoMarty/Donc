@@ -33,18 +33,16 @@ type AnswerLog = {
 
 /**
  * Engine generico de "rodada infinita cronometrada": combo, timer decrescente,
- * 3 strikes encerram, XP ao vivo e revisao de erros. Dirigido por `game.questions`.
+ * 3 strikes encerram, revisao de erros. Dirigido por `game.questions`.
  */
 export function TimedRushSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
-  const xp = useGameStore((state) => state.xp);
   const adaptive = useGameStore((state) => state.adaptive);
   const [round, setRound] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [sessionXp, setSessionXp] = useState(0);
   const [answerLog, setAnswerLog] = useState<AnswerLog[]>([]);
   const [seconds, setSeconds] = useState(0);
   const [timeLeft, setTimeLeft] = useState(getRoundDuration());
@@ -96,7 +94,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
       if (selected !== null || feedback || result || !question) return;
       const isCorrect = !timedOut && index === question.answerIndex;
       const nextCombo = isCorrect ? combo + 1 : 0;
-      const xpGain = isCorrect ? getLiveXpGain(nextCombo, difficultyStage) : 0;
       const selectedLabel = timedOut ? "Tempo esgotado" : (question.options[index] ?? "Sem resposta");
       const nextAnswer: AnswerLog = {
         questionId: question.id,
@@ -117,7 +114,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         playCorrect();
         setCombo(nextCombo);
         setMaxCombo((value) => Math.max(value, nextCombo));
-        setSessionXp((value) => value + xpGain);
       } else {
         playWrong();
         setCombo(0);
@@ -134,7 +130,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         isCorrect ? NEXT_ROUND_DELAY_MS.correct : NEXT_ROUND_DELAY_MS.wrong,
       );
     },
-    [answerLog, combo, difficultyStage, feedback, finishRound, goNextRound, playCorrect, playWrong, question, result, selected],
+    [answerLog, combo, feedback, finishRound, goNextRound, playCorrect, playWrong, question, result, selected],
   );
 
   useEffect(() => {
@@ -158,7 +154,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
     setFeedback(null);
     setCombo(0);
     setMaxCombo(0);
-    setSessionXp(0);
     setAnswerLog([]);
     setSeconds(0);
     setTimeLeft(getRoundDuration());
@@ -184,7 +179,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
       title={game.name}
       step={roundDuration - timeLeft}
       total={roundDuration}
-      xp={xp + sessionXp}
       extraChips={
         <>
           <Chip>
@@ -297,7 +291,6 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         result={result}
         decoration={<ConfettiBurst />}
         eyebrow="Rodada finalizada"
-        headline={`+${result?.xpEarned ?? 0} XP`}
         review={errors.slice(0, 3).map((error) => ({
           id: error.questionId,
           text: `${error.selected} -> correto: ${error.correctAnswer} — ${error.explanation}`,
@@ -305,8 +298,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         onRestart={restart}
         categorySlug={category.slug}
       >
-        <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <SideMetric label="XP ganho" value={`+${result?.xpEarned ?? 0}`} />
+        <div className="relative mt-6 grid grid-cols-3 gap-3">
           <SideMetric label="Max combo" value={`${maxCombo}x`} />
           <SideMetric label="Acerto" value={`${accuracy}%`} />
           <SideMetric label="Erros" value={`${errors.length}`} />
@@ -395,15 +387,6 @@ function writeString(view: DataView, offset: number, value: string) {
 const ROUND_DURATION_SECONDS = 90;
 function getRoundDuration() {
   return ROUND_DURATION_SECONDS;
-}
-
-/** XP ao vivo por acerto: base + bônus de combo (capado) + bônus de dificuldade (velocidade). */
-const LIVE_XP_BASE = 4;
-const LIVE_XP_COMBO_MULTIPLIER = 2;
-const LIVE_XP_COMBO_CAP = 12;
-const LIVE_XP_DIFFICULTY_MULTIPLIER = 2;
-function getLiveXpGain(combo: number, difficultyStage: number) {
-  return LIVE_XP_BASE + Math.min(LIVE_XP_COMBO_CAP, combo * LIVE_XP_COMBO_MULTIPLIER) + difficultyStage * LIVE_XP_DIFFICULTY_MULTIPLIER;
 }
 
 const confettiPieces = [

@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Gauge, Medal, Play, Star, Zap, type LucideIcon } from "lucide-react";
+import { Gauge, Play, Zap, type LucideIcon } from "lucide-react";
 
 import { getEnrichedCategories, getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
 import { masteryForHub, recommendHub } from "@/features/gamification/adaptive";
-import { getRankSnapshot } from "@/features/xp/xp";
 import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +16,6 @@ export default function GamesHub() {
   const [ready, setReady] = useState(false);
   const progress = useGameStore((state) => state.progress);
   const adaptive = useGameStore((state) => state.adaptive);
-  const xp = useGameStore((state) => state.xp);
   const streak = useGameStore((state) => state.streak);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
@@ -40,15 +38,12 @@ export default function GamesHub() {
   const recommendedMission = recommendation.missionGameId ? games.find((game) => game.id === recommendation.missionGameId) : undefined;
   const recommendedMastery = recommendation.hub ? masteryForHub(adaptive, recommendation.hub) : 0;
   const primaryGame = recommendedMission ?? recommended[0];
-  const rank = getRankSnapshot(xp);
 
   if (!ready) {
     return <GamesHubSkeleton />;
   }
 
   const metrics: { icon: LucideIcon; value: string; label: string; tint: string }[] = [
-    { icon: Medal, value: rank.current.name, label: "Rank atual", tint: "#e6820e" },
-    { icon: Star, value: xp.toLocaleString("pt-BR"), label: "XP total", tint: "hsl(var(--primary))" },
     { icon: Zap, value: `${streak.current} dias`, label: "Sequência", tint: "#e5484d" },
     { icon: Gauge, value: `${overallProgress}%`, label: "Maestria geral", tint: "#0a84ff" },
   ];
@@ -57,7 +52,7 @@ export default function GamesHub() {
     <div className="space-y-5 md:space-y-6">
       <PageHeader eyebrow="Treino" title="Micro-desafios para lapidar cada competência da escrita" />
 
-      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3.5">
         {metrics.map((metric) => (
           <div key={metric.label} className="flex items-center gap-3.5 rounded-card bg-card p-5 shadow-soft">
             <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-control" style={{ backgroundColor: `${metric.tint}1a` }}>
@@ -93,7 +88,7 @@ export default function GamesHub() {
                 <Play className="h-4 w-4 fill-current" aria-hidden="true" />
                 Jogar agora
               </Link>
-              <span className="text-[13px] text-white/60">~4 min · +60 XP</span>
+              <span className="text-[13px] text-white/60">~4 min</span>
             </div>
           </div>
           <div className="grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full border-[3px] border-dashed border-[hsl(var(--accent-300)/40%)]">
@@ -125,8 +120,8 @@ export default function GamesHub() {
 function GamesHubSkeleton() {
   return (
     <div className="space-y-5 md:space-y-6">
-      <div className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
+      <div className="grid grid-cols-2 gap-3.5">
+        {Array.from({ length: 2 }).map((_, index) => (
           <Skeleton key={index} className="h-16" />
         ))}
       </div>
