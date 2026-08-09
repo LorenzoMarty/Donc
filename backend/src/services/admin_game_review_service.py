@@ -64,11 +64,20 @@ class AdminGameReviewService:
         notes: str | None,
         questions: list[dict] | None,
         name: str | None,
+        targets: list[str] | None,
         reviewer_id: int,
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
             raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
+        if targets is not None:
+            game.targets = targets
+        if action == "approve" and not game.targets:
+            raise AppError(
+                "Defina ao menos um problema cognitivo treinado antes de aprovar.",
+                status_code=422,
+                code="game_target_required",
+            )
         game.status = "approved" if action == "approve" else "rejected"
         game.reviewed_at = datetime.now(timezone.utc)
         game.reviewed_by = reviewer_id
@@ -76,8 +85,10 @@ class AdminGameReviewService:
             game.admin_notes = notes
         if questions is not None:
             game.questions = questions
+            game.edited_after_generation = True
         if name is not None:
             game.name = name
+            game.edited_after_generation = True
         self.db.commit()
         self.db.refresh(game)
         return self._game_to_read(game)
@@ -88,14 +99,19 @@ class AdminGameReviewService:
         *,
         name: str | None = None,
         questions: list[dict] | None = None,
+        targets: list[str] | None = None,
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
             raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
         if name is not None:
             game.name = name
+            game.edited_after_generation = True
         if questions is not None:
             game.questions = questions
+            game.edited_after_generation = True
+        if targets is not None:
+            game.targets = targets
         self.db.commit()
         self.db.refresh(game)
         return self._game_to_read(game)
@@ -126,6 +142,8 @@ class AdminGameReviewService:
             questions=questions,
             status=game.status,
             admin_notes=game.admin_notes,
+            targets=game.targets or [],
+            edited_after_generation=game.edited_after_generation,
             created_at=game.created_at,
             reviewed_at=game.reviewed_at,
         )

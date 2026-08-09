@@ -6,14 +6,27 @@ import { motion } from "framer-motion";
 import { Gauge, Play, Zap, type LucideIcon } from "lucide-react";
 
 import { getEnrichedCategories, getEnrichedGames, getRecommendedGames } from "@/features/gamification/catalog";
-import { masteryForHub, recommendHub } from "@/features/gamification/adaptive";
+import { masteryForHub, missionForHub, recommendHub } from "@/features/gamification/adaptive";
+import type { SymptomHubId } from "@/features/gamification/types";
 import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiFetch, type NextRecommendedAction } from "@/services/api";
 import { useGameStore } from "@/stores/game-store";
+
+const KNOWN_HUB_IDS = new Set<string>([
+  "texto-robotico",
+  "repete-ideias",
+  "repertorio-nao-encaixa",
+  "nao-aprofunda",
+  "introducao-sem-tese",
+  "perde-na-c3",
+  "conclusao-formula",
+]);
 
 export default function GamesHub() {
   const [ready, setReady] = useState(false);
+  const [backendAction, setBackendAction] = useState<NextRecommendedAction | null>(null);
   const progress = useGameStore((state) => state.progress);
   const adaptive = useGameStore((state) => state.adaptive);
   const streak = useGameStore((state) => state.streak);
@@ -29,14 +42,34 @@ export default function GamesHub() {
     hydrateRemoteGames();
   }, [hydrateRemoteGames]);
 
+  useEffect(() => {
+    let ignore = false;
+    apiFetch<NextRecommendedAction[]>("/ai/recommended-actions")
+      .then((actions) => {
+        if (!ignore) setBackendAction(actions[0] ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const games = useMemo(() => getEnrichedGames(progress, remoteGames), [progress, remoteGames]);
   const categories = useMemo(() => getEnrichedCategories(progress, remoteGames), [progress, remoteGames]);
   const recommended = useMemo(() => getRecommendedGames(progress, remoteGames), [progress, remoteGames]);
   const overallProgress = games.length ? Math.round(games.reduce((sum, game) => sum + game.progress, 0) / games.length) : 0;
 
-  const recommendation = recommendHub(adaptive, games);
-  const recommendedMission = recommendation.missionGameId ? games.find((game) => game.id === recommendation.missionGameId) : undefined;
-  const recommendedMastery = recommendation.hub ? masteryForHub(adaptive, recommendation.hub) : 0;
+  // Fonte de prioridade: RecommendationEngine do backend quando ele aponta pra um GAME (unico
+  // ponto de decisao entre Dashboard/Games/Perfil). `missionForHub`/`recommendHub` seguem
+  // resolvendo qual jogo concreto representa o hub — papel de resolucao, nao de priorizacao.
+  const backendHub = backendAction?.type === "GAME" && backendAction.target && KNOWN_HUB_IDS.has(backendAction.target)
+    ? (backendAction.target as SymptomHubId)
+    : null;
+  const localRecommendation = recommendHub(adaptive, games);
+  const hub = backendHub ?? localRecommendation.hub;
+  const reason = backendHub ? backendAction!.reason : localRecommendation.reason;
+  const recommendedMission = missionForHub(hub, games);
+  const recommendedMastery = masteryForHub(adaptive, hub);
   const primaryGame = recommendedMission ?? recommended[0];
 
   if (!ready) {
@@ -79,7 +112,7 @@ export default function GamesHub() {
               <span className="rounded-md bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">Desafio de hoje</span>
             </div>
             <p className="font-display text-[25px] font-medium leading-tight">{primaryGame.name}</p>
-            <p className="mt-1.5 max-w-[460px] text-[14px] text-white/70">{recommendation.reason}</p>
+            <p className="mt-1.5 max-w-[460px] text-[14px] text-white/70">{reason}</p>
             <div className="mt-4.5 flex items-center gap-4">
               <Link
                 href={`/games/${primaryGame.category}/${primaryGame.id}`}

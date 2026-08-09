@@ -69,11 +69,23 @@ export type User = {
   created_at: string;
 };
 
+export type CognitiveIssueState = "DETECTED" | "TRAINING" | "IMPROVING" | "MASTERED";
+
+export type CognitiveIssueRecord = {
+  state: CognitiveIssueState;
+  negative_count: number;
+  positive_streak: number;
+  updated_at: string | null;
+};
+
 export type LearningProfile = {
   weak_competencies: Record<string, number>;
   recurring_errors: string[];
   repertories_used: string[];
   recommendations: string[];
+  latest_competencies: Record<string, number>;
+  score_trend: number[];
+  cognitive_issues: Record<string, CognitiveIssueRecord>;
   has_data: boolean;
 };
 
@@ -81,6 +93,14 @@ export type TokenResponse = {
   access_token: string;
   token_type: string;
   user: User;
+};
+
+export type NextRecommendedAction = {
+  type: "LESSON" | "EXERCISE" | "GAME" | "ESSAY";
+  target_issue: string | null;
+  target: string | null;
+  reason: string;
+  estimated_minutes: number;
 };
 
 export type Dashboard = {
@@ -99,6 +119,7 @@ export type Dashboard = {
   recent_essays: { id: number; title: string; theme_title: string; status: Essay["status"]; word_count: number; score: number | null; updated_at: string }[];
   suggested_lessons: { id: number; title: string; module: string; progress_percent: number }[];
   goals: { id: number; title: string; current: number; target: number; unit: string; completed: boolean; due_date?: string | null }[];
+  next_action: NextRecommendedAction;
 };
 
 export type Lesson = {
@@ -275,6 +296,7 @@ export type AdminLesson = {
   pdf_url: string | null;
   duration_minutes: number;
   order: number;
+  targets: string[];
 };
 
 export type AdminActivity = {
@@ -288,6 +310,7 @@ export type AdminActivity = {
   lesson_id: number | null;
   base_lesson_ids: number[];
   order: number;
+  targets: string[];
 };
 
 export type AdminModuleItem = {
@@ -393,6 +416,31 @@ export type AdminUserLearningProfile = {
   recommendations: string[];
 };
 
+export type ContentQualityItem = {
+  id: number;
+  label: string;
+  kind: "lesson" | "exercise" | "game";
+};
+
+export type ContentByIssueRow = {
+  code: string;
+  lessons: number;
+  exercises: number;
+  games: number;
+};
+
+export type AdminContentQuality = {
+  lessons_without_target: ContentQualityItem[];
+  exercises_without_target: ContentQualityItem[];
+  games_without_target: ContentQualityItem[];
+  unused_lessons: ContentQualityItem[];
+  unused_exercises: ContentQualityItem[];
+  unused_games: ContentQualityItem[];
+  rejected_games: ContentQualityItem[];
+  edited_games: ContentQualityItem[];
+  content_by_issue: ContentByIssueRow[];
+};
+
 export type AdminUserAIUsage = {
   total_tokens: number;
   total_calls: number;
@@ -429,6 +477,8 @@ export type AIGeneratedGame = {
   questions: GameQuestion[];
   status: "pending" | "approved" | "rejected";
   admin_notes: string | null;
+  targets: string[];
+  edited_after_generation: boolean;
   created_at: string;
   reviewed_at: string | null;
 };

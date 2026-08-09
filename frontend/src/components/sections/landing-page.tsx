@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -16,7 +17,10 @@ export function LandingPage() {
   return (
     <MarketingShell>
       <main>
-        <section className="mx-auto max-w-6xl px-4 pb-4 pt-10 md:px-6 md:pt-16">
+        <section className="relative mx-auto max-w-6xl px-4 pb-4 pt-10 md:px-6 md:pt-16">
+          <div className="pointer-events-none absolute -right-16 -top-10 -z-10 hidden w-[30rem] opacity-80 sm:block lg:w-[38rem]" aria-hidden="true">
+            <Image src="/marketing/hero-manuscript-texture.png" alt="" width={1536} height={1024} priority sizes="38rem" className="h-auto w-full" />
+          </div>
           <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
             <FadeIn>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Português e Redação para o ENEM</p>

@@ -368,3 +368,11 @@ export type StreakState = {
 export type GameCompletion = {
   attempt: GameAttempt;
 };
+
+/** Mudança de estado de um CognitiveIssue causada por uma tentativa de jogo — vem da resposta de
+ * `POST /games/complete` (`RecommendationEngine`/`cognitive_issues`, nunca calculado no cliente). */
+export type IssueUpdate = {
+  code: string;
+  previous_state: string | null;
+  new_state: string;
+};

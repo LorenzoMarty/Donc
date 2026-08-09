@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Loader2, Save, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -47,6 +48,7 @@ function GameCard({
   const [open, setOpen] = useState(false);
   const [editingQ, setEditingQ] = useState<GameQuestion[] | null>(null);
   const [notes, setNotes] = useState("");
+  const [targets, setTargets] = useState<string[]>(game.targets);
   const [reviewing, setReviewing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -62,6 +64,7 @@ function GameCard({
           action,
           notes: notes || null,
           questions: editingQ,
+          targets,
         }),
       });
       onReviewed(result);
@@ -80,7 +83,7 @@ function GameCard({
     try {
       const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ questions: editingQ }),
+        body: JSON.stringify({ questions: editingQ, targets }),
       });
       onReviewed(result);
       setEditingQ(null);
@@ -129,6 +132,8 @@ function GameCard({
             {statusBadge(game.status)}
             <Badge variant="outline" className="text-xs">{game.category}</Badge>
             <Badge variant="outline" className="text-xs">{game.difficulty}</Badge>
+            {!game.targets.length ? <Badge variant="destructive" className="text-xs">Sem target</Badge> : null}
+            {game.edited_after_generation ? <Badge variant="outline" className="text-xs">Editado</Badge> : null}
           </div>
           <p className="mt-1 font-semibold">{game.name}</p>
           <p className="text-xs text-muted-foreground">{game.skill} · {game.questions.length} questões</p>
@@ -179,6 +184,12 @@ function GameCard({
             <p className="text-xs text-streak">Questões editadas. As alterações serão salvas ao aprovar/rejeitar.</p>
           )}
 
+          <TargetsField
+            value={targets}
+            onChange={setTargets}
+            hint="Obrigatório para aprovar — define quando o RecommendationEngine indica este jogo."
+          />
+
           {game.status === "pending" ? (
             <div className="space-y-3">
               <Textarea
@@ -189,7 +200,7 @@ function GameCard({
                 rows={2}
               />
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => review("approve")} disabled={reviewing}>
+                <Button size="sm" onClick={() => review("approve")} disabled={reviewing || !targets.length}>
                   {reviewing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                   Aprovar
                 </Button>

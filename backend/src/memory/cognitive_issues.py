@@ -1,12 +1,21 @@
-"""Maquina de estado de CognitiveIssue — P0 nucleo adaptativo.
+"""Maquina de estado de CognitiveIssue — nucleo adaptativo (P0 + P1).
 
-Cada problema cognitivo do aluno tem um estado explicito, alimentado por dois canais:
-1. Correcao de redacao (`update_learning_profile`, via notas C1-C5) — sinais competency-driven.
-2. Resultado de jogo (`GameAttempt.cognitive_outcomes`, via hub) — sinais de treino direto.
+Cada problema cognitivo do aluno tem um estado explicito, alimentado por tres canais (evidencia
+de multiplas fontes, nao um unico sinal isolado — REQ-15/P1):
+1. Correcao de redacao (`memory/profile.py::update_learning_profile`, via notas C1-C5) — sinal
+   competency-driven, um por correcao.
+2. Resultado de jogo (`routes/games.py::complete_game`, via `GameAttempt.cognitive_outcomes` ->
+   hub -> issue) — sinal por evento cognitivo emitido na sessao.
+3. Resposta de exercicio (`services/exercise_service.py::ExerciseService.submit`, via
+   `Exercise.targets`) — sinal positivo se `is_correct`, negativo caso contrario, um por resposta.
 
-Regra deliberadamente simples (sem ML/heuristica de texto livre): DETECTED -> TRAINING ->
-IMPROVING -> MASTERED conforme sinais positivos se acumulam; qualquer sinal negativo em
-IMPROVING/MASTERED regride para TRAINING (recaida).
+Regra deliberadamente simples (sem ML/heuristica de texto livre), a mesma para os tres canais:
+DETECTED -> TRAINING -> IMPROVING -> MASTERED conforme sinais positivos se acumulam (3 positivos
+consecutivos em IMPROVING viram MASTERED); qualquer sinal negativo em IMPROVING/MASTERED regride
+para TRAINING (recaida). Um unico sinal, de qualquer canal, nunca pula mais de um estado — a
+resistencia contra atualizacao agressiva (REQ-12/P1: "evite atualizar o perfil agressivamente com
+uma unica resposta") vem dessa propriedade da maquina de estado em si, nao de um filtro adicional
+por canal.
 """
 
 from __future__ import annotations

@@ -220,7 +220,7 @@ def recommended_actions(
 ) -> ApiResponse[list[RecommendedActionRead]]:
     profile = get_or_create_learning_profile(db, current_user.id)
     db.commit()
-    actions = RecommendationEngine(db).recommend(profile)
+    actions = RecommendationEngine(db).recommend(profile, user_id=current_user.id)
     return success_response(
         [
             RecommendedActionRead(

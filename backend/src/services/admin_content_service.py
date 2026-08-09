@@ -251,6 +251,7 @@ class AdminContentService:
         summary: str,
         duration_minutes: int,
         order: int | None,
+        targets: list[str] | None = None,
     ) -> AdminLessonRead:
         module = self.db.get(Module, module_id)
         if not module:
@@ -267,6 +268,7 @@ class AdminContentService:
             summary=summary.strip(),
             duration_minutes=duration_minutes,
             order=lesson_order,
+            targets=targets or [],
         )
         self.db.add(lesson)
         self.db.flush()
@@ -295,6 +297,7 @@ class AdminContentService:
         lesson_id: int | None,
         base_lesson_ids: list[int],
         order: int | None,
+        targets: list[str] | None = None,
     ) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
         if not module:
@@ -310,6 +313,7 @@ class AdminContentService:
             skill=skill.strip(),
             difficulty=Difficulty(difficulty),
             base_lesson_ids=base_lesson_ids,
+            targets=targets or [],
         )
         self.db.add(exercise)
         self.db.flush()
@@ -416,6 +420,7 @@ class AdminContentService:
         thumbnail_url: str | None,
         video_url: str | None,
         duration_minutes: int | None,
+        targets: list[str] | None = None,
     ) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
@@ -432,6 +437,8 @@ class AdminContentService:
             lesson.video_url = video_url.strip() or lesson.video_url
         if duration_minutes is not None:
             lesson.duration_minutes = duration_minutes
+        if targets is not None:
+            lesson.targets = targets
         self.db.commit()
         return self.content_tree()
 
@@ -471,6 +478,7 @@ class AdminContentService:
         difficulty: str | None,
         lesson_id: int | None,
         base_lesson_ids: list[int] | None,
+        targets: list[str] | None = None,
     ) -> list[AdminModuleRead]:
         exercise = self.db.get(Exercise, activity_id)
         if not exercise:
@@ -497,6 +505,8 @@ class AdminContentService:
             exercise.lesson_id = lesson_id
         if base_lesson_ids is not None:
             exercise.base_lesson_ids = base_lesson_ids
+        if targets is not None:
+            exercise.targets = targets
         self.db.commit()
         return self.content_tree()
 
@@ -601,6 +611,7 @@ class AdminContentService:
             summary=lesson.summary,
             duration_minutes=lesson.duration_minutes,
             order=lesson.order,
+            targets=lesson.targets or [],
         )
 
     def _activity_to_admin_read(self, exercise: Exercise, order: int | None = None) -> AdminActivityRead:
@@ -618,6 +629,7 @@ class AdminContentService:
             lesson_id=exercise.lesson_id,
             base_lesson_ids=exercise.base_lesson_ids or [],
             order=item_order or 0,
+            targets=exercise.targets or [],
         )
 
     def _module_items(self, module: Module) -> list[AdminModuleItemRead]:

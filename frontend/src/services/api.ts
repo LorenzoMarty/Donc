@@ -3,6 +3,7 @@ export { authApi } from "@/services/auth-service";
 export type {
   AdminMetrics,
   ApiEnvelope,
+  CognitiveIssueRecord,
   Dashboard,
   Essay,
   EssayCorrection,
@@ -15,6 +16,7 @@ export type {
   LearningProfile,
   Lesson,
   Module,
+  NextRecommendedAction,
   TokenResponse,
   User,
 } from "@/types/api";

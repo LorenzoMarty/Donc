@@ -3,7 +3,18 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from src.memory.cognitive_issues import ISSUE_CODES
+
+
+def _validate_targets(value: list[str] | None) -> list[str] | None:
+    if value is None:
+        return value
+    unknown = [code for code in value if code not in ISSUE_CODES]
+    if unknown:
+        raise ValueError(f"codigo(s) de problema cognitivo desconhecido(s): {', '.join(unknown)}")
+    return value
 
 
 class AdminMetricsResponse(BaseModel):
@@ -98,6 +109,7 @@ class AdminLessonRead(BaseModel):
     summary: str
     duration_minutes: int
     order: int
+    targets: list[str] = Field(default_factory=list)
 
 
 class AdminActivityRead(BaseModel):
@@ -111,6 +123,7 @@ class AdminActivityRead(BaseModel):
     lesson_id: int | None = None
     base_lesson_ids: list[int] = Field(default_factory=list)
     order: int
+    targets: list[str] = Field(default_factory=list)
 
 
 class AdminModuleItemRead(BaseModel):
@@ -149,6 +162,9 @@ class AdminLessonCreateRequest(BaseModel):
     summary: str = Field(min_length=10, max_length=5000)
     duration_minutes: int = Field(default=15, ge=1, le=600)
     order: int | None = Field(default=None, ge=1, le=999)
+    targets: list[str] = Field(default_factory=list)
+
+    _validate_targets = field_validator("targets")(_validate_targets)
 
 
 class AdminActivityCreateRequest(BaseModel):
@@ -161,6 +177,9 @@ class AdminActivityCreateRequest(BaseModel):
     lesson_id: int | None = Field(default=None, gt=0)
     base_lesson_ids: list[int] = Field(default_factory=list, max_length=8)
     order: int | None = Field(default=None, ge=1, le=999)
+    targets: list[str] = Field(default_factory=list)
+
+    _validate_targets = field_validator("targets")(_validate_targets)
 
 
 class AdminActivityGenerateRequest(BaseModel):
@@ -184,6 +203,9 @@ class AdminLessonUpdateRequest(BaseModel):
     pdf_url: str | None = Field(default=None, max_length=500)
     summary: str | None = Field(default=None, min_length=10, max_length=5000)
     duration_minutes: int | None = Field(default=None, ge=1, le=600)
+    targets: list[str] | None = None
+
+    _validate_targets = field_validator("targets")(_validate_targets)
 
 
 class AdminActivityUpdateRequest(BaseModel):
@@ -195,6 +217,9 @@ class AdminActivityUpdateRequest(BaseModel):
     difficulty: Literal["easy", "medium", "hard"] | None = None
     lesson_id: int | None = Field(default=None, gt=0)
     base_lesson_ids: list[int] | None = Field(default=None, max_length=8)
+    targets: list[str] | None = None
+
+    _validate_targets = field_validator("targets")(_validate_targets)
 
 
 class AdminMoveRequest(BaseModel):
@@ -346,6 +371,8 @@ class AIGeneratedGameRead(BaseModel):
     questions: list[GameQuestionRead]
     status: str
     admin_notes: str | None = None
+    targets: list[str] = Field(default_factory=list)
+    edited_after_generation: bool = False
     created_at: datetime
     reviewed_at: datetime | None = None
 
@@ -363,11 +390,42 @@ class ReviewGameRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=500)
     questions: list[GameQuestionRead] | None = None
     name: str | None = Field(default=None, max_length=120)
+    targets: list[str] | None = None
+
+    _validate_targets = field_validator("targets")(_validate_targets)
 
 
 class UpdateGameRequest(BaseModel):
     name: str | None = Field(default=None, max_length=120)
     questions: list[GameQuestionRead] | None = None
+    targets: list[str] | None = None
+
+    _validate_targets = field_validator("targets")(_validate_targets)
+
+
+class ContentQualityItem(BaseModel):
+    id: int
+    label: str
+    kind: Literal["lesson", "exercise", "game"]
+
+
+class ContentByIssueRow(BaseModel):
+    code: str
+    lessons: int
+    exercises: int
+    games: int
+
+
+class AdminContentQualityResponse(BaseModel):
+    lessons_without_target: list[ContentQualityItem]
+    exercises_without_target: list[ContentQualityItem]
+    games_without_target: list[ContentQualityItem]
+    unused_lessons: list[ContentQualityItem]
+    unused_exercises: list[ContentQualityItem]
+    unused_games: list[ContentQualityItem]
+    rejected_games: list[ContentQualityItem]
+    edited_games: list[ContentQualityItem]
+    content_by_issue: list[ContentByIssueRow]
 
 
 class AIGameActionResponse(BaseModel):

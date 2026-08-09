@@ -1,5 +1,7 @@
 ﻿from sqlalchemy.orm import Session
 
+from src.memory.cognitive_issues import apply_cognitive_signal
+from src.memory.profile import get_or_create_learning_profile
 from src.middlewares.errors import AppError
 from src.models import ExerciseAnswer, User
 from src.repositories.learning import LearningRepository
@@ -38,6 +40,15 @@ class ExerciseService:
             is_correct=is_correct,
         )
         self.db.add(answer)
+
+        if exercise.targets:
+            profile = get_or_create_learning_profile(self.db, user.id)
+            issues = profile.cognitive_issues
+            direction = "positive" if is_correct else "negative"
+            for code in exercise.targets:
+                issues = apply_cognitive_signal(issues, code, direction)
+            profile.cognitive_issues = issues
+
         self.db.commit()
 
         return {

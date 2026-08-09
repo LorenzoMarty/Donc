@@ -48,6 +48,7 @@ const DASHBOARD: Dashboard = {
   recent_essays: [],
   suggested_lessons: [{ id: 2, title: "Conectivos essenciais", module: "Módulo 1", progress_percent: 0 }],
   goals: [],
+  next_action: { type: "ESSAY", target_issue: null, target: null, reason: "Envie uma redação para continuarmos o diagnóstico.", estimated_minutes: 60 },
 };
 
 vi.mock("@/services/api", async () => {

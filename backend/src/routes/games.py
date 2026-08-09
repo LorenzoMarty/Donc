@@ -76,12 +76,19 @@ class GameCompleteRequest(BaseModel):
         return self
 
 
+class IssueUpdate(BaseModel):
+    code: str
+    previous_state: str | None
+    new_state: str
+
+
 class GameCompleteResponse(BaseModel):
     attempt_id: int
     game_id: str
     score: int
     total: int
     accuracy: int
+    issue_updates: list[IssueUpdate]
 
 
 class GameProgressUpsertRequest(BaseModel):
@@ -195,18 +202,31 @@ def complete_game(
         db.add(row)
 
     profile = get_or_create_learning_profile(db, current_user.id)
+    issues_before = dict(profile.cognitive_issues)
     issues = profile.cognitive_issues
+    touched_codes: list[str] = []
     for outcome in payload.cognitive_outcomes:
         issue_code = HUB_TO_ISSUE.get(outcome.hub)
         direction = EVENT_DIRECTION.get(outcome.event)
         if not issue_code or not direction:
             continue
+        if issue_code not in touched_codes:
+            touched_codes.append(issue_code)
         issues = apply_cognitive_signal(issues, issue_code, direction)
     profile.cognitive_issues = issues
 
     db.commit()
     db.refresh(attempt)
     touch_daily_streak(db, current_user)
+
+    issue_updates = [
+        IssueUpdate(
+            code=code,
+            previous_state=(issues_before.get(code) or {}).get("state"),
+            new_state=(issues.get(code) or {}).get("state"),
+        )
+        for code in touched_codes
+    ]
 
     return success_response(
         GameCompleteResponse(
@@ -215,6 +235,7 @@ def complete_game(
             score=attempt.score,
             total=attempt.total,
             accuracy=attempt.accuracy,
+            issue_updates=issue_updates,
         )
     )
 

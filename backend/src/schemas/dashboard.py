@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -58,6 +59,14 @@ class MasteryPoint(BaseModel):
     value: int
 
 
+class NextActionRead(BaseModel):
+    type: Literal["LESSON", "EXERCISE", "GAME", "ESSAY"]
+    target_issue: str | None = None
+    target: str | None = None
+    reason: str
+    estimated_minutes: int
+
+
 class DashboardResponse(BaseModel):
     progress_general: int
     essay_average: int
@@ -74,4 +83,5 @@ class DashboardResponse(BaseModel):
     recent_essays: list[RecentEssay]
     suggested_lessons: list[RecentLesson]
     goals: list[GoalRead]
+    next_action: NextActionRead
 
