@@ -3,7 +3,7 @@ every authenticated request) from real pedagogical activity (last_activity_at, o
 game completion, exercise submission, lesson completion, essay submission).
 
 Revision ID: 0015_user_last_activity_at
-Revises: 0014_student_learning_profile_cognitive_issues
+Revises: 0014_slp_cognitive_issues
 Create Date: 2026-08-09
 """
 
@@ -14,7 +14,7 @@ from alembic import op
 
 
 revision: str = "0015_user_last_activity_at"
-down_revision: str | None = "0014_student_learning_profile_cognitive_issues"
+down_revision: str | None = "0014_slp_cognitive_issues"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

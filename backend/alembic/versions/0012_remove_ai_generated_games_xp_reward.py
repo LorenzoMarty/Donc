@@ -1,7 +1,7 @@
 """Remove ai_generated_games.xp_reward — P0 remove XP/conquistas/simulados from the product;
 games stay as pedagogical tools, no XP reward attached to them anymore.
 
-Revision ID: 0012_remove_ai_generated_games_xp_reward
+Revision ID: 0012_remove_game_xp_reward
 Revises: 0011_essay_last_ai_job_id
 Create Date: 2026-08-09
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0012_remove_ai_generated_games_xp_reward"
+revision: str = "0012_remove_game_xp_reward"
 down_revision: str | None = "0011_essay_last_ai_job_id"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
