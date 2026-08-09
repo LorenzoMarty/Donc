@@ -8,6 +8,7 @@ from src.dependencies import get_current_user, require_admin
 from src.models import User
 from src.schemas.admin import (
     AdminContentActionResponse,
+    AdminContentQualityResponse,
     AdminActivityCreateRequest,
     AdminActivityGenerateRequest,
     AdminActivityRead,
@@ -38,6 +39,7 @@ from src.schemas.admin import (
 )
 from src.schemas.common import ApiResponse, success_response
 from src.schemas.essays import EssayThemeRead
+from src.services.admin_content_quality_service import AdminContentQualityService
 from src.services.admin_content_service import AdminContentService
 from src.services.admin_game_review_service import AdminGameReviewService
 from src.services.admin_metrics_service import AdminMetricsService
@@ -58,6 +60,11 @@ def metrics(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> 
 @router.get("/users", response_model=ApiResponse[list[AdminUserRead]])
 def users(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[AdminUserRead]]:
     return success_response(AdminUserService(db).users_list())
+
+
+@router.get("/content-quality", response_model=ApiResponse[AdminContentQualityResponse])
+def content_quality(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[AdminContentQualityResponse]:
+    return success_response(AdminContentQualityService(db).report())
 
 
 @router.get("/content", response_model=ApiResponse[list[AdminModuleRead]])
@@ -161,6 +168,7 @@ def create_lesson(
             summary=payload.summary,
             duration_minutes=payload.duration_minutes,
             order=payload.order,
+            targets=payload.targets,
         ),
         "Aula criada.",
     )
@@ -185,6 +193,7 @@ def create_activity(
             lesson_id=payload.lesson_id,
             base_lesson_ids=payload.base_lesson_ids,
             order=payload.order,
+            targets=payload.targets,
         ),
         "Atividade criada.",
     )
@@ -262,6 +271,7 @@ def update_lesson(
             thumbnail_url=payload.thumbnail_url,
             video_url=payload.video_url,
             duration_minutes=payload.duration_minutes,
+            targets=payload.targets,
         ),
         "Aula atualizada.",
     )
@@ -304,6 +314,7 @@ def update_activity(
             difficulty=payload.difficulty,
             lesson_id=payload.lesson_id,
             base_lesson_ids=payload.base_lesson_ids,
+            targets=payload.targets,
         ),
         "Atividade atualizada.",
     )
@@ -443,6 +454,7 @@ def review_game(
         notes=payload.notes,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
         name=payload.name,
+        targets=payload.targets,
         reviewer_id=current_admin.id,
     )
     return success_response(game, "Jogo atualizado.")
@@ -459,6 +471,7 @@ def update_game(
         game_id,
         name=payload.name,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
+        targets=payload.targets,
     )
     return success_response(game, "Jogo atualizado.")
 

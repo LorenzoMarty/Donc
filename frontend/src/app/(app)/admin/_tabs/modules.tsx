@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BookOpen, ChevronDown, ChevronRight, ChevronUp, ClipboardList, Folder, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -340,6 +341,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [videoUrl, setVideoUrl] = useState(editing?.video_url ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState(editing?.thumbnail_url ?? "");
   const [pdfUrl, setPdfUrl] = useState(editing?.pdf_url ?? "");
+  const [targets, setTargets] = useState<string[]>(editing?.targets ?? []);
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -351,7 +353,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
     setSubmitted(true);
     if (!title.trim() || !description.trim() || !summary.trim()) return toast.error("Preencha título, descrição e resumo.");
     setBusy(true);
-    const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl, pdf_url: pdfUrl.trim() || null };
+    const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl, pdf_url: pdfUrl.trim() || null, targets };
     try {
       if (editing) {
         const modules = await apiFetch<AdminModule[]>(`/admin/lessons/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) });
@@ -405,6 +407,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
             <Input value={pdfUrl} onChange={(e) => setPdfUrl(e.target.value)} placeholder="https://..." />
           </Field>
         </div>
+        <TargetsField value={targets} onChange={setTargets} hint="Usado pelo motor de recomendação para indicar esta aula ao aluno certo." />
       </div>
     </Modal>
   );
@@ -425,6 +428,7 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
       lesson_id: null,
       base_lesson_ids: [],
       order: normalizedItems(contentModule).length + 1,
+      targets: [],
     },
   );
   const [busy, setBusy] = useState(false);
@@ -469,6 +473,7 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
       difficulty: draft.difficulty,
       lesson_id: draft.lesson_id,
       base_lesson_ids: draft.base_lesson_ids,
+      targets: draft.targets,
     };
     try {
       const modules = editing
@@ -588,6 +593,11 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
         <Field label="Explicação" required error={explanationError}>
           <Textarea value={draft.explanation} error={Boolean(explanationError)} onChange={(e) => setDraft({ ...draft, explanation: e.target.value })} />
         </Field>
+        <TargetsField
+          value={draft.targets}
+          onChange={(next) => setDraft({ ...draft, targets: next })}
+          hint="Usado pelo motor de recomendação para indicar esta atividade ao aluno certo."
+        />
       </div>
     </Modal>
   );

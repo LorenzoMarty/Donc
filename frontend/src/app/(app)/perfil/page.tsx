@@ -8,11 +8,13 @@ import { ArrowRight, Flame, GraduationCap, Medal, Zap } from "lucide-react";
 import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
+import { CognitiveIssuesSection } from "@/app/(app)/perfil/components/cognitive-issues-section";
 import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
 import { WriterXraySection } from "@/app/(app)/perfil/components/writer-xray";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { NextActionCard } from "@/components/shared/next-action-card";
 import { buildWriterXray, type WriterXray } from "@/features/profile/writer-xray";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type Dashboard, type EssayHistory, type LearningProfile } from "@/services/api";
@@ -90,6 +92,10 @@ export default function ProfilePage() {
         </div>
         <Progress value={dashboard?.progress_general ?? 0} className="h-3" />
       </Surface>
+
+      {dashboard?.next_action ? <NextActionCard action={dashboard.next_action} /> : null}
+
+      <CognitiveIssuesSection issues={learningProfile?.cognitive_issues} />
 
       <WriterXraySection xray={xray} loading={loading} />
 

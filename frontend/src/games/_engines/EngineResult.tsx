@@ -8,7 +8,35 @@ import { RotateCcw, Trophy } from "lucide-react";
 import type { GameCompletion, Grade } from "@/features/gamification/types";
 import { GRADE_LABEL, GRADE_TONE } from "@/games/_engines/grade";
 import { Button } from "@/components/ui/button";
+import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
+
+const ISSUE_STATE_ORDER: Record<string, number> = { DETECTED: 0, TRAINING: 1, IMPROVING: 2, MASTERED: 3 };
+
+/** Feedback pós-treino honesto: só afirma evolução se algum problema realmente mudou de estado
+ * pra melhor nesta sessão (dado vindo do backend, `IssueUpdate[]`) — nunca promete progresso que
+ * os dados não sustentam. */
+function PostSessionFeedback() {
+  const issueUpdates = useGameStore((state) => state.lastIssueUpdates);
+  if (!issueUpdates.length) return null;
+
+  const improved = issueUpdates.some((update) => {
+    const previous = update.previous_state ? (ISSUE_STATE_ORDER[update.previous_state] ?? -1) : -1;
+    const next = ISSUE_STATE_ORDER[update.new_state] ?? -1;
+    return next > previous;
+  });
+
+  return (
+    <div className={cn("mt-4 rounded-2xl p-3.5 text-left text-sm leading-6", improved ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+      <p className="font-semibold">{improved ? "Boa evolução" : "Continue treinando"}</p>
+      <p className="mt-0.5">
+        {improved
+          ? "Seu desempenho nesse ponto melhorou nesta sessão."
+          : "Você ainda está desenvolvendo essa habilidade — repita o treino pra consolidar."}
+      </p>
+    </div>
+  );
+}
 
 /** Lê `?returnTo=` da URL atual — destino para "voltar"/"próximo exercício" após a sessão. */
 export function readReturnTo(): string | undefined {
@@ -78,6 +106,8 @@ export function EngineResult({
       </div>
 
       {children}
+
+      <PostSessionFeedback />
 
       {review && review.length > 0 && (
         <div className="game-tile mt-5 border-amber-500/20 bg-amber-500/10 p-4 text-left">

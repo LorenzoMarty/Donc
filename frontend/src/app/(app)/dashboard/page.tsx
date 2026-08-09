@@ -7,6 +7,7 @@ import { Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
+import { NextActionCard } from "@/components/shared/next-action-card";
 import { apiFetch, type Dashboard, type EssayTheme } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
 import { cn } from "@/utils";
@@ -88,6 +89,10 @@ export default function DashboardPage() {
             {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
           </div>
         </div>
+      </section>
+
+      <section className="mt-4">
+        <NextActionCard action={data.next_action} />
       </section>
 
       <section className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">

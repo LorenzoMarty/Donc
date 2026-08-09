@@ -4,9 +4,11 @@ from datetime import date, timedelta
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, load_only, selectinload
 
+from src.memory.profile import get_or_create_learning_profile
 from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, Module, User
 from src.middlewares.errors import AppError
-from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, PendingExercise, RecentEssay, RecentLesson, TrendPoint
+from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, NextActionRead, PendingExercise, RecentEssay, RecentLesson, TrendPoint
+from src.services.recommendation_service import RecommendationEngine
 
 
 class DashboardService:
@@ -130,6 +132,9 @@ class DashboardService:
 
         streak = user.streak_days if user else 0
 
+        profile = get_or_create_learning_profile(self.db, user_id)
+        next_action = RecommendationEngine(self.db).recommend(profile, user_id=user_id)[0]
+
         return DashboardResponse(
             progress_general=progress_general,
             essay_average=essay_average,
@@ -146,6 +151,13 @@ class DashboardService:
             recent_essays=recent_essays,
             suggested_lessons=suggested_lessons,
             goals=goals,
+            next_action=NextActionRead(
+                type=next_action.type,
+                target_issue=next_action.target_issue,
+                target=next_action.target,
+                reason=next_action.reason,
+                estimated_minutes=next_action.estimated_minutes,
+            ),
         )
 
     def create_goal(self, *, user_id: int, title: str, target: int, unit: str) -> GoalRead:

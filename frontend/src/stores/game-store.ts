@@ -7,7 +7,7 @@ import { mapPublishedGame } from "@/features/gamification/catalog";
 import { applyEvent, emptyAdaptiveProfile, eventsForOutcome, tagOutcomeToEvents } from "@/features/gamification/adaptive";
 import type { CognitiveDecision } from "@/features/gamification/adaptive";
 import type { SkillProfile } from "@/features/gamification/symptoms";
-import type { AdaptiveProfile, CognitiveEventRecord, GameAttempt, GameCompletion, GameDefinition, GameProgress, SkillTag, StreakState } from "@/features/gamification/types";
+import type { AdaptiveProfile, CognitiveEventRecord, GameAttempt, GameCompletion, GameDefinition, GameProgress, IssueUpdate, SkillTag, StreakState } from "@/features/gamification/types";
 import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
@@ -22,6 +22,10 @@ type GameStore = {
    * `cognitive_outcomes` e limpos ao fechar a tentativa. O backend, não o cliente, decide como
    * isso afeta o perfil pedagógico do aluno. */
   pendingCognitiveEvents: CognitiveEventRecord[];
+  /** Resultado da última chamada resolvida de `POST /games/complete` — populado de forma
+   * assíncrona (a chamada em si é fire-and-forget); telas de resultado leem isso pra mostrar
+   * feedback honesto ("evoluiu"/"continue treinando"), nunca inventado no cliente. */
+  lastIssueUpdates: IssueUpdate[];
   hydrated: boolean;
   remoteGames: GameDefinition[];
   remoteGamesHydrated: boolean;
@@ -50,6 +54,7 @@ export const useGameStore = create<GameStore>()(
       skills: {},
       adaptive: emptyAdaptiveProfile(),
       pendingCognitiveEvents: [],
+      lastIssueUpdates: [],
       hydrated: false,
       remoteGames: [],
       remoteGamesHydrated: false,
@@ -181,10 +186,12 @@ export const useGameStore = create<GameStore>()(
           pendingCognitiveEvents: [],
         });
 
+        set({ lastIssueUpdates: [] });
+
         // Persistencia oficial do resultado (server authority) — o backend valida ownership,
         // limites de score/duracao e se o jogo existe/esta publicado antes de gravar a tentativa.
         // useGameStore/localStorage seguem so como cache de UI, nunca fonte de verdade.
-        apiFetch("/games/complete", {
+        apiFetch<{ issue_updates: IssueUpdate[] }>("/games/complete", {
           method: "POST",
           body: JSON.stringify({
             game_id: game.id,
@@ -193,7 +200,9 @@ export const useGameStore = create<GameStore>()(
             duration_seconds: Math.max(1, durationSeconds),
             cognitive_outcomes: cognitiveOutcomes.map((e) => ({ hub: e.hub, event: e.type, severity: e.severity })),
           }),
-        }).catch(() => undefined);
+        })
+          .then((response) => set({ lastIssueUpdates: response.issue_updates ?? [] }))
+          .catch(() => undefined);
 
         return { attempt };
       },

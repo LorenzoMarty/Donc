@@ -58,6 +58,10 @@ class Lesson(Base):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     duration_minutes: Mapped[int] = mapped_column(Integer, default=15, nullable=False)
     order: Mapped[int] = mapped_column(Integer, default=0)
+    # Codigos de CognitiveIssue (src/memory/cognitive_issues.py::ISSUE_CODES) que esta aula treina.
+    # Vazio = sem target explicito; RecommendationEngine cai no fallback via
+    # Module.target_competencies (ver recommendation_service.py).
+    targets: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
 
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson")
@@ -78,6 +82,8 @@ class Exercise(Base):
     skill: Mapped[str] = mapped_column(String(160), nullable=False)
     difficulty: Mapped[Difficulty] = mapped_column(SQLEnum(Difficulty), default=Difficulty.MEDIUM, nullable=False)
     base_lesson_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+    # Codigos de CognitiveIssue que este exercicio treina — ver Lesson.targets.
+    targets: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
 
     module = relationship("Module", back_populates="exercises")
     lesson = relationship("Lesson", back_populates="exercises")

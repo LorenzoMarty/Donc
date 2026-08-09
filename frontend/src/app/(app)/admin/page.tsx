@@ -7,10 +7,11 @@ import { PageHeader } from "@/components/shared/premium-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type AdminMetrics } from "@/services/api";
-import type { AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
+import type { AdminContentQuality, AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
 
 import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
+import { ContentQualityTab } from "./_tabs/content-quality";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
 import { ModulesTab } from "./_tabs/modules";
@@ -44,6 +45,7 @@ export default function AdminPage() {
   const [games, setGames] = useState<AIGeneratedGame[]>([]);
   const [modules, setModules] = useState<AdminModule[]>([]);
   const [themes, setThemes] = useState<EssayTheme[]>([]);
+  const [contentQuality, setContentQuality] = useState<AdminContentQuality | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
 
@@ -60,7 +62,8 @@ export default function AdminPage() {
       apiFetch<AIGeneratedGame[]>("/admin/ai-games"),
       apiFetch<AdminModule[]>("/admin/content"),
       apiFetch<EssayTheme[]>("/admin/essay-themes"),
-    ]).then(([m, u, t, a, g, c, th]) => {
+      apiFetch<AdminContentQuality>("/admin/content-quality"),
+    ]).then(([m, u, t, a, g, c, th, cq]) => {
       if (m.status === "fulfilled") setMetrics(m.value);
       else setError(m.reason instanceof Error ? m.reason.message : "Não foi possível carregar o painel administrativo.");
 
@@ -74,6 +77,7 @@ export default function AdminPage() {
       if (g.status === "fulfilled") setGames(g.value);
       if (c.status === "fulfilled") setModules(c.value);
       if (th.status === "fulfilled") setThemes(th.value);
+      if (cq.status === "fulfilled") setContentQuality(cq.value);
     });
   }, [authLoading, isAdmin]);
 
@@ -105,6 +109,7 @@ export default function AdminPage() {
           <TabsTrigger value="themes">Temas</TabsTrigger>
           <TabsTrigger value="modules">Módulos</TabsTrigger>
           <TabsTrigger value="games">Jogos IA</TabsTrigger>
+          <TabsTrigger value="content-quality">Qualidade</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -167,6 +172,10 @@ export default function AdminPage() {
             onReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
             onDeleted={(gameId) => setGames((prev) => prev.filter((g) => g.id !== gameId))}
           />
+        </TabsContent>
+
+        <TabsContent value="content-quality" className="mt-4">
+          {contentQuality ? <ContentQualityTab report={contentQuality} /> : <LoadingCard />}
         </TabsContent>
       </Tabs>
     </div>

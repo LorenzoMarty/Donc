@@ -9,12 +9,18 @@ Sem chamada de LLM — a recomendacao e uma consequencia direta e explicavel do 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.models import Module, StudentLearningProfile
+from src.models import Exercise, ExerciseAnswer, GameAttempt, Lesson, LessonProgress, Module, StudentLearningProfile
+
+# Janela de "atividade recente" — conteudo concluido dentro dela e deprioritado (nao excluido:
+# se for a unica opcao compativel com o issue, ainda e recomendado) em favor de algo fresco.
+RECENT_ACTIVITY_DAYS = 3
+EXERCISE_ESTIMATED_MINUTES = 5
 
 ActionType = Literal["LESSON", "EXERCISE", "GAME", "ESSAY"]
 
@@ -41,6 +47,27 @@ HUB_FOR_ISSUE: dict[str, str] = {
     "C3_LOW": "perde-na-c3",
     "FORMULAIC_CONCLUSION": "conclusao-formula",
 }
+
+# Inverso de COMPETENCY_FOR_ISSUE — uma competencia pode mapear pra mais de um issue.
+ISSUES_FOR_COMPETENCY: dict[str, list[str]] = {}
+for _issue, _competency in COMPETENCY_FOR_ISSUE.items():
+    ISSUES_FOR_COMPETENCY.setdefault(_competency, []).append(_issue)
+
+
+def effective_targets(explicit: list[str] | None, module_target_competencies: list[str] | None) -> list[str]:
+    """REQ-4: targets explicitos de Lesson/Exercise vencem; se vazios, deriva candidatos a partir
+    de `Module.target_competencies` (fallback de leitura, nunca escreve de volta no conteudo)."""
+    if explicit:
+        return explicit
+    if not module_target_competencies:
+        return []
+    issues: list[str] = []
+    for competency in module_target_competencies:
+        for issue in ISSUES_FOR_COMPETENCY.get(competency, []):
+            if issue not in issues:
+                issues.append(issue)
+    return issues
+
 
 ISSUE_LABEL: dict[str, str] = {
     "TEXT_ROBOTIC": "seu texto parece robótico",
@@ -81,7 +108,7 @@ class RecommendationEngine:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def recommend(self, profile: StudentLearningProfile) -> list[RecommendedAction]:
+    def recommend(self, profile: StudentLearningProfile, user_id: int | None = None) -> list[RecommendedAction]:
         top = _top_active_issue(profile.cognitive_issues)
         if not top:
             return [
@@ -98,7 +125,7 @@ class RecommendationEngine:
         label = ISSUE_LABEL.get(code, code)
         actions: list[RecommendedAction] = []
 
-        lesson = self._find_lesson_for_issue(code)
+        lesson = self._find_lesson_for_issue(code, user_id)
         if lesson is not None:
             actions.append(
                 RecommendedAction(
@@ -106,7 +133,19 @@ class RecommendationEngine:
                     target_issue=code,
                     target=str(lesson.id),
                     reason=f"Seu desempenho recente indica que {label}. Esta aula trabalha diretamente esse ponto.",
-                    estimated_minutes=8,
+                    estimated_minutes=lesson.duration_minutes or 8,
+                )
+            )
+
+        exercise = self._find_exercise_for_issue(code, user_id)
+        if exercise is not None:
+            actions.append(
+                RecommendedAction(
+                    type="EXERCISE",
+                    target_issue=code,
+                    target=str(exercise.id),
+                    reason=f"Seu desempenho recente indica que {label}. Este exercício treina exatamente esse ponto.",
+                    estimated_minutes=EXERCISE_ESTIMATED_MINUTES,
                 )
             )
 
@@ -122,16 +161,92 @@ class RecommendationEngine:
                 )
             )
 
+        if user_id is not None:
+            actions = self._order_by_variety(actions, user_id)
+
         return actions
 
-    def _find_lesson_for_issue(self, code: str):
-        competency = COMPETENCY_FOR_ISSUE.get(code)
-        if not competency:
+    def _find_lesson_for_issue(self, code: str, user_id: int | None):
+        modules_by_id = {m.id: m for m in self.db.scalars(select(Module).order_by(Module.order))}
+        lessons = self.db.scalars(select(Lesson).order_by(Lesson.order)).all()
+        matches = []
+        for lesson in lessons:
+            module = modules_by_id.get(lesson.module_id)
+            module_competencies = module.target_competencies if module else []
+            if code in effective_targets(lesson.targets, module_competencies):
+                matches.append(lesson)
+        if not matches:
             return None
-        modules = self.db.scalars(select(Module).order_by(Module.order)).all()
-        for module in modules:
-            if competency in (module.target_competencies or []):
-                lessons = sorted(module.lessons, key=lambda item: item.order)
-                if lessons:
-                    return lessons[0]
-        return None
+        if user_id is None:
+            return matches[0]
+        recent_ids = self._recently_completed_lesson_ids(user_id)
+        fresh = [lesson for lesson in matches if lesson.id not in recent_ids]
+        return (fresh or matches)[0]
+
+    def _find_exercise_for_issue(self, code: str, user_id: int | None):
+        exercises = self.db.scalars(select(Exercise).order_by(Exercise.id)).all()
+        matches = [exercise for exercise in exercises if code in (exercise.targets or [])]
+        if not matches:
+            return None
+        if user_id is None:
+            return matches[0]
+        recent_ids = self._recently_answered_exercise_ids(user_id)
+        fresh = [exercise for exercise in matches if exercise.id not in recent_ids]
+        return (fresh or matches)[0]
+
+    def _recently_completed_lesson_ids(self, user_id: int) -> set[int]:
+        cutoff = datetime.now(UTC) - timedelta(days=RECENT_ACTIVITY_DAYS)
+        rows = self.db.scalars(
+            select(LessonProgress.lesson_id).where(
+                LessonProgress.user_id == user_id,
+                LessonProgress.completed.is_(True),
+                LessonProgress.updated_at >= cutoff,
+            )
+        )
+        return set(rows)
+
+    def _recently_answered_exercise_ids(self, user_id: int) -> set[int]:
+        cutoff = datetime.now(UTC) - timedelta(days=RECENT_ACTIVITY_DAYS)
+        rows = self.db.scalars(
+            select(ExerciseAnswer.exercise_id).where(
+                ExerciseAnswer.user_id == user_id,
+                ExerciseAnswer.answered_at >= cutoff,
+            )
+        )
+        return set(rows)
+
+    def _last_activity_type(self, user_id: int) -> ActionType | None:
+        latest_lesson = self.db.scalar(
+            select(LessonProgress.updated_at)
+            .where(LessonProgress.user_id == user_id, LessonProgress.completed.is_(True))
+            .order_by(LessonProgress.updated_at.desc())
+            .limit(1)
+        )
+        latest_exercise = self.db.scalar(
+            select(ExerciseAnswer.answered_at)
+            .where(ExerciseAnswer.user_id == user_id)
+            .order_by(ExerciseAnswer.answered_at.desc())
+            .limit(1)
+        )
+        latest_game = self.db.scalar(
+            select(GameAttempt.completed_at)
+            .where(GameAttempt.user_id == user_id)
+            .order_by(GameAttempt.completed_at.desc())
+            .limit(1)
+        )
+        candidates: list[tuple[datetime, ActionType]] = []
+        if latest_lesson is not None:
+            candidates.append((latest_lesson, "LESSON"))
+        if latest_exercise is not None:
+            candidates.append((latest_exercise, "EXERCISE"))
+        if latest_game is not None:
+            candidates.append((latest_game, "GAME"))
+        if not candidates:
+            return None
+        return max(candidates, key=lambda item: item[0])[1]
+
+    def _order_by_variety(self, actions: list[RecommendedAction], user_id: int) -> list[RecommendedAction]:
+        last_type = self._last_activity_type(user_id)
+        if last_type is None:
+            return actions
+        return sorted(actions, key=lambda action: 1 if action.type == last_type else 0)
