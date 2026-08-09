@@ -2,7 +2,7 @@
 P0 core adaptive: StudentLearningProfile becomes the central pedagogical state, CognitiveIssue
 gains explicit DETECTED/TRAINING/IMPROVING/MASTERED states.
 
-Revision ID: 0014_student_learning_profile_cognitive_issues
+Revision ID: 0014_slp_cognitive_issues
 Revises: 0013_game_attempts
 Create Date: 2026-08-09
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0014_student_learning_profile_cognitive_issues"
+revision: str = "0014_slp_cognitive_issues"
 down_revision: str | None = "0013_game_attempts"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

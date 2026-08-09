@@ -3,7 +3,7 @@ authoritative for pedagogical results; POST /games/complete now persists a valid
 instead of being fire-and-forget).
 
 Revision ID: 0013_game_attempts
-Revises: 0012_remove_ai_generated_games_xp_reward
+Revises: 0012_remove_game_xp_reward
 Create Date: 2026-08-09
 """
 
@@ -14,7 +14,7 @@ from alembic import op
 
 
 revision: str = "0013_game_attempts"
-down_revision: str | None = "0012_remove_ai_generated_games_xp_reward"
+down_revision: str | None = "0012_remove_game_xp_reward"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
