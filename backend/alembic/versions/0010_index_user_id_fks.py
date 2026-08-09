@@ -37,7 +37,10 @@ def upgrade() -> None:
     for index_name, table_name in _INDEXES:
         if is_postgres:
             with op.get_context().autocommit_block():
-                op.create_index(index_name, table_name, ["user_id"], postgresql_concurrently=True)
+                op.execute(
+                    f"CREATE INDEX CONCURRENTLY IF NOT EXISTS {index_name} "
+                    f"ON {table_name} (user_id)"
+                )
         else:
             op.create_index(index_name, table_name, ["user_id"])
 
@@ -47,6 +50,6 @@ def downgrade() -> None:
     for index_name, table_name in reversed(_INDEXES):
         if is_postgres:
             with op.get_context().autocommit_block():
-                op.drop_index(index_name, table_name=table_name, postgresql_concurrently=True)
+                op.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {index_name}")
         else:
             op.drop_index(index_name, table_name=table_name)
