@@ -5,7 +5,12 @@ import { HoverGlowCard, Reveal } from "@/components/sections/aceternity-primitiv
 import { MarketingShell } from "@/components/sections/marketing-shell";
 import { Button } from "@/components/ui/button";
 
-const tracks = ["Interpretação Textual", "Gramática Aplicada", "Redação ENEM", "Figuras de Linguagem"];
+const tracks = [
+  { title: "Interpretação Textual", text: "Leitura crítica, inferência e reconhecimento de estruturas argumentativas." },
+  { title: "Gramática Aplicada", text: "Regras que aparecem de fato na prova, sem decoreba de exceção rara." },
+  { title: "Redação ENEM", text: "Tese, desenvolvimento e proposta de intervenção com prática guiada." },
+  { title: "Figuras de Linguagem", text: "Reconhecimento rápido, o suficiente pra não travar na hora da prova." },
+];
 
 export default function TracksPage() {
   return (
@@ -14,11 +19,12 @@ export default function TracksPage() {
         <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <Reveal>
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Trilhas</p>
-            <h1 className="text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
-              Trilhas de Português com etapas desbloqueáveis.
+            <h1 className="font-display text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
+              Uma etapa por vez, sem pular conteúdo.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
-              Avance uma etapa por vez — cada módulo concluído abre o próximo e dá bônus de XP.
+              Cada trilha de Português avança em sequência: você só destrava a próxima etapa depois de mostrar domínio na atual — sem
+              lacuna escondida no meio do caminho.
             </p>
             <Button asChild size="lg" className="mt-7">
               <Link href="/games">
@@ -47,7 +53,7 @@ export default function TracksPage() {
                     <div>
                       <p className="font-semibold">Etapa {index + 1}</p>
                       <p className="text-sm text-muted-foreground">
-                        {state === "locked" ? "Bloqueada" : state === "available" ? "Liberada agora" : "Concluída"}
+                        {state === "locked" ? "Bloqueada até você concluir a anterior" : state === "available" ? "Liberada agora" : "Concluída"}
                       </p>
                     </div>
                   </div>
@@ -59,14 +65,29 @@ export default function TracksPage() {
 
         <section className="fluid-grid gap-4 py-12 [--grid-min:15rem]">
           {tracks.map((track, index) => (
-            <HoverGlowCard key={track} delay={index * 0.05}>
+            <HoverGlowCard key={track.title} delay={index * 0.05}>
               <Trophy className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
-              <h2 className="text-xl font-semibold tracking-normal">{track}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Etapas curtas com revisão e prática aplicada ao final de cada módulo.
-              </p>
+              <h2 className="text-xl font-semibold tracking-normal">{track.title}</h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">{track.text}</p>
             </HoverGlowCard>
           ))}
+        </section>
+
+        <section className="pb-8">
+          <div className="game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">Primeira etapa liberada na hora</p>
+              <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
+                Crie a conta e comece sua primeira trilha agora.
+              </h2>
+            </div>
+            <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
+              <Link href="/cadastro">
+                Criar conta grátis
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
         </section>
       </main>
     </MarketingShell>

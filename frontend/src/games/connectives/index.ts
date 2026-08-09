@@ -8,7 +8,6 @@ export const connectiveGames: GameDefinition[] = [
     description:
       "Modo cronometrado: todas as opções são conectivos gramaticais — só uma preserva a relação lógica do período. Distinga concessão, adversidade, causa, conclusão e proporção sob pressão.",
     difficulty: "Avancado",
-    xpReward: 78,
     estimatedTime: "Infinito",
     thumbnail: "coesao-conectivos",
     progress: 0,
@@ -184,7 +183,6 @@ export const connectiveGames: GameDefinition[] = [
     category: "coesao",
     description: "Anáfora, catáfora, elipse e ambiguidade referencial. Identifique o que cada expressão retoma — ou projeta — e diagnostique falhas de referenciação.",
     difficulty: "Avancado",
-    xpReward: 70,
     estimatedTime: "6 min",
     thumbnail: "coesao-retomadas",
     progress: 0,
@@ -299,7 +297,6 @@ export const connectiveGames: GameDefinition[] = [
     category: "coesao",
     description: "Vários conectivos mudam de função conforme o contexto. Leia o uso indicado e arraste cada um para a relação lógica que ele estabelece naquele emprego.",
     difficulty: "Avancado",
-    xpReward: 74,
     estimatedTime: "6 min",
     thumbnail: "coesao-funcao",
     progress: 0,

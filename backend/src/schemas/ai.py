@@ -46,11 +46,21 @@ class AIEvaluateRewriteRequest(BaseModel):
     criteria: str | None = Field(default=None, max_length=240, description="Criterio pedagogico avaliado.")
 
 
+class CognitiveIssueRead(BaseModel):
+    state: Literal["DETECTED", "TRAINING", "IMPROVING", "MASTERED"]
+    negative_count: int = 0
+    positive_streak: int = 0
+    updated_at: str | None = None
+
+
 class LearningProfileRead(BaseModel):
     weak_competencies: dict[str, int] = Field(default_factory=dict)
     recurring_errors: list[str] = Field(default_factory=list)
     repertories_used: list[str] = Field(default_factory=list)
     recommendations: list[str] = Field(default_factory=list)
+    latest_competencies: dict[str, int] = Field(default_factory=dict)
+    score_trend: list[int] = Field(default_factory=list)
+    cognitive_issues: dict[str, CognitiveIssueRead] = Field(default_factory=dict)
     has_data: bool = False
 
     @classmethod
@@ -59,12 +69,26 @@ class LearningProfileRead(BaseModel):
         errors = payload.get("recurring_errors") or []
         repertories = payload.get("repertories_used") or []
         recommendations = payload.get("recommendations") or []
-        has_data = bool(weak or errors or repertories or recommendations)
+        latest_competencies = payload.get("latest_competencies") or {}
+        score_trend = payload.get("score_trend") or []
+        cognitive_issues = payload.get("cognitive_issues") or {}
+        has_data = bool(weak or errors or repertories or recommendations or cognitive_issues)
         return cls(
             weak_competencies=weak,
             recurring_errors=errors,
             repertories_used=repertories,
             recommendations=recommendations,
+            latest_competencies=latest_competencies,
+            score_trend=score_trend,
+            cognitive_issues=cognitive_issues,
             has_data=has_data,
         )
+
+
+class RecommendedActionRead(BaseModel):
+    type: Literal["LESSON", "EXERCISE", "GAME", "ESSAY"]
+    target_issue: str | None = None
+    target: str | None = None
+    reason: str
+    estimated_minutes: int
 

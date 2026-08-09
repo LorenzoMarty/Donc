@@ -7,7 +7,6 @@ export const artificialityGames: GameDefinition[] = [
     category: "coesao",
     description: "Treine o ouvido para o texto que perde autenticidade: rebuscamento vazio, abstração genérica e 'cara de IA'. Diga se o trecho é autêntico ou artificial — e por quê.",
     difficulty: "Avancado",
-    xpReward: 78,
     estimatedTime: "7 min",
     thumbnail: "detector-artificial",
     progress: 0,

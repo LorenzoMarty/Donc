@@ -7,9 +7,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Check, ChevronRight, Map, PenLine, Target, type LucideIcon } from "lucide-react";
 
+import { apiFetch } from "@/lib/http-client";
 import { cn } from "@/utils";
-
-const STORAGE_KEY = "donc.onboarding.v1";
 
 const GOALS = [
   { id: "900+", label: "Nota 900+", description: "Mira no topo do ranking" },
@@ -96,7 +95,10 @@ export default function OnboardingPage() {
   }
 
   function finish() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ goal, level, completedAt: new Date().toISOString() }));
+    apiFetch("/auth/onboarding", {
+      method: "PUT",
+      body: JSON.stringify({ goal, level }),
+    }).catch(() => undefined);
     router.push("/dashboard");
   }
 

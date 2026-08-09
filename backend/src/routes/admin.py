@@ -44,6 +44,7 @@ from src.services.admin_metrics_service import AdminMetricsService
 from src.services.admin_telemetry_service import AdminTelemetryService
 from src.services.admin_user_service import AdminUserService
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
+from src.utils.rate_limit import require_ai_rate_limit
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -69,7 +70,12 @@ def essay_themes(_: User = Depends(require_admin), db: Session = Depends(get_db)
     return success_response(AdminContentService(db).list_essay_themes())
 
 
-@router.post("/essay-themes/generate", response_model=ApiResponse[EssayThemeRead], status_code=201)
+@router.post(
+    "/essay-themes/generate",
+    response_model=ApiResponse[EssayThemeRead],
+    status_code=201,
+    dependencies=[Depends(require_ai_rate_limit)],
+)
 def generate_essay_theme(
     payload: AdminEssayThemeGenerateRequest,
     current_admin: User = Depends(require_admin),
@@ -184,7 +190,11 @@ def create_activity(
     )
 
 
-@router.post("/modules/{module_id}/activities/generate", response_model=ApiResponse[list[AdminActivityRead]])
+@router.post(
+    "/modules/{module_id}/activities/generate",
+    response_model=ApiResponse[list[AdminActivityRead]],
+    dependencies=[Depends(require_ai_rate_limit)],
+)
 def generate_activity_draft(
     module_id: int,
     payload: AdminActivityGenerateRequest,
@@ -399,7 +409,11 @@ def list_ai_games(
     return success_response(AdminGameReviewService(db).list_ai_games(status=status))
 
 
-@router.post("/ai-games/generate", response_model=ApiResponse[AIGeneratedGameRead])
+@router.post(
+    "/ai-games/generate",
+    response_model=ApiResponse[AIGeneratedGameRead],
+    dependencies=[Depends(require_ai_rate_limit)],
+)
 def generate_game(
     payload: GenerateGameRequest,
     current_admin: User = Depends(require_admin),
@@ -429,7 +443,6 @@ def review_game(
         notes=payload.notes,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
         name=payload.name,
-        xp_reward=payload.xp_reward,
         reviewer_id=current_admin.id,
     )
     return success_response(game, "Jogo atualizado.")
@@ -445,7 +458,6 @@ def update_game(
     game = AdminGameReviewService(db).update_game(
         game_id,
         name=payload.name,
-        xp_reward=payload.xp_reward,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
     )
     return success_response(game, "Jogo atualizado.")

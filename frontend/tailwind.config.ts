@@ -85,6 +85,7 @@ const config: Config = {
       },
       fontFamily: {
         display: ["var(--font-newsreader)", "Georgia", "serif"],
+        essay: ["var(--font-merriweather)", "Georgia", "serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

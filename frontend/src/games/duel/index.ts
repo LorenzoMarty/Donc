@@ -7,7 +7,6 @@ export const duelGames: GameDefinition[] = [
     category: "argumentacao",
     description: "Duas versões quase idênticas de um trecho. Decida qual tiraria nota maior e descubra a dimensão que separa as duas.",
     difficulty: "Avancado",
-    xpReward: 76,
     estimatedTime: "6 min",
     thumbnail: "duelo-versoes",
     progress: 0,

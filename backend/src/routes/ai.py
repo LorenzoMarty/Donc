@@ -30,25 +30,27 @@ from src.schemas.ai import (
     AIRecommendRequest,
     AIStudyPlanRequest,
     LearningProfileRead,
+    RecommendedActionRead,
 )
 from src.agents.schemas import AnalyticsResult, ExerciseGenerationResult, RecommendationResult, RewriteEvaluationResult, StudyPlanResult
 from src.schemas.essays import EssayRead
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.essay_service import EssayService
+from src.services.recommendation_service import RecommendationEngine
+from src.memory.profile import get_or_create_learning_profile
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
-from src.utils.rate_limit import check_ai_rate_limit
+from src.utils.rate_limit import require_ai_rate_limit
 
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
-@router.post("/correct", response_model=ApiResponse[EssayRead | AIJobResponse])
+@router.post("/correct", response_model=ApiResponse[EssayRead | AIJobResponse], dependencies=[Depends(require_ai_rate_limit)])
 def correct_essay(
     payload: AICorrectRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_ai_rate_limit(current_user.id)
     if payload.async_mode:
         jobs = AIJobService(db)
         active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=payload.essay_id)
@@ -64,13 +66,12 @@ def correct_essay(
     return success_response(EssayRead.model_validate(essay), "Redacao corrigida.")
 
 
-@router.post("/generate-exercise", response_model=ApiResponse[ExerciseGenerationResult])
+@router.post("/generate-exercise", response_model=ApiResponse[ExerciseGenerationResult], dependencies=[Depends(require_ai_rate_limit)])
 def generate_exercise(
     payload: AIGenerateExerciseRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_ai_rate_limit(current_user.id)
     focus = sanitize_ai_text(payload.focus or _default_focus(db, current_user.id), max_chars=160)
     _reject_prompt_injection(focus)
     profile = get_learning_profile_payload(db, current_user.id)
@@ -95,13 +96,12 @@ def generate_exercise(
     return success_response(result)
 
 
-@router.post("/evaluate-rewrite", response_model=ApiResponse[RewriteEvaluationResult])
+@router.post("/evaluate-rewrite", response_model=ApiResponse[RewriteEvaluationResult], dependencies=[Depends(require_ai_rate_limit)])
 def evaluate_rewrite(
     payload: AIEvaluateRewriteRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_ai_rate_limit(current_user.id)
     original = sanitize_ai_text(payload.original, max_chars=800)
     rewritten = sanitize_ai_text(payload.rewritten, max_chars=800)
     criteria = sanitize_ai_text(payload.criteria, max_chars=240) if payload.criteria else None
@@ -126,13 +126,12 @@ def evaluate_rewrite(
     return success_response(result)
 
 
-@router.post("/analyze", response_model=ApiResponse[AnalyticsResult])
+@router.post("/analyze", response_model=ApiResponse[AnalyticsResult], dependencies=[Depends(require_ai_rate_limit)])
 def analyze_student(
     payload: AIAnalyzeRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_ai_rate_limit(current_user.id)
     profile = get_learning_profile_payload(db, current_user.id)
     history = _history_payload(db, current_user) if payload.include_history else {}
     agent = AnalyticsAgent()
@@ -149,13 +148,12 @@ def analyze_student(
     return success_response(result)
 
 
-@router.post("/recommend", response_model=ApiResponse[RecommendationResult])
+@router.post("/recommend", response_model=ApiResponse[RecommendationResult], dependencies=[Depends(require_ai_rate_limit)])
 def recommend(
     payload: AIRecommendRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_ai_rate_limit(current_user.id)
     context = sanitize_ai_text(payload.context or "", max_chars=1000)
     _reject_prompt_injection(context)
     profile = get_learning_profile_payload(db, current_user.id)
@@ -176,13 +174,12 @@ def recommend(
     return success_response(result)
 
 
-@router.post("/study-plan", response_model=ApiResponse[StudyPlanResult])
+@router.post("/study-plan", response_model=ApiResponse[StudyPlanResult], dependencies=[Depends(require_ai_rate_limit)])
 def study_plan(
     payload: AIStudyPlanRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    check_ai_rate_limit(current_user.id)
     profile = get_learning_profile_payload(db, current_user.id)
     history = _history_payload(db, current_user)
     profile = {**profile, "intensity": payload.intensity}
@@ -214,6 +211,28 @@ def learning_profile(
 ) -> ApiResponse[LearningProfileRead]:
     payload = get_learning_profile_payload(db, current_user.id)
     return success_response(LearningProfileRead.from_payload(payload))
+
+
+@router.get("/recommended-actions", response_model=ApiResponse[list[RecommendedActionRead]])
+def recommended_actions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[RecommendedActionRead]]:
+    profile = get_or_create_learning_profile(db, current_user.id)
+    db.commit()
+    actions = RecommendationEngine(db).recommend(profile)
+    return success_response(
+        [
+            RecommendedActionRead(
+                type=a.type,
+                target_issue=a.target_issue,
+                target=a.target,
+                reason=a.reason,
+                estimated_minutes=a.estimated_minutes,
+            )
+            for a in actions
+        ]
+    )
 
 
 @router.get("/jobs/{job_id}", response_model=ApiResponse[AIJobResponse])

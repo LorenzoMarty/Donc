@@ -34,6 +34,17 @@ class AIJob(Base):
 
 
 class StudentLearningProfile(Base):
+    """Fonte central do estado pedagogico do aluno (P0 nucleo adaptativo).
+
+    `weak_competencies`/`recurring_errors`/`repertories_used`/`recommendations` sao o estado
+    legado (contador de vezes abaixo de 160, padroes de erro em texto livre, recomendacoes fixas).
+    `latest_competencies`/`score_trend`/`cognitive_issues` sao o estado adaptativo novo: notas
+    C1-C5 mais recentes, uma janela curta de tendencia (derivada, nao fonte de verdade — a fonte
+    real do historico completo e `EssayVersionCorrection`) e os problemas cognitivos com estado
+    (`DETECTED`/`TRAINING`/`IMPROVING`/`MASTERED`) atualizados tanto pela correcao de redacao
+    quanto por `GameAttempt.cognitive_outcomes`.
+    """
+
     __tablename__ = "student_learning_profiles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -42,6 +53,9 @@ class StudentLearningProfile(Base):
     recurring_errors: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     repertories_used: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     recommendations: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    latest_competencies: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    score_trend: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+    cognitive_issues: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 

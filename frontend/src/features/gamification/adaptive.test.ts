@@ -28,7 +28,6 @@ function fakeGame(overrides: Partial<GameDefinition> = {}): GameDefinition {
     category: "argumentacao",
     description: "",
     difficulty: "Avancado",
-    xpReward: 50,
     estimatedTime: "5 min",
     thumbnail: "",
     progress: 0,

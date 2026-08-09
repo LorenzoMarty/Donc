@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { BrandLink } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -14,16 +14,16 @@ const links = [
 
 export function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="website-shell min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border bg-background/82 backdrop-blur-xl">
-        <div className="mx-auto flex min-h-[72px] w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6 lg:flex-nowrap">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-[68px] w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 md:px-6">
           <BrandLink href="/" />
-          <nav className="mobile-scroll order-3 flex w-full items-center gap-1 overflow-x-auto rounded-md border border-border bg-card/72 p-1 no-scrollbar lg:order-none lg:w-auto">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-1">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="shrink-0 rounded-md px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+                className="text-sm font-medium text-muted-foreground decoration-primary decoration-2 underline-offset-4 transition-colors hover:text-foreground hover:underline"
               >
                 {link.label}
               </Link>
@@ -35,7 +35,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             </Button>
             <Button asChild>
               <Link href="/cadastro">
-                Começar
+                Começar agora
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
@@ -45,28 +45,30 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
 
       {children}
 
-      <footer className="mt-16 border-t border-border bg-card/52 text-foreground">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-[1.1fr_0.9fr] md:px-6">
+      <footer className="mt-16 border-t border-border text-foreground">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 md:grid-cols-[1.1fr_0.9fr] md:px-6">
           <div>
-            <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              EdTech moderna para ENEM
-            </div>
-            <h2 className="max-w-2xl text-3xl font-semibold tracking-normal md:text-4xl">Estudo com ritmo, não com apostila digital.</h2>
+            <BrandLink href="/" className="mb-4" />
+            <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+              Plataforma de Português e Redação para o ENEM: rotina guiada, correção com IA e prática curta todos os dias.
+            </p>
           </div>
           <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className="font-semibold transition-colors hover:text-primary">
+              <Link key={link.href} href={link.href} className="font-medium transition-colors hover:text-primary">
                 {link.label}
               </Link>
             ))}
-            <Link href="/login" className="font-semibold transition-colors hover:text-primary">
+            <Link href="/login" className="font-medium transition-colors hover:text-primary">
               Entrar
             </Link>
-            <Link href="/dashboard" className="font-semibold transition-colors hover:text-primary">
+            <Link href="/dashboard" className="font-medium transition-colors hover:text-primary">
               Painel
             </Link>
           </div>
+        </div>
+        <div className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground md:px-6">
+          Donc ENEM · em pré-lançamento
         </div>
       </footer>
     </div>

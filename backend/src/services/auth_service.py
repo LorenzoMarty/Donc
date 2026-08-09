@@ -1,13 +1,14 @@
-﻿from datetime import timedelta
+﻿from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
 from src.config.security import create_access_token, get_password_hash, verify_password
 from src.middlewares.errors import AppError
-from src.models import User
+from src.models import StudentProfile, User
 from src.repositories.users import UserRepository
-from src.services.streak_service import touch_daily_streak
+from src.services.streak_service import touch_last_seen
 
 
 class AuthService:
@@ -19,13 +20,13 @@ class AuthService:
         if self.users.get_by_email(email):
             raise AppError("Já existe uma conta com este e-mail.", status_code=409, code="email_in_use")
         user = self.users.create(name=name, email=email, hashed_password=get_password_hash(password))
-        return touch_daily_streak(self.db, user)
+        return touch_last_seen(self.db, user)
 
     def authenticate(self, *, email: str, password: str) -> User:
         user = self.users.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
             raise AppError("E-mail ou senha inválidos.", status_code=401, code="invalid_credentials")
-        return touch_daily_streak(self.db, user)
+        return touch_last_seen(self.db, user)
 
     def update_profile(self, user: User, *, name: str) -> User:
         user.name = name.strip()
@@ -38,6 +39,22 @@ class AuthService:
             raise AppError("A nova senha deve ser diferente da atual.", status_code=400, code="password_unchanged")
         user.hashed_password = get_password_hash(new_password)
         self.users.save(user)
+
+    def get_onboarding(self, user_id: int) -> StudentProfile | None:
+        return self.db.scalar(select(StudentProfile).where(StudentProfile.user_id == user_id))
+
+    def update_onboarding(self, user_id: int, *, goal: str | None, level: str | None) -> StudentProfile:
+        profile = self.get_onboarding(user_id)
+        if not profile:
+            profile = StudentProfile(user_id=user_id)
+            self.db.add(profile)
+        profile.goal = goal
+        profile.level = level
+        profile.completed = True
+        profile.completed_at = datetime.now(UTC)
+        self.db.commit()
+        self.db.refresh(profile)
+        return profile
 
     def token_for(self, user: User) -> str:
         expires = timedelta(minutes=settings.access_token_expire_minutes)

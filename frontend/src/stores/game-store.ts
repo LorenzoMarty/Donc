@@ -12,24 +12,16 @@ import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
 
-/**
- * Valor interno usado só para preencher o histórico de tentativas (`GameAttempt.xpEarned`) e o
- * payload de sincronização com o backend (`/games/complete`) — não existe mais total de XP nem
- * rank client-side; nada consome este número na UI.
- */
-function calculateXpEarned(game: GameDefinition, isRepeatToday: boolean, accuracy: number): number {
-  const accuracyMultiplier = accuracy >= 90 ? 1.15 : accuracy >= 70 ? 1 : 0.72;
-  const base = Math.round(game.xpReward * accuracyMultiplier);
-  if (!isRepeatToday) return base;
-  return Math.max(5, Math.round(base * 0.25));
-}
-
 type GameStore = {
   streak: StreakState;
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
   skills: SkillProfile;
   adaptive: AdaptiveProfile;
+  /** Eventos cognitivos emitidos desde o último `completeGame` — enviados ao backend como
+   * `cognitive_outcomes` e limpos ao fechar a tentativa. O backend, não o cliente, decide como
+   * isso afeta o perfil pedagógico do aluno. */
+  pendingCognitiveEvents: CognitiveEventRecord[];
   hydrated: boolean;
   remoteGames: GameDefinition[];
   remoteGamesHydrated: boolean;
@@ -57,6 +49,7 @@ export const useGameStore = create<GameStore>()(
       progress: {},
       skills: {},
       adaptive: emptyAdaptiveProfile(),
+      pendingCognitiveEvents: [],
       hydrated: false,
       remoteGames: [],
       remoteGamesHydrated: false,
@@ -88,10 +81,14 @@ export const useGameStore = create<GameStore>()(
             skills[tag] = { attempts: prev.attempts + 1, errors: prev.errors + (correct ? 0 : 1) };
           }
         }
-        set({ adaptive, skills });
+        set({ adaptive, skills, pendingCognitiveEvents: [...get().pendingCognitiveEvents, ...events] });
       },
       trackCognitiveEvent: (event) => {
-        set({ adaptive: applyEvent(get().adaptive, { ...event, at: new Date().toISOString() }) });
+        const record = { ...event, at: new Date().toISOString() };
+        set({
+          adaptive: applyEvent(get().adaptive, record),
+          pendingCognitiveEvents: [...get().pendingCognitiveEvents, record],
+        });
       },
       hydrateRemoteGames: async () => {
         try {
@@ -150,9 +147,7 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const dateKey = todayKey();
         const currentProgress = state.progress[game.id];
-        const isRepeatToday = currentProgress?.lastPlayedAt?.slice(0, 10) === dateKey;
         const accuracy = total ? Math.round((score / total) * 100) : 0;
-        const xpEarned = calculateXpEarned(game, isRepeatToday, accuracy);
         const nextStreak = updateStreak(state.streak, dateKey);
         const nextProgressValue = Math.max(currentProgress?.progress ?? 0, accuracy);
         const attempt: GameAttempt = {
@@ -162,7 +157,6 @@ export const useGameStore = create<GameStore>()(
           score,
           total,
           accuracy,
-          xpEarned,
           playedAt: new Date().toISOString(),
           durationSeconds,
         };
@@ -179,24 +173,25 @@ export const useGameStore = create<GameStore>()(
             lastPlayedAt: attempt.playedAt,
           },
         };
+        const cognitiveOutcomes = state.pendingCognitiveEvents;
         set({
           streak: nextStreak,
           attempts: nextAttempts,
           progress: nextProgress,
+          pendingCognitiveEvents: [],
         });
 
-        // Sync to backend fire-and-forget — local store is source of truth for UI.
+        // Persistencia oficial do resultado (server authority) — o backend valida ownership,
+        // limites de score/duracao e se o jogo existe/esta publicado antes de gravar a tentativa.
+        // useGameStore/localStorage seguem so como cache de UI, nunca fonte de verdade.
         apiFetch("/games/complete", {
           method: "POST",
-          body: JSON.stringify({ game_id: game.id, xp_earned: xpEarned }),
-        }).catch(() => undefined);
-        apiFetch(`/games/progress/${game.id}`, {
-          method: "PUT",
           body: JSON.stringify({
-            plays: nextProgress[game.id].plays,
-            best_score: nextProgress[game.id].bestScore,
-            best_accuracy: nextProgress[game.id].bestAccuracy,
-            progress: nextProgress[game.id].progress,
+            game_id: game.id,
+            score,
+            total,
+            duration_seconds: Math.max(1, durationSeconds),
+            cognitive_outcomes: cognitiveOutcomes.map((e) => ({ hub: e.hub, event: e.type, severity: e.severity })),
           }),
         }).catch(() => undefined);
 

@@ -201,7 +201,16 @@ def test_student_theme_generate_ignores_prompt_text_because_it_uses_database(cli
 
 def test_learning_profile_returns_shape_always(client):
     data = api_data(client.get("/api/v1/ai/learning-profile"))
-    assert set(data) == {"weak_competencies", "recurring_errors", "repertories_used", "recommendations", "has_data"}
+    assert set(data) == {
+        "weak_competencies",
+        "recurring_errors",
+        "repertories_used",
+        "recommendations",
+        "latest_competencies",
+        "score_trend",
+        "cognitive_issues",
+        "has_data",
+    }
     assert isinstance(data["weak_competencies"], dict)
     assert isinstance(data["recurring_errors"], list)
 

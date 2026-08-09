@@ -7,7 +7,6 @@ export const correctorGames: GameDefinition[] = [
     category: "competencias-enem",
     description: "Assuma a cadeira do corretor: leia o parágrafo e marque só os problemas realmente presentes (há distratores), relacionando cada um à competência afetada.",
     difficulty: "Avancado",
-    xpReward: 82,
     estimatedTime: "8 min",
     thumbnail: "diagnostico-corretor",
     progress: 0,

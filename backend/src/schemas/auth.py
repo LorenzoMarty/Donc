@@ -1,8 +1,12 @@
 ﻿from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from src.models.user import UserRole
+
+ONBOARDING_GOALS = {"900+", "850-900", "800-850", "consistencia"}
+ONBOARDING_LEVELS = {"iniciante", "intermediario", "avancado"}
 
 
 class RegisterRequest(BaseModel):
@@ -45,3 +49,15 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserRead
+
+
+class OnboardingUpdateRequest(BaseModel):
+    goal: Literal["900+", "850-900", "800-850", "consistencia"] | None = None
+    level: Literal["iniciante", "intermediario", "avancado"] | None = None
+
+
+class OnboardingRead(BaseModel):
+    goal: str | None = None
+    level: str | None = None
+    completed: bool = False
+    completed_at: datetime | None = None

@@ -1,9 +1,9 @@
 ﻿from src.models.ai import AIInteractionLog, AIJob, AIKnowledgeChunk, AIKnowledgeDocument, StudentLearningProfile
 from src.models.essay import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVersion, EssayVersionCorrection
 from src.models.events import AIGeneratedGame, UserEvent
-from src.models.gamification import Goal, UserGameProgress
+from src.models.gamification import GameAttempt, Goal, UserGameProgress
 from src.models.learning import Difficulty, Exercise, ExerciseAnswer, Lesson, LessonProgress, Module, ModuleItem
-from src.models.user import User, UserRole
+from src.models.user import StudentProfile, User, UserRole
 
 __all__ = [
     "AIGeneratedGame",
@@ -20,6 +20,7 @@ __all__ = [
     "EssayVersionCorrection",
     "Exercise",
     "ExerciseAnswer",
+    "GameAttempt",
     "Goal",
     "UserGameProgress",
     "Lesson",
@@ -27,6 +28,7 @@ __all__ = [
     "Module",
     "ModuleItem",
     "StudentLearningProfile",
+    "StudentProfile",
     "User",
     "UserEvent",
     "UserRole",

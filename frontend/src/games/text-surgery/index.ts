@@ -7,7 +7,6 @@ export const surgeryGames: GameDefinition[] = [
     category: "estrutura",
     description: "Um texto forte foi degradado. Restaure cada trecho escolhendo a melhor versão — e, em um deles, reescrevendo à mão (avaliado por IA). Receba nota por qualidade, não por 'certo/errado'.",
     difficulty: "Avancado",
-    xpReward: 96,
     estimatedTime: "9 min",
     thumbnail: "cirurgia-textual",
     progress: 0,

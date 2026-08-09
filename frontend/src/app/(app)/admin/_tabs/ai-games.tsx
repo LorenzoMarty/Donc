@@ -131,7 +131,7 @@ function GameCard({
             <Badge variant="outline" className="text-xs">{game.difficulty}</Badge>
           </div>
           <p className="mt-1 font-semibold">{game.name}</p>
-          <p className="text-xs text-muted-foreground">{game.skill} · {game.questions.length} questões · {game.xp_reward} XP</p>
+          <p className="text-xs text-muted-foreground">{game.skill} · {game.questions.length} questões</p>
         </div>
         {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
       </button>

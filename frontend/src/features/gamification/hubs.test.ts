@@ -83,7 +83,6 @@ describe("contrato cognitivo das missões (enrichGame)", () => {
       category: "coesao",
       description: "",
       difficulty: "Essencial",
-      xpReward: 10,
       estimatedTime: "2 min",
       thumbnail: "",
       progress: 0,

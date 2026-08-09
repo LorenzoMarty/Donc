@@ -202,7 +202,10 @@ def test_scores_snap_to_multiples_of_40():
 
 
 def test_games_complete_endpoint(client):
-    response = client.post("/api/v1/games/complete", json={"game_id": "concordancia-nominal", "xp_earned": 50})
+    response = client.post(
+        "/api/v1/games/complete",
+        json={"game_id": "concordancia-nominal", "score": 8, "total": 10, "duration_seconds": 45},
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True

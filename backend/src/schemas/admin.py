@@ -343,7 +343,6 @@ class AIGeneratedGameRead(BaseModel):
     category: str
     skill: str
     difficulty: str
-    xp_reward: int
     questions: list[GameQuestionRead]
     status: str
     admin_notes: str | None = None
@@ -364,12 +363,10 @@ class ReviewGameRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=500)
     questions: list[GameQuestionRead] | None = None
     name: str | None = Field(default=None, max_length=120)
-    xp_reward: int | None = Field(default=None, ge=10, le=200)
 
 
 class UpdateGameRequest(BaseModel):
     name: str | None = Field(default=None, max_length=120)
-    xp_reward: int | None = Field(default=None, ge=10, le=200)
     questions: list[GameQuestionRead] | None = None
 
 

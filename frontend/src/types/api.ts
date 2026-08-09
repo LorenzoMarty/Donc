@@ -18,7 +18,6 @@ export type PublishedGame = {
   category: string;
   skill: string;
   difficulty: string;
-  xp_reward: number;
   questions: PublishedGameQuestion[];
 };
 
@@ -427,7 +426,6 @@ export type AIGeneratedGame = {
   category: string;
   skill: string;
   difficulty: string;
-  xp_reward: number;
   questions: GameQuestion[];
   status: "pending" | "approved" | "rejected";
   admin_notes: string | null;

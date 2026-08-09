@@ -8,7 +8,6 @@ export const structureGames: GameDefinition[] = [
     description:
       "Arraste os blocos para introdução, desenvolvimento e conclusão. No nível difícil há distratores que precisam ficar de fora do texto.",
     difficulty: "Avancado",
-    xpReward: 84,
     estimatedTime: "7 min",
     thumbnail: "estrutura-monte-redacao",
     progress: 0,
@@ -32,7 +31,6 @@ export const structureGames: GameDefinition[] = [
     category: "estrutura",
     description: "Reordene períodos cuja coesão depende de catáfora, retomada e progressão tema→rema. Mais de uma ordem parece possível — só uma encadeia de fato.",
     difficulty: "Avancado",
-    xpReward: 70,
     estimatedTime: "6 min",
     thumbnail: "estrutura-paragrafo",
     progress: 0,
@@ -85,7 +83,6 @@ export const structureGames: GameDefinition[] = [
     category: "estrutura",
     description: "Classifique cada trecho no elemento da proposta (Competência 5). Cuidado com os casos-limite entre meio e detalhamento, e entre ação e finalidade.",
     difficulty: "Avancado",
-    xpReward: 80,
     estimatedTime: "6 min",
     thumbnail: "estrutura-intervencao",
     progress: 0,

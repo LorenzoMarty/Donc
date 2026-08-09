@@ -18,6 +18,8 @@ from src.schemas.essays import (
     JobStatusRead,
 )
 from src.services.essay_service import EssayService
+from src.services.streak_service import touch_daily_streak
+from src.utils.rate_limit import require_ai_rate_limit
 
 
 router = APIRouter(prefix="/essays", tags=["essays"])
@@ -29,11 +31,14 @@ def themes(_: User = Depends(get_current_user), db: Session = Depends(get_db)) -
 
 
 @router.post("/themes/generate", response_model=ApiResponse[list[EssayThemeRead]])
-def generate_theme(
+def draw_random_themes(
     payload: EssayThemeGenerateRequest,  # noqa: ARG001
     _: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[EssayThemeRead]]:
+    # Apesar do path (/themes/generate, mantido por compatibilidade com o frontend), isto NAO
+    # gera tema via IA — so sorteia entre temas ja cadastrados. Geracao real por IA existe em
+    # POST /admin/essay-themes/generate (ThemeGeneratorAgent, uso exclusivo do admin).
     return success_response(EssayService(db).list_random_themes(limit=4), "4 temas sorteados do banco.")
 
 
@@ -68,7 +73,11 @@ def autosave(
     )
 
 
-@router.post("/{essay_id}/submit", response_model=ApiResponse[EssaySubmitResponse])
+@router.post(
+    "/{essay_id}/submit",
+    response_model=ApiResponse[EssaySubmitResponse],
+    dependencies=[Depends(require_ai_rate_limit)],
+)
 def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
     jobs = AIJobService(db)
@@ -87,6 +96,7 @@ def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), 
     enqueued = enqueue_correct_essay(job.id)
     if not enqueued:
         run_correct_essay_job(job.id)
+    touch_daily_streak(db, current_user)
     return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Correcao iniciada.")
 
 
@@ -131,7 +141,11 @@ def rewrite_from_version(essay_id: int, version_id: int, current_user: User = De
     )
 
 
-@router.post("/{essay_id}/reprocess", response_model=ApiResponse[EssaySubmitResponse])
+@router.post(
+    "/{essay_id}/reprocess",
+    response_model=ApiResponse[EssaySubmitResponse],
+    dependencies=[Depends(require_ai_rate_limit)],
+)
 def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
     jobs = AIJobService(db)

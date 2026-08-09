@@ -89,7 +89,6 @@ export function mapPublishedGame(game: PublishedGame): GameDefinition {
     category,
     description: game.skill ? `Atividade gerada para treinar ${game.skill}.` : "Atividade gerada por IA.",
     difficulty: DIFFICULTY_LABEL[game.difficulty] ?? "Intermediario",
-    xpReward: game.xp_reward,
     estimatedTime: `${Math.max(2, Math.round(game.questions.length * 0.5))} min`,
     thumbnail: `${category}-ia`,
     progress: 0,
@@ -211,7 +210,7 @@ export function getRecommendedGames(progress: Record<string, GameProgress>, extr
     .sort((a, b) => {
       const aProgress = progress[a.id]?.progress ?? 0;
       const bProgress = progress[b.id]?.progress ?? 0;
-      return aProgress - bProgress || b.xpReward - a.xpReward;
+      return aProgress - bProgress;
     })
     .slice(0, 4);
 }

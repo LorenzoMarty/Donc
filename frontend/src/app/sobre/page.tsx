@@ -12,12 +12,12 @@ export default function AboutPage() {
         <AceternityGrid className="rounded-[2rem] p-4 xs:p-6 md:p-10">
           <Reveal className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Sobre</p>
-            <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
-              Donc ENEM existe para transformar estudo em sensacao real de progresso.
+            <h1 className="font-display mt-3 text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
+              Donc ENEM existe pra transformar estudo em progresso que você consegue ver.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
-              A plataforma une design moderno, IA aplicada à redação e arquitetura de progressão para alunos que precisam de foco, clareza e
-              rotina.
+              Nasceu de um problema simples: treinar Português e Redação sem saber se está funcionando. A plataforma une correção por IA,
+              prática guiada e um jeito claro de acompanhar evolução — pra tirar a dúvida &ldquo;isso está adiantando?&rdquo; do caminho.
             </p>
             <Button asChild size="lg" className="mt-7">
               <Link href="/cadastro">
@@ -30,9 +30,9 @@ export default function AboutPage() {
 
         <section className="fluid-grid gap-4 py-12 [--grid-min:16rem]">
           {[
-            { title: "Criatividade", text: "Amarelo como sistema visual para ideias, energia mental e insight.", icon: Sparkles },
-            { title: "Inteligência", text: "Feedbacks explicativos, dados históricos e estudo personalizado.", icon: Brain },
-            { title: "Foco ENEM", text: "Sem dispersão: Português, Redação e competências cobradas.", icon: GraduationCap },
+            { title: "Progresso visível", text: "Nota por competência, sequência de dias e marcos de domínio — não só uma lista de tarefas.", icon: Sparkles },
+            { title: "Correção que explica", text: "Feedback por competência do ENEM, com o porquê de cada ponto perdido, não só um número.", icon: Brain },
+            { title: "Foco no que cai na prova", text: "Português, Redação e as competências cobradas — sem conteúdo solto que não ajuda na nota.", icon: GraduationCap },
           ].map((item, index) => {
             const Icon = item.icon;
             return (
