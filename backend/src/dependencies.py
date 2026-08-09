@@ -10,7 +10,7 @@ from src.config.security import decode_access_token
 from src.middlewares.errors import AppError
 from src.models import User, UserRole
 from src.repositories.users import UserRepository
-from src.services.streak_service import touch_daily_streak
+from src.services.streak_service import touch_last_seen
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_prefix}/auth/login", auto_error=False)
@@ -37,7 +37,7 @@ def get_current_user(
         raise AppError("Usuário não encontrado.", status_code=401, code="user_not_found")
 
     try:
-        user = touch_daily_streak(db, user)
+        user = touch_last_seen(db, user)
     except Exception:
         db.rollback()
 

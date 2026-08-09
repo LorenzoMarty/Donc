@@ -29,7 +29,6 @@ class AIGeneratedGame(Base):
     category: Mapped[str] = mapped_column(String(60), nullable=False)
     skill: Mapped[str] = mapped_column(String(120), nullable=False)
     difficulty: Mapped[str] = mapped_column(String(30), nullable=False, default="medium")
-    xp_reward: Mapped[int] = mapped_column(Integer, nullable=False, default=40)
     questions: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
     admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,9 +1,32 @@
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.session import Base
+
+
+class GameAttempt(Base):
+    """Tentativa de jogo persistida pelo servidor — fonte de verdade do desempenho pedagógico.
+
+    O cliente (`useGameStore`) nunca escreve nestas colunas alem do payload validado em
+    `POST /games/complete`; nenhum campo aqui alimenta `StudentLearningProfile` diretamente sem
+    passar pela logica de dominio do servico (evita que o cliente manipule o perfil cognitivo).
+    """
+
+    __tablename__ = "game_attempts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    game_id: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    score: Mapped[int] = mapped_column(Integer, nullable=False)
+    total: Mapped[int] = mapped_column(Integer, nullable=False)
+    accuracy: Mapped[int] = mapped_column(Integer, nullable=False)
+    duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    cognitive_outcomes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class UserGameProgress(Base):

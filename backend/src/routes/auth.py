@@ -8,6 +8,8 @@ from src.models import User
 from src.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
+    OnboardingRead,
+    OnboardingUpdateRequest,
     PasswordRecoveryRequest,
     RegisterRequest,
     TokenResponse,
@@ -62,6 +64,24 @@ def change_password(
         new_password=payload.new_password,
     )
     return success_response(MessageResponse(message="Senha alterada com sucesso."), "Senha alterada com sucesso.")
+
+
+@router.get("/onboarding", response_model=ApiResponse[OnboardingRead])
+def get_onboarding(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[OnboardingRead]:
+    profile = AuthService(db).get_onboarding(current_user.id)
+    if not profile:
+        return success_response(OnboardingRead())
+    return success_response(OnboardingRead.model_validate(profile, from_attributes=True))
+
+
+@router.put("/onboarding", response_model=ApiResponse[OnboardingRead])
+def update_onboarding(
+    payload: OnboardingUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[OnboardingRead]:
+    profile = AuthService(db).update_onboarding(current_user.id, goal=payload.goal, level=payload.level)
+    return success_response(OnboardingRead.model_validate(profile, from_attributes=True), "Onboarding salvo.")
 
 
 @router.post("/logout", response_model=ApiResponse[MessageResponse])

@@ -1,357 +1,133 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import type { LucideIcon } from "lucide-react";
-import {
-  ArrowRight,
-  Award,
-  BookOpenCheck,
-  Brain,
-  CheckCircle2,
-  Crown,
-  FilePenLine,
-  Flame,
-  Gamepad2,
-  Layers3,
-  Medal,
-  PenTool,
-  Play,
-  Sparkles,
-  Target,
-  Trophy,
-  Zap,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-import { HoverGlowCard, MetricRail, MovingBorderPanel, Reveal } from "@/components/sections/aceternity-primitives";
 import { MarketingShell } from "@/components/sections/marketing-shell";
-import { AnimatedGameCard, InteractiveMascot, SmoothProgressPath } from "@/components/shared/motion-system";
+import { AnnotatedManuscript, FadeIn, HubTag, PullQuote, ReportSlip } from "@/components/sections/marketing/manuscript";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/utils";
+import { HUBS } from "@/features/gamification/symptoms";
 
-const features = [
-  {
-    title: "Praticas rapidas",
-    text: "Conectivos, interpretacao e argumentacao em sessoes curtas com feedback imediato.",
-    icon: Gamepad2,
-    tone: "bg-primary text-primary-foreground",
-  },
-  {
-    title: "Redação ENEM",
-    text: "Editor A4, repertório guiado, análise por competência e correção com IA.",
-    icon: FilePenLine,
-    tone: "bg-primary/10 text-primary",
-  },
-  {
-    title: "Trilhas guiadas",
-    text: "Portugues em sequencias organizadas: revisao, pratica e avanco controlado.",
-    icon: Layers3,
-    tone: "bg-accent text-accent-foreground",
-  },
-  {
-    title: "Evolucao",
-    text: "Marcos discretos para registrar constância, domínio e qualidade de escrita.",
-    icon: Trophy,
-    tone: "bg-primary/12 text-primary",
-  },
-];
-
-const games = [
-  { title: "Conectivo preciso", text: "Selecione conectivos e refine a coesao textual.", icon: Zap },
-  { title: "Argumentacao", text: "Escolha o argumento mais forte para sustentar a tese.", icon: Brain },
-  { title: "Repertorio produtivo", text: "Ative referencias uteis para temas provaveis.", icon: Medal },
-  { title: "Estrutura textual", text: "Organize introducao, tese e intervencao com clareza.", icon: PenTool },
-];
-
-const campaign = [
-  { label: "Etapa 1", title: "Interpretacao", status: "Disponivel", icon: Play },
-  { label: "Etapa 2", title: "Conectivos", status: "Em revisao", icon: Zap },
-  { label: "Etapa 3", title: "Argumentacao", status: "Em progresso", icon: Target },
-  { label: "Etapa 4", title: "Redacao curta", status: "A seguir", icon: Crown },
-];
+const ROTATIONS = [-2.5, 1.5, -1, 2, -1.5, 1, -2] as const;
 
 export function LandingPage() {
+  const hubs = Object.values(HUBS);
+
   return (
     <MarketingShell>
       <main>
-        <section className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-          <div className="game-surface relative min-h-[calc(100dvh-9rem)] overflow-clip bg-card p-4 text-foreground md:min-h-[570px] md:p-6 lg:p-8">
-            <Image
-              src="/study-collaboration.jpg"
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="pointer-events-none absolute inset-0 object-cover opacity-35"
-            />
-            <div className="pointer-events-none absolute inset-0 bg-background/76" aria-hidden="true" />
-            <div className="relative grid min-h-[calc(100dvh-11rem)] gap-6 md:min-h-[530px] lg:grid-cols-[minmax(0,1fr)_minmax(18rem,26.25rem)] lg:items-center">
-              <Reveal className="max-w-4xl">
-                <div className="game-chip mb-5 inline-flex items-center gap-2 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-                  <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                  Portugues e Redacao com rotina guiada
-                </div>
-                <h1 className="text-5xl font-semibold leading-[0.95] tracking-normal md:text-6xl lg:text-7xl">
-                  Donc ENEM
-                </h1>
-                <p className="mt-5 max-w-2xl text-lg font-medium leading-7 text-muted-foreground md:text-2xl md:leading-9">
-                  Pratique escrita com constância: aulas, redação com IA, exercícios curtos e indicadores de evolução real.
-                </p>
-                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                  <Button asChild size="lg" className="bg-primary text-primary-foreground">
-                    <Link href="/cadastro">
-                      Começar rotina
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </Link>
-                  </Button>
-                  <Button asChild size="lg" variant="outline" className="bg-background text-foreground">
-                    <Link href="/login">Entrar</Link>
-                  </Button>
-                </div>
-              </Reveal>
+        <section className="mx-auto max-w-6xl px-4 pb-4 pt-10 md:px-6 md:pt-16">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+            <FadeIn>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Português e Redação para o ENEM</p>
+              <h1 className="font-display mt-3 text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                A gente lê sua redação como a banca lê.
+              </h1>
+              <p className="mt-5 max-w-lg text-lg leading-8 text-muted-foreground">
+                Cada texto que você manda volta com o diagnóstico exato: onde a nota está travando, competência a competência — não um
+                número solto.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <Button asChild size="lg">
+                  <Link href="/cadastro">
+                    Corrigir minha primeira redação
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="/login">Já tenho conta</Link>
+                </Button>
+              </div>
+            </FadeIn>
 
-              <Reveal delay={0.08}>
-                <HeroConsole />
-              </Reveal>
-            </div>
+            <FadeIn delay={0.1}>
+              <AnnotatedManuscript
+                intro="A desigualdade no acesso à educação de qualidade"
+                segments={[
+                  { phrase: "configura-se, na contemporaneidade, como um entrave à plena cidadania.", hubLabel: "Texto artificial", color: HUBS["texto-robotico"].accent },
+                  "Sabe-se que a educação é um direito garantido pela Constituição Federal de 1988. Portanto,",
+                  { phrase: "é necessário que o governo faça algo para mudar essa realidade", hubLabel: "Argumentação rasa", color: HUBS["nao-aprofunda"].accent },
+                  "e",
+                  { phrase: "garantir um futuro melhor para todos os brasileiros.", hubLabel: "Conclusão clichê", color: HUBS["conclusao-formula"].accent },
+                ]}
+              />
+            </FadeIn>
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-          <MetricRail
-            items={[
-              { value: "5", label: "competências ENEM acompanhadas" },
-              { value: "12", label: "formatos de prática para estudar sem travar" },
-              { value: "PTS", label: "reforço secundário de consistência" },
-              { value: "1000", label: "meta final para redação" },
-            ]}
-          />
-        </section>
-
-        <section className="fluid-grid mx-auto max-w-7xl gap-4 px-4 py-8 [--grid-min:15rem] md:px-6">
-          {features.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <HoverGlowCard key={feature.title} delay={index * 0.05}>
-                <div className={cn("mb-5 grid h-10 w-10 place-items-center rounded-md border border-primary/25", feature.tone)}>
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <h2 className="text-xl font-semibold tracking-normal">{feature.title}</h2>
-                <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">{feature.text}</p>
-              </HoverGlowCard>
-            );
-          })}
-        </section>
-
-        <section className="mx-auto grid max-w-7xl gap-4 px-4 py-8 md:px-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <Reveal>
-            <div className="game-surface h-full bg-primary p-5 text-primary-foreground md:p-7">
-              <div className="game-chip mb-5 inline-flex items-center gap-2 bg-background/70 px-3 py-1 text-xs font-semibold text-foreground">
-                <Flame className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                Fluxo contínuo
-              </div>
-              <h2 className="text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                O próximo passo sempre fica claro.
-              </h2>
-              <p className="mt-4 text-sm font-semibold leading-6 text-foreground/74 md:text-base">
-                Sem listas infinitas. O aluno abre uma trilha, conclui uma prática curta, recebe feedback e sabe qual é o próximo passo.
-              </p>
-              <Button asChild className="mt-7 bg-background text-foreground hover:bg-background/90">
-                <Link href="/games">
-                  Ver praticas
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
-          </Reveal>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {campaign.map((step, index) => (
-              <CampaignCard key={step.title} step={step} index={index} />
+        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sete jeitos de travar</p>
+            <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              A gente aponta qual é o seu.
+            </h2>
+            <p className="mt-3 text-base leading-7 text-muted-foreground">
+              Cada hub treina um bloqueio real de redação — não uma lista de &ldquo;habilidades&rdquo; genérica.
+            </p>
+          </FadeIn>
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-8">
+            {hubs.map((hub, index) => (
+              <FadeIn key={hub.id} delay={index * 0.04}>
+                <HubTag
+                  title={hub.title}
+                  description={hub.description}
+                  icon={hub.icon}
+                  color={hub.accent}
+                  rotation={ROTATIONS[index % ROTATIONS.length]}
+                />
+              </FadeIn>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-          <MovingBorderPanel>
-            <div className="grid gap-6 p-5 md:grid-cols-[1fr_0.85fr] md:p-8 lg:p-10">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Laboratório de redação</p>
-                <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                  Escrever fica mais leve em uma tela limpa e direta.
-                </h2>
-                <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-muted-foreground md:text-base">
-                  A redação tem editor compacto, banco de conectivos, repertórios por tema e práticas curtas para treinar coesão antes da
-                  correção.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {["A4", "IA por competência", "Repertório", "Conectivos"].map((item) => (
-                    <span key={item} className="game-chip bg-primary/12 px-3 py-2 text-xs font-semibold text-foreground">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <EssaySheetPreview />
-            </div>
-          </MovingBorderPanel>
-        </section>
-
-        <section className="fluid-grid mx-auto max-w-7xl gap-4 px-4 py-8 [--grid-min:15rem] md:px-6">
-          {games.map((game, index) => {
-            const Icon = game.icon;
-            return (
-              <HoverGlowCard key={game.title} delay={index * 0.05} className="min-h-[190px]">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-md border border-primary/25 bg-primary/12 text-primary">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <span className="game-chip bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">PTS</span>
-                </div>
-                <h3 className="text-lg font-semibold tracking-normal">{game.title}</h3>
-                <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">{game.text}</p>
-              </HoverGlowCard>
-            );
-          })}
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 py-8 md:px-6">
-          <div className="game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">
-                Pronto para sair da lista de exercícios?
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                Entre e comece pela sua primeira prática.
+        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <FadeIn>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Diagnóstico por competência</p>
+              <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
+                Não é &ldquo;sua redação tirou 720&rdquo;. É por quê.
               </h2>
-            </div>
-            <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
+              <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
+                A correção segue as 5 competências do ENEM. Você vê exatamente qual delas está te custando pontos e qual treinar primeiro
+                pra virar o jogo.
+              </p>
+              <Button asChild className="mt-6">
+                <Link href="/cadastro">
+                  Ver meu diagnóstico
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+            </FadeIn>
+            <FadeIn delay={0.1} className="mx-auto w-full max-w-sm">
+              <ReportSlip />
+            </FadeIn>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-3xl px-4 py-16 md:px-6">
+          <FadeIn>
+            <PullQuote
+              quote="Eu treinava sem saber onde estava travando. Agora sei exatamente qual competência revisar antes da próxima redação."
+              name="Exemplo ilustrativo"
+              role="Aluno(a) do 3º ano"
+            />
+          </FadeIn>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-20 pt-8 md:px-6">
+          <FadeIn className="flex flex-col items-center gap-6 border-t border-dashed border-border pt-12 text-center">
+            <h2 className="font-display max-w-xl text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
+              Manda a próxima redação e descubra onde ela está travando.
+            </h2>
+            <Button asChild size="lg">
               <Link href="/cadastro">
-                Criar conta
+                Criar conta grátis
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-          </div>
+          </FadeIn>
         </section>
       </main>
     </MarketingShell>
-  );
-}
-
-function HeroConsole() {
-  return (
-    <div className="relative">
-      <div className="game-surface bg-card p-4 text-foreground">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <InteractiveMascot size="sm" mood="happy" />
-            <div>
-              <p className="text-sm font-semibold">Rotina de hoje</p>
-              <p className="text-xs font-bold text-muted-foreground">42 min de foco</p>
-            </div>
-          </div>
-          <span className="game-chip bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Consistência 8</span>
-        </div>
-
-        <div className="grid gap-3">
-          <PreviewTile icon={Flame} label="Sequência" value="12 dias" progress={86} tone="streak" />
-          <PreviewTile icon={Award} label="Marcos" value="18/32" progress={56} tone="highlight" />
-          <PreviewTile icon={BookOpenCheck} label="Trilha ativa" value="Coesão" progress={68} tone="info" />
-        </div>
-
-        <div className="mt-3">
-          <SmoothProgressPath progress={72} />
-        </div>
-
-        <div className="game-tile mt-3 bg-primary/14 p-3">
-          <div className="mb-2 flex items-center justify-between text-sm font-semibold">
-            <span>Nota estimada</span>
-            <span>920</span>
-          </div>
-          <Progress value={92} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const PREVIEW_TONE = {
-  streak: "bg-streak-tint text-streak",
-  highlight: "bg-highlight-tint text-highlight",
-  info: "bg-info-tint text-info",
-} as const;
-
-function PreviewTile({
-  icon: Icon,
-  label,
-  value,
-  progress,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  progress: number;
-  tone: keyof typeof PREVIEW_TONE;
-}) {
-  return (
-    <AnimatedGameCard className="bg-background/60 p-3">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className={cn("grid h-9 w-9 place-items-center rounded-control", PREVIEW_TONE[tone])}>
-          <Icon className="h-4 w-4" aria-hidden="true" />
-        </div>
-        <p className="text-lg font-semibold tracking-normal">{value}</p>
-      </div>
-      <p className="mb-2 text-xs font-bold text-muted-foreground">{label}</p>
-      <Progress value={progress} />
-    </AnimatedGameCard>
-  );
-}
-
-function CampaignCard({ step, index }: { step: { label: string; title: string; status: string; icon: LucideIcon }; index: number }) {
-  const Icon = step.icon;
-  const locked = step.status === "Bloqueado";
-
-  return (
-    <Reveal delay={index * 0.04}>
-      <AnimatedGameCard className={cn("min-h-[160px] bg-card p-4", locked && "opacity-70")}>
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <span className="game-chip bg-muted/70 px-3 py-1 text-xs font-semibold text-muted-foreground">{step.label}</span>
-          <div
-            className={cn(
-              "grid h-10 w-10 place-items-center rounded-md border border-primary/25",
-              locked ? "bg-muted text-muted-foreground" : "bg-primary/12 text-primary",
-            )}
-          >
-            <Icon className="h-5 w-5" aria-hidden="true" />
-          </div>
-        </div>
-        <h3 className="text-xl font-semibold tracking-normal">{step.title}</h3>
-        <p className="mt-3 text-sm font-bold text-muted-foreground">{step.status}</p>
-      </AnimatedGameCard>
-    </Reveal>
-  );
-}
-
-function EssaySheetPreview() {
-  return (
-    <div className="mx-auto w-full max-w-[280px]">
-      <div className="aspect-[210/297] rounded-card border border-border bg-card p-5 text-foreground shadow-elevated">
-        <div className="mb-4 h-3 w-2/3 rounded-full bg-primary/40" />
-        <div className="space-y-2">
-          <div className="h-2 rounded-full bg-muted" />
-          <div className="h-2 w-11/12 rounded-full bg-muted" />
-          <div className="h-2 w-10/12 rounded-full bg-muted" />
-          <div className="h-2 w-full rounded-full bg-muted" />
-          <div className="h-2 w-8/12 rounded-full bg-muted" />
-        </div>
-        <div className="mt-5 rounded-md border border-primary/20 bg-primary/12 p-3 text-xs font-semibold">C1 180 • C2 200 • C3 180</div>
-        <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-primary">
-          <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-          Pronta para correção
-        </div>
-      </div>
-    </div>
   );
 }

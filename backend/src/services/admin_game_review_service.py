@@ -33,7 +33,6 @@ class AdminGameReviewService:
             category=category,
             skill=skill,
             difficulty=difficulty,
-            xp_reward=40,
             questions=[{"prompt": q.prompt, "options": q.options, "answer_index": q.answer_index, "explanation": q.explanation} for q in result.questions],
             status="pending",
         )
@@ -65,7 +64,6 @@ class AdminGameReviewService:
         notes: str | None,
         questions: list[dict] | None,
         name: str | None,
-        xp_reward: int | None,
         reviewer_id: int,
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
@@ -80,8 +78,6 @@ class AdminGameReviewService:
             game.questions = questions
         if name is not None:
             game.name = name
-        if xp_reward is not None:
-            game.xp_reward = xp_reward
         self.db.commit()
         self.db.refresh(game)
         return self._game_to_read(game)
@@ -91,7 +87,6 @@ class AdminGameReviewService:
         game_id: int,
         *,
         name: str | None = None,
-        xp_reward: int | None = None,
         questions: list[dict] | None = None,
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
@@ -99,8 +94,6 @@ class AdminGameReviewService:
             raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
         if name is not None:
             game.name = name
-        if xp_reward is not None:
-            game.xp_reward = xp_reward
         if questions is not None:
             game.questions = questions
         self.db.commit()
@@ -130,7 +123,6 @@ class AdminGameReviewService:
             category=game.category,
             skill=game.skill,
             difficulty=game.difficulty,
-            xp_reward=game.xp_reward,
             questions=questions,
             status=game.status,
             admin_notes=game.admin_notes,

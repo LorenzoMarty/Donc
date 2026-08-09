@@ -1,17 +1,35 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.dependencies import get_current_user
-from src.models import User, UserGameProgress
+from src.memory.cognitive_issues import EVENT_DIRECTION, HUB_TO_ISSUE, apply_cognitive_signal
+from src.memory.profile import get_or_create_learning_profile
+from src.middlewares.errors import AppError
+from src.models import GameAttempt, User, UserGameProgress
+from src.models.events import AIGeneratedGame
 from src.schemas.common import ApiResponse, success_response
 from src.services.game_service import GameService
+from src.services.streak_service import touch_daily_streak
 
 
 router = APIRouter(prefix="/games", tags=["games"])
+
+# Hubs cognitivos reais do produto (features/gamification/symptoms.ts::HUBS no frontend) — usado
+# pra rejeitar payload de cognitive_outcomes com hub inventado/arbitrario.
+_KNOWN_HUBS = {
+    "texto-robotico",
+    "repete-ideias",
+    "repertorio-nao-encaixa",
+    "nao-aprofunda",
+    "introducao-sem-tese",
+    "perde-na-c3",
+    "conclusao-formula",
+}
 
 
 class PublishedGameQuestion(BaseModel):
@@ -27,17 +45,43 @@ class PublishedGameRead(BaseModel):
     category: str
     skill: str
     difficulty: str
-    xp_reward: int
     questions: list[PublishedGameQuestion]
+
+
+class CognitiveOutcomeIn(BaseModel):
+    hub: str = Field(min_length=1, max_length=60)
+    event: str = Field(min_length=1, max_length=80)
+    severity: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def _hub_and_event_known(self) -> "CognitiveOutcomeIn":
+        if self.hub not in _KNOWN_HUBS:
+            raise ValueError(f"hub desconhecido: {self.hub}")
+        if self.event not in EVENT_DIRECTION:
+            raise ValueError(f"evento cognitivo desconhecido: {self.event}")
+        return self
 
 
 class GameCompleteRequest(BaseModel):
     game_id: str = Field(min_length=1, max_length=120)
-    xp_earned: int = Field(ge=0, le=500)
+    score: int = Field(ge=0, le=500)
+    total: int = Field(ge=1, le=500)
+    duration_seconds: int = Field(ge=1, le=3600)
+    cognitive_outcomes: list[CognitiveOutcomeIn] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def _score_within_total(self) -> "GameCompleteRequest":
+        if self.score > self.total:
+            raise ValueError("score nao pode ser maior que total")
+        return self
 
 
 class GameCompleteResponse(BaseModel):
+    attempt_id: int
     game_id: str
+    score: int
+    total: int
+    accuracy: int
 
 
 class GameProgressUpsertRequest(BaseModel):
@@ -73,7 +117,6 @@ def published_games(
                 category=game.category,
                 skill=game.skill,
                 difficulty=game.difficulty,
-                xp_reward=game.xp_reward,
                 questions=[
                     PublishedGameQuestion(
                         prompt=q.get("prompt", ""),
@@ -89,14 +132,121 @@ def published_games(
     )
 
 
+def _assert_game_playable(db: Session, game_id: str) -> None:
+    """Se o game_id referencia um jogo gerado por IA (`ai-<id>`), confirma que ele existe e esta
+    aprovado. Jogos estaticos (catalogo do frontend) nao tem registro no backend hoje — validamos
+    o que da pra validar (ownership, limites de score/duracao); nao ha tabela de jogos estaticos
+    pra checar "existencia" contra ela."""
+    if not game_id.startswith("ai-"):
+        return
+    raw_id = game_id.removeprefix("ai-")
+    if not raw_id.isdigit():
+        raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+    game = db.get(AIGeneratedGame, int(raw_id))
+    if not game or game.status != "approved":
+        raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+
+
 @router.post("/complete", response_model=ApiResponse[GameCompleteResponse])
 def complete_game(
     payload: GameCompleteRequest,
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> ApiResponse[GameCompleteResponse]:
-    # A progressao de XP local (useGameStore) e a fonte de verdade no cliente; este
-    # endpoint so confirma o recebimento da sincronizacao "fire-and-forget".
-    return success_response(GameCompleteResponse(game_id=payload.game_id))
+    _assert_game_playable(db, payload.game_id)
+
+    accuracy = round((payload.score / payload.total) * 100) if payload.total else 0
+    completed_at = datetime.now(UTC)
+    started_at = completed_at - timedelta(seconds=payload.duration_seconds)
+
+    attempt = GameAttempt(
+        user_id=current_user.id,
+        game_id=payload.game_id,
+        score=payload.score,
+        total=payload.total,
+        accuracy=accuracy,
+        duration_seconds=payload.duration_seconds,
+        cognitive_outcomes=[o.model_dump() for o in payload.cognitive_outcomes],
+        started_at=started_at,
+        completed_at=completed_at,
+    )
+    db.add(attempt)
+
+    row = db.query(UserGameProgress).filter(
+        UserGameProgress.user_id == current_user.id,
+        UserGameProgress.game_id == payload.game_id,
+    ).first()
+    if row:
+        row.plays = row.plays + 1
+        row.best_score = max(row.best_score, payload.score)
+        row.best_accuracy = max(row.best_accuracy, accuracy)
+        row.progress = max(row.progress, accuracy)
+        row.last_played_at = completed_at
+    else:
+        row = UserGameProgress(
+            user_id=current_user.id,
+            game_id=payload.game_id,
+            plays=1,
+            best_score=payload.score,
+            best_accuracy=accuracy,
+            progress=accuracy,
+            last_played_at=completed_at,
+        )
+        db.add(row)
+
+    profile = get_or_create_learning_profile(db, current_user.id)
+    issues = profile.cognitive_issues
+    for outcome in payload.cognitive_outcomes:
+        issue_code = HUB_TO_ISSUE.get(outcome.hub)
+        direction = EVENT_DIRECTION.get(outcome.event)
+        if not issue_code or not direction:
+            continue
+        issues = apply_cognitive_signal(issues, issue_code, direction)
+    profile.cognitive_issues = issues
+
+    db.commit()
+    db.refresh(attempt)
+    touch_daily_streak(db, current_user)
+
+    return success_response(
+        GameCompleteResponse(
+            attempt_id=attempt.id,
+            game_id=attempt.game_id,
+            score=attempt.score,
+            total=attempt.total,
+            accuracy=attempt.accuracy,
+        )
+    )
+
+
+class GameAttemptRead(BaseModel):
+    id: int
+    game_id: str
+    score: int
+    total: int
+    accuracy: int
+    duration_seconds: int
+    cognitive_outcomes: list[CognitiveOutcomeIn]
+    started_at: datetime
+    completed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/attempts/{attempt_id}", response_model=ApiResponse[GameAttemptRead])
+def get_game_attempt(
+    attempt_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[GameAttemptRead]:
+    attempt = db.query(GameAttempt).filter(
+        GameAttempt.id == attempt_id,
+        GameAttempt.user_id == current_user.id,
+    ).first()
+    if not attempt:
+        raise AppError("Tentativa nao encontrada.", status_code=404, code="attempt_not_found")
+    return success_response(GameAttemptRead.model_validate(attempt))
 
 
 @router.get("/progress", response_model=ApiResponse[list[GameProgressRead]])

@@ -8,7 +8,6 @@ export const grammarGames: GameDefinition[] = [
     description:
       "Modo cronometrado: três frases corretas (algumas parecem erradas, mas não são) e uma com desvio real. Concordância, regência, crase, colocação e paralelismo no nível de banca.",
     difficulty: "Avancado",
-    xpReward: 78,
     estimatedTime: "Infinito",
     thumbnail: "gramatica-revisao",
     progress: 0,
@@ -216,7 +215,6 @@ export const grammarGames: GameDefinition[] = [
     category: "gramatica",
     description: "Pontuação que muda o sentido. Digite a palavra após a qual a vírgula resolve a ambiguidade, isola o termo deslocado ou marca a oração explicativa. Sem alternativas.",
     difficulty: "Avancado",
-    xpReward: 68,
     estimatedTime: "6 min",
     thumbnail: "gramatica-pontuacao",
     progress: 0,
@@ -286,7 +284,6 @@ export const grammarGames: GameDefinition[] = [
     category: "gramatica",
     description: "Cada frase tem exatamente um erro. Arraste-a para o TIPO de desvio: concordância, regência, crase, colocação pronominal ou pontuação. Erros sutis e plausíveis.",
     difficulty: "Avancado",
-    xpReward: 64,
     estimatedTime: "5 min",
     thumbnail: "gramatica-registro",
     progress: 0,

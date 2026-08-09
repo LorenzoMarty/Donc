@@ -7,6 +7,7 @@ from src.models import User
 from src.schemas.common import ApiResponse, success_response
 from src.schemas.lessons import LessonProgressRead, LessonProgressUpdate, LessonRead, ModuleRead
 from src.services.lesson_service import LessonService
+from src.services.streak_service import touch_daily_streak
 
 
 router = APIRouter(prefix="/lessons", tags=["lessons"])
@@ -29,10 +30,13 @@ def update_progress(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[LessonProgressRead]:
-    return success_response(LessonService(db).update_progress(
+    result = LessonService(db).update_progress(
         lesson_id,
         current_user.id,
         progress_percent=payload.progress_percent,
         last_position_seconds=payload.last_position_seconds,
         completed=payload.completed,
-    ))
+    )
+    if result.completed:
+        touch_daily_streak(db, current_user)
+    return success_response(result)

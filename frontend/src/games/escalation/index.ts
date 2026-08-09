@@ -7,7 +7,6 @@ export const escalationGames: GameDefinition[] = [
     category: "argumentacao",
     description: "Pegue uma opinião rasa e suba degrau a degrau até a complexidade. A cada nível, escolha a formulação que aprofunda de verdade — as dicas somem no topo.",
     difficulty: "Avancado",
-    xpReward: 84,
     estimatedTime: "8 min",
     thumbnail: "escalada-argumento",
     progress: 0,

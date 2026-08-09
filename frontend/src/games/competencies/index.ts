@@ -8,7 +8,6 @@ export const competencyGames: GameDefinition[] = [
     description:
       "Casos-limite: cada sintoma poderia tocar mais de uma competência. Identifique a competência PRINCIPALMENTE avaliada, segundo a matriz oficial.",
     difficulty: "Avancado",
-    xpReward: 74,
     estimatedTime: "6 min",
     thumbnail: "competencias-diagnostico",
     progress: 0,
@@ -128,7 +127,6 @@ export const competencyGames: GameDefinition[] = [
     category: "competencias-enem",
     description: "Arraste cada sintoma de correção para a competência que ele MAIS afeta. Vários são casos-limite que tangenciam duas competências.",
     difficulty: "Avancado",
-    xpReward: 68,
     estimatedTime: "5 min",
     thumbnail: "competencias-classify",
     progress: 0,
@@ -164,7 +162,6 @@ export const competencyGames: GameDefinition[] = [
     category: "competencias-enem",
     description: "Modo cronometrado: classifique rápido a competência principal de cada sintoma. Casos-limite, combo e velocidade crescente.",
     difficulty: "Avancado",
-    xpReward: 72,
     estimatedTime: "Infinito",
     thumbnail: "competencias-rush",
     progress: 0,

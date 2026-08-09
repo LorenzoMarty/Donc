@@ -71,11 +71,17 @@ def test_progress_upsert_rejects_out_of_range_accuracy(client: TestClient) -> No
     assert res.status_code == 422
 
 
-def test_complete_game_rejects_invalid_xp(client: TestClient) -> None:
-    res = client.post("/api/v1/games/complete", json={"game_id": "g", "xp_earned": 9999})
+def test_complete_game_rejects_score_above_bounds(client: TestClient) -> None:
+    res = client.post(
+        "/api/v1/games/complete",
+        json={"game_id": "g", "score": 9999, "total": 10, "duration_seconds": 30},
+    )
     assert res.status_code == 422
 
 
 def test_complete_game_rejects_missing_game_id(client: TestClient) -> None:
-    res = client.post("/api/v1/games/complete", json={"game_id": "", "xp_earned": 10})
+    res = client.post(
+        "/api/v1/games/complete",
+        json={"game_id": "", "score": 5, "total": 10, "duration_seconds": 30},
+    )
     assert res.status_code == 422

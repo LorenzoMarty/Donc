@@ -269,7 +269,7 @@ export function selectGamesForHub(
         : "Essencial";
 
   const deepEngines = new Set(hub.missionEngines);
-  const relevanceScore = (g: GameDefinition) => (deepEngines.has(g.engine) ? 2 : 0) + (g.xpReward > 60 ? 1 : 0);
+  const relevanceScore = (g: GameDefinition) => (deepEngines.has(g.engine) ? 2 : 0);
 
   const byDiff: Record<string, GameDefinition[]> = { Essencial: [], Intermediario: [], Avancado: [] };
   for (const g of hubGames) {

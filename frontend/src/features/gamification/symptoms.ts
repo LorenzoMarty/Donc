@@ -215,7 +215,7 @@ export function topWeaknesses(profile: SkillProfile): { tag: SkillTag; errors: n
 }
 
 /**
- * Recomenda treinos por interseção de tags com as fraquezas legadas. Sem dados, cai para maior XP.
+ * Recomenda treinos por interseção de tags com as fraquezas legadas.
  * (Mantido para compat; o treinador principal usa `recommendHub` em `adaptive.ts`.)
  */
 export function recommendTrainings(games: GameDefinition[], profile: SkillProfile, limit = 4): GameDefinition[] {
@@ -226,7 +226,7 @@ export function recommendTrainings(games: GameDefinition[], profile: SkillProfil
       const score = tags.reduce((sum, t) => sum + (weak.get(t) ?? 0), 0);
       return { game, score };
     })
-    .sort((a, b) => b.score - a.score || b.game.xpReward - a.game.xpReward)
+    .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((entry) => entry.game);
 }

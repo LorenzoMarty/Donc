@@ -286,7 +286,6 @@ export type GameDefinition = {
   category: GameCategoryId;
   description: string;
   difficulty: GameDifficulty;
-  xpReward: number;
   estimatedTime: string;
   thumbnail: string;
   progress: number;
@@ -346,7 +345,6 @@ export type GameAttempt = {
   score: number;
   total: number;
   accuracy: number;
-  xpEarned: number;
   playedAt: string;
   durationSeconds: number;
 };

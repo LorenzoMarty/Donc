@@ -7,7 +7,6 @@ export const collapseGames: GameDefinition[] = [
     category: "estrutura",
     description: "Uma redação forte entrou em colapso: parágrafos embaralhados e conectivos arrancados. Reordene e reconecte para restaurar a progressão.",
     difficulty: "Avancado",
-    xpReward: 84,
     estimatedTime: "8 min",
     thumbnail: "resgate-redacao",
     progress: 0,

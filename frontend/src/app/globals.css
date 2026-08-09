@@ -597,6 +597,14 @@ li {
       background-size: 28px 28px;
     }
   }
+
+  /* Textura de "papel pautado" só das páginas de marketing (AnnotatedManuscript) — substitui uma
+     imagem gerada por IA indisponível nesta sessão (sem GEMINI_API_KEY/OPENAI_API_KEY, ver
+     skills-plan.yaml da spec marketing-redesign-conversao). Puro CSS, sem dependência externa. */
+  .manuscript-paper {
+    background-image: repeating-linear-gradient(hsl(var(--border) / 0.5) 0 1px, transparent 1px 2.25rem);
+    background-position: 0 3.25rem;
+  }
 }
 
 @keyframes bob {

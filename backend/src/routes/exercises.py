@@ -7,6 +7,7 @@ from src.models import User
 from src.schemas.common import ApiResponse, success_response
 from src.schemas.exercises import ExerciseRead, ExerciseSubmitRequest, ExerciseSubmitResponse
 from src.services.exercise_service import ExerciseService
+from src.services.streak_service import touch_daily_streak
 
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
@@ -24,5 +25,7 @@ def submit_exercise(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[dict[str, object]]:
-    return success_response(ExerciseService(db).submit(user=current_user, exercise_id=exercise_id, selected_answer=payload.selected_answer))
+    result = ExerciseService(db).submit(user=current_user, exercise_id=exercise_id, selected_answer=payload.selected_answer)
+    touch_daily_streak(db, current_user)
+    return success_response(result)
 

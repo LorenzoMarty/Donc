@@ -8,7 +8,6 @@ export const thesisGames: GameDefinition[] = [
     description:
       "Modo cronometrado: as quatro teses são defensáveis — escolha a MAIS delimitada e operacionalizável (com recorte, relação causal clara e desdobramento argumentativo).",
     difficulty: "Avancado",
-    xpReward: 78,
     estimatedTime: "Infinito",
     thumbnail: "argumentacao-tese",
     progress: 0,
@@ -168,7 +167,6 @@ export const thesisGames: GameDefinition[] = [
     category: "argumentacao",
     description: "Ordene os elementos do argumento segundo o modelo de Toulmin: dado, garantia, apoio, refutação e conclusão. Várias ordens parecem válidas — só uma sustenta o raciocínio.",
     difficulty: "Avancado",
-    xpReward: 70,
     estimatedTime: "6 min",
     thumbnail: "argumentacao-mapa",
     progress: 0,
@@ -220,7 +218,6 @@ export const thesisGames: GameDefinition[] = [
     category: "argumentacao",
     description: "Cada trecho contém uma falácia. As quatro opções são falácias reais — identifique exatamente qual foi cometida.",
     difficulty: "Avancado",
-    xpReward: 72,
     estimatedTime: "6 min",
     thumbnail: "argumentacao-falacia",
     progress: 0,

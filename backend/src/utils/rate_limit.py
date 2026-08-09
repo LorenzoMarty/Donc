@@ -3,12 +3,24 @@
 import logging
 import time
 
+from fastapi import Depends
+
 from src.config.settings import settings
+from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
+from src.models import User
 
 logger = logging.getLogger("src.utils.rate_limit")
 
 _memory_counters: dict[str, tuple[int, int]] = {}
+
+
+def require_ai_rate_limit(current_user: User = Depends(get_current_user)) -> None:
+    """Dependency unica pra qualquer rota que consome IA — aplicada via `dependencies=[...]` no
+    decorator da rota, nunca chamada manualmente dentro do corpo do handler. Centraliza o limite
+    em `/ai/*`, `/essays/{id}/submit`, `/essays/{id}/reprocess` e geracao de conteudo admin (temas,
+    atividades, jogos) — nenhuma dessas rotas pode contornar o limite usando outra."""
+    check_ai_rate_limit(current_user.id)
 
 
 def check_ai_rate_limit(user_id: int) -> None:
