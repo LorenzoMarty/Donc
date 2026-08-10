@@ -15,6 +15,7 @@ class ExerciseRead(BaseModel):
 
 class ExerciseSubmitRequest(BaseModel):
     selected_answer: str = Field(pattern="^[A-E]$")
+    recommendation_log_id: int | None = None
 
 
 class ExerciseSubmitResponse(BaseModel):

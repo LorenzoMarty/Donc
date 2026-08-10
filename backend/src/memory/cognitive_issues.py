@@ -10,12 +10,21 @@ de multiplas fontes, nao um unico sinal isolado — REQ-15/P1):
    `Exercise.targets`) — sinal positivo se `is_correct`, negativo caso contrario, um por resposta.
 
 Regra deliberadamente simples (sem ML/heuristica de texto livre), a mesma para os tres canais:
-DETECTED -> TRAINING -> IMPROVING -> MASTERED conforme sinais positivos se acumulam (3 positivos
-consecutivos em IMPROVING viram MASTERED); qualquer sinal negativo em IMPROVING/MASTERED regride
+DETECTED -> TRAINING -> IMPROVING -> MASTERED conforme sinais positivos se acumulam (streak
+ponderado >= 3 em IMPROVING vira MASTERED); qualquer sinal negativo em IMPROVING/MASTERED regride
 para TRAINING (recaida). Um unico sinal, de qualquer canal, nunca pula mais de um estado — a
 resistencia contra atualizacao agressiva (REQ-12/P1: "evite atualizar o perfil agressivamente com
 uma unica resposta") vem dessa propriedade da maquina de estado em si, nao de um filtro adicional
 por canal.
+
+P2a/Bloco 2 (REQ-5/REQ-6): `weight` pondera a forca do sinal pela fonte da evidencia
+(`memory/learning_outcomes.py::SOURCE_WEIGHT` — redacao=2, jogo/exercicio=1), nao so o ultimo
+evento isolado. `negative_count`/`positive_streak` acumulam por peso em vez de por evento, entao
+evidencia mais forte (redacao) empurra o estado mais rapido que microexercicios isolados, mas
+sem quebrar a garantia de que uma unica evidencia nunca masteriza sozinha: o peso maximo hoje
+(ESSAY=2) e sempre menor que `_MASTERY_STREAK` (3), entao um unico sinal dentro de IMPROVING nunca
+fecha o streak sozinho — precisa de pelo menos duas evidencias em IMPROVING, igual ao
+comportamento anterior. `weight` default 1 reproduz exatamente o comportamento pre-P2a.
 """
 
 from __future__ import annotations
@@ -75,9 +84,12 @@ def apply_cognitive_signal(
     code: str,
     direction: Direction,
     *,
+    weight: int = 1,
     now: datetime | None = None,
 ) -> dict:
-    """Retorna um novo dict de `cognitive_issues` com o sinal aplicado. Nao muta `issues`."""
+    """Retorna um novo dict de `cognitive_issues` com o sinal aplicado. Nao muta `issues`.
+
+    `weight` (P2a/Bloco 2): forca da evidencia — ver docstring do modulo."""
     if code not in ISSUE_CODES:
         raise ValueError(f"codigo de problema cognitivo desconhecido: {code}")
 
@@ -86,7 +98,7 @@ def apply_cognitive_signal(
     state: IssueState | None = record["state"]
 
     if direction == "negative":
-        record["negative_count"] = int(record.get("negative_count", 0)) + 1
+        record["negative_count"] = int(record.get("negative_count", 0)) + weight
         if state is None:
             state = "DETECTED"
         elif state in ("IMPROVING", "MASTERED"):
@@ -101,9 +113,9 @@ def apply_cognitive_signal(
             state = "TRAINING"
         elif state == "TRAINING":
             state = "IMPROVING"
-            record["positive_streak"] = 1
+            record["positive_streak"] = weight
         elif state == "IMPROVING":
-            record["positive_streak"] = int(record.get("positive_streak", 0)) + 1
+            record["positive_streak"] = int(record.get("positive_streak", 0)) + weight
             if record["positive_streak"] >= _MASTERY_STREAK:
                 state = "MASTERED"
         # MASTERED permanece MASTERED sob sinal positivo.

@@ -3,7 +3,7 @@ import { Quote } from "lucide-react";
 import { Reveal } from "@/components/sections/aceternity-primitives";
 
 /**
- * Donc ENEM está pré-lançamento — sem aluno pagante ainda. Estes depoimentos são exemplos
+ * Donc está pré-lançamento — sem aluno pagante ainda. Estes depoimentos são exemplos
  * ilustrativos, não relatos reais (ver REQ-5 da spec de marketing). Trocar por depoimentos
  * reais assim que existirem.
  */
@@ -34,7 +34,7 @@ export function TestimonialsSection() {
           Exemplos de como a rotina costuma mudar.
         </h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Donc ENEM está em pré-lançamento — os depoimentos abaixo são exemplos ilustrativos de uso, não relatos reais ainda.
+          Donc está em pré-lançamento — os depoimentos abaixo são exemplos ilustrativos de uso, não relatos reais ainda.
         </p>
       </Reveal>
 

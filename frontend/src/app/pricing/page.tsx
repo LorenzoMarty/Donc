@@ -44,7 +44,7 @@ const faq = [
   },
   {
     question: "Os valores acima são os valores finais?",
-    answer: "Donc ENEM está em pré-lançamento — estes preços são de referência e podem mudar antes do lançamento oficial.",
+    answer: "Donc está em pré-lançamento — estes preços são de referência e podem mudar antes do lançamento oficial.",
   },
 ];
 

@@ -71,6 +71,35 @@ def test_unknown_issue_code_rejected():
         apply_cognitive_signal({}, "NOT_A_REAL_ISSUE", "negative")
 
 
+def test_weight_defaults_to_one_and_preserves_legacy_behavior():
+    issues = apply_cognitive_signal({}, "WEAK_THESIS", "negative")
+    assert issues["WEAK_THESIS"]["negative_count"] == 1
+    issues = apply_cognitive_signal(issues, "WEAK_THESIS", "negative", weight=1)
+    assert issues["WEAK_THESIS"]["negative_count"] == 2
+
+
+def test_negative_count_accumulates_by_weight():
+    issues = apply_cognitive_signal({}, "WEAK_THESIS", "negative", weight=2)
+    assert issues["WEAK_THESIS"]["negative_count"] == 2
+
+
+def test_heavier_positive_evidence_masters_issue_in_fewer_calls():
+    issues = apply_cognitive_signal({}, "WEAK_THESIS", "negative")
+    issues = apply_cognitive_signal(issues, "WEAK_THESIS", "positive", weight=2)  # DETECTED -> TRAINING
+    issues = apply_cognitive_signal(issues, "WEAK_THESIS", "positive", weight=2)  # TRAINING -> IMPROVING, streak=2
+    assert issues["WEAK_THESIS"]["state"] == "IMPROVING"
+    issues = apply_cognitive_signal(issues, "WEAK_THESIS", "positive", weight=2)  # streak=4 -> MASTERED
+    assert issues["WEAK_THESIS"]["state"] == "MASTERED"
+
+
+def test_single_heavy_positive_evidence_never_masters_alone_from_improving():
+    issues = apply_cognitive_signal({}, "WEAK_THESIS", "negative")
+    issues = apply_cognitive_signal(issues, "WEAK_THESIS", "positive", weight=2)  # DETECTED -> TRAINING
+    issues = apply_cognitive_signal(issues, "WEAK_THESIS", "positive", weight=2)  # TRAINING -> IMPROVING, streak=2
+    assert issues["WEAK_THESIS"]["state"] == "IMPROVING"
+    assert issues["WEAK_THESIS"]["positive_streak"] == 2
+
+
 def test_all_seven_issue_codes_are_stable_identifiers():
     assert ISSUE_CODES == {
         "TEXT_ROBOTIC",

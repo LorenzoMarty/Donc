@@ -49,7 +49,7 @@ class EssayService:
             EssayTheme(
                 title=item.title,
                 context=item.context,
-                source="IA Donc ENEM",
+                source="IA Donc",
                 supporting_texts=[supporting_text.model_dump() for supporting_text in item.supporting_texts],
                 is_active=True,
             )

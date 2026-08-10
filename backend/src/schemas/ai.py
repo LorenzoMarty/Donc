@@ -51,6 +51,10 @@ class CognitiveIssueRead(BaseModel):
     negative_count: int = 0
     positive_streak: int = 0
     updated_at: str | None = None
+    confidence: Literal["low", "medium", "high"] = "low"
+    detected_at: str | None = None
+    evidence_count: int = 0
+    last_evidence_at: str | None = None
 
 
 class LearningProfileRead(BaseModel):
@@ -91,4 +95,6 @@ class RecommendedActionRead(BaseModel):
     target: str | None = None
     reason: str
     estimated_minutes: int
+    confidence: Literal["low", "medium", "high"] | None = None
+    recommendation_log_id: int | None = None
 

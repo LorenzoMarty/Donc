@@ -57,7 +57,7 @@ class AdminContentService:
         theme = EssayTheme(
             title=title,
             context=generated.context,
-            source="IA Donc ENEM",
+            source="IA Donc",
             supporting_texts=self._normalize_supporting_texts(
                 [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
                 requirements=supporting_text_requirements,

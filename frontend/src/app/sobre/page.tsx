@@ -13,7 +13,7 @@ export default function AboutPage() {
           <Reveal className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Sobre</p>
             <h1 className="font-display mt-3 text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
-              Donc ENEM existe pra transformar estudo em progresso que você consegue ver.
+              Donc existe pra transformar estudo em progresso que você consegue ver.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
               Nasceu de um problema simples: treinar Português e Redação sem saber se está funcionando. A plataforma une correção por IA,

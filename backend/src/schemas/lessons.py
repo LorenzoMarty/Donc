@@ -73,3 +73,4 @@ class LessonProgressUpdate(BaseModel):
     progress_percent: int = Field(ge=0, le=100)
     last_position_seconds: int = Field(ge=0)
     completed: bool = False
+    recommendation_log_id: int | None = None

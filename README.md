@@ -1,4 +1,4 @@
-# Donc ENEM
+# Donc
 
 Plataforma de preparacao para Portugues e Redacao do ENEM. Frontend em Next.js 16 (App Router),
 backend em FastAPI + PostgreSQL/pgvector, fila assincrona via Celery/Redis e pipeline de correcao

@@ -150,7 +150,7 @@ export function ReportSlip({ className }: { className?: string }) {
   return (
     <div ref={ref} className={cn("relative", className)}>
       <div className="rounded-t-[10px] bg-foreground px-6 py-3 text-background">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Boletim · Donc ENEM</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Boletim · Donc</p>
       </div>
       <div className="relative border-x border-b border-border bg-card px-6 pb-6 pt-5 shadow-[0_10px_30px_rgba(20,20,20,0.08)]">
         <span aria-hidden="true" className="absolute -left-2.5 top-0 h-5 w-5 -translate-y-1/2 rounded-full bg-background" />

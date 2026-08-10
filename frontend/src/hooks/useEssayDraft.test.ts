@@ -7,7 +7,7 @@ const THEME: EssayTheme = {
   id: 1,
   title: "Desafios da educação digital no Brasil",
   context: "Contexto do tema.",
-  source: "Donc ENEM",
+  source: "Donc",
 };
 
 describe("computeEssayTitle", () => {

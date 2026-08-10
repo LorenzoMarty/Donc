@@ -42,7 +42,7 @@ export default function PlatformPage() {
                 Tudo que Português e Redação precisam, num fluxo só.
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Donc ENEM organiza conteúdo, prática, correção por IA e histórico de evolução na mesma tela — sem alternar entre cinco apps
+                Donc organiza conteúdo, prática, correção por IA e histórico de evolução na mesma tela — sem alternar entre cinco apps
                 diferentes pra estudar.
               </p>
               <Button asChild size="lg" className="mt-7">

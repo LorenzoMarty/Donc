@@ -54,7 +54,7 @@ def test_recommendation_reflects_most_recent_correction(client):
 
     db = SessionLocal()
     try:
-        update_learning_profile(db, user_id=user_id, correction=_correction(competency_2=100))
+        update_learning_profile(db, user_id=user_id, essay_id=1, correction=_correction(competency_2=100))
         db.commit()
     finally:
         db.close()
@@ -69,7 +69,7 @@ def test_recommendation_reflects_most_recent_correction(client):
         profile = get_or_create_learning_profile(db, user_id)
         profile.cognitive_issues = {}
         db.commit()
-        update_learning_profile(db, user_id=user_id, correction=_correction(competency_5=80))
+        update_learning_profile(db, user_id=user_id, essay_id=1, correction=_correction(competency_5=80))
         db.commit()
     finally:
         db.close()

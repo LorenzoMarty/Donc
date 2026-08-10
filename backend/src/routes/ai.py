@@ -15,6 +15,7 @@ from src.agents.study_planner import StudyPlannerAgent
 from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.memory import get_learning_profile_payload
+from src.memory.recommendation_log import mark_started, record_shown
 from src.middlewares.errors import AppError
 from src.models import User
 from src.queues import AIJobService, enqueue_correct_essay
@@ -221,18 +222,36 @@ def recommended_actions(
     profile = get_or_create_learning_profile(db, current_user.id)
     db.commit()
     actions = RecommendationEngine(db).recommend(profile, user_id=current_user.id)
-    return success_response(
-        [
+    reads = []
+    for a in actions:
+        log = record_shown(db, user_id=current_user.id, action_type=a.type, target_issue=a.target_issue, target=a.target)
+        db.flush()
+        reads.append(
             RecommendedActionRead(
                 type=a.type,
                 target_issue=a.target_issue,
                 target=a.target,
                 reason=a.reason,
                 estimated_minutes=a.estimated_minutes,
+                confidence=a.confidence,
+                recommendation_log_id=log.id,
             )
-            for a in actions
-        ]
-    )
+        )
+    db.commit()
+    return success_response(reads)
+
+
+@router.post("/recommendations/{log_id}/start", response_model=ApiResponse[bool])
+def start_recommendation(
+    log_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[bool]:
+    """REQ-16: aluno abriu a aula/jogo/exercicio vindo de uma recomendacao. Vinculo frouxo
+    (REQ-18) — log inexistente/de outro usuario simplesmente nao marca nada, sem erro."""
+    result = mark_started(db, log_id=log_id, user_id=current_user.id)
+    db.commit()
+    return success_response(result is not None)
 
 
 @router.get("/jobs/{job_id}", response_model=ApiResponse[AIJobResponse])

@@ -300,9 +300,9 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
           className="mt-6 rounded-2xl border border-white/14 bg-white/5 p-6 text-left"
         >
           {current.hydraVideoUrl ? (
-            <video src={current.hydraVideoUrl} controls className="mb-4 w-full rounded-control object-contain" aria-label="Vídeo da Hydra, a mascote do Donc ENEM" />
+            <video src={current.hydraVideoUrl} controls className="mb-4 w-full rounded-control object-contain" aria-label="Vídeo da Hydra, a mascote do Donc" />
           ) : current.hydraImageUrl ? (
-            <Image src={current.hydraImageUrl} alt="Hydra, a mascote do Donc ENEM" width={80} height={80} className="mb-4 rounded-control object-contain" />
+            <Image src={current.hydraImageUrl} alt="Hydra, a mascote do Donc" width={80} height={80} className="mb-4 rounded-control object-contain" />
           ) : (
             <div className="mb-4 inline-flex rounded-xl bg-[hsl(var(--accent-300)/14%)] p-3">
               <Icon className="h-7 w-7 text-[hsl(var(--accent-300))]" aria-hidden="true" />

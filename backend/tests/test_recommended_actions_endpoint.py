@@ -49,3 +49,85 @@ def test_recommended_actions_targets_detected_issue(client):
 
     actions = api_data(client.get("/api/v1/ai/recommended-actions"))
     assert any(a["target_issue"] == "C3_LOW" for a in actions)
+
+
+def test_recommended_actions_targeting_issue_expose_confidence_level(client):
+    _reset_all_cognitive_issues()
+    client.post(
+        "/api/v1/games/complete",
+        json={
+            "game_id": "rec-endpoint-confidence",
+            "score": 2,
+            "total": 10,
+            "duration_seconds": 45,
+            "cognitive_outcomes": [{"hub": "perde-na-c3", "event": "WEAK_PROGRESSION", "severity": 0.8}],
+        },
+    )
+
+    actions = api_data(client.get("/api/v1/ai/recommended-actions"))
+    targeted = [a for a in actions if a["target_issue"] == "C3_LOW"]
+    assert targeted
+    assert all(a["confidence"] in ("low", "medium", "high") for a in targeted)
+
+
+def test_recommended_actions_expose_recommendation_log_id_and_are_recorded_as_shown(client):
+    from src.models import RecommendationLog
+
+    _reset_all_cognitive_issues()
+    client.post(
+        "/api/v1/games/complete",
+        json={
+            "game_id": "rec-endpoint-log",
+            "score": 2,
+            "total": 10,
+            "duration_seconds": 45,
+            "cognitive_outcomes": [{"hub": "perde-na-c3", "event": "WEAK_PROGRESSION", "severity": 0.8}],
+        },
+    )
+
+    actions = api_data(client.get("/api/v1/ai/recommended-actions"))
+    assert all(a["recommendation_log_id"] is not None for a in actions)
+
+    db = SessionLocal()
+    try:
+        log_ids = [a["recommendation_log_id"] for a in actions]
+        rows = db.query(RecommendationLog).filter(RecommendationLog.id.in_(log_ids)).all()
+        assert len(rows) == len(log_ids)
+        assert all(row.shown_at is not None for row in rows)
+        assert all(row.started_at is None for row in rows)
+    finally:
+        db.close()
+
+
+def test_start_recommendation_marks_started_at(client):
+    from src.models import RecommendationLog
+
+    _reset_all_cognitive_issues()
+    client.post(
+        "/api/v1/games/complete",
+        json={
+            "game_id": "rec-endpoint-start",
+            "score": 2,
+            "total": 10,
+            "duration_seconds": 45,
+            "cognitive_outcomes": [{"hub": "perde-na-c3", "event": "WEAK_PROGRESSION", "severity": 0.8}],
+        },
+    )
+    actions = api_data(client.get("/api/v1/ai/recommended-actions"))
+    log_id = actions[0]["recommendation_log_id"]
+
+    started = api_data(client.post(f"/api/v1/ai/recommendations/{log_id}/start"))
+    assert started is True
+
+    db = SessionLocal()
+    try:
+        row = db.get(RecommendationLog, log_id)
+        assert row.started_at is not None
+    finally:
+        db.close()
+
+
+def test_start_recommendation_with_unknown_id_does_not_fail(client):
+    response = client.post("/api/v1/ai/recommendations/999999999/start")
+    assert response.status_code == 200
+    assert api_data(response) is False

@@ -467,7 +467,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         daily_goal_minutes=45,
     )
     admin = User(
-        name="Admin Donc ENEM",
+        name="Admin Donc",
         email="admin@demo.com",
         hashed_password=get_password_hash(settings.seed_admin_password),
         role=UserRole.ADMIN,
@@ -487,22 +487,22 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         EssayTheme(
             title="Desafios para a democratizacao do acesso a educacao digital no Brasil",
             context="Considere desigualdade de acesso a internet, infraestrutura escolar, formacao docente e cidadania digital.",
-            source="Donc ENEM",
+            source="Donc",
         ),
         EssayTheme(
             title="Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
             context="Reflita sobre genero, economia, politicas publicas, reconhecimento social e direitos trabalhistas.",
-            source="Donc ENEM",
+            source="Donc",
         ),
         EssayTheme(
             title="A importancia da leitura critica na formacao dos jovens brasileiros",
             context="Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
-            source="Donc ENEM",
+            source="Donc",
         ),
         EssayTheme(
             title="Desafios para promover a seguranca alimentar nas cidades brasileiras",
             context="Analise renda, acesso a alimentos saudaveis, abastecimento local, educacao nutricional e politicas publicas.",
-            source="Donc ENEM",
+            source="Donc",
         ),
     ]
     db.add_all(themes)
@@ -663,7 +663,7 @@ def seed_missing_themes(db: Session) -> None:
         {
             "title": "Desafios para a democratizacao do acesso a educacao digital no Brasil",
             "context": "Considere desigualdade de acesso a internet, infraestrutura escolar, formacao docente e cidadania digital.",
-            "source": "Donc ENEM",
+            "source": "Donc",
             "supporting_texts": [
                 {
                     "title": "Texto motivador I — Exclusao digital no Brasil",
@@ -675,7 +675,7 @@ def seed_missing_themes(db: Session) -> None:
         {
             "title": "Caminhos para combater a invisibilidade do trabalho de cuidado no Brasil",
             "context": "Reflita sobre genero, economia, politicas publicas, reconhecimento social e direitos trabalhistas.",
-            "source": "Donc ENEM",
+            "source": "Donc",
             "supporting_texts": [
                 {
                     "title": "Texto motivador I — Trabalho invisivel e economia",
@@ -687,7 +687,7 @@ def seed_missing_themes(db: Session) -> None:
         {
             "title": "A importancia da leitura critica na formacao dos jovens brasileiros",
             "context": "Relacione escola, redes sociais, desinformacao, repertorio cultural e autonomia intelectual.",
-            "source": "Donc ENEM",
+            "source": "Donc",
             "supporting_texts": [
                 {
                     "title": "Texto motivador I — Jovens e desinformacao",
@@ -699,7 +699,7 @@ def seed_missing_themes(db: Session) -> None:
         {
             "title": "Desafios para promover a seguranca alimentar nas cidades brasileiras",
             "context": "Analise renda, acesso a alimentos saudaveis, abastecimento local, educacao nutricional e politicas publicas.",
-            "source": "Donc ENEM",
+            "source": "Donc",
             "supporting_texts": [
                 {
                     "title": "Texto motivador I — Acesso desigual a alimentos saudaveis",

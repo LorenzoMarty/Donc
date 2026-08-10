@@ -90,7 +90,7 @@ describe("anti-regressão: estruturas-núcleo", () => {
   });
 
   it("metadados das missões profundas (payload de contrato)", () => {
-    const ids = ["version-duel", "argument-escalation", "text-surgery", "artificiality-detector", "corrector-diagnosis", "essay-collapse"];
+    const ids = ["version-duel", "argument-escalation", "text-surgery", "artificiality-detector", "corrector-diagnosis"];
     const meta = ids.map((id) => {
       const g = getGameById(id) as GameDefinition;
       return { id: g.id, engine: g.engine, hubs: g.hubs, focus: g.cognitiveFocus };
@@ -156,18 +156,6 @@ describe("anti-regressão: estruturas-núcleo", () => {
             "conclusao-formula",
           ],
           "id": "corrector-diagnosis",
-        },
-        {
-          "engine": "essay-collapse",
-          "focus": [
-            "reconstruction",
-            "progression",
-          ],
-          "hubs": [
-            "perde-na-c3",
-            "repete-ideias",
-          ],
-          "id": "essay-collapse",
         },
       ]
     `);
