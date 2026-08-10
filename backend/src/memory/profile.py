@@ -5,6 +5,9 @@ from sqlalchemy.orm import Session
 
 from src.agents.schemas import EssayCorrectionResult
 from src.memory.cognitive_issues import apply_cognitive_signal
+from src.memory.confidence import compute_confidence
+from src.memory.issue_timeline import compute_issue_timeline
+from src.memory.learning_outcomes import SOURCE_WEIGHT, record_learning_outcome
 from src.models import StudentLearningProfile
 
 _TREND_LIMIT = 8
@@ -23,6 +26,14 @@ def get_learning_profile_payload(db: Session, user_id: int) -> dict:
             "score_trend": [],
             "cognitive_issues": {},
         }
+    cognitive_issues = {
+        code: {
+            **record,
+            "confidence": compute_confidence(db, user_id=user_id, code=code),
+            **compute_issue_timeline(db, user_id=user_id, code=code),
+        }
+        for code, record in (profile.cognitive_issues or {}).items()
+    }
     return {
         "weak_competencies": profile.weak_competencies,
         "recurring_errors": profile.recurring_errors,
@@ -30,7 +41,7 @@ def get_learning_profile_payload(db: Session, user_id: int) -> dict:
         "recommendations": profile.recommendations,
         "latest_competencies": profile.latest_competencies,
         "score_trend": profile.score_trend,
-        "cognitive_issues": profile.cognitive_issues,
+        "cognitive_issues": cognitive_issues,
     }
 
 
@@ -43,7 +54,9 @@ def get_or_create_learning_profile(db: Session, user_id: int) -> StudentLearning
     return profile
 
 
-def update_learning_profile(db: Session, *, user_id: int, correction: EssayCorrectionResult) -> None:
+def update_learning_profile(
+    db: Session, *, user_id: int, correction: EssayCorrectionResult, essay_id: int | None = None
+) -> None:
     profile = get_or_create_learning_profile(db, user_id)
 
     weak = dict(profile.weak_competencies or {})
@@ -66,17 +79,26 @@ def update_learning_profile(db: Session, *, user_id: int, correction: EssayCorre
     profile.score_trend = [*(profile.score_trend or []), correction.total_score][-_TREND_LIMIT:]
 
     issues = profile.cognitive_issues
-    issues = apply_cognitive_signal(issues, "C3_LOW", "negative" if correction.competency_3 < 160 else "positive")
-    issues = apply_cognitive_signal(
-        issues, "WEAK_THESIS", "negative" if correction.competency_2 < 160 else "positive"
-    )
-    issues = apply_cognitive_signal(
-        issues, "FORMULAIC_CONCLUSION", "negative" if correction.competency_5 < 160 else "positive"
-    )
+
+    def _signal(code: str, direction: str) -> None:
+        nonlocal issues
+        issues = apply_cognitive_signal(issues, code, direction, weight=SOURCE_WEIGHT["ESSAY"])
+        record_learning_outcome(
+            db,
+            user_id=user_id,
+            cognitive_issue_code=code,
+            source="ESSAY",
+            source_id=essay_id,
+            direction=direction,
+        )
+
+    _signal("C3_LOW", "negative" if correction.competency_3 < 160 else "positive")
+    _signal("WEAK_THESIS", "negative" if correction.competency_2 < 160 else "positive")
+    _signal("FORMULAIC_CONCLUSION", "negative" if correction.competency_5 < 160 else "positive")
     if correction.competency_3 >= 160:
-        issues = apply_cognitive_signal(issues, "SHALLOW_ARGUMENTATION", "positive")
+        _signal("SHALLOW_ARGUMENTATION", "positive")
     elif weak.get("c3", 0) >= _SHALLOW_ARGUMENTATION_THRESHOLD:
-        issues = apply_cognitive_signal(issues, "SHALLOW_ARGUMENTATION", "negative")
+        _signal("SHALLOW_ARGUMENTATION", "negative")
     profile.cognitive_issues = issues
 
 

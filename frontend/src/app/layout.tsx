@@ -31,12 +31,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
-    default: "Donc ENEM | Portugues e Redacao",
-    template: "%s | Donc ENEM",
+    default: "Donc | Portugues e Redacao",
+    template: "%s | Donc",
   },
   description: "Plataforma para estudar Portugues e Redacao ENEM com IA, praticas curtas, rotina e progresso real.",
   openGraph: {
-    title: "Donc ENEM",
+    title: "Donc",
     description: "Estudo de Portugues e Redacao ENEM com IA, rotina e progresso mensuravel.",
     type: "website",
   },

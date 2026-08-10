@@ -1,7 +1,7 @@
 [project]
 name = "donc-enem-backend"
 version = "1.0.0"
-description = "Donc ENEM backend (FastAPI)"
+description = "Donc backend (FastAPI)"
 requires-python = ">=3.11"
 # Espelha backend/requirements.txt (fonte usada em Docker/local). Mantenha os dois em sincronia.
 dependencies = [

@@ -25,7 +25,12 @@ def submit_exercise(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[dict[str, object]]:
-    result = ExerciseService(db).submit(user=current_user, exercise_id=exercise_id, selected_answer=payload.selected_answer)
+    result = ExerciseService(db).submit(
+        user=current_user,
+        exercise_id=exercise_id,
+        selected_answer=payload.selected_answer,
+        recommendation_log_id=payload.recommendation_log_id,
+    )
     touch_daily_streak(db, current_user)
     return success_response(result)
 

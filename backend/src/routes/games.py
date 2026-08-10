@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session
 from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.memory.cognitive_issues import EVENT_DIRECTION, HUB_TO_ISSUE, apply_cognitive_signal
+from src.memory.learning_outcomes import SOURCE_WEIGHT, record_learning_outcome
 from src.memory.profile import get_or_create_learning_profile
+from src.memory.recommendation_log import mark_completed
 from src.middlewares.errors import AppError
 from src.models import GameAttempt, User, UserGameProgress
 from src.models.events import AIGeneratedGame
@@ -68,6 +70,7 @@ class GameCompleteRequest(BaseModel):
     total: int = Field(ge=1, le=500)
     duration_seconds: int = Field(ge=1, le=3600)
     cognitive_outcomes: list[CognitiveOutcomeIn] = Field(default_factory=list, max_length=20)
+    recommendation_log_id: int | None = None
 
     @model_validator(mode="after")
     def _score_within_total(self) -> "GameCompleteRequest":
@@ -178,6 +181,7 @@ def complete_game(
         completed_at=completed_at,
     )
     db.add(attempt)
+    db.flush()  # popula attempt.id — usado como source_id do LearningOutcome abaixo.
 
     row = db.query(UserGameProgress).filter(
         UserGameProgress.user_id == current_user.id,
@@ -205,6 +209,7 @@ def complete_game(
     issues_before = dict(profile.cognitive_issues)
     issues = profile.cognitive_issues
     touched_codes: list[str] = []
+    first_learning_outcome_id: int | None = None
     for outcome in payload.cognitive_outcomes:
         issue_code = HUB_TO_ISSUE.get(outcome.hub)
         direction = EVENT_DIRECTION.get(outcome.event)
@@ -212,8 +217,28 @@ def complete_game(
             continue
         if issue_code not in touched_codes:
             touched_codes.append(issue_code)
-        issues = apply_cognitive_signal(issues, issue_code, direction)
+        issues = apply_cognitive_signal(issues, issue_code, direction, weight=SOURCE_WEIGHT["GAME"])
+        learning_outcome = record_learning_outcome(
+            db,
+            user_id=current_user.id,
+            cognitive_issue_code=issue_code,
+            source="GAME",
+            source_id=attempt.id,
+            direction=direction,
+        )
+        db.flush()
+        if first_learning_outcome_id is None:
+            first_learning_outcome_id = learning_outcome.id
     profile.cognitive_issues = issues
+
+    if payload.recommendation_log_id is not None:
+        # REQ-17/REQ-18: vinculo frouxo — log inexistente/de outro usuario nao bloqueia o fluxo.
+        mark_completed(
+            db,
+            log_id=payload.recommendation_log_id,
+            user_id=current_user.id,
+            learning_outcome_id=first_learning_outcome_id,
+        )
 
     db.commit()
     db.refresh(attempt)

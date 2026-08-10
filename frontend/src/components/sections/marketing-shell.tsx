@@ -68,7 +68,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground md:px-6">
-          Donc ENEM · em pré-lançamento
+          Donc · em pré-lançamento
         </div>
       </footer>
     </div>

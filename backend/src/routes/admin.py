@@ -21,6 +21,7 @@ from src.schemas.admin import (
     AdminLessonUpdateRequest,
     AdminModuleUpdateRequest,
     AdminMoveRequest,
+    AdminPedagogicalMetricsResponse,
     AdminUserActionResponse,
     AdminUserDetailResponse,
     AdminMetricsResponse,
@@ -43,6 +44,7 @@ from src.services.admin_content_quality_service import AdminContentQualityServic
 from src.services.admin_content_service import AdminContentService
 from src.services.admin_game_review_service import AdminGameReviewService
 from src.services.admin_metrics_service import AdminMetricsService
+from src.services.admin_pedagogical_metrics_service import AdminPedagogicalMetricsService
 from src.services.admin_telemetry_service import AdminTelemetryService
 from src.services.admin_user_service import AdminUserService
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
@@ -65,6 +67,13 @@ def users(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> Ap
 @router.get("/content-quality", response_model=ApiResponse[AdminContentQualityResponse])
 def content_quality(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[AdminContentQualityResponse]:
     return success_response(AdminContentQualityService(db).report())
+
+
+@router.get("/pedagogical-metrics", response_model=ApiResponse[AdminPedagogicalMetricsResponse])
+def pedagogical_metrics(
+    _: User = Depends(require_admin), db: Session = Depends(get_db)
+) -> ApiResponse[AdminPedagogicalMetricsResponse]:
+    return success_response(AdminPedagogicalMetricsService(db).report())
 
 
 @router.get("/content", response_model=ApiResponse[list[AdminModuleRead]])

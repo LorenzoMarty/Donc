@@ -60,14 +60,13 @@ describe("contrato cognitivo das missões (enrichGame)", () => {
     }
   });
 
-  it("as 6 missões profundas estão vinculadas a pelo menos um hub", () => {
+  it("as 5 missões profundas estão vinculadas a pelo menos um hub", () => {
     const deepIds = [
       "version-duel",
       "argument-escalation",
       "text-surgery",
       "artificiality-detector",
       "corrector-diagnosis",
-      "essay-collapse",
     ];
     for (const id of deepIds) {
       const game = games.find((g) => g.id === id);

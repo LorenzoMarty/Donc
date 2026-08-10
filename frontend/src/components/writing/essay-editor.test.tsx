@@ -10,7 +10,7 @@ const THEME: EssayTheme = {
   id: 1,
   title: "Tema de teste",
   context: "Contexto do tema de teste.",
-  source: "Donc ENEM",
+  source: "Donc",
   supporting_texts: [
     { title: "Texto motivador 1", content: "Conteúdo do texto motivador de teste.", type: "motivador" },
   ],

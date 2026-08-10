@@ -230,3 +230,40 @@ def test_learning_profile_empty_when_no_correction(client):
     assert data["has_data"] is False
     assert data["weak_competencies"] == {}
     assert data["recurring_errors"] == []
+
+
+def test_learning_profile_cognitive_issues_expose_confidence(client):
+    client.post(
+        "/api/v1/games/complete",
+        json={
+            "game_id": "learning-profile-confidence",
+            "score": 2,
+            "total": 10,
+            "duration_seconds": 45,
+            "cognitive_outcomes": [{"hub": "perde-na-c3", "event": "WEAK_PROGRESSION", "severity": 0.8}],
+        },
+    )
+
+    data = api_data(client.get("/api/v1/ai/learning-profile"))
+    assert "C3_LOW" in data["cognitive_issues"]
+    issue = data["cognitive_issues"]["C3_LOW"]
+    assert issue["confidence"] in ("low", "medium", "high")
+
+
+def test_learning_profile_cognitive_issues_expose_historical_timeline(client):
+    client.post(
+        "/api/v1/games/complete",
+        json={
+            "game_id": "learning-profile-timeline",
+            "score": 2,
+            "total": 10,
+            "duration_seconds": 45,
+            "cognitive_outcomes": [{"hub": "perde-na-c3", "event": "WEAK_PROGRESSION", "severity": 0.8}],
+        },
+    )
+
+    data = api_data(client.get("/api/v1/ai/learning-profile"))
+    issue = data["cognitive_issues"]["C3_LOW"]
+    assert issue["detected_at"] is not None
+    assert issue["evidence_count"] >= 1
+    assert issue["last_evidence_at"] is not None

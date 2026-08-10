@@ -15,7 +15,6 @@ import { duelGames } from "@/games/duel";
 import { escalationGames } from "@/games/escalation";
 import { artificialityGames } from "@/games/artificiality";
 import { correctorGames } from "@/games/corrector";
-import { collapseGames } from "@/games/essay-collapse";
 import { surgeryGames } from "@/games/text-surgery";
 import { survivalGames } from "@/games/survival";
 import type { PublishedGame } from "@/types/api";
@@ -32,7 +31,6 @@ const gamesCatalog: GameDefinition[] = [
   ...escalationGames,
   ...artificialityGames,
   ...correctorGames,
-  ...collapseGames,
   ...surgeryGames,
   ...survivalGames,
 ];

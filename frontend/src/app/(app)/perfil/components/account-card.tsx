@@ -25,7 +25,7 @@ export function AccountCard() {
           {initials(user?.name ?? "Aluno")}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground/62">Aluno Donc ENEM</p>
+          <p className="text-sm font-semibold text-foreground/62">Aluno Donc</p>
           <h2 className="font-display text-safe text-[28px] font-medium tracking-normal">{user?.name ?? "Aluno"}</h2>
           <p className="text-safe mt-1 text-sm text-foreground/70">{user?.email}</p>
           {user?.created_at ? (

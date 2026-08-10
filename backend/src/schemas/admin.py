@@ -433,6 +433,25 @@ class AIGameActionResponse(BaseModel):
     game_id: int
 
 
+# ── Pedagogical metrics (P2a Bloco 6 — REQ-19/REQ-20) ──────────────────────
+
+class BeforeAfterIssueRow(BaseModel):
+    issue: str
+    cycles: int
+    improved: int
+    unchanged_or_worse: int
+
+
+class AdminPedagogicalMetricsResponse(BaseModel):
+    shown: int
+    started: int
+    completed: int
+    start_rate: float | None
+    completion_rate: float | None
+    avg_completion_seconds_by_type: dict[str, float]
+    before_after_by_issue: list[BeforeAfterIssueRow]
+
+
 # ── Event Tracking ────────────────────────────────────────────────────────────
 
 class TrackEventRequest(BaseModel):

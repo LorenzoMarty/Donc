@@ -36,6 +36,7 @@ def update_progress(
         progress_percent=payload.progress_percent,
         last_position_seconds=payload.last_position_seconds,
         completed=payload.completed,
+        recommendation_log_id=payload.recommendation_log_id,
     )
     if result.completed:
         touch_daily_streak(db, current_user)

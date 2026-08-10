@@ -91,7 +91,7 @@ def test_admin_can_generate_one_essay_theme(client):
         assert theme["title"]
         assert not theme["title"].strip()[0].isdigit()
         assert theme["context"]
-        assert theme["source"] == "IA Donc ENEM"
+        assert theme["source"] == "IA Donc"
         assert len(theme["supporting_texts"]) >= 2
 
         list_response = client.get("/api/v1/admin/essay-themes")

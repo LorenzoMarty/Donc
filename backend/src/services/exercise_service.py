@@ -1,7 +1,9 @@
 ﻿from sqlalchemy.orm import Session
 
 from src.memory.cognitive_issues import apply_cognitive_signal
+from src.memory.learning_outcomes import SOURCE_WEIGHT, record_learning_outcome
 from src.memory.profile import get_or_create_learning_profile
+from src.memory.recommendation_log import mark_completed
 from src.middlewares.errors import AppError
 from src.models import ExerciseAnswer, User
 from src.repositories.learning import LearningRepository
@@ -27,7 +29,9 @@ class ExerciseService:
             for exercise in self.repo.list_exercises()
         ]
 
-    def submit(self, *, user: User, exercise_id: int, selected_answer: str) -> dict[str, object]:
+    def submit(
+        self, *, user: User, exercise_id: int, selected_answer: str, recommendation_log_id: int | None = None
+    ) -> dict[str, object]:
         exercise = self.repo.get_exercise(exercise_id)
         if not exercise:
             raise AppError("Exercício não encontrado.", status_code=404, code="exercise_not_found")
@@ -40,14 +44,36 @@ class ExerciseService:
             is_correct=is_correct,
         )
         self.db.add(answer)
+        self.db.flush()  # popula answer.id — usado como source_id do LearningOutcome abaixo.
 
+        first_learning_outcome_id: int | None = None
         if exercise.targets:
             profile = get_or_create_learning_profile(self.db, user.id)
             issues = profile.cognitive_issues
             direction = "positive" if is_correct else "negative"
             for code in exercise.targets:
-                issues = apply_cognitive_signal(issues, code, direction)
+                issues = apply_cognitive_signal(issues, code, direction, weight=SOURCE_WEIGHT["EXERCISE"])
+                learning_outcome = record_learning_outcome(
+                    self.db,
+                    user_id=user.id,
+                    cognitive_issue_code=code,
+                    source="EXERCISE",
+                    source_id=answer.id,
+                    direction=direction,
+                )
+                self.db.flush()
+                if first_learning_outcome_id is None:
+                    first_learning_outcome_id = learning_outcome.id
             profile.cognitive_issues = issues
+
+        if recommendation_log_id is not None:
+            # REQ-17/REQ-18: vinculo frouxo — log inexistente/de outro usuario nao bloqueia o fluxo.
+            mark_completed(
+                self.db,
+                log_id=recommendation_log_id,
+                user_id=user.id,
+                learning_outcome_id=first_learning_outcome_id,
+            )
 
         self.db.commit()
 

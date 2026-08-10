@@ -74,6 +74,7 @@ class CorrectionOrchestratorWorkflow:
                     safe_content=safe_content,
                     session_id=session_id,
                     user_id=user_id,
+                    essay_id=essay_id,
                     job_id=job_id,
                     parent_ctx=parent_ctx,
                 )
@@ -87,6 +88,7 @@ class CorrectionOrchestratorWorkflow:
         safe_content: str,
         session_id: str | None,
         user_id: int | None,
+        essay_id: int | None = None,
         job_id: str | None,
         parent_ctx: object,
     ) -> EssayCorrectionResult:
@@ -154,7 +156,7 @@ class CorrectionOrchestratorWorkflow:
         correction = self.mapper.map(analyses, audited)
 
         if self.db is not None and user_id is not None:
-            update_learning_profile(self.db, user_id=user_id, correction=correction)
+            update_learning_profile(self.db, user_id=user_id, correction=correction, essay_id=essay_id)
 
         return correction
 

@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from src.database.session import SessionLocal
 from src.memory.profile import get_or_create_learning_profile
-from src.models import StudentLearningProfile, User
+from src.models import LearningOutcome, StudentLearningProfile, User
 from src.models.events import AIGeneratedGame
 from src.services.recommendation_service import RecommendationEngine
 
@@ -24,6 +24,10 @@ def _reset_issues(user_id: int) -> None:
     try:
         profile = get_or_create_learning_profile(db, user_id)
         profile.cognitive_issues = {}
+        # P2a/Bloco 4 (REQ-11): recommend() considera o LearningOutcome mais recente de cada
+        # issue pra desempate — precisa ser limpo tambem, senao evidencia de outro teste (usuario
+        # demo e compartilhado por toda a suite) vaza pro ranking deste teste.
+        db.query(LearningOutcome).filter(LearningOutcome.user_id == user_id).delete()
         db.commit()
     finally:
         db.close()

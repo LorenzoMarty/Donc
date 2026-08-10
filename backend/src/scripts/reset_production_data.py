@@ -55,7 +55,7 @@ def main() -> None:
         if args.wipe_catalog:
             _reset_catalog_data(db)
         else:
-            db.execute(delete(EssayTheme).where(EssayTheme.source == "IA Donc ENEM"))
+            db.execute(delete(EssayTheme).where(EssayTheme.source == "IA Donc"))
         db.commit()
 
         seed_database(db, include_demo_data=False)

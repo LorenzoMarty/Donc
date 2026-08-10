@@ -28,6 +28,16 @@ const STATE_LABEL: Record<CognitiveIssueRecord["state"], string> = {
   MASTERED: "Dominado",
 };
 
+const CONFIDENCE_LABEL: Record<CognitiveIssueRecord["confidence"], string> = {
+  low: "Confiança baixa",
+  medium: "Confiança média",
+  high: "Confiança alta",
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 /** REQ-23 (P1): lista os problemas cognitivos do aluno com indicador visual por estado — mesmo
  * payload de `GET /ai/learning-profile` (`cognitive_issues`, já centralizado no P0). */
 export function CognitiveIssuesSection({ issues }: { issues: Record<string, CognitiveIssueRecord> | undefined }) {
@@ -43,10 +53,22 @@ export function CognitiveIssuesSection({ issues }: { issues: Record<string, Cogn
           const hub = HUB_FOR_ISSUE[code];
           const label = hub ? HUBS[hub].title : code;
           return (
-            <div key={code} className="flex items-center gap-3 rounded-control bg-muted/40 px-4 py-3">
-              <span aria-hidden="true">{STATE_DOT[record.state]}</span>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{label}</span>
-              <span className="shrink-0 text-xs font-semibold text-muted-foreground">{STATE_LABEL[record.state]}</span>
+            <div key={code} className="rounded-control bg-muted/40 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span aria-hidden="true">{STATE_DOT[record.state]}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{label}</span>
+                <span className="shrink-0 text-xs font-semibold text-muted-foreground">{STATE_LABEL[record.state]}</span>
+              </div>
+              <p className="mt-1 pl-6 text-xs text-muted-foreground">
+                {CONFIDENCE_LABEL[record.confidence]}
+                {record.detected_at ? (
+                  <>
+                    {" · Detectado em "}
+                    {formatDate(record.detected_at)}
+                    {` · ${record.evidence_count} evidência${record.evidence_count === 1 ? "" : "s"}`}
+                  </>
+                ) : null}
+              </p>
             </div>
           );
         })}

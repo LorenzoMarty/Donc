@@ -71,11 +71,17 @@ export type User = {
 
 export type CognitiveIssueState = "DETECTED" | "TRAINING" | "IMPROVING" | "MASTERED";
 
+export type CognitiveIssueConfidence = "low" | "medium" | "high";
+
 export type CognitiveIssueRecord = {
   state: CognitiveIssueState;
   negative_count: number;
   positive_streak: number;
   updated_at: string | null;
+  confidence: CognitiveIssueConfidence;
+  detected_at: string | null;
+  evidence_count: number;
+  last_evidence_at: string | null;
 };
 
 export type LearningProfile = {

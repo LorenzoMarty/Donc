@@ -12,10 +12,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from src.models import Exercise, ExerciseAnswer, GameAttempt, Lesson, LessonProgress, Module, StudentLearningProfile
+from src.memory.confidence import Confidence, compute_confidence
+from src.models import Exercise, ExerciseAnswer, GameAttempt, LearningOutcome, Lesson, LessonProgress, Module, StudentLearningProfile
 
 # Janela de "atividade recente" — conteudo concluido dentro dela e deprioritado (nao excluido:
 # se for a unica opcao compativel com o issue, ainda e recomendado) em favor de algo fresco.
@@ -89,27 +90,70 @@ class RecommendedAction:
     target: str | None
     reason: str
     estimated_minutes: int
+    confidence: Confidence | None = None
 
 
-def _top_active_issue(cognitive_issues: dict) -> tuple[str, dict] | None:
-    active = [(code, rec) for code, rec in (cognitive_issues or {}).items() if rec.get("state") in _ACTIVE_STATES]
-    if not active:
-        return None
-
-    def sort_key(item: tuple[str, dict]) -> tuple[int, int]:
-        _, rec = item
-        state_priority = 0 if rec.get("state") == "DETECTED" else 1
-        return (state_priority, -int(rec.get("negative_count", 0)))
-
-    return sorted(active, key=sort_key)[0]
+_RECENT_TREND_WINDOW = 2
+_EVIDENCE_NOTE_MIN_COUNT = 2
 
 
 class RecommendationEngine:
     def __init__(self, db: Session) -> None:
         self.db = db
 
+    def _evidence_count(self, user_id: int, code: str) -> int:
+        return (
+            self.db.scalar(
+                select(func.count()).select_from(LearningOutcome).where(
+                    LearningOutcome.user_id == user_id, LearningOutcome.cognitive_issue_code == code
+                )
+            )
+            or 0
+        )
+
+    def _recent_positive_count(self, user_id: int, code: str) -> int:
+        """REQ-11: quantos dos ultimos `_RECENT_TREND_WINDOW` LearningOutcome do issue ja sao
+        positivos — issue "recuperando" (recente ja positivo) cede prioridade a um issue ainda
+        so negativo, mesmo com mesmo estado/negative_count."""
+        rows = self.db.scalars(
+            select(LearningOutcome.direction)
+            .where(LearningOutcome.user_id == user_id, LearningOutcome.cognitive_issue_code == code)
+            .order_by(LearningOutcome.created_at.desc())
+            .limit(_RECENT_TREND_WINDOW)
+        ).all()
+        return sum(1 for direction in rows if direction == "positive")
+
+    def _top_active_issue(self, cognitive_issues: dict, user_id: int | None) -> tuple[str, dict] | None:
+        active = [(code, rec) for code, rec in (cognitive_issues or {}).items() if rec.get("state") in _ACTIVE_STATES]
+        if not active:
+            return None
+
+        def sort_key(item: tuple[str, dict]) -> tuple[int, int, int]:
+            code, rec = item
+            state_priority = 0 if rec.get("state") == "DETECTED" else 1
+            recent_positive = self._recent_positive_count(user_id, code) if user_id is not None else 0
+            return (state_priority, recent_positive, -int(rec.get("negative_count", 0)))
+
+        return sorted(active, key=sort_key)[0]
+
+    def _evidence_note(self, user_id: int, code: str) -> str:
+        """REQ-14: menciona quantidade de evidencia quando isso faz diferenca (>= 2 registros —
+        uma unica evidencia isolada nao acrescenta informacao util ao motivo)."""
+        count = self._evidence_count(user_id, code)
+        if count < _EVIDENCE_NOTE_MIN_COUNT:
+            return ""
+        return f" Baseado em {count} evidências recentes."
+
     def recommend(self, profile: StudentLearningProfile, user_id: int | None = None) -> list[RecommendedAction]:
-        top = _top_active_issue(profile.cognitive_issues)
+        cognitive_issues = profile.cognitive_issues or {}
+        if user_id is not None:
+            # REQ-12: nenhum issue sem nenhuma evidencia (LearningOutcome) e recomendado — estado
+            # herdado de antes da migration (REQ-7) ou sinal sem registro nao vira recomendacao.
+            cognitive_issues = {
+                code: rec for code, rec in cognitive_issues.items() if self._evidence_count(user_id, code) > 0
+            }
+
+        top = self._top_active_issue(cognitive_issues, user_id)
         if not top:
             return [
                 RecommendedAction(
@@ -123,6 +167,8 @@ class RecommendationEngine:
 
         code, _record = top
         label = ISSUE_LABEL.get(code, code)
+        confidence = compute_confidence(self.db, user_id=user_id, code=code) if user_id is not None else None
+        evidence_note = self._evidence_note(user_id, code) if user_id is not None else ""
         actions: list[RecommendedAction] = []
 
         lesson = self._find_lesson_for_issue(code, user_id)
@@ -132,8 +178,9 @@ class RecommendationEngine:
                     type="LESSON",
                     target_issue=code,
                     target=str(lesson.id),
-                    reason=f"Seu desempenho recente indica que {label}. Esta aula trabalha diretamente esse ponto.",
+                    reason=f"Seu desempenho recente indica que {label}. Esta aula trabalha diretamente esse ponto.{evidence_note}",
                     estimated_minutes=lesson.duration_minutes or 8,
+                    confidence=confidence,
                 )
             )
 
@@ -144,8 +191,9 @@ class RecommendationEngine:
                     type="EXERCISE",
                     target_issue=code,
                     target=str(exercise.id),
-                    reason=f"Seu desempenho recente indica que {label}. Este exercício treina exatamente esse ponto.",
+                    reason=f"Seu desempenho recente indica que {label}. Este exercício treina exatamente esse ponto.{evidence_note}",
                     estimated_minutes=EXERCISE_ESTIMATED_MINUTES,
+                    confidence=confidence,
                 )
             )
 
@@ -156,8 +204,9 @@ class RecommendationEngine:
                     type="GAME",
                     target_issue=code,
                     target=hub,
-                    reason=f"Seu desempenho recente indica que {label}. Um treino curto ajuda a corrigir isso na prática.",
+                    reason=f"Seu desempenho recente indica que {label}. Um treino curto ajuda a corrigir isso na prática.{evidence_note}",
                     estimated_minutes=6,
+                    confidence=confidence,
                 )
             )
 

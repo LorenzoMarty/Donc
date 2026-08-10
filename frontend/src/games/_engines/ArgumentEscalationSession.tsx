@@ -18,7 +18,10 @@ import { cn } from "@/utils";
 
 type Step = { theme: string; level: number; instruction: string; options: EscalationOption[]; tags?: SkillTag[] };
 
-/** Engine `argument-escalation`: subir a escada da tese, do raso ao sofisticado. */
+const ERROR_LIMIT = 5;
+
+/** Engine `argument-escalation`: subir a escada da tese, do raso ao sofisticado. Errar derruba
+ * um degrau (mesma escada); acumular 5 erros encerra a sessão. */
 export function ArgumentEscalationSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
   const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
@@ -36,9 +39,14 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
 
   const [step, setStep] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
+  const [lastCorrect, setLastCorrect] = useState(false);
   const [score, setScore] = useState(0);
+  const [errors, setErrors] = useState(0);
   const [result, setResult] = useState<GameCompletion | null>(null);
   const [missed, setMissed] = useState<{ id: string; text: string }[]>([]);
+  // Degraus já resolvidos corretamente ao menos uma vez — evita contar de novo quando o aluno
+  // volta e reacerta um degrau que tinha derrubado (mecânica de "descer" após erro).
+  const [solved, setSolved] = useState<Set<number>>(new Set());
 
   const current = steps[step];
   const maxLevel = useMemo(() => steps.reduce((m, s) => Math.max(m, s.level), 0), [steps]);
@@ -59,15 +67,32 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
     if (picked !== null || !current) return;
     const correct = current.options[index]?.correct === true;
     setPicked(index);
-    if (correct) setScore((v) => v + 1);
-    else {
+    setLastCorrect(correct);
+    if (correct) {
+      if (!solved.has(step)) {
+        setScore((v) => v + 1);
+        setSolved((prev) => new Set(prev).add(step));
+      }
+    } else {
       const right = current.options.find((o) => o.correct);
-      setMissed((m) => [...m, { id: `${step}`, text: `Nível ${current.level}: ${right?.note ?? "veja o patamar superior."}` }]);
+      setMissed((m) => [...m, { id: `${step}-${errors}`, text: `Nível ${current.level}: ${right?.note ?? "veja o patamar superior."}` }]);
+      setErrors((v) => v + 1);
     }
     recordCognitiveOutcome(game, { tags: current.tags, correct });
   }
 
   function next() {
+    // 5º erro encerra a sessão imediatamente, com o desempenho até aqui.
+    if (!lastCorrect && errors >= ERROR_LIMIT) {
+      setResult(completeGame(game, score, steps.length, 0));
+      return;
+    }
+    if (!lastCorrect) {
+      // Errar derruba um degrau na mesma escada; no 1º degrau, repete o mesmo degrau.
+      setStep((v) => (current.level > 1 ? v - 1 : v));
+      setPicked(null);
+      return;
+    }
     if (step < steps.length - 1) {
       setStep((v) => v + 1);
       setPicked(null);
@@ -79,8 +104,11 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
   function restart() {
     setStep(0);
     setPicked(null);
+    setLastCorrect(false);
     setScore(0);
+    setErrors(0);
     setMissed([]);
+    setSolved(new Set());
     setResult(null);
   }
 
@@ -103,6 +131,9 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
               <TrendingUp className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Degrau {current.level}/{maxLevel}
             </Badge>
             <Badge variant="outline">{current.theme}</Badge>
+            <Badge variant={errors >= ERROR_LIMIT - 1 ? "destructive" : "outline"}>
+              Erros: {errors}/{ERROR_LIMIT}
+            </Badge>
           </div>
 
           {/* Escada visual */}
@@ -149,8 +180,16 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
           </div>
 
           {picked !== null && (
-            <Button onClick={next} className="mt-5">
-              {step < steps.length - 1 ? "Próximo degrau" : "Finalizar"}
+            <Button onClick={next} className="mt-5" variant={lastCorrect ? "default" : "outline"}>
+              {!lastCorrect
+                ? errors >= ERROR_LIMIT
+                  ? "Encerrar sessão"
+                  : current.level > 1
+                    ? "Descer um degrau"
+                    : "Tentar de novo"
+                : step < steps.length - 1
+                  ? "Próximo degrau"
+                  : "Finalizar"}
             </Button>
           )}
         </motion.section>

@@ -1,6 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from src.memory.recommendation_log import mark_completed
 from src.middlewares.errors import AppError
 from src.models import Lesson, LessonProgress, User
 from src.repositories.learning import LearningRepository
@@ -36,7 +37,16 @@ class LessonService:
             )
         return self._lesson_schema(lesson, user_id, locked=False)
 
-    def update_progress(self, lesson_id: int, user_id: int, *, progress_percent: int, last_position_seconds: int, completed: bool) -> LessonProgressRead:
+    def update_progress(
+        self,
+        lesson_id: int,
+        user_id: int,
+        *,
+        progress_percent: int,
+        last_position_seconds: int,
+        completed: bool,
+        recommendation_log_id: int | None = None,
+    ) -> LessonProgressRead:
         lesson = self.repo.get_lesson(lesson_id)
         if not lesson:
             raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
@@ -49,6 +59,11 @@ class LessonService:
         progress.progress_percent = 100 if completed else progress_percent
         progress.last_position_seconds = last_position_seconds
         progress.completed = completed or progress.progress_percent >= 100
+
+        if progress.completed and recommendation_log_id is not None:
+            # REQ-17/REQ-18: aula nao gera LearningOutcome (REQ-3) — fecha o ciclo sem esse vinculo.
+            mark_completed(self.db, log_id=recommendation_log_id, user_id=user_id)
+
         self.db.commit()
         self.db.refresh(progress)
         return LessonProgressRead(

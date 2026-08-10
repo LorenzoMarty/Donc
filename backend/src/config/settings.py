@@ -8,7 +8,7 @@ DEFAULT_JWT_SECRET = "change-this-secret-before-production"
 
 
 class Settings(BaseSettings):
-    project_name: str = "Donc ENEM"
+    project_name: str = "Donc"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "postgresql+psycopg://enem:enem@localhost:5432/enem_redacao"
     database_connect_timeout_seconds: int = 5
