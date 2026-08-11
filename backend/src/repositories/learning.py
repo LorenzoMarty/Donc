@@ -29,7 +29,8 @@ class LearningRepository:
         return self.db.get(Exercise, exercise_id)
 
     def list_exercises(self) -> list[Exercise]:
-        stmt = select(Exercise).order_by(Exercise.id)
+        # REQ-12 (P2c): exercicio arquivado nao aparece pro aluno, mas continua no banco.
+        stmt = select(Exercise).where(Exercise.archived.is_(False)).order_by(Exercise.id)
         return list(self.db.scalars(stmt))
 
     def get_progress(self, user_id: int, lesson_id: int) -> LessonProgress | None:

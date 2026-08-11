@@ -11,7 +11,6 @@ from src.schemas.admin import (
     AdminContentQualityResponse,
     AdminActivityCreateRequest,
     AdminActivityGenerateRequest,
-    AdminActivityRead,
     AdminActivityUpdateRequest,
     AdminEssayThemeActionResponse,
     AdminEssayThemeGenerateRequest,
@@ -21,10 +20,12 @@ from src.schemas.admin import (
     AdminLessonUpdateRequest,
     AdminModuleUpdateRequest,
     AdminMoveRequest,
+    AdminAdaptiveHealthResponse,
     AdminPedagogicalMetricsResponse,
     AIGenerationTraceRead,
     AIQualityReportRow,
     AIQuotaStatusRead,
+    ContentVersionRead,
     AdminUserActionResponse,
     AdminUserDetailResponse,
     AdminMetricsResponse,
@@ -33,9 +34,11 @@ from src.schemas.admin import (
     AdminUserRead,
     AdminUserUpdateRequest,
     AIGameActionResponse,
+    AIGeneratedExerciseRead,
     AIGeneratedGameRead,
     AITelemetryResponse,
     GenerateGameRequest,
+    ReviewExerciseRequest,
     ReviewGameRequest,
     TrackEventRequest,
     UpdateGameRequest,
@@ -43,6 +46,7 @@ from src.schemas.admin import (
 )
 from src.schemas.common import ApiResponse, success_response
 from src.schemas.essays import EssayThemeRead
+from src.services.admin_adaptive_health_service import AdminAdaptiveHealthService
 from src.services.admin_content_quality_service import AdminContentQualityService
 from src.services.admin_content_service import AdminContentService
 from src.services.admin_game_review_service import AdminGameReviewService
@@ -50,6 +54,7 @@ from src.services.admin_metrics_service import AdminMetricsService
 from src.services.admin_pedagogical_metrics_service import AdminPedagogicalMetricsService
 from src.services.admin_telemetry_service import AdminTelemetryService
 from src.services.admin_user_service import AdminUserService
+from src.services.content_versioning import list_versions
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
 from src.utils.ai_quota import require_ai_daily_quota
 from src.utils.rate_limit import require_ai_rate_limit
@@ -71,6 +76,20 @@ def users(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> Ap
 @router.get("/content-quality", response_model=ApiResponse[AdminContentQualityResponse])
 def content_quality(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[AdminContentQualityResponse]:
     return success_response(AdminContentQualityService(db).report())
+
+
+@router.get("/adaptive-health", response_model=ApiResponse[AdminAdaptiveHealthResponse])
+def adaptive_health(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[AdminAdaptiveHealthResponse]:
+    report = AdminAdaptiveHealthService(db).report()
+    return success_response(
+        AdminAdaptiveHealthResponse(
+            students_without_diagnosis=report.students_without_diagnosis,
+            students_without_recommendation=report.students_without_recommendation,
+            recommendations_without_content=report.recommendations_without_content,
+            issues_without_content=report.issues_without_content,
+            issues_without_progress=report.issues_without_progress,
+        )
+    )
 
 
 @router.get("/pedagogical-metrics", response_model=ApiResponse[AdminPedagogicalMetricsResponse])
@@ -122,7 +141,7 @@ def generate_essay_theme(
 def update_essay_theme(
     theme_id: int,
     payload: AdminEssayThemeUpdateRequest,
-    _: User = Depends(require_admin),
+    current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ApiResponse[EssayThemeRead]:
     return success_response(
@@ -131,6 +150,7 @@ def update_essay_theme(
             title=payload.title,
             context=payload.context,
             supporting_texts=[item.model_dump() for item in payload.supporting_texts] if payload.supporting_texts is not None else None,
+            admin_user_id=current_admin.id,
         ),
         "Tema atualizado.",
     )
@@ -215,7 +235,7 @@ def create_activity(
 
 @router.post(
     "/modules/{module_id}/activities/generate",
-    response_model=ApiResponse[list[AdminActivityRead]],
+    response_model=ApiResponse[list[AIGeneratedExerciseRead]],
     dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_activity_generation"))],
 )
 def generate_activity_draft(
@@ -223,7 +243,7 @@ def generate_activity_draft(
     payload: AdminActivityGenerateRequest,
     current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
-) -> ApiResponse[list[AdminActivityRead]]:
+) -> ApiResponse[list[AIGeneratedExerciseRead]]:
     return success_response(
         AdminContentService(db).generate_activity_drafts(
             module_id=module_id,
@@ -234,8 +254,43 @@ def generate_activity_draft(
             admin_user_id=current_admin.id,
             idempotency_key=payload.idempotency_key,
         ),
-        "Atividade gerada para revisão.",
+        "Exercício gerado — revise antes de aprovar.",
     )
+
+
+@router.get("/ai-exercises", response_model=ApiResponse[list[AIGeneratedExerciseRead]])
+def list_ai_exercises(
+    status: str | None = Query(default=None, pattern="^(pending|approved|rejected)$"),
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AIGeneratedExerciseRead]]:
+    return success_response(AdminContentService(db).list_ai_exercises(status=status))
+
+
+@router.post("/ai-exercises/{ai_exercise_id}/review", response_model=ApiResponse[AIGeneratedExerciseRead])
+def review_ai_exercise(
+    ai_exercise_id: int,
+    payload: ReviewExerciseRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedExerciseRead]:
+    result = AdminContentService(db).review_ai_exercise(
+        ai_exercise_id,
+        action=payload.action,
+        notes=payload.notes,
+        statement=payload.statement,
+        options=payload.options,
+        correct_answer=payload.correct_answer,
+        explanation=payload.explanation,
+        skill=payload.skill,
+        difficulty=payload.difficulty,
+        lesson_id=payload.lesson_id,
+        base_lesson_ids=payload.base_lesson_ids,
+        order=payload.order,
+        targets=payload.targets,
+        reviewer_id=current_admin.id,
+    )
+    return success_response(result, "Exercício aprovado." if payload.action == "approve" else "Exercício rejeitado.")
 
 
 @router.patch("/modules/{module_id}", response_model=ApiResponse[list[AdminModuleRead]])
@@ -315,7 +370,7 @@ def move_lesson(
 def update_activity(
     activity_id: int,
     payload: AdminActivityUpdateRequest,
-    _: User = Depends(require_admin),
+    current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[AdminModuleRead]]:
     return success_response(
@@ -330,6 +385,7 @@ def update_activity(
             lesson_id=payload.lesson_id,
             base_lesson_ids=payload.base_lesson_ids,
             targets=payload.targets,
+            admin_user_id=current_admin.id,
         ),
         "Atividade atualizada.",
     )
@@ -342,6 +398,24 @@ def delete_activity(
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[AdminModuleRead]]:
     return success_response(AdminContentService(db).delete_activity(activity_id=activity_id), "Atividade excluida.")
+
+
+@router.post("/activities/{activity_id}/archive", response_model=ApiResponse[list[AdminModuleRead]])
+def archive_activity(
+    activity_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AdminModuleRead]]:
+    return success_response(AdminContentService(db).archive_activity(activity_id=activity_id), "Atividade arquivada.")
+
+
+@router.post("/activities/{activity_id}/unarchive", response_model=ApiResponse[list[AdminModuleRead]])
+def unarchive_activity(
+    activity_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AdminModuleRead]]:
+    return success_response(AdminContentService(db).unarchive_activity(activity_id=activity_id), "Atividade restaurada.")
 
 
 @router.post("/module-items/{item_id}/move", response_model=ApiResponse[list[AdminModuleRead]])
@@ -424,6 +498,17 @@ def ai_generation_trace(
     return success_response(AdminTelemetryService(db).generation_trace(content_type=content_type, content_id=content_id))
 
 
+@router.get("/content-versions/{content_type}/{content_id}", response_model=ApiResponse[list[ContentVersionRead]])
+def content_versions(
+    content_type: str,
+    content_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[ContentVersionRead]]:
+    versions = list_versions(db, content_type=content_type, content_id=content_id)
+    return success_response([ContentVersionRead.model_validate(v) for v in versions])
+
+
 @router.get("/user-activity", response_model=ApiResponse[UserActivityResponse])
 def user_activity(
     days: int = Query(default=7, ge=1, le=30),
@@ -504,7 +589,7 @@ def review_game(
 def update_game(
     game_id: int,
     payload: UpdateGameRequest,
-    _: User = Depends(require_admin),
+    current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ) -> ApiResponse[AIGeneratedGameRead]:
     game = AdminGameReviewService(db).update_game(
@@ -512,8 +597,27 @@ def update_game(
         name=payload.name,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
         targets=payload.targets,
+        admin_user_id=current_admin.id,
     )
     return success_response(game, "Jogo atualizado.")
+
+
+@router.post("/ai-games/{game_id}/archive", response_model=ApiResponse[AIGeneratedGameRead])
+def archive_game(
+    game_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    return success_response(AdminGameReviewService(db).archive_game(game_id), "Jogo arquivado.")
+
+
+@router.post("/ai-games/{game_id}/unarchive", response_model=ApiResponse[AIGeneratedGameRead])
+def unarchive_game(
+    game_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    return success_response(AdminGameReviewService(db).unarchive_game(game_id), "Jogo restaurado.")
 
 
 @router.delete("/ai-games/{game_id}", response_model=ApiResponse[AIGameActionResponse])

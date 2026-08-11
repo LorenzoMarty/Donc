@@ -81,7 +81,7 @@ class DashboardService:
         pending_exercises = [
             PendingExercise(id=exercise.id, skill=exercise.skill, difficulty=exercise.difficulty.value)
             for exercise in self.db.scalars(
-                select(Exercise).where(~Exercise.id.in_(answered_ids)).limit(5)
+                select(Exercise).where(~Exercise.id.in_(answered_ids), Exercise.archived.is_(False)).limit(5)
             )
         ]
 

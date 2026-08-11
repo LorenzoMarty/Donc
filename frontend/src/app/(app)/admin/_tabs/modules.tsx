@@ -14,7 +14,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/utils";
 import { apiFetch } from "@/services/api";
-import type { AdminActivity, AdminLesson, AdminModule, AdminModuleItem } from "@/types/api";
+import type { AdminActivity, AdminLesson, AdminModule, AdminModuleItem, AIGeneratedExercise } from "@/types/api";
 
 type ModalState =
   | { kind: "module"; mode: "create" }
@@ -434,6 +434,7 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [aiExerciseId, setAiExerciseId] = useState<number | null>(null);
 
   const skillError = submitted && !draft.skill.trim() ? "Informe a habilidade." : null;
   const statementError = submitted && draft.statement.trim().length < 20 ? "Mínimo de 20 caracteres." : null;
@@ -444,11 +445,27 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
     if (!draft.base_lesson_ids.length) return toast.error("Escolha as aulas que servirão de base para a IA.");
     setGenerating(true);
     try {
-      const generated = await apiFetch<AdminActivity[]>(`/admin/modules/${contentModule.id}/activities/generate`, {
+      const generated = await apiFetch<AIGeneratedExercise[]>(`/admin/modules/${contentModule.id}/activities/generate`, {
         method: "POST",
         body: JSON.stringify({ lesson_ids: draft.base_lesson_ids, difficulty: draft.difficulty, count: 1, focus: draft.skill || null }),
       });
-      if (generated[0]) setDraft({ ...generated[0], id: editing?.id ?? 0 });
+      const first = generated[0];
+      if (first) {
+        setDraft({
+          id: editing?.id ?? 0,
+          statement: first.statement,
+          options: first.options,
+          correct_answer: first.correct_answer,
+          explanation: first.explanation,
+          skill: first.skill,
+          difficulty: first.difficulty,
+          lesson_id: first.lesson_id,
+          base_lesson_ids: first.base_lesson_ids,
+          order: draft.order,
+          targets: first.targets,
+        });
+        setAiExerciseId(first.id);
+      }
       toast.success("Atividade gerada. Revise antes de salvar.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível gerar a atividade.");
@@ -476,9 +493,18 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
       targets: draft.targets,
     };
     try {
-      const modules = editing
-        ? await apiFetch<AdminModule[]>(`/admin/activities/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) })
-        : await apiFetch<AdminModule[]>(`/admin/modules/${contentModule.id}/activities`, { method: "POST", body: JSON.stringify(body) });
+      let modules: AdminModule[];
+      if (!editing && aiExerciseId) {
+        await apiFetch<AIGeneratedExercise>(`/admin/ai-exercises/${aiExerciseId}/review`, {
+          method: "POST",
+          body: JSON.stringify({ action: "approve", order: draft.order, ...body }),
+        });
+        modules = await apiFetch<AdminModule[]>("/admin/content");
+      } else {
+        modules = editing
+          ? await apiFetch<AdminModule[]>(`/admin/activities/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) })
+          : await apiFetch<AdminModule[]>(`/admin/modules/${contentModule.id}/activities`, { method: "POST", body: JSON.stringify(body) });
+      }
       onUpdated(modules);
       toast.success(editing ? "Atividade atualizada." : "Atividade criada.");
     } catch (err) {

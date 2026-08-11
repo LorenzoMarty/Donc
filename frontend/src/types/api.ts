@@ -319,6 +319,25 @@ export type AdminActivity = {
   targets: string[];
 };
 
+export type AIGeneratedExercise = {
+  id: number;
+  module_id: number;
+  lesson_id: number | null;
+  statement: string;
+  options: string[];
+  correct_answer: "A" | "B" | "C" | "D" | "E";
+  explanation: string;
+  skill: string;
+  difficulty: "easy" | "medium" | "hard";
+  base_lesson_ids: number[];
+  targets: string[];
+  status: "pending" | "approved" | "rejected";
+  admin_notes: string | null;
+  edited_after_generation: boolean;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
 export type AdminModuleItem = {
   id: number;
   kind: "lesson" | "activity";
@@ -445,6 +464,34 @@ export type AdminContentQuality = {
   rejected_games: ContentQualityItem[];
   edited_games: ContentQualityItem[];
   content_by_issue: ContentByIssueRow[];
+};
+
+export type StudentHealthItem = {
+  user_id: number;
+  name: string;
+  email: string;
+};
+
+export type RecommendationWithoutContentItem = {
+  id: number;
+  user_id: number;
+  action_type: string;
+  target_issue: string | null;
+};
+
+export type IssueWithoutProgressItem = {
+  user_id: number;
+  code: string;
+  state: string;
+  updated_at: string;
+};
+
+export type AdminAdaptiveHealth = {
+  students_without_diagnosis: StudentHealthItem[];
+  students_without_recommendation: StudentHealthItem[];
+  recommendations_without_content: RecommendationWithoutContentItem[];
+  issues_without_content: string[];
+  issues_without_progress: IssueWithoutProgressItem[];
 };
 
 export type AdminUserAIUsage = {

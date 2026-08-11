@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -11,14 +12,16 @@ from src.agents.image_generator import generate_supporting_image
 from src.agents.theme_generator import ThemeGeneratorAgent
 from src.config.ai_pricing import image_generation_cost_micro_usd
 from src.middlewares.errors import AppError
-from src.models import AIInteractionLog, Difficulty, EssayTheme, Exercise, Lesson, Module, ModuleItem
+from src.models import AIGeneratedExercise, AIInteractionLog, Difficulty, EssayTheme, Exercise, Lesson, Module, ModuleItem
 from src.schemas.admin import (
     AdminActivityRead,
     AdminLessonRead,
     AdminModuleItemRead,
     AdminModuleRead,
+    AIGeneratedExerciseRead,
 )
 from src.services.ai_telemetry import record_ai_interaction, safe_persist_interaction
+from src.services.content_versioning import list_versions, record_version
 from src.utils.ai_idempotency import find_cached_generation
 
 
@@ -98,8 +101,24 @@ class AdminContentService:
         title: str | None = None,
         context: str | None = None,
         supporting_texts: list[dict] | None = None,
+        admin_user_id: int | None = None,
     ) -> EssayTheme:
         theme = self._get_active_essay_theme(theme_id)
+        will_change = (
+            (title is not None and title != theme.title)
+            or (context is not None and context != theme.context)
+            or (supporting_texts is not None and supporting_texts != theme.supporting_texts)
+        )
+        if will_change:
+            # REQ-9 (P2c): snapshot ANTES da sobrescrita — tema continua publicado direto (sem
+            # fila nova), so ganha historico de versoes.
+            record_version(
+                self.db,
+                content_type="EssayTheme",
+                content_id=theme.id,
+                snapshot={"title": theme.title, "context": theme.context, "supporting_texts": theme.supporting_texts},
+                edited_by=admin_user_id,
+            )
         if title is not None:
             cleaned_title = self._clean_theme_title(title)
             if len(cleaned_title) < 8:
@@ -346,21 +365,21 @@ class AdminContentService:
         focus: str | None,
         admin_user_id: int,
         idempotency_key: str | None = None,
-    ) -> list[AdminActivityRead]:
-        # REQ-8 (P2b): drafts sao efemeros (nao persistidos) — cacheia o payload em `meta` em vez
-        # de content_id (find_cached_generation exige content_id, nao se aplica aqui).
-        if idempotency_key:
-            cached = self.db.scalar(
-                select(AIInteractionLog)
-                .where(
-                    AIInteractionLog.user_id == admin_user_id,
-                    AIInteractionLog.workflow == "admin_activity_generation",
-                    AIInteractionLog.idempotency_key == idempotency_key,
+    ) -> list[AIGeneratedExerciseRead]:
+        # REQ-2 (P2c): geracao passa a persistir AIGeneratedExercise(status=pending) em vez de
+        # devolver draft efemero — idempotencia reaproveita find_cached_generation (mesmo padrao
+        # do jogo/tema, P2b), ja que agora ha content_id de verdade.
+        cached = find_cached_generation(
+            self.db, user_id=admin_user_id, workflow="admin_activity_generation", idempotency_key=idempotency_key
+        )
+        if cached is not None:
+            rows = list(
+                self.db.scalars(
+                    select(AIGeneratedExercise).where(AIGeneratedExercise.id.in_(cached.meta.get("content_ids", [])))
                 )
-                .order_by(AIInteractionLog.created_at.desc())
             )
-            if cached is not None and cached.meta.get("draft_result") is not None:
-                return [AdminActivityRead.model_validate(item) for item in cached.meta["draft_result"]]
+            if rows:
+                return [AIGeneratedExerciseRead.model_validate(row) for row in rows]
 
         module = self.db.get(Module, module_id)
         if not module:
@@ -383,39 +402,121 @@ class AdminContentService:
             user_id=admin_user_id,
             session_id=f"admin:{admin_user_id}:module-activity",
         )
-        drafts: list[AdminActivityRead] = []
-        for index, question in enumerate(result.questions[:count], start=1):
-            drafts.append(
-                AdminActivityRead(
-                    id=0 - index,
-                    statement=question.statement,
-                    options=question.options,
-                    correct_answer=question.correct_answer,
-                    explanation=question.explanation,
-                    skill=question.skill,
-                    difficulty=question.difficulty,
-                    lesson_id=lesson_ids[-1] if lesson_ids else None,
-                    base_lesson_ids=lesson_ids,
-                    order=self._next_item_order(module_id),
-                )
+        rows: list[AIGeneratedExercise] = []
+        for question in result.questions[:count]:
+            row = AIGeneratedExercise(
+                module_id=module_id,
+                lesson_id=lesson_ids[-1] if lesson_ids else None,
+                statement=question.statement,
+                options=question.options,
+                correct_answer=question.correct_answer,
+                explanation=question.explanation,
+                skill=question.skill,
+                difficulty=question.difficulty,
+                base_lesson_ids=lesson_ids,
+                status="pending",
             )
+            self.db.add(row)
+            rows.append(row)
+        self.db.flush()
         record_ai_interaction(
             self.db,
             workflow="admin_activity_generation",
             agent="ExerciseGeneratorAgent",
             user_id=admin_user_id,
             runner=agent.runner,
+            content_id=rows[0].id if rows else None,
+            content_type="AIGeneratedExercise",
             meta={
                 "module_id": module_id,
                 "lesson_ids": lesson_ids,
                 "difficulty": difficulty,
                 "count": count,
-                "draft_result": [draft.model_dump(mode="json") for draft in drafts],
+                "content_ids": [row.id for row in rows],
             },
             idempotency_key=idempotency_key,
         )
         self.db.commit()
-        return drafts
+        return [AIGeneratedExerciseRead.model_validate(row) for row in rows]
+
+    def list_ai_exercises(self, *, status: str | None = None) -> list[AIGeneratedExerciseRead]:
+        query = select(AIGeneratedExercise).order_by(AIGeneratedExercise.created_at.desc())
+        if status:
+            query = query.where(AIGeneratedExercise.status == status)
+        return [AIGeneratedExerciseRead.model_validate(row) for row in self.db.scalars(query)]
+
+    def review_ai_exercise(
+        self,
+        ai_exercise_id: int,
+        *,
+        action: str,
+        notes: str | None,
+        statement: str | None,
+        options: list[str] | None,
+        correct_answer: str | None,
+        explanation: str | None,
+        skill: str | None,
+        difficulty: str | None,
+        lesson_id: int | None,
+        base_lesson_ids: list[int] | None,
+        order: int | None,
+        targets: list[str] | None,
+        reviewer_id: int,
+    ) -> AIGeneratedExerciseRead:
+        row = self.db.get(AIGeneratedExercise, ai_exercise_id)
+        if not row:
+            raise AppError("Exercício gerado não encontrado.", status_code=404, code="ai_exercise_not_found")
+
+        edited = False
+        if statement is not None and statement != row.statement:
+            row.statement, edited = statement, True
+        if options is not None and options != row.options:
+            row.options, edited = options, True
+        if correct_answer is not None and correct_answer != row.correct_answer:
+            row.correct_answer, edited = correct_answer, True
+        if explanation is not None and explanation != row.explanation:
+            row.explanation, edited = explanation, True
+        if skill is not None and skill != row.skill:
+            row.skill, edited = skill, True
+        if difficulty is not None and difficulty != row.difficulty:
+            row.difficulty, edited = difficulty, True
+        if lesson_id is not None and lesson_id != row.lesson_id:
+            row.lesson_id, edited = lesson_id, True
+        if base_lesson_ids is not None and base_lesson_ids != row.base_lesson_ids:
+            row.base_lesson_ids, edited = base_lesson_ids, True
+        if edited:
+            row.edited_after_generation = True
+        if targets is not None:
+            row.targets = targets
+
+        row.status = "approved" if action == "approve" else "rejected"
+        row.reviewed_at = datetime.now(timezone.utc)
+        row.reviewed_by = reviewer_id
+        if notes is not None:
+            row.admin_notes = notes
+
+        if action == "approve":
+            self._validate_activity_lessons(module_id=row.module_id, lesson_id=row.lesson_id, base_lesson_ids=row.base_lesson_ids)
+            exercise = Exercise(
+                module_id=row.module_id,
+                lesson_id=row.lesson_id,
+                statement=row.statement.strip(),
+                options=[option.strip() for option in row.options],
+                correct_answer=row.correct_answer,
+                explanation=row.explanation.strip(),
+                skill=row.skill.strip(),
+                difficulty=Difficulty(row.difficulty),
+                base_lesson_ids=row.base_lesson_ids,
+                targets=row.targets or [],
+            )
+            self.db.add(exercise)
+            self.db.flush()
+            item_order = order or self._next_item_order(row.module_id)
+            self.db.add(ModuleItem(module_id=row.module_id, kind="activity", exercise_id=exercise.id, order=item_order))
+
+        self.db.commit()
+        self.db.refresh(row)
+        return AIGeneratedExerciseRead.model_validate(row)
 
     def update_module(self, *, module_id: int, title: str | None, description: str | None, color: str | None) -> list[AdminModuleRead]:
         module = self.db.get(Module, module_id)
@@ -516,6 +617,7 @@ class AdminContentService:
         lesson_id: int | None,
         base_lesson_ids: list[int] | None,
         targets: list[str] | None = None,
+        admin_user_id: int | None = None,
     ) -> list[AdminModuleRead]:
         exercise = self.db.get(Exercise, activity_id)
         if not exercise:
@@ -525,6 +627,36 @@ class AdminContentService:
                 module_id=exercise.module_id,
                 lesson_id=lesson_id,
                 base_lesson_ids=base_lesson_ids if base_lesson_ids is not None else exercise.base_lesson_ids,
+            )
+        will_change = any(
+            (
+                (statement is not None and statement.strip() != exercise.statement),
+                (options is not None and [o.strip() for o in options] != exercise.options),
+                (correct_answer is not None and correct_answer != exercise.correct_answer),
+                (explanation is not None and explanation.strip() != exercise.explanation),
+                (skill is not None and skill.strip() != exercise.skill),
+                (difficulty is not None and difficulty != exercise.difficulty.value),
+                (lesson_id is not None and lesson_id != exercise.lesson_id),
+                (base_lesson_ids is not None and base_lesson_ids != exercise.base_lesson_ids),
+            )
+        )
+        if will_change:
+            # REQ-8 (P2c): snapshot ANTES da sobrescrita — edicao pos-aprovacao do Exercise real.
+            record_version(
+                self.db,
+                content_type="Exercise",
+                content_id=exercise.id,
+                snapshot={
+                    "statement": exercise.statement,
+                    "options": exercise.options,
+                    "correct_answer": exercise.correct_answer,
+                    "explanation": exercise.explanation,
+                    "skill": exercise.skill,
+                    "difficulty": exercise.difficulty.value,
+                    "lesson_id": exercise.lesson_id,
+                    "base_lesson_ids": exercise.base_lesson_ids,
+                },
+                edited_by=admin_user_id,
             )
         if statement is not None:
             exercise.statement = statement.strip()
@@ -544,6 +676,24 @@ class AdminContentService:
             exercise.base_lesson_ids = base_lesson_ids
         if targets is not None:
             exercise.targets = targets
+        self.db.commit()
+        return self.content_tree()
+
+    def archive_activity(self, *, activity_id: int) -> list[AdminModuleRead]:
+        """REQ-12 (P2c): despublica reversivelmente — exercicio some de GET /exercises (aluno)
+        mas continua no banco, vinculado ao modulo/aula."""
+        exercise = self.db.get(Exercise, activity_id)
+        if not exercise:
+            raise AppError("Atividade não encontrada.", status_code=404, code="activity_not_found")
+        exercise.archived = True
+        self.db.commit()
+        return self.content_tree()
+
+    def unarchive_activity(self, *, activity_id: int) -> list[AdminModuleRead]:
+        exercise = self.db.get(Exercise, activity_id)
+        if not exercise:
+            raise AppError("Atividade não encontrada.", status_code=404, code="activity_not_found")
+        exercise.archived = False
         self.db.commit()
         return self.content_tree()
 
