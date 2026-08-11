@@ -42,3 +42,29 @@ class AIGeneratedGame(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+
+class AIGeneratedExercise(Base):
+    """P2c Bloco 1 — fila de revisao real do exercicio gerado por IA, mesmo padrao do
+    AIGeneratedGame. Substitui o fluxo anterior de draft efemero (id negativo, nunca persistido)
+    do module builder: gerar agora grava pending aqui; aprovar cria o Exercise real."""
+
+    __tablename__ = "ai_generated_exercises"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    module_id: Mapped[int] = mapped_column(ForeignKey("modules.id", ondelete="CASCADE"), nullable=False)
+    lesson_id: Mapped[int | None] = mapped_column(ForeignKey("lessons.id", ondelete="SET NULL"), nullable=True)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    options: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    correct_answer: Mapped[str] = mapped_column(String(5), nullable=False)
+    explanation: Mapped[str] = mapped_column(Text, nullable=False)
+    skill: Mapped[str] = mapped_column(String(160), nullable=False)
+    difficulty: Mapped[str] = mapped_column(String(30), nullable=False, default="medium")
+    base_lesson_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
+    targets: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    edited_after_generation: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

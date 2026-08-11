@@ -7,8 +7,19 @@ import { PageHeader } from "@/components/shared/premium-ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type AdminMetrics } from "@/services/api";
-import type { AdminContentQuality, AdminLesson, AdminModule, AdminUser, AIGeneratedGame, AITelemetry, EssayTheme, UserActivity } from "@/types/api";
+import type {
+  AdminAdaptiveHealth,
+  AdminContentQuality,
+  AdminLesson,
+  AdminModule,
+  AdminUser,
+  AIGeneratedGame,
+  AITelemetry,
+  EssayTheme,
+  UserActivity,
+} from "@/types/api";
 
+import { AdaptiveHealthTab } from "./_tabs/adaptive-health";
 import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
 import { ContentQualityTab } from "./_tabs/content-quality";
@@ -46,6 +57,7 @@ export default function AdminPage() {
   const [modules, setModules] = useState<AdminModule[]>([]);
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [contentQuality, setContentQuality] = useState<AdminContentQuality | null>(null);
+  const [adaptiveHealth, setAdaptiveHealth] = useState<AdminAdaptiveHealth | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
 
@@ -63,7 +75,8 @@ export default function AdminPage() {
       apiFetch<AdminModule[]>("/admin/content"),
       apiFetch<EssayTheme[]>("/admin/essay-themes"),
       apiFetch<AdminContentQuality>("/admin/content-quality"),
-    ]).then(([m, u, t, a, g, c, th, cq]) => {
+      apiFetch<AdminAdaptiveHealth>("/admin/adaptive-health"),
+    ]).then(([m, u, t, a, g, c, th, cq, ah]) => {
       if (m.status === "fulfilled") setMetrics(m.value);
       else setError(m.reason instanceof Error ? m.reason.message : "Não foi possível carregar o painel administrativo.");
 
@@ -78,6 +91,7 @@ export default function AdminPage() {
       if (c.status === "fulfilled") setModules(c.value);
       if (th.status === "fulfilled") setThemes(th.value);
       if (cq.status === "fulfilled") setContentQuality(cq.value);
+      if (ah.status === "fulfilled") setAdaptiveHealth(ah.value);
     });
   }, [authLoading, isAdmin]);
 
@@ -110,6 +124,7 @@ export default function AdminPage() {
           <TabsTrigger value="modules">Módulos</TabsTrigger>
           <TabsTrigger value="games">Jogos IA</TabsTrigger>
           <TabsTrigger value="content-quality">Qualidade</TabsTrigger>
+          <TabsTrigger value="adaptive-health">Saúde</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -176,6 +191,18 @@ export default function AdminPage() {
 
         <TabsContent value="content-quality" className="mt-4">
           {contentQuality ? <ContentQualityTab report={contentQuality} /> : <LoadingCard />}
+        </TabsContent>
+
+        <TabsContent value="adaptive-health" className="mt-4">
+          {adaptiveHealth && contentQuality ? (
+            <AdaptiveHealthTab
+              report={adaptiveHealth}
+              contentQuality={contentQuality}
+              onOpenContentQuality={() => setTab("content-quality")}
+            />
+          ) : (
+            <LoadingCard />
+          )}
         </TabsContent>
       </Tabs>
     </div>

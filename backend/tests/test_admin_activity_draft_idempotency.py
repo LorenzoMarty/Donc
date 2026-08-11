@@ -1,4 +1,6 @@
-"""P2b Bloco 3 (REQ-8) — idempotency key no draft de atividade (ephemero: cacheia via meta)."""
+"""P2b Bloco 3 (REQ-8) — idempotency key na geração de exercício IA. Desde P2c Bloco 1, a
+geração persiste AIGeneratedExercise (não é mais draft efêmero) — chave repetida retorna as
+mesmas linhas via find_cached_generation, sem gerar duas vezes."""
 
 from fastapi import Depends
 from sqlalchemy import select

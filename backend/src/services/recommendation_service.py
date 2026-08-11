@@ -233,7 +233,7 @@ class RecommendationEngine:
         return (fresh or matches)[0]
 
     def _find_exercise_for_issue(self, code: str, user_id: int | None):
-        exercises = self.db.scalars(select(Exercise).order_by(Exercise.id)).all()
+        exercises = self.db.scalars(select(Exercise).where(Exercise.archived.is_(False)).order_by(Exercise.id)).all()
         matches = [exercise for exercise in exercises if code in (exercise.targets or [])]
         if not matches:
             return None

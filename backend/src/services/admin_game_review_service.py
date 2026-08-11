@@ -10,6 +10,7 @@ from src.middlewares.errors import AppError
 from src.models.events import AIGeneratedGame
 from src.schemas.admin import AIGeneratedGameRead, GameQuestionRead
 from src.services.ai_telemetry import record_ai_interaction
+from src.services.content_versioning import record_version
 from src.utils.ai_idempotency import find_cached_generation
 
 
@@ -92,15 +93,25 @@ class AdminGameReviewService:
                 status_code=422,
                 code="game_target_required",
             )
+        if (questions is not None and questions != game.questions) or (name is not None and name != game.name):
+            # REQ-7 (P2c): snapshot do estado ANTES da sobrescrita — grava so quando o conteudo
+            # de fato muda, nao a cada review sem edicao.
+            record_version(
+                self.db,
+                content_type="AIGeneratedGame",
+                content_id=game.id,
+                snapshot={"name": game.name, "questions": game.questions},
+                edited_by=reviewer_id,
+            )
         game.status = "approved" if action == "approve" else "rejected"
         game.reviewed_at = datetime.now(timezone.utc)
         game.reviewed_by = reviewer_id
         if notes is not None:
             game.admin_notes = notes
-        if questions is not None:
+        if questions is not None and questions != game.questions:
             game.questions = questions
             game.edited_after_generation = True
-        if name is not None:
+        if name is not None and name != game.name:
             game.name = name
             game.edited_after_generation = True
         self.db.commit()
@@ -114,18 +125,47 @@ class AdminGameReviewService:
         name: str | None = None,
         questions: list[dict] | None = None,
         targets: list[str] | None = None,
+        admin_user_id: int | None = None,
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
             raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
-        if name is not None:
+        if (name is not None and name != game.name) or (questions is not None and questions != game.questions):
+            record_version(
+                self.db,
+                content_type="AIGeneratedGame",
+                content_id=game.id,
+                snapshot={"name": game.name, "questions": game.questions},
+                edited_by=admin_user_id,
+            )
+        if name is not None and name != game.name:
             game.name = name
             game.edited_after_generation = True
-        if questions is not None:
+        if questions is not None and questions != game.questions:
             game.questions = questions
             game.edited_after_generation = True
         if targets is not None:
             game.targets = targets
+        self.db.commit()
+        self.db.refresh(game)
+        return self._game_to_read(game)
+
+    def archive_game(self, game_id: int) -> AIGeneratedGameRead:
+        """REQ-11 (P2c): despublica reversivelmente — jogo some de /games/published
+        (que so serve status=='approved') mas continua no banco."""
+        game = self.db.get(AIGeneratedGame, game_id)
+        if not game:
+            raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
+        game.status = "archived"
+        self.db.commit()
+        self.db.refresh(game)
+        return self._game_to_read(game)
+
+    def unarchive_game(self, game_id: int) -> AIGeneratedGameRead:
+        game = self.db.get(AIGeneratedGame, game_id)
+        if not game:
+            raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
+        game.status = "approved"
         self.db.commit()
         self.db.refresh(game)
         return self._game_to_read(game)

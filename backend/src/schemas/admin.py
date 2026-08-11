@@ -191,6 +191,46 @@ class AdminActivityGenerateRequest(BaseModel):
     idempotency_key: str | None = Field(default=None, max_length=80)
 
 
+# ── AIGeneratedExercise (P2c Bloco 1) ───────────────────────────────────────
+
+class AIGeneratedExerciseRead(BaseModel):
+    id: int
+    module_id: int
+    lesson_id: int | None = None
+    statement: str
+    options: list[str]
+    correct_answer: str
+    explanation: str
+    skill: str
+    difficulty: str
+    base_lesson_ids: list[int] = Field(default_factory=list)
+    targets: list[str] = Field(default_factory=list)
+    status: str
+    admin_notes: str | None = None
+    edited_after_generation: bool = False
+    created_at: datetime
+    reviewed_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class ReviewExerciseRequest(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
+    notes: str | None = Field(default=None, max_length=500)
+    statement: str | None = Field(default=None, min_length=20, max_length=1200)
+    options: list[str] | None = Field(default=None, min_length=5, max_length=5)
+    correct_answer: str | None = Field(default=None, pattern="^[A-E]$")
+    explanation: str | None = Field(default=None, min_length=20, max_length=1200)
+    skill: str | None = Field(default=None, min_length=3, max_length=160)
+    difficulty: Literal["easy", "medium", "hard"] | None = None
+    lesson_id: int | None = Field(default=None, gt=0)
+    base_lesson_ids: list[int] | None = Field(default=None, max_length=8)
+    order: int | None = Field(default=None, ge=1, le=999)
+    targets: list[str] | None = None
+
+    _validate_targets = field_validator("targets")(_validate_targets)
+
+
 class AdminModuleUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=160)
     description: str | None = Field(default=None, min_length=10, max_length=1200)
@@ -301,6 +341,46 @@ class DailyUsage(BaseModel):
     cost_usd_cents: int  # legado (compat)
     cost_usd_micros: int = 0
     cost_brl_cents: int = 0
+
+
+class StudentHealthItem(BaseModel):
+    user_id: int
+    name: str
+    email: str
+
+
+class RecommendationWithoutContentItem(BaseModel):
+    id: int
+    user_id: int
+    action_type: str
+    target_issue: str | None
+
+
+class IssueWithoutProgressItem(BaseModel):
+    user_id: int
+    code: str
+    state: str
+    updated_at: str
+
+
+class AdminAdaptiveHealthResponse(BaseModel):
+    students_without_diagnosis: list[StudentHealthItem]
+    students_without_recommendation: list[StudentHealthItem]
+    recommendations_without_content: list[RecommendationWithoutContentItem]
+    issues_without_content: list[str]
+    issues_without_progress: list[IssueWithoutProgressItem]
+
+
+class ContentVersionRead(BaseModel):
+    id: int
+    content_type: str
+    content_id: int
+    snapshot: dict
+    edited_by: int | None
+    reason: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 class AIGenerationTraceRead(BaseModel):

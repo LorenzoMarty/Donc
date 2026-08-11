@@ -84,6 +84,9 @@ class Exercise(Base):
     base_lesson_ids: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)
     # Codigos de CognitiveIssue que este exercicio treina — ver Lesson.targets.
     targets: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    # P2c Bloco 3 (REQ-12): despublicacao reversivel — arquivado some de listagens/recomendacao
+    # do aluno mas continua no banco (nunca deletado). Diferente de rejeitar (nunca foi publicado).
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     module = relationship("Module", back_populates="exercises")
     lesson = relationship("Lesson", back_populates="exercises")
