@@ -85,6 +85,7 @@ class AdminEssayThemeUpdateRequest(BaseModel):
 class AdminEssayThemeGenerateRequest(BaseModel):
     focus: str | None = Field(default=None, max_length=160)
     supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=5)
+    idempotency_key: str | None = Field(default=None, max_length=80)
 
     @model_validator(mode="after")
     def ensure_requested_texts(self):
@@ -187,6 +188,7 @@ class AdminActivityGenerateRequest(BaseModel):
     difficulty: Literal["easy", "medium", "hard"] = "medium"
     count: int = Field(default=1, ge=1, le=3)
     focus: str | None = Field(default=None, max_length=160)
+    idempotency_key: str | None = Field(default=None, max_length=80)
 
 
 class AdminModuleUpdateRequest(BaseModel):
@@ -301,6 +303,48 @@ class DailyUsage(BaseModel):
     cost_brl_cents: int = 0
 
 
+class AIGenerationTraceRead(BaseModel):
+    id: int
+    workflow: str
+    agent: str
+    user_id: int | None
+    status: str
+    model: str | None
+    cost_micro_usd: int
+    prompt_hash: str | None
+    template_version: str | None
+    error: str | None
+    meta: dict
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class UserQuotaUsage(BaseModel):
+    user_id: int
+    consumed_micro_usd: int
+
+
+class WorkflowQuotaUsage(BaseModel):
+    workflow: str
+    consumed_micro_usd: int
+
+
+class AIQuotaStatusRead(BaseModel):
+    daily_limit_micro_usd_per_user: int
+    daily_limit_micro_usd_per_workflow: int
+    per_user_today: list[UserQuotaUsage] = Field(default_factory=list)
+    per_workflow_today: list[WorkflowQuotaUsage] = Field(default_factory=list)
+
+
+class AIQualityReportRow(BaseModel):
+    content_type: str
+    generated: int
+    approved: int
+    rejected: int
+    edited: int
+
+
 class AITelemetryResponse(BaseModel):
     period_days: int
     has_data: bool = False
@@ -383,6 +427,7 @@ class GenerateGameRequest(BaseModel):
     difficulty: str = Field(default="medium", pattern="^(easy|medium|hard)$")
     count: int = Field(default=5, ge=3, le=10)
     name: str | None = Field(default=None, max_length=120)
+    idempotency_key: str | None = Field(default=None, max_length=80)
 
 
 class ReviewGameRequest(BaseModel):

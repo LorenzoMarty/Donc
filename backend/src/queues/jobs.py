@@ -19,13 +19,17 @@ class AIJobService:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def create(self, *, user_id: int, kind: str, request_payload: dict) -> AIJob:
+    def create(
+        self, *, user_id: int, kind: str, request_payload: dict, idempotency_key: str | None = None, attempt: int = 1
+    ) -> AIJob:
         job = AIJob(
             id=str(uuid.uuid4()),
             user_id=user_id,
             kind=kind,
             status="queued",
             request_payload=request_payload,
+            idempotency_key=idempotency_key,
+            attempt=attempt,
         )
         self.db.add(job)
         self.db.commit()
@@ -53,6 +57,30 @@ class AIJobService:
             (job for job in jobs if int((job.request_payload or {}).get("essay_id", -1)) == essay_id),
             None,
         )
+
+    def get_by_idempotency_key(self, *, user_id: int, kind: str, idempotency_key: str | None) -> AIJob | None:
+        """REQ-9 (P2b): job repetido com a mesma chave e reaproveitado independente do status —
+        cobre o fallback sincrono, onde `get_active_for_essay` (so queued/running) ja nao pega
+        mais o job assim que ele termina."""
+        if not idempotency_key:
+            return None
+        return (
+            self.db.query(AIJob)
+            .filter(AIJob.user_id == user_id, AIJob.kind == kind, AIJob.idempotency_key == idempotency_key)
+            .order_by(AIJob.created_at.desc())
+            .first()
+        )
+
+    def next_attempt_number(self, *, user_id: int, kind: str, essay_id: int) -> int:
+        """REQ-7 (P2b): quantas vezes essa redacao ja foi submetida/reprocessada — usado como
+        `attempt` do proximo AIJob."""
+        prior = (
+            self.db.query(AIJob)
+            .filter(AIJob.user_id == user_id, AIJob.kind == kind)
+            .all()
+        )
+        count = sum(1 for job in prior if int((job.request_payload or {}).get("essay_id", -1)) == essay_id)
+        return count + 1
 
     def mark_running(self, job: AIJob) -> None:
         job.status = "running"

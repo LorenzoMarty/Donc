@@ -109,6 +109,8 @@ def test_admin_can_generate_one_essay_theme(client):
     assert log is not None
     assert log.agent == "ThemeGeneratorAgent"
     assert log.meta["generated_count"] == 1
+    assert log.content_id == theme["id"]
+    assert log.content_type == "EssayTheme"
 
 
 def test_admin_theme_generation_rejects_prompt_injection(client):

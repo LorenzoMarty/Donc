@@ -19,6 +19,7 @@ from src.schemas.admin import (
     AdminModuleRead,
 )
 from src.services.ai_telemetry import record_ai_interaction, safe_persist_interaction
+from src.utils.ai_idempotency import find_cached_generation
 
 
 class AdminContentService:
@@ -36,7 +37,16 @@ class AdminContentService:
         focus: str | None,
         admin_user_id: int,
         supporting_text_requirements: dict[str, int] | None = None,
+        idempotency_key: str | None = None,
     ) -> EssayTheme:
+        cached = find_cached_generation(
+            self.db, user_id=admin_user_id, workflow="admin_theme_generation", idempotency_key=idempotency_key
+        )
+        if cached is not None and cached.content_id is not None:
+            existing = self.db.get(EssayTheme, cached.content_id)
+            if existing is not None:
+                return existing
+
         existing_titles = [theme.title for theme in self.db.scalars(select(EssayTheme))]
         agent = ThemeGeneratorAgent()
         result = agent.generate_batch(
@@ -65,6 +75,7 @@ class AdminContentService:
             is_active=True,
         )
         self.db.add(theme)
+        self.db.flush()  # popula theme.id — usado como content_id do AIInteractionLog abaixo.
         record_ai_interaction(
             self.db,
             workflow="admin_theme_generation",
@@ -72,6 +83,9 @@ class AdminContentService:
             user_id=admin_user_id,
             runner=agent.runner,
             meta={"focus": focus, "generated_count": 1, "supporting_text_requirements": supporting_text_requirements or {}},
+            content_id=theme.id,
+            content_type="EssayTheme",
+            idempotency_key=idempotency_key,
         )
         self.db.commit()
         self.db.refresh(theme)
@@ -331,7 +345,23 @@ class AdminContentService:
         count: int,
         focus: str | None,
         admin_user_id: int,
+        idempotency_key: str | None = None,
     ) -> list[AdminActivityRead]:
+        # REQ-8 (P2b): drafts sao efemeros (nao persistidos) — cacheia o payload em `meta` em vez
+        # de content_id (find_cached_generation exige content_id, nao se aplica aqui).
+        if idempotency_key:
+            cached = self.db.scalar(
+                select(AIInteractionLog)
+                .where(
+                    AIInteractionLog.user_id == admin_user_id,
+                    AIInteractionLog.workflow == "admin_activity_generation",
+                    AIInteractionLog.idempotency_key == idempotency_key,
+                )
+                .order_by(AIInteractionLog.created_at.desc())
+            )
+            if cached is not None and cached.meta.get("draft_result") is not None:
+                return [AdminActivityRead.model_validate(item) for item in cached.meta["draft_result"]]
+
         module = self.db.get(Module, module_id)
         if not module:
             raise AppError("Módulo não encontrado.", status_code=404, code="module_not_found")
@@ -353,14 +383,6 @@ class AdminContentService:
             user_id=admin_user_id,
             session_id=f"admin:{admin_user_id}:module-activity",
         )
-        record_ai_interaction(
-            self.db,
-            workflow="admin_activity_generation",
-            agent="ExerciseGeneratorAgent",
-            user_id=admin_user_id,
-            runner=agent.runner,
-            meta={"module_id": module_id, "lesson_ids": lesson_ids, "difficulty": difficulty, "count": count},
-        )
         drafts: list[AdminActivityRead] = []
         for index, question in enumerate(result.questions[:count], start=1):
             drafts.append(
@@ -377,6 +399,21 @@ class AdminContentService:
                     order=self._next_item_order(module_id),
                 )
             )
+        record_ai_interaction(
+            self.db,
+            workflow="admin_activity_generation",
+            agent="ExerciseGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={
+                "module_id": module_id,
+                "lesson_ids": lesson_ids,
+                "difficulty": difficulty,
+                "count": count,
+                "draft_result": [draft.model_dump(mode="json") for draft in drafts],
+            },
+            idempotency_key=idempotency_key,
+        )
         self.db.commit()
         return drafts
 
