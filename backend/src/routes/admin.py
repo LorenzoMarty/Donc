@@ -22,6 +22,9 @@ from src.schemas.admin import (
     AdminModuleUpdateRequest,
     AdminMoveRequest,
     AdminPedagogicalMetricsResponse,
+    AIGenerationTraceRead,
+    AIQualityReportRow,
+    AIQuotaStatusRead,
     AdminUserActionResponse,
     AdminUserDetailResponse,
     AdminMetricsResponse,
@@ -48,6 +51,7 @@ from src.services.admin_pedagogical_metrics_service import AdminPedagogicalMetri
 from src.services.admin_telemetry_service import AdminTelemetryService
 from src.services.admin_user_service import AdminUserService
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
+from src.utils.ai_quota import require_ai_daily_quota
 from src.utils.rate_limit import require_ai_rate_limit
 
 
@@ -90,7 +94,7 @@ def essay_themes(_: User = Depends(require_admin), db: Session = Depends(get_db)
     "/essay-themes/generate",
     response_model=ApiResponse[EssayThemeRead],
     status_code=201,
-    dependencies=[Depends(require_ai_rate_limit)],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_theme_generation"))],
 )
 def generate_essay_theme(
     payload: AdminEssayThemeGenerateRequest,
@@ -108,6 +112,7 @@ def generate_essay_theme(
             focus=focus,
             admin_user_id=current_admin.id,
             supporting_text_requirements=requirements or None,
+            idempotency_key=payload.idempotency_key,
         ),
         "Tema gerado.",
     )
@@ -211,7 +216,7 @@ def create_activity(
 @router.post(
     "/modules/{module_id}/activities/generate",
     response_model=ApiResponse[list[AdminActivityRead]],
-    dependencies=[Depends(require_ai_rate_limit)],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_activity_generation"))],
 )
 def generate_activity_draft(
     module_id: int,
@@ -227,6 +232,7 @@ def generate_activity_draft(
             count=payload.count,
             focus=payload.focus,
             admin_user_id=current_admin.id,
+            idempotency_key=payload.idempotency_key,
         ),
         "Atividade gerada para revisão.",
     )
@@ -394,6 +400,30 @@ def ai_telemetry(
     return success_response(AdminTelemetryService(db).ai_telemetry(period_days=days))
 
 
+@router.get("/ai-quota", response_model=ApiResponse[AIQuotaStatusRead])
+def ai_quota_status(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[AIQuotaStatusRead]:
+    return success_response(AdminTelemetryService(db).ai_quota_status())
+
+
+@router.get("/ai-quality", response_model=ApiResponse[list[AIQualityReportRow]])
+def ai_quality_report(
+    days: int = Query(default=30, ge=1, le=90),
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AIQualityReportRow]]:
+    return success_response(AdminTelemetryService(db).ai_quality_report(period_days=days))
+
+
+@router.get("/ai-generations/{content_type}/{content_id}", response_model=ApiResponse[list[AIGenerationTraceRead]])
+def ai_generation_trace(
+    content_type: str,
+    content_id: int,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AIGenerationTraceRead]]:
+    return success_response(AdminTelemetryService(db).generation_trace(content_type=content_type, content_id=content_id))
+
+
 @router.get("/user-activity", response_model=ApiResponse[UserActivityResponse])
 def user_activity(
     days: int = Query(default=7, ge=1, le=30),
@@ -432,7 +462,7 @@ def list_ai_games(
 @router.post(
     "/ai-games/generate",
     response_model=ApiResponse[AIGeneratedGameRead],
-    dependencies=[Depends(require_ai_rate_limit)],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_game_generation"))],
 )
 def generate_game(
     payload: GenerateGameRequest,
@@ -446,6 +476,7 @@ def generate_game(
         count=payload.count,
         name=payload.name,
         admin_user_id=current_admin.id,
+        idempotency_key=payload.idempotency_key,
     )
     return success_response(game, "Jogo gerado com sucesso.")
 

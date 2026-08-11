@@ -19,6 +19,7 @@ from src.schemas.essays import (
 )
 from src.services.essay_service import EssayService
 from src.services.streak_service import touch_daily_streak
+from src.utils.ai_quota import require_ai_daily_quota
 from src.utils.rate_limit import require_ai_rate_limit
 
 
@@ -76,9 +77,14 @@ def autosave(
 @router.post(
     "/{essay_id}/submit",
     response_model=ApiResponse[EssaySubmitResponse],
-    dependencies=[Depends(require_ai_rate_limit)],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("essay_correction"))],
 )
-def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
+def submit_essay(
+    essay_id: int,
+    idempotency_key: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
     jobs = AIJobService(db)
     active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=essay_id)
@@ -86,10 +92,17 @@ def submit_essay(essay_id: int, current_user: User = Depends(get_current_user), 
         # Evita duplo-clique/retry disparando um novo pipeline de IA enquanto o anterior ainda
         # esta rodando para a mesma redacao — devolve o job ja em andamento em vez de criar outro.
         return success_response(EssaySubmitResponse(job_id=active_job.id, essay_id=essay.id), "Correcao ja em andamento.")
+    # REQ-9 (P2b): cobre tambem o caso do fallback sincrono, onde o job ja terminou (completed/
+    # failed) antes do retry chegar — get_active_for_essay() sozinho nao pega mais isso.
+    cached_job = jobs.get_by_idempotency_key(user_id=current_user.id, kind="essay_correction", idempotency_key=idempotency_key)
+    if cached_job and int((cached_job.request_payload or {}).get("essay_id", -1)) == essay_id:
+        return success_response(EssaySubmitResponse(job_id=cached_job.id, essay_id=essay.id), "Correcao ja processada.")
     job = jobs.create(
         user_id=current_user.id,
         kind="essay_correction",
         request_payload={"essay_id": essay_id},
+        idempotency_key=idempotency_key,
+        attempt=jobs.next_attempt_number(user_id=current_user.id, kind="essay_correction", essay_id=essay_id),
     )
     essay.last_ai_job_id = job.id
     db.commit()
@@ -144,18 +157,28 @@ def rewrite_from_version(essay_id: int, version_id: int, current_user: User = De
 @router.post(
     "/{essay_id}/reprocess",
     response_model=ApiResponse[EssaySubmitResponse],
-    dependencies=[Depends(require_ai_rate_limit)],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("essay_correction"))],
 )
-def reprocess_essay(essay_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssaySubmitResponse]:
+def reprocess_essay(
+    essay_id: int,
+    idempotency_key: str | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
     jobs = AIJobService(db)
     active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=essay_id)
     if active_job:
         return success_response(EssaySubmitResponse(job_id=active_job.id, essay_id=essay.id), "Correcao ja em andamento.")
+    cached_job = jobs.get_by_idempotency_key(user_id=current_user.id, kind="essay_correction", idempotency_key=idempotency_key)
+    if cached_job and int((cached_job.request_payload or {}).get("essay_id", -1)) == essay_id:
+        return success_response(EssaySubmitResponse(job_id=cached_job.id, essay_id=essay.id), "Correcao ja processada.")
     job = jobs.create(
         user_id=current_user.id,
         kind="essay_correction",
         request_payload={"essay_id": essay_id},
+        idempotency_key=idempotency_key,
+        attempt=jobs.next_attempt_number(user_id=current_user.id, kind="essay_correction", essay_id=essay_id),
     )
     essay.last_ai_job_id = job.id
     db.commit()

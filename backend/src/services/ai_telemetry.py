@@ -62,6 +62,11 @@ def build_interaction_log(
     model: str | None = None,
     error: str | None = None,
     meta: dict[str, Any] | None = None,
+    content_id: int | None = None,
+    content_type: str | None = None,
+    template_version: str | None = None,
+    attempt: int = 1,
+    idempotency_key: str | None = None,
 ) -> AIInteractionLog:
     """Monta um AIInteractionLog com custo calculado pela tabela oficial por modelo.
 
@@ -94,6 +99,11 @@ def build_interaction_log(
         model=resolved_model,
         prompt_hash=prompt_hash,
         error=error if error is not None else (runner.last_error if runner is not None else None),
+        content_id=content_id,
+        content_type=content_type,
+        template_version=template_version,
+        attempt=attempt,
+        idempotency_key=idempotency_key,
         meta={
             **(meta or {}),
             **(
@@ -120,6 +130,11 @@ def record_ai_interaction(
     error: str | None = None,
     meta: dict[str, Any] | None = None,
     commit: bool = False,
+    content_id: int | None = None,
+    content_type: str | None = None,
+    template_version: str | None = None,
+    attempt: int = 1,
+    idempotency_key: str | None = None,
 ) -> None:
     try:
         log = build_interaction_log(
@@ -134,6 +149,11 @@ def record_ai_interaction(
             token_count=token_count,
             error=error,
             meta=meta,
+            content_id=content_id,
+            content_type=content_type,
+            template_version=template_version,
+            attempt=attempt,
+            idempotency_key=idempotency_key,
         )
     except Exception:
         logger.warning("Falha ao montar log de telemetria de IA (ignorada).", exc_info=True)

@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     usd_brl_fallback_rate: float = 5.40  # usado quando a cotação PTAX/BCB falha
     usd_brl_rate_ttl_hours: int = 6
     ai_rate_limit_per_minute: int = 20
+    # P2b — REQ-4/5: quota diaria de custo de IA (micro-USD), reaproveitando AIInteractionLog pra
+    # somar o gasto do dia corrente (UTC). 0 desliga o respectivo limite. Default generoso o
+    # bastante pra nao atrapalhar uso normal, mas protege contra geracao descontrolada.
+    ai_daily_cost_limit_micro_usd_per_user: int = 2_000_000  # ~US$2/dia por usuario
+    ai_daily_cost_limit_micro_usd_per_workflow: int = 1_000_000  # ~US$1/dia por usuario+workflow
     seed_demo_data: bool = False
     seed_admin_password: str = "12345678"  # default só para dev local; sobrescreva via env em qualquer ambiente compartilhado
     frontend_origin: str = "http://localhost:3000"

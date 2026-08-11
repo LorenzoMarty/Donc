@@ -39,6 +39,7 @@ from src.services.ai_telemetry import record_ai_interaction
 from src.services.essay_service import EssayService
 from src.services.recommendation_service import RecommendationEngine
 from src.memory.profile import get_or_create_learning_profile
+from src.utils.ai_quota import require_ai_daily_quota
 from src.utils.ai_security import contains_prompt_injection, sanitize_ai_text
 from src.utils.rate_limit import require_ai_rate_limit
 
@@ -46,7 +47,11 @@ from src.utils.rate_limit import require_ai_rate_limit
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
-@router.post("/correct", response_model=ApiResponse[EssayRead | AIJobResponse], dependencies=[Depends(require_ai_rate_limit)])
+@router.post(
+    "/correct",
+    response_model=ApiResponse[EssayRead | AIJobResponse],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("essay_correction"))],
+)
 def correct_essay(
     payload: AICorrectRequest,
     current_user: User = Depends(get_current_user),
@@ -67,7 +72,11 @@ def correct_essay(
     return success_response(EssayRead.model_validate(essay), "Redacao corrigida.")
 
 
-@router.post("/generate-exercise", response_model=ApiResponse[ExerciseGenerationResult], dependencies=[Depends(require_ai_rate_limit)])
+@router.post(
+    "/generate-exercise",
+    response_model=ApiResponse[ExerciseGenerationResult],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("exercise_generation"))],
+)
 def generate_exercise(
     payload: AIGenerateExerciseRequest,
     current_user: User = Depends(get_current_user),
@@ -97,7 +106,11 @@ def generate_exercise(
     return success_response(result)
 
 
-@router.post("/evaluate-rewrite", response_model=ApiResponse[RewriteEvaluationResult], dependencies=[Depends(require_ai_rate_limit)])
+@router.post(
+    "/evaluate-rewrite",
+    response_model=ApiResponse[RewriteEvaluationResult],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("rewrite_evaluation"))],
+)
 def evaluate_rewrite(
     payload: AIEvaluateRewriteRequest,
     current_user: User = Depends(get_current_user),
@@ -127,7 +140,11 @@ def evaluate_rewrite(
     return success_response(result)
 
 
-@router.post("/analyze", response_model=ApiResponse[AnalyticsResult], dependencies=[Depends(require_ai_rate_limit)])
+@router.post(
+    "/analyze",
+    response_model=ApiResponse[AnalyticsResult],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("student_analytics"))],
+)
 def analyze_student(
     payload: AIAnalyzeRequest,
     current_user: User = Depends(get_current_user),
@@ -149,7 +166,11 @@ def analyze_student(
     return success_response(result)
 
 
-@router.post("/recommend", response_model=ApiResponse[RecommendationResult], dependencies=[Depends(require_ai_rate_limit)])
+@router.post(
+    "/recommend",
+    response_model=ApiResponse[RecommendationResult],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("study_recommendation"))],
+)
 def recommend(
     payload: AIRecommendRequest,
     current_user: User = Depends(get_current_user),
@@ -175,7 +196,11 @@ def recommend(
     return success_response(result)
 
 
-@router.post("/study-plan", response_model=ApiResponse[StudyPlanResult], dependencies=[Depends(require_ai_rate_limit)])
+@router.post(
+    "/study-plan",
+    response_model=ApiResponse[StudyPlanResult],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("study_plan_generation"))],
+)
 def study_plan(
     payload: AIStudyPlanRequest,
     current_user: User = Depends(get_current_user),

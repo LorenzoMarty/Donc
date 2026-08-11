@@ -6,14 +6,20 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.models import AIInteractionLog, User
-from src.models.events import UserEvent
+from src.models.events import AIGeneratedGame, UserEvent
+from src.config.settings import settings
 from src.schemas.admin import (
     AgentStats,
+    AIGenerationTraceRead,
+    AIQualityReportRow,
+    AIQuotaStatusRead,
     AITelemetryResponse,
     DailyUsage,
     EventTypeSummary,
     ModelStats,
     UserActivityResponse,
+    UserQuotaUsage,
+    WorkflowQuotaUsage,
     WorkflowStats,
 )
 from src.services.admin_cost_helpers import log_cost_micros, micros_to_brl_cents, micros_to_usd_cents
@@ -23,6 +29,73 @@ from src.services.fx_rate import get_usd_brl
 class AdminTelemetryService:
     def __init__(self, db: Session) -> None:
         self.db = db
+
+    def generation_trace(self, *, content_type: str, content_id: int) -> list[AIGenerationTraceRead]:
+        """REQ-3 (P2b): reconstroi quem gerou, quando, com quais parametros e a que custo, a
+        partir do content_id/content_type gravado no AIInteractionLog (Bloco 1)."""
+        logs = self.db.scalars(
+            select(AIInteractionLog)
+            .where(AIInteractionLog.content_type == content_type, AIInteractionLog.content_id == content_id)
+            .order_by(AIInteractionLog.created_at.asc())
+        ).all()
+        return [AIGenerationTraceRead.model_validate(log) for log in logs]
+
+    def ai_quota_status(self) -> AIQuotaStatusRead:
+        """REQ-6 (P2b): visibilidade dos limites configurados (Bloco 2) e do consumo do dia
+        corrente (UTC) por usuario e por workflow, antes de bloquear."""
+        since = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        logs = self.db.scalars(select(AIInteractionLog).where(AIInteractionLog.created_at >= since)).all()
+
+        by_user: dict[int, int] = {}
+        by_workflow: dict[str, int] = {}
+        for log in logs:
+            if log.user_id is not None:
+                by_user[log.user_id] = by_user.get(log.user_id, 0) + log.cost_micro_usd
+            by_workflow[log.workflow] = by_workflow.get(log.workflow, 0) + log.cost_micro_usd
+
+        return AIQuotaStatusRead(
+            daily_limit_micro_usd_per_user=settings.ai_daily_cost_limit_micro_usd_per_user,
+            daily_limit_micro_usd_per_workflow=settings.ai_daily_cost_limit_micro_usd_per_workflow,
+            per_user_today=[
+                UserQuotaUsage(user_id=user_id, consumed_micro_usd=consumed)
+                for user_id, consumed in sorted(by_user.items(), key=lambda item: -item[1])
+            ],
+            per_workflow_today=[
+                WorkflowQuotaUsage(workflow=workflow, consumed_micro_usd=consumed)
+                for workflow, consumed in sorted(by_workflow.items(), key=lambda item: -item[1])
+            ],
+        )
+
+    def ai_quality_report(self, period_days: int = 30) -> list[AIQualityReportRow]:
+        """REQ-11 (P2b): gerados/aprovados/rejeitados/editados por tipo de conteudo IA, no
+        periodo. So conta o que a fonte de dados realmente sustenta — `AIGeneratedGame` tem
+        fila de revisao (status/edited_after_generation); outros tipos (ex.: `EssayTheme`) ainda
+        nao tem essa fila, entao aprovado/rejeitado/editado ficam 0 em vez de inventados."""
+        since = datetime.now(timezone.utc) - timedelta(days=period_days)
+        logs = self.db.scalars(
+            select(AIInteractionLog).where(
+                AIInteractionLog.created_at >= since, AIInteractionLog.content_type.is_not(None)
+            )
+        ).all()
+
+        content_ids_by_type: dict[str, set[int]] = {}
+        for log in logs:
+            if log.content_id is None or log.content_type is None:
+                continue
+            content_ids_by_type.setdefault(log.content_type, set()).add(log.content_id)
+
+        rows: list[AIQualityReportRow] = []
+        for content_type, ids in content_ids_by_type.items():
+            approved = rejected = edited = 0
+            if content_type == "AIGeneratedGame":
+                games = self.db.scalars(select(AIGeneratedGame).where(AIGeneratedGame.id.in_(ids))).all()
+                approved = sum(1 for game in games if game.status == "approved")
+                rejected = sum(1 for game in games if game.status == "rejected")
+                edited = sum(1 for game in games if game.edited_after_generation)
+            rows.append(
+                AIQualityReportRow(content_type=content_type, generated=len(ids), approved=approved, rejected=rejected, edited=edited)
+            )
+        return rows
 
     def ai_telemetry(self, period_days: int = 30) -> AITelemetryResponse:
         since = datetime.now(timezone.utc) - timedelta(days=period_days)

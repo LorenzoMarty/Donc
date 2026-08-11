@@ -31,6 +31,13 @@ class AIJob(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # P2b — REQ-9: chave de idempotencia opcional enviada pelo cliente no submit/reprocess de
+    # redacao — repetir a mesma chave reaproveita o job ja criado (queued/running/completed/
+    # failed) em vez de disparar outra correcao, cobrindo tambem o caso do fallback sincrono
+    # (get_active_for_essay() sozinho so cobre job ainda em andamento).
+    idempotency_key: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    # P2b — REQ-7: numero da tentativa (1 = primeira submissao dessa redacao; reprocess sobe).
+    attempt: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
 
 class StudentLearningProfile(Base):
@@ -109,3 +116,14 @@ class AIInteractionLog(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # P2b — REQ-1/REQ-2: vinculo com o conteudo persistido que essa chamada gerou (ex.:
+    # content_type="AIGeneratedGame", content_id=42) e versao do template/prompt, quando o agente
+    # tiver esse conceito. Ambos opcionais — nem toda chamada gera conteudo persistido.
+    content_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(60), nullable=True, index=True)
+    template_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # P2b — REQ-7/REQ-8: numero da tentativa (1 = primeira) e chave de idempotencia enviada pelo
+    # cliente (admin UI) — requisicao repetida com a mesma chave reaproveita o resultado gravado
+    # aqui em vez de gerar de novo (ver src/utils/ai_idempotency.py).
+    attempt: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
