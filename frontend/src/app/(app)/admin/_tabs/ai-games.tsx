@@ -1,34 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Save, Sparkles, Trash2, Wand2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, Loader2, Plus, Save, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
+import { GamePreviewModal } from "@/app/(app)/admin/_tabs/game-preview";
+import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/http-client";
-import type { AIGeneratedGame, GameQuestion } from "@/types/api";
+import type { AdminUser, AIGeneratedGame, GameQuestion } from "@/types/api";
 import { cn } from "@/utils";
-
-const CATEGORIES = [
-  { value: "coesao", label: "Coesão" },
-  { value: "argumentacao", label: "Argumentação" },
-  { value: "estrutura", label: "Estrutura" },
-  { value: "repertorio", label: "Repertório" },
-  { value: "gramatica", label: "Gramática" },
-  { value: "competencias-enem", label: "Competências ENEM" },
-];
-
-const DIFFICULTIES = [
-  { value: "easy", label: "Essencial" },
-  { value: "medium", label: "Intermediário" },
-  { value: "hard", label: "Avançado" },
-];
 
 function statusBadge(status: string) {
   if (status === "approved") return <Badge variant="success" className="text-xs">Aprovado</Badge>;
@@ -38,10 +23,12 @@ function statusBadge(status: string) {
 
 function GameCard({
   game,
+  users,
   onReviewed,
   onDeleted,
 }: {
   game: AIGeneratedGame;
+  users: AdminUser[];
   onReviewed: (updated: AIGeneratedGame) => void;
   onDeleted: (gameId: number) => void;
 }) {
@@ -52,8 +39,84 @@ function GameCard({
   const [reviewing, setReviewing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [structuralBusy, setStructuralBusy] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const questions = editingQ ?? game.questions;
+
+  function guardUnsavedEdits(): boolean {
+    if (editingQ) {
+      toast.error("Salve ou descarte as alterações de texto antes de adicionar/remover/reordenar/regenerar.");
+      return false;
+    }
+    return true;
+  }
+
+  async function addQuestion() {
+    if (!guardUnsavedEdits()) return;
+    setStructuralBusy("add");
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions`, {
+        method: "POST",
+        body: JSON.stringify({ prompt: "Nova pergunta — edite o enunciado.", options: ["Alternativa 1", "Alternativa 2"], answer_index: 0, explanation: "Edite a explicação." }),
+      });
+      onReviewed(result);
+      toast.success("Pergunta adicionada.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao adicionar pergunta.");
+    } finally {
+      setStructuralBusy(null);
+    }
+  }
+
+  async function removeQuestion(questionId: string) {
+    if (!guardUnsavedEdits()) return;
+    if (!window.confirm("Remover esta pergunta do jogo?")) return;
+    setStructuralBusy(questionId);
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions/${questionId}`, { method: "DELETE" });
+      onReviewed(result);
+      toast.success("Pergunta removida.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao remover pergunta.");
+    } finally {
+      setStructuralBusy(null);
+    }
+  }
+
+  async function moveQuestion(index: number, direction: -1 | 1) {
+    if (!guardUnsavedEdits()) return;
+    const target = index + direction;
+    if (target < 0 || target >= game.questions.length) return;
+    const ids = game.questions.map((q) => q.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    setStructuralBusy("reorder");
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions/reorder`, {
+        method: "POST",
+        body: JSON.stringify({ question_ids: ids }),
+      });
+      onReviewed(result);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao reordenar.");
+    } finally {
+      setStructuralBusy(null);
+    }
+  }
+
+  async function regenerateQuestion(questionId: string) {
+    if (!guardUnsavedEdits()) return;
+    setStructuralBusy(questionId);
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions/${questionId}/regenerate`, { method: "POST" });
+      onReviewed(result);
+      toast.success("Pergunta regenerada.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao regenerar pergunta.");
+    } finally {
+      setStructuralBusy(null);
+    }
+  }
 
   async function review(action: "approve" | "reject") {
     setReviewing(true);
@@ -145,7 +208,7 @@ function GameCard({
         <div className="collapse-in border-t p-4 space-y-4">
           <div className="space-y-4">
             {questions.map((q, qi) => (
-              <div key={qi} className="rounded-control bg-background/60 p-3 shadow-soft space-y-2.5">
+              <div key={q.id} className="rounded-control bg-background/60 p-3 shadow-soft space-y-2.5">
                 <div className="flex items-start gap-2">
                   <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[0.65rem] font-bold text-primary">Q{qi + 1}</span>
                   <Textarea
@@ -176,9 +239,72 @@ function GameCard({
                   <p className="text-xs text-muted-foreground mb-1">Explicação:</p>
                   <Input value={q.explanation} onChange={(e) => updateField(qi, "explanation", e.target.value)} className="h-9 text-xs" />
                 </div>
+                <div className="flex flex-wrap items-center gap-1.5 pl-8">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => regenerateQuestion(q.id)}
+                    disabled={structuralBusy !== null}
+                  >
+                    {structuralBusy === q.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                    Regenerar pergunta
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => moveQuestion(qi, -1)}
+                    disabled={structuralBusy !== null || qi === 0}
+                    aria-label="Mover pergunta para cima"
+                  >
+                    ↑
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => moveQuestion(qi, 1)}
+                    disabled={structuralBusy !== null || qi === questions.length - 1}
+                    aria-label="Mover pergunta para baixo"
+                  >
+                    ↓
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="ml-auto h-7 px-2 text-xs text-destructive hover:text-destructive"
+                    onClick={() => removeQuestion(q.id)}
+                    disabled={structuralBusy !== null || questions.length <= 1}
+                  >
+                    {structuralBusy === q.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                    Remover
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={addQuestion} disabled={structuralBusy !== null}>
+              {structuralBusy === "add" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              Adicionar pergunta
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+              <Eye className="h-3.5 w-3.5" />
+              Pré-visualizar
+            </Button>
+          </div>
+
+          <GamePreviewModal
+            open={previewOpen}
+            onClose={() => setPreviewOpen(false)}
+            name={game.name}
+            category={game.category}
+            skill={game.skill}
+            difficulty={game.difficulty}
+            questions={questions}
+          />
 
           {editingQ && game.status === "pending" && (
             <p className="text-xs text-streak">Questões editadas. As alterações serão salvas ao aprovar/rejeitar.</p>
@@ -231,6 +357,8 @@ function GameCard({
           {game.admin_notes && (
             <p className="text-xs text-muted-foreground italic">Notas: {game.admin_notes}</p>
           )}
+
+          <HistoryPanel contentType="AIGeneratedGame" contentId={game.id} users={users} />
         </div>
       )}
     </div>
@@ -239,93 +367,22 @@ function GameCard({
 
 export function AIGamesTab({
   games,
-  onGenerated,
+  users,
   onReviewed,
   onDeleted,
 }: {
   games: AIGeneratedGame[];
-  onGenerated: (game: AIGeneratedGame) => void;
+  users: AdminUser[];
   onReviewed: (updated: AIGeneratedGame) => void;
   onDeleted: (gameId: number) => void;
 }) {
-  const [skill, setSkill] = useState("");
-  const [category, setCategory] = useState("coesao");
-  const [difficulty, setDifficulty] = useState("medium");
-  const [count, setCount] = useState(5);
-  const [gamesCount, setGamesCount] = useState(1);
-  const [generating, setGenerating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
-
-  async function generate() {
-    if (!skill.trim()) {
-      toast.error("Informe a habilidade que o jogo vai treinar.");
-      return;
-    }
-    setGenerating(true);
-    const total = Math.min(Math.max(gamesCount, 1), 5);
-    let created = 0;
-    try {
-      for (let i = 0; i < total; i++) {
-        const game = await apiFetch<AIGeneratedGame>("/admin/ai-games/generate", {
-          method: "POST",
-          body: JSON.stringify({ skill: skill.trim(), category, difficulty, count }),
-        });
-        onGenerated(game);
-        created++;
-      }
-      toast.success(`${created} ${created === 1 ? "jogo gerado" : "jogos gerados"}. Revise antes de aprovar.`);
-      setSkill("");
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? created > 0
-            ? `${created} gerado(s); falha no restante: ${err.message}`
-            : err.message
-          : "Erro ao gerar jogo.",
-      );
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   const filtered = statusFilter === "all" ? games : games.filter((g) => g.status === statusFilter);
   const pendingCount = games.filter((g) => g.status === "pending").length;
 
   return (
     <div className="space-y-6">
-      {/* Generator panel */}
-      <div className="rounded-card bg-card p-5 shadow-soft space-y-4">
-        <div className="flex items-center gap-2">
-          <Wand2 className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold">Gerar novo jogo com IA</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Habilidade" className="lg:col-span-2">
-            <Input value={skill} onChange={(e) => setSkill(e.target.value)} placeholder="ex: uso de conectivos adversativos" />
-          </Field>
-          <Field label="Categoria">
-            <Select value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </Select>
-          </Field>
-          <Field label="Dificuldade">
-            <Select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-              {DIFFICULTIES.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </Select>
-          </Field>
-          <Field label="Questões por jogo">
-            <Input type="number" min={3} max={10} value={count} onChange={(e) => setCount(Number(e.target.value))} />
-          </Field>
-          <Field label="Quantidade de jogos">
-            <Input type="number" min={1} max={5} value={gamesCount} onChange={(e) => setGamesCount(Number(e.target.value))} />
-          </Field>
-        </div>
-        <Button onClick={generate} disabled={generating}>
-          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {generating ? "Gerando..." : "Gerar jogo"}
-        </Button>
-      </div>
-
       {/* Filter + list */}
       <div className="flex flex-wrap gap-2">
         {(["all", "pending", "approved", "rejected"] as const).map((s) => (
@@ -345,7 +402,7 @@ export function AIGamesTab({
 
       <div className="space-y-3">
         {filtered.map((game) => (
-          <GameCard key={game.id} game={game} onReviewed={onReviewed} onDeleted={onDeleted} />
+          <GameCard key={game.id} game={game} users={users} onReviewed={onReviewed} onDeleted={onDeleted} />
         ))}
         {filtered.length === 0 && (
           <div className="rounded-card bg-card p-8 text-center shadow-soft">

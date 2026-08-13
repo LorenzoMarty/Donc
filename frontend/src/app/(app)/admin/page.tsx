@@ -23,6 +23,8 @@ import { AdaptiveHealthTab } from "./_tabs/adaptive-health";
 import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
 import { ContentQualityTab } from "./_tabs/content-quality";
+import { CreateWithAiTab } from "./_tabs/create-with-ai";
+import { ReviewQueueTab } from "./_tabs/review-queue";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
 import { ModulesTab } from "./_tabs/modules";
@@ -123,6 +125,8 @@ export default function AdminPage() {
           <TabsTrigger value="themes">Temas</TabsTrigger>
           <TabsTrigger value="modules">Módulos</TabsTrigger>
           <TabsTrigger value="games">Jogos IA</TabsTrigger>
+          <TabsTrigger value="create-with-ai">Criar com IA</TabsTrigger>
+          <TabsTrigger value="review-queue">Revisões</TabsTrigger>
           <TabsTrigger value="content-quality">Qualidade</TabsTrigger>
           <TabsTrigger value="adaptive-health">Saúde</TabsTrigger>
         </TabsList>
@@ -154,7 +158,7 @@ export default function AdminPage() {
         <TabsContent value="themes" className="mt-4">
           <ThemesTab
             themes={themes}
-            onGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])}
+            users={users}
             onUpdated={(theme) => setThemes((prev) => prev.map((item) => (item.id === theme.id ? theme : item)))}
             onDeleted={(themeId) => setThemes((prev) => prev.filter((item) => item.id !== themeId))}
           />
@@ -183,9 +187,27 @@ export default function AdminPage() {
         <TabsContent value="games" className="mt-4">
           <AIGamesTab
             games={games}
-            onGenerated={(game) => setGames((prev) => [game, ...prev])}
+            users={users}
             onReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
             onDeleted={(gameId) => setGames((prev) => prev.filter((g) => g.id !== gameId))}
+          />
+        </TabsContent>
+
+        <TabsContent value="create-with-ai" className="mt-4">
+          <CreateWithAiTab
+            modules={modules}
+            onGameGenerated={(game) => setGames((prev) => [game, ...prev])}
+            onExerciseGenerated={() => {}}
+            onThemeGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])}
+          />
+        </TabsContent>
+
+        <TabsContent value="review-queue" className="mt-4">
+          <ReviewQueueTab
+            onOpenTab={setTab}
+            onGameReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
+            onExerciseReviewed={() => apiFetch<AdminModule[]>("/admin/content").then(setModules)}
+            onThemeReviewed={(updated) => setThemes((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))}
           />
         </TabsContent>
 

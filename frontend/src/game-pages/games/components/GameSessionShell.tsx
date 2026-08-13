@@ -21,6 +21,7 @@ export function GameSessionShell({
   step,
   total,
   extraChips,
+  onClose,
   children,
 }: {
   categoryName: string;
@@ -30,6 +31,9 @@ export function GameSessionShell({
   total: number;
   /** Chip extra específico do engine (timer/vidas) — só nos que já têm isso de verdade. */
   extraChips?: React.ReactNode;
+  /** Sobrescreve o "Fechar" pra um callback (P3a: preview do admin, dentro de um modal — não deve
+   * navegar pra uma rota real de jogo). Sem isso, comportamento padrão (Link) é mantido. */
+  onClose?: () => void;
   children: React.ReactNode;
 }) {
   const returnTo = readReturnTo();
@@ -39,13 +43,24 @@ export function GameSessionShell({
     <div className="game-shell-panel dark rounded-[28px] border border-border/50 bg-background px-4 py-4 text-foreground shadow-elevated md:px-8 md:py-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <Link
-            href={returnTo ?? `/games/${categorySlug}`}
-            aria-label="Fechar"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-control border border-border text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fechar"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-control border border-border text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : (
+            <Link
+              href={returnTo ?? `/games/${categorySlug}`}
+              aria-label="Fechar"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-control border border-border text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          )}
           <div className="min-w-0">
             <p className="truncate text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-primary">{categoryName}</p>
             <h1 className="truncate text-sm font-semibold leading-tight text-foreground">{title}</h1>

@@ -14,7 +14,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/utils";
 import { apiFetch } from "@/services/api";
-import type { AdminActivity, AdminLesson, AdminModule, AdminModuleItem, AIGeneratedExercise } from "@/types/api";
+import type { AdminActivity, AdminLesson, AdminModule, AdminModuleItem } from "@/types/api";
 
 type ModalState =
   | { kind: "module"; mode: "create" }
@@ -432,47 +432,12 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
     },
   );
   const [busy, setBusy] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [aiExerciseId, setAiExerciseId] = useState<number | null>(null);
 
   const skillError = submitted && !draft.skill.trim() ? "Informe a habilidade." : null;
   const statementError = submitted && draft.statement.trim().length < 20 ? "Mínimo de 20 caracteres." : null;
   const explanationError = submitted && !draft.explanation.trim() ? "Informe a explicação." : null;
   const optionsError = submitted && draft.options.some((option) => !option.trim()) ? "Preencha todas as alternativas." : null;
-
-  async function generateDraft() {
-    if (!draft.base_lesson_ids.length) return toast.error("Escolha as aulas que servirão de base para a IA.");
-    setGenerating(true);
-    try {
-      const generated = await apiFetch<AIGeneratedExercise[]>(`/admin/modules/${contentModule.id}/activities/generate`, {
-        method: "POST",
-        body: JSON.stringify({ lesson_ids: draft.base_lesson_ids, difficulty: draft.difficulty, count: 1, focus: draft.skill || null }),
-      });
-      const first = generated[0];
-      if (first) {
-        setDraft({
-          id: editing?.id ?? 0,
-          statement: first.statement,
-          options: first.options,
-          correct_answer: first.correct_answer,
-          explanation: first.explanation,
-          skill: first.skill,
-          difficulty: first.difficulty,
-          lesson_id: first.lesson_id,
-          base_lesson_ids: first.base_lesson_ids,
-          order: draft.order,
-          targets: first.targets,
-        });
-        setAiExerciseId(first.id);
-      }
-      toast.success("Atividade gerada. Revise antes de salvar.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível gerar a atividade.");
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   async function submit() {
     setSubmitted(true);
@@ -493,18 +458,9 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
       targets: draft.targets,
     };
     try {
-      let modules: AdminModule[];
-      if (!editing && aiExerciseId) {
-        await apiFetch<AIGeneratedExercise>(`/admin/ai-exercises/${aiExerciseId}/review`, {
-          method: "POST",
-          body: JSON.stringify({ action: "approve", order: draft.order, ...body }),
-        });
-        modules = await apiFetch<AdminModule[]>("/admin/content");
-      } else {
-        modules = editing
-          ? await apiFetch<AdminModule[]>(`/admin/activities/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) })
-          : await apiFetch<AdminModule[]>(`/admin/modules/${contentModule.id}/activities`, { method: "POST", body: JSON.stringify(body) });
-      }
+      const modules = editing
+        ? await apiFetch<AdminModule[]>(`/admin/activities/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) })
+        : await apiFetch<AdminModule[]>(`/admin/modules/${contentModule.id}/activities`, { method: "POST", body: JSON.stringify(body) });
       onUpdated(modules);
       toast.success(editing ? "Atividade atualizada." : "Atividade criada.");
     } catch (err) {
@@ -519,18 +475,14 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
       open
       onClose={onClose}
       title={editing ? "Editar atividade" : "Nova atividade"}
-      description="Questão de múltipla escolha — gere com IA ou monte manualmente."
+      description="Questão de múltipla escolha — monte manualmente ou gere um rascunho na aba Criar com IA."
       icon={ClipboardList}
       size="xl"
       footer={<ModalActions busy={busy} onClose={onClose} onSubmit={submit} />}
     >
       <div className="grid gap-4">
         <div className="rounded-card bg-primary/5 p-3.5 shadow-soft">
-          <div className="mb-2 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-            <p className="text-sm font-semibold">Gerar com IA</p>
-          </div>
-          <Field label="Aulas usadas como base" hint="Selecione ao menos uma aula para a IA se basear.">
+          <Field label="Aulas base" hint="Aulas que esta atividade cobra do aluno.">
             <div className="grid gap-1 rounded-control bg-card p-2 shadow-soft">
               {contentModule.lessons.length ? (
                 contentModule.lessons.map((lesson) => {
@@ -566,10 +518,6 @@ function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalStat
               )}
             </div>
           </Field>
-          <Button type="button" size="sm" variant="outline" className="mt-2" onClick={generateDraft} disabled={generating || busy}>
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-            {generating ? "Gerando..." : "Gerar com IA"}
-          </Button>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

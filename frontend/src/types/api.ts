@@ -196,6 +196,7 @@ export type EssayTheme = {
   title: string;
   context: string;
   source: string;
+  status: "pending" | "approved" | "rejected";
   supporting_texts?: SupportingText[];
 };
 
@@ -336,6 +337,42 @@ export type AIGeneratedExercise = {
   edited_after_generation: boolean;
   created_at: string;
   reviewed_at: string | null;
+};
+
+export type ReviewQueueItem = {
+  content_type: "game" | "exercise" | "theme";
+  content_id: number;
+  title: string;
+  skill: string | null;
+  difficulty: string | null;
+  targets: string[];
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+};
+
+export type ContentVersion = {
+  id: number;
+  content_type: string;
+  content_id: number;
+  snapshot: Record<string, unknown>;
+  edited_by: number | null;
+  reason: string | null;
+  created_at: string;
+};
+
+export type AIGenerationTrace = {
+  id: number;
+  workflow: string;
+  agent: string;
+  user_id: number | null;
+  status: string;
+  model: string | null;
+  cost_micro_usd: number;
+  prompt_hash: string | null;
+  template_version: string | null;
+  error: string | null;
+  meta: Record<string, unknown>;
+  created_at: string;
 };
 
 export type AdminModuleItem = {
@@ -515,6 +552,7 @@ export type AdminUserDetail = {
 };
 
 export type GameQuestion = {
+  id: string;
   prompt: string;
   options: string[];
   answer_index: number;
@@ -528,7 +566,7 @@ export type AIGeneratedGame = {
   skill: string;
   difficulty: string;
   questions: GameQuestion[];
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "archived";
   admin_notes: string | null;
   targets: string[];
   edited_after_generation: boolean;

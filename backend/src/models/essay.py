@@ -23,6 +23,10 @@ class EssayTheme(Base):
     source: Mapped[str] = mapped_column(String(160), default="Banco ENEM")
     supporting_texts: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, default=None)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    # P3b REQ-1: so tema gerado por IA nasce "pending" (is_active=False ate aprovar) — sem fluxo
+    # manual de criacao hoje, entao o default "approved" cobre o unico outro caso (nenhum, na
+    # pratica) sem quebrar nada.
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="approved")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     essays = relationship("Essay", back_populates="theme")

@@ -100,6 +100,21 @@ class AdminEssayThemeActionResponse(BaseModel):
     theme_id: int
 
 
+class AdminEssayThemeReviewRequest(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
+
+
+class ReviewQueueItem(BaseModel):
+    content_type: Literal["game", "exercise", "theme"]
+    content_id: int
+    title: str
+    skill: str | None = None
+    difficulty: str | None = None
+    targets: list[str] = Field(default_factory=list)
+    status: str
+    created_at: datetime
+
+
 class AdminLessonRead(BaseModel):
     id: int
     title: str
@@ -480,6 +495,7 @@ class UserActivityResponse(BaseModel):
 # ── AI Generated Games ───────────────────────────────────────────────────────
 
 class GameQuestionRead(BaseModel):
+    id: str
     prompt: str
     options: list[str]
     answer_index: int
@@ -526,6 +542,23 @@ class UpdateGameRequest(BaseModel):
     targets: list[str] | None = None
 
     _validate_targets = field_validator("targets")(_validate_targets)
+
+
+class AddGameQuestionRequest(BaseModel):
+    prompt: str = Field(min_length=3, max_length=500)
+    options: list[str] = Field(min_length=2, max_length=6)
+    answer_index: int = Field(ge=0)
+    explanation: str = Field(min_length=1, max_length=1000)
+
+    @model_validator(mode="after")
+    def _validate_answer_index(self) -> "AddGameQuestionRequest":
+        if self.answer_index >= len(self.options):
+            raise ValueError("answer_index deve apontar para uma alternativa existente")
+        return self
+
+
+class ReorderGameQuestionsRequest(BaseModel):
+    question_ids: list[str] = Field(min_length=1)
 
 
 class ContentQualityItem(BaseModel):

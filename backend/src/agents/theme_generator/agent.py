@@ -125,6 +125,14 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                         ),
                         type="motivador",
                     ),
+                    GeneratedSupportingText(
+                        title="Texto III",
+                        content=(
+                            "Escolas que investem em formacao docente para uso pedagogico da tecnologia reportam maior engajamento "
+                            "dos alunos e uso mais consciente das ferramentas digitais em sala de aula."
+                        ),
+                        type="motivador",
+                    ),
                 ],
                 rationale="Tema gerado por fallback pedagogico quando a IA externa nao esta disponivel.",
             ),
@@ -150,6 +158,14 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                         content=(
                             "Politicas publicas de creches, centros de apoio e licencas familiares podem distribuir melhor as responsabilidades "
                             "de cuidado entre Estado, familias, mercado e comunidade."
+                        ),
+                        type="motivador",
+                    ),
+                    GeneratedSupportingText(
+                        title="Texto III",
+                        content=(
+                            "Pesquisas mostram que o tempo dedicado ao cuidado nao remunerado recai desproporcionalmente sobre mulheres, "
+                            "limitando sua permanencia em empregos formais e trajetorias de estudo."
                         ),
                         type="motivador",
                     ),
@@ -181,6 +197,14 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                         ),
                         type="motivador",
                     ),
+                    GeneratedSupportingText(
+                        title="Texto III",
+                        content=(
+                            "Grêmios estudantis e coletivos juvenis funcionam como escola pratica de participacao, aproximando adolescentes "
+                            "de processos de decisao antes mesmo da idade de votar."
+                        ),
+                        type="motivador",
+                    ),
                 ],
                 rationale="Tema alternativo sobre cidadania e educacao politica.",
             ),
@@ -206,6 +230,14 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                         content=(
                             "Cooperativas de reciclagem unem inclusao produtiva e protecao ambiental, mas precisam de apoio tecnico, logistica "
                             "e contratos estaveis para ampliar seus resultados."
+                        ),
+                        type="motivador",
+                    ),
+                    GeneratedSupportingText(
+                        title="Texto III",
+                        content=(
+                            "Campanhas de educacao ambiental em escolas e bairros ajudam a reduzir o descarte irregular quando combinadas "
+                            "com pontos de coleta acessiveis e horarios de recolhimento previsiveis."
                         ),
                         type="motivador",
                     ),
@@ -237,6 +269,14 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                         ),
                         type="motivador",
                     ),
+                    GeneratedSupportingText(
+                        title="Texto III",
+                        content=(
+                            "Hortas urbanas e programas de merenda escolar de qualidade reforcam o direito a alimentacao adequada desde a "
+                            "infancia, com efeitos duradouros sobre saude e aprendizado."
+                        ),
+                        type="motivador",
+                    ),
                 ],
                 rationale="Tema alternativo sobre saude publica e desigualdade.",
             ),
@@ -261,6 +301,14 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
                         content=(
                             "Projetos educativos e acervos digitais podem aproximar estudantes da historia local, desde que respeitem a diversidade "
                             "regional e valorizem comunidades produtoras de cultura."
+                        ),
+                        type="motivador",
+                    ),
+                    GeneratedSupportingText(
+                        title="Texto III",
+                        content=(
+                            "Mestres e mestras de saberes tradicionais raramente recebem reconhecimento formal, apesar de sustentarem praticas "
+                            "culturais transmitidas ha geracoes em suas comunidades."
                         ),
                         type="motivador",
                     ),

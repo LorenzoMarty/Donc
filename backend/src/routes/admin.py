@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -7,6 +9,10 @@ from src.database.session import get_db
 from src.dependencies import get_current_user, require_admin
 from src.models import User
 from src.schemas.admin import (
+    AddGameQuestionRequest,
+    AdminEssayThemeReviewRequest,
+    ReorderGameQuestionsRequest,
+    ReviewQueueItem,
     AdminContentActionResponse,
     AdminContentQualityResponse,
     AdminActivityCreateRequest,
@@ -52,6 +58,7 @@ from src.services.admin_content_service import AdminContentService
 from src.services.admin_game_review_service import AdminGameReviewService
 from src.services.admin_metrics_service import AdminMetricsService
 from src.services.admin_pedagogical_metrics_service import AdminPedagogicalMetricsService
+from src.services.admin_review_queue_service import AdminReviewQueueService
 from src.services.admin_telemetry_service import AdminTelemetryService
 from src.services.admin_user_service import AdminUserService
 from src.services.content_versioning import list_versions
@@ -97,6 +104,22 @@ def pedagogical_metrics(
     _: User = Depends(require_admin), db: Session = Depends(get_db)
 ) -> ApiResponse[AdminPedagogicalMetricsResponse]:
     return success_response(AdminPedagogicalMetricsService(db).report())
+
+
+@router.get("/review-queue", response_model=ApiResponse[list[ReviewQueueItem]])
+def review_queue(
+    content_type: str | None = Query(default=None, pattern="^(game|exercise|theme)$"),
+    status: str = Query(default="pending", pattern="^(pending|approved|rejected)$"),
+    target: str | None = Query(default=None),
+    difficulty: str | None = Query(default=None),
+    created_from: date | None = Query(default=None),
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[ReviewQueueItem]]:
+    items = AdminReviewQueueService(db).list_queue(
+        content_type=content_type, status=status, target=target, difficulty=difficulty, created_from=created_from
+    )
+    return success_response(items)
 
 
 @router.get("/content", response_model=ApiResponse[list[AdminModuleRead]])
@@ -154,6 +177,17 @@ def update_essay_theme(
         ),
         "Tema atualizado.",
     )
+
+
+@router.post("/essay-themes/{theme_id}/review", response_model=ApiResponse[EssayThemeRead])
+def review_essay_theme(
+    theme_id: int,
+    payload: AdminEssayThemeReviewRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssayThemeRead]:
+    theme = AdminContentService(db).review_essay_theme(theme_id=theme_id, action=payload.action, reviewer_id=current_admin.id)
+    return success_response(theme, "Tema revisado.")
 
 
 @router.delete("/essay-themes/{theme_id}", response_model=ApiResponse[AdminEssayThemeActionResponse])
@@ -600,6 +634,61 @@ def update_game(
         admin_user_id=current_admin.id,
     )
     return success_response(game, "Jogo atualizado.")
+
+
+@router.post("/ai-games/{game_id}/questions", response_model=ApiResponse[AIGeneratedGameRead])
+def add_game_question(
+    game_id: int,
+    payload: AddGameQuestionRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).add_question(
+        game_id,
+        prompt=payload.prompt,
+        options=payload.options,
+        answer_index=payload.answer_index,
+        explanation=payload.explanation,
+        admin_user_id=current_admin.id,
+    )
+    return success_response(game, "Pergunta adicionada.")
+
+
+@router.delete("/ai-games/{game_id}/questions/{question_id}", response_model=ApiResponse[AIGeneratedGameRead])
+def remove_game_question(
+    game_id: int,
+    question_id: str,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).remove_question(game_id, question_id=question_id, admin_user_id=current_admin.id)
+    return success_response(game, "Pergunta removida.")
+
+
+@router.post("/ai-games/{game_id}/questions/reorder", response_model=ApiResponse[AIGeneratedGameRead])
+def reorder_game_questions(
+    game_id: int,
+    payload: ReorderGameQuestionsRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).reorder_questions(game_id, question_ids=payload.question_ids, admin_user_id=current_admin.id)
+    return success_response(game, "Perguntas reordenadas.")
+
+
+@router.post(
+    "/ai-games/{game_id}/questions/{question_id}/regenerate",
+    response_model=ApiResponse[AIGeneratedGameRead],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_game_question_regeneration"))],
+)
+def regenerate_game_question(
+    game_id: int,
+    question_id: str,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).regenerate_question(game_id, question_id=question_id, admin_user_id=current_admin.id)
+    return success_response(game, "Pergunta regenerada.")
 
 
 @router.post("/ai-games/{game_id}/archive", response_model=ApiResponse[AIGeneratedGameRead])

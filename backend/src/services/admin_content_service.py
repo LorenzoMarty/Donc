@@ -4,7 +4,7 @@ import re
 import unicodedata
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from src.agents.exercise import ExerciseGeneratorAgent
@@ -32,7 +32,15 @@ class AdminContentService:
     # ── Essay Themes ─────────────────────────────────────────────────────────
 
     def list_essay_themes(self) -> list[EssayTheme]:
-        return list(self.db.scalars(select(EssayTheme).where(EssayTheme.is_active.is_(True)).order_by(EssayTheme.created_at.desc())))
+        # P3b REQ-4/5: inclui pending pra aparecer na fila de revisao/aba Temas; rejeitado
+        # continua fora (so acessivel via review-queue historico, nao "conteudo gerenciavel").
+        return list(
+            self.db.scalars(
+                select(EssayTheme)
+                .where(or_(EssayTheme.is_active.is_(True), EssayTheme.status == "pending"))
+                .order_by(EssayTheme.created_at.desc())
+            )
+        )
 
     def generate_essay_theme(
         self,
@@ -75,7 +83,8 @@ class AdminContentService:
                 [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
                 requirements=supporting_text_requirements,
             ),
-            is_active=True,
+            is_active=False,
+            status="pending",
         )
         self.db.add(theme)
         self.db.flush()  # popula theme.id — usado como content_id do AIInteractionLog abaixo.
@@ -103,7 +112,7 @@ class AdminContentService:
         supporting_texts: list[dict] | None = None,
         admin_user_id: int | None = None,
     ) -> EssayTheme:
-        theme = self._get_active_essay_theme(theme_id)
+        theme = self._get_manageable_essay_theme(theme_id)
         will_change = (
             (title is not None and title != theme.title)
             or (context is not None and context != theme.context)
@@ -223,13 +232,26 @@ class AdminContentService:
         return cleaned
 
     def delete_essay_theme(self, *, theme_id: int) -> None:
-        theme = self._get_active_essay_theme(theme_id)
+        theme = self._get_manageable_essay_theme(theme_id)
         theme.is_active = False
+        if theme.status == "pending":
+            # Sem isso, excluir um tema ainda pending nao tira ele da listagem/fila de revisao —
+            # is_active=False sozinho nao basta pra distinguir "excluido" de "aguardando revisao".
+            theme.status = "rejected"
         self.db.commit()
 
-    def _get_active_essay_theme(self, theme_id: int) -> EssayTheme:
+    def review_essay_theme(self, *, theme_id: int, action: str, reviewer_id: int | None) -> EssayTheme:
+        """P3b REQ-2: aprovar publica (is_active=True); rejeitar mantem despublicado."""
+        theme = self._get_manageable_essay_theme(theme_id)
+        theme.status = "approved" if action == "approve" else "rejected"
+        theme.is_active = action == "approve"
+        self.db.commit()
+        self.db.refresh(theme)
+        return theme
+
+    def _get_manageable_essay_theme(self, theme_id: int) -> EssayTheme:
         theme = self.db.get(EssayTheme, theme_id)
-        if not theme or not theme.is_active:
+        if not theme or not (theme.is_active or theme.status == "pending"):
             raise AppError("Tema de redação não encontrado.", status_code=404, code="theme_not_found")
         return theme
 
