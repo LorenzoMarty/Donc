@@ -197,6 +197,7 @@ export type EssayTheme = {
   context: string;
   source: string;
   status: "pending" | "approved" | "rejected";
+  created_at: string;
   supporting_texts?: SupportingText[];
 };
 
