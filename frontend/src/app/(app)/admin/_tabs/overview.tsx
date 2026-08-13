@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, BarChart3, BookOpen, FileText, Users, Wifi, Zap } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, Clock, Sparkles } from "lucide-react";
 
-import { MetricCard } from "@/components/shared/metric-card";
-import type { AdminMetrics, UserActivity } from "@/types/api";
+import { contentQualityTotal, countPublished, countRecentlyCreated } from "@/app/(app)/admin/_tabs/overview-metrics";
+import { Card, CardContent } from "@/components/ui/card";
+import type { AdminContentQuality, AIGeneratedGame, EssayTheme, UserActivity } from "@/types/api";
 
 const EVENT_LABELS: Record<string, string> = {
   page_view: "Visitas de página",
@@ -19,21 +20,91 @@ function labelFor(eventType: string) {
   return EVENT_LABELS[eventType] ?? eventType;
 }
 
-export function AdminOverviewTab({ metrics, activity }: { metrics: AdminMetrics; activity: UserActivity }) {
+function ActionCard({
+  title,
+  value,
+  detail,
+  icon: Icon,
+  onClick,
+}: {
+  title: string;
+  value: number;
+  detail: string;
+  icon: typeof Sparkles;
+  onClick?: () => void;
+}) {
+  const content = (
+    <CardContent className="p-4 lg:p-5">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-safe mt-2 text-3xl font-semibold tracking-normal">{value}</p>
+        </div>
+        <div className="grid h-11 w-11 place-items-center rounded-md border border-primary/20 bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" aria-hidden="true" />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground">{detail}</p>
+    </CardContent>
+  );
+
+  if (!onClick) return <Card>{content}</Card>;
+
+  return (
+    <Card className="p-0">
+      <button type="button" onClick={onClick} className="w-full rounded-[inherit] text-left transition-colors hover:bg-muted/40">
+        {content}
+      </button>
+    </Card>
+  );
+}
+
+/** REQ-1..6 (P3c): 4 indicadores acionáveis (o que está publicado, aguardando revisão, criado
+ * recentemente, precisando de atenção) substituem a antiga grade de métricas genéricas de uso —
+ * cada número vem de dado real já existente no sistema (REQ-9), nada estimado/mockado. */
+export function AdminOverviewTab({
+  games,
+  themes,
+  reviewQueueCount,
+  contentQuality,
+  activity,
+  onOpenTab,
+}: {
+  games: AIGeneratedGame[];
+  themes: EssayTheme[];
+  reviewQueueCount: number;
+  contentQuality: AdminContentQuality | null;
+  activity: UserActivity;
+  onOpenTab: (tab: string) => void;
+}) {
   const ranked = [...activity.by_type].sort((a, b) => b.count - a.count);
   const mostUsed = ranked[0];
   const leastUsed = ranked.length > 1 ? ranked[ranked.length - 1] : null;
   const maxCount = mostUsed?.count ?? 0;
 
+  const published = countPublished(games, themes);
+  const recentlyCreated = countRecentlyCreated(games, themes, new Date());
+  const needsAttention = contentQuality ? contentQualityTotal(contentQuality) : 0;
+
   return (
     <div className="space-y-6">
       <div className="fluid-grid gap-4 [--grid-min:15rem]">
-        <MetricCard title="Usuários" value={`${metrics.users}`} detail="Contas cadastradas" icon={Users} />
-        <MetricCard title="Redações" value={`${metrics.essays}`} detail={`${metrics.corrected_essays} corrigidas`} icon={FileText} />
-        <MetricCard title="Aulas" value={`${metrics.lessons}`} detail={`${metrics.exercises} exercícios`} icon={BookOpen} />
-        <MetricCard title="Média geral" value={`${metrics.average_score}`} detail={`${metrics.active_themes} temas ativos`} icon={BarChart3} />
-        <MetricCard title="Online agora" value={`${activity.online_now}`} detail="Ativos nos últimos 5 min" icon={Wifi} />
-        <MetricCard title="Eventos" value={`${activity.total_events}`} detail={`Últimos ${activity.period_days} dias`} icon={Zap} />
+        <ActionCard title="Publicados" value={published} detail="Jogos e temas aprovados" icon={CheckCircle2} />
+        <ActionCard
+          title="Aguardando revisão"
+          value={reviewQueueCount}
+          detail="Conteúdo gerado por IA pendente"
+          icon={Clock}
+          onClick={() => onOpenTab("review-queue")}
+        />
+        <ActionCard title="Criados recentemente" value={recentlyCreated} detail="Últimos 7 dias" icon={Sparkles} />
+        <ActionCard
+          title="Precisa atenção"
+          value={needsAttention}
+          detail="Conteúdo sem objetivo, não usado ou rejeitado"
+          icon={AlertTriangle}
+          onClick={() => onOpenTab("content-quality")}
+        />
       </div>
 
       {ranked.length > 0 ? (

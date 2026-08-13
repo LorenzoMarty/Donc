@@ -12,6 +12,7 @@ const THEME: EssayTheme = {
   context: "Contexto do tema de teste.",
   source: "Donc",
   status: "approved",
+  created_at: "2026-08-01T00:00:00Z",
   supporting_texts: [
     { title: "Texto motivador 1", content: "Conteúdo do texto motivador de teste.", type: "motivador" },
   ],

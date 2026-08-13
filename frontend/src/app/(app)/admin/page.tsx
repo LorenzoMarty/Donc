@@ -16,6 +16,7 @@ import type {
   AIGeneratedGame,
   AITelemetry,
   EssayTheme,
+  ReviewQueueItem,
   UserActivity,
 } from "@/types/api";
 
@@ -60,6 +61,7 @@ export default function AdminPage() {
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [contentQuality, setContentQuality] = useState<AdminContentQuality | null>(null);
   const [adaptiveHealth, setAdaptiveHealth] = useState<AdminAdaptiveHealth | null>(null);
+  const [reviewQueueCount, setReviewQueueCount] = useState(0);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
 
@@ -78,7 +80,8 @@ export default function AdminPage() {
       apiFetch<EssayTheme[]>("/admin/essay-themes"),
       apiFetch<AdminContentQuality>("/admin/content-quality"),
       apiFetch<AdminAdaptiveHealth>("/admin/adaptive-health"),
-    ]).then(([m, u, t, a, g, c, th, cq, ah]) => {
+      apiFetch<ReviewQueueItem[]>("/admin/review-queue"),
+    ]).then(([m, u, t, a, g, c, th, cq, ah, rq]) => {
       if (m.status === "fulfilled") setMetrics(m.value);
       else setError(m.reason instanceof Error ? m.reason.message : "Não foi possível carregar o painel administrativo.");
 
@@ -94,6 +97,7 @@ export default function AdminPage() {
       if (th.status === "fulfilled") setThemes(th.value);
       if (cq.status === "fulfilled") setContentQuality(cq.value);
       if (ah.status === "fulfilled") setAdaptiveHealth(ah.value);
+      if (rq.status === "fulfilled") setReviewQueueCount(rq.value.length);
     });
   }, [authLoading, isAdmin]);
 
@@ -132,7 +136,14 @@ export default function AdminPage() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
-          <AdminOverviewTab metrics={metrics} activity={activity} />
+          <AdminOverviewTab
+            games={games}
+            themes={themes}
+            reviewQueueCount={reviewQueueCount}
+            contentQuality={contentQuality}
+            activity={activity}
+            onOpenTab={setTab}
+          />
         </TabsContent>
 
         <TabsContent value="ai" className="mt-4">

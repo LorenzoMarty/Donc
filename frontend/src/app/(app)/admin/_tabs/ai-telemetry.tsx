@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { agentLabel, workflowLabel } from "@/app/(app)/admin/_tabs/ai-labels";
 import { Badge } from "@/components/ui/badge";
 import { formatBRLCents, formatTokens, formatUSDMicros } from "@/lib/format";
-import type { AgentStats, AITelemetry, ModelStats, WorkflowStats } from "@/types/api";
+import type { AgentStats, AITelemetry, WorkflowStats } from "@/types/api";
 
 export function AITelemetryTab({
   telemetry,
@@ -120,48 +121,13 @@ export function AITelemetryTab({
               <tbody>
                 {telemetry.workflows.map((w: WorkflowStats) => (
                   <tr key={w.workflow} className="border-b last:border-b-0 hover:bg-muted/40">
-                    <td className="px-4 py-3 font-medium">{w.workflow}</td>
+                    <td className="px-4 py-3 font-medium">{workflowLabel(w.workflow)}</td>
                     <td className="px-4 py-3 tabular-nums">{w.total_calls}</td>
                     <td className="px-4 py-3 tabular-nums">{formatTokens(w.total_tokens)}</td>
                     <td className="px-4 py-3 tabular-nums text-muted-foreground">{formatBRLCents(w.avg_cost_brl_cents)}</td>
                     <td className="px-4 py-3 tabular-nums font-semibold">
                       {formatBRLCents(w.cost_brl_cents)}
                       <span className="ml-1 text-[10px] font-normal text-muted-foreground">{formatUSDMicros(w.cost_usd_micros)}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Por modelo — qual IA gasta mais / é mais chamada */}
-      {telemetry.models.length > 0 && (
-        <div className="rounded-card bg-card shadow-soft">
-          <div className="border-b p-4">
-            <h2 className="font-semibold">Por modelo de IA</h2>
-            <p className="text-xs text-muted-foreground">Qual IA gasta mais e qual é mais chamada</p>
-          </div>
-          <div className="mobile-scroll overflow-x-auto">
-            <table className="w-full min-w-[560px] text-sm">
-              <thead className="text-left">
-                <tr className="border-b text-xs text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Modelo</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Chamadas</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Tokens</th>
-                  <th className="px-4 py-3 font-medium tabular-nums">Custo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {telemetry.models.map((m: ModelStats) => (
-                  <tr key={m.model} className="border-b last:border-b-0 hover:bg-muted/40">
-                    <td className="px-4 py-3 font-medium font-mono text-xs">{m.model}</td>
-                    <td className="px-4 py-3 tabular-nums">{m.total_calls}</td>
-                    <td className="px-4 py-3 tabular-nums">{formatTokens(m.total_tokens)}</td>
-                    <td className="px-4 py-3 tabular-nums font-semibold">
-                      {formatBRLCents(m.cost_brl_cents)}
-                      <span className="ml-1 text-[10px] font-normal text-muted-foreground">{formatUSDMicros(m.cost_usd_micros)}</span>
                     </td>
                   </tr>
                 ))}
@@ -192,8 +158,8 @@ export function AITelemetryTab({
             <tbody>
               {telemetry.agents.map((agent: AgentStats) => (
                 <tr key={`${agent.workflow}:${agent.agent}`} className="border-b last:border-b-0 hover:bg-muted/40">
-                  <td className="px-4 py-3 font-medium">{agent.agent}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{agent.workflow}</td>
+                  <td className="px-4 py-3 font-medium">{agentLabel(agent.agent)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{workflowLabel(agent.workflow)}</td>
                   <td className="px-4 py-3 tabular-nums">{agent.total_calls}</td>
                   <td className="px-4 py-3 tabular-nums">
                     {agent.error_calls > 0 ? (

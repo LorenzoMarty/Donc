@@ -1,5 +1,6 @@
 import { HeartPulse } from "lucide-react";
 
+import { contentQualityTotal } from "@/app/(app)/admin/_tabs/overview-metrics";
 import { Badge } from "@/components/ui/badge";
 import { HUBS } from "@/features/gamification/symptoms";
 import type {
@@ -53,19 +54,6 @@ function StudentList({ items }: { items: StudentHealthItem[] }) {
       ))}
       {items.length > 12 ? <li className="italic">+{items.length - 12} outros</li> : null}
     </ul>
-  );
-}
-
-function contentQualityTotal(quality: AdminContentQuality): number {
-  return (
-    quality.lessons_without_target.length +
-    quality.exercises_without_target.length +
-    quality.games_without_target.length +
-    quality.unused_lessons.length +
-    quality.unused_exercises.length +
-    quality.unused_games.length +
-    quality.rejected_games.length +
-    quality.edited_games.length
   );
 }
 

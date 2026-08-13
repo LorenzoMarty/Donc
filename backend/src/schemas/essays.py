@@ -66,6 +66,7 @@ class EssayThemeRead(BaseModel):
     context: str
     source: str
     status: str = "approved"
+    created_at: datetime
     supporting_texts: list[SupportingTextRead] = Field(default_factory=list)
 
     @field_validator("supporting_texts", mode="before")

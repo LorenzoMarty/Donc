@@ -113,6 +113,17 @@ def test_admin_can_generate_one_essay_theme(client):
     assert log.content_type == "EssayTheme"
 
 
+def test_generated_theme_exposes_created_at(client):
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        response = client.post("/api/v1/admin/essay-themes/generate", json={"focus": "energia renovavel"})
+        theme = api_data(response)
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    assert theme["created_at"]
+
+
 def test_admin_theme_generation_rejects_prompt_injection(client):
     app.dependency_overrides[require_admin] = override_admin
     try:

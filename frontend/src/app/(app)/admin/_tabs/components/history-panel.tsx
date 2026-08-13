@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
 
+import { workflowLabel } from "@/app/(app)/admin/_tabs/ai-labels";
 import { apiFetch } from "@/services/api";
 import type { AdminUser, AIGenerationTrace, ContentVersion } from "@/types/api";
 
-const WORKFLOW_LABELS: Record<string, string> = {
+// Fraseado de evento (linha do tempo), diferente do rótulo de categoria de `ai-labels.ts` — cai
+// pro rótulo genérico (REQ-7) quando o workflow não tem essa versão narrada especificamente.
+const HISTORY_EVENT_LABELS: Record<string, string> = {
   admin_game_generation: "Jogo criado com assistência de IA",
   admin_game_question_regeneration: "Pergunta regenerada com assistência de IA",
   admin_activity_generation: "Exercício criado com assistência de IA",
@@ -53,7 +56,7 @@ export function HistoryPanel({
           ? generations.value.map((g) => ({
               key: `g-${g.id}`,
               date: g.created_at,
-              label: WORKFLOW_LABELS[g.workflow] ?? "Criado com assistência de IA",
+              label: HISTORY_EVENT_LABELS[g.workflow] ?? workflowLabel(g.workflow),
             }))
           : [];
       setEvents([...versionEvents, ...generationEvents].sort((a, b) => b.date.localeCompare(a.date)));
