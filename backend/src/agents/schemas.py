@@ -142,7 +142,9 @@ class GameQuestion(BaseModel):
 
 class GameGenerationResult(BaseModel):
     name: str = Field(min_length=5, max_length=120, description="Titulo curto e atraente para o jogo.")
-    questions: list[GameQuestion] = Field(min_length=3, max_length=10, description="Lista de questoes do jogo.")
+    # min_length=1 (nao 3): regeneracao granular de 1 pergunta (P3a REQ-5) reusa este schema pedindo
+    # count=1 — a validacao de >=3 perguntas por jogo completo continua em GenerateGameRequest.count.
+    questions: list[GameQuestion] = Field(min_length=1, max_length=10, description="Lista de questoes do jogo.")
 
 
 class RewriteEvaluationResult(BaseModel):

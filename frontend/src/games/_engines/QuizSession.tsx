@@ -19,8 +19,24 @@ import { cn } from "@/utils";
 /** Delay (ms) antes de avançar para a próxima questão, exibindo o feedback certo/errado. */
 const NEXT_QUESTION_DELAY_MS = 620;
 
-/** Engine `quiz`/`choice`: múltipla escolha simples, uma pergunta por vez. */
-export function QuizSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
+/**
+ * Engine `quiz`/`choice`: múltipla escolha simples, uma pergunta por vez.
+ *
+ * `preview` (P3a REQ-8): usado pelo admin pra visualizar um jogo em edição como o aluno veria —
+ * não chama `completeGame`/`trackEvent` (não grava tentativa nem afeta progresso/adaptativo), e
+ * troca a navegação de saída por `onExit`.
+ */
+export function QuizSession({
+  game,
+  category,
+  preview = false,
+  onExit,
+}: {
+  game: GameDefinition;
+  category: GameCategory;
+  preview?: boolean;
+  onExit?: () => void;
+}) {
   const returnTo = readReturnTo();
   const completeGame = useGameStore((state) => state.completeGame);
   const adaptive = useGameStore((state) => state.adaptive);
@@ -49,9 +65,10 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
   }, [result]);
 
   useEffect(() => {
+    if (preview) return;
     trackEvent({ event_type: "game_started", entity_id: game.id, entity_type: "game" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.id]);
+  }, [game.id, preview]);
 
   const question = questions[step];
 
@@ -68,7 +85,12 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
         return;
       }
       setAnswers(nextAnswers);
-      const completion = completeGame(game, nextAnswers.filter(Boolean).length, questions.length, seconds);
+      const correctCount = nextAnswers.filter(Boolean).length;
+      if (preview) {
+        setResult({ attempt: { id: "preview", gameId: game.id, category: game.category, score: correctCount, total: questions.length, accuracy: questions.length ? Math.round((correctCount / questions.length) * 100) : 0, playedAt: new Date().toISOString(), durationSeconds: seconds } });
+        return;
+      }
+      const completion = completeGame(game, correctCount, questions.length, seconds);
       setResult(completion);
       trackEvent({ event_type: "game_completed", entity_id: game.id, entity_type: "game", duration_ms: seconds * 1000, meta: { accuracy: completion.attempt.accuracy } });
     }, NEXT_QUESTION_DELAY_MS);
@@ -90,6 +112,7 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
       title={game.name}
       step={Math.min(step + 1, questions.length)}
       total={questions.length}
+      onClose={preview ? onExit : undefined}
     >
       <div className="force-light">
         <main className="mx-auto flex min-h-[70dvh] max-w-2xl flex-col items-center justify-center text-center md:min-h-[75dvh]">
@@ -178,11 +201,15 @@ export function QuizSession({ game, category }: { game: GameDefinition; category
                     <RotateCcw className="h-4 w-4" aria-hidden="true" />
                     Repetir
                   </Button>
-                  <Button asChild>
-                    <Link href={returnTo ?? `/games/${category.slug}`}>
-                      {returnTo ? "Próximo exercício" : "Voltar para categoria"}
-                    </Link>
-                  </Button>
+                  {preview ? (
+                    <Button onClick={onExit}>Fechar pré-visualização</Button>
+                  ) : (
+                    <Button asChild>
+                      <Link href={returnTo ?? `/games/${category.slug}`}>
+                        {returnTo ? "Próximo exercício" : "Voltar para categoria"}
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </motion.div>
             )}
