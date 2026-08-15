@@ -135,6 +135,10 @@ def published_games(
                         explanation=q.get("explanation", ""),
                     )
                     for q in (game.questions or [])
+                    # REQ-4 (jogo-ia-perguntas-existentes): pergunta pendente nunca aparece pro
+                    # aluno, mesmo com o jogo approved — falta de status = pergunta legada, tratada
+                    # como aprovada.
+                    if q.get("status", "approved") == "approved"
                 ],
             )
             for game in games

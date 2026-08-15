@@ -500,6 +500,7 @@ class GameQuestionRead(BaseModel):
     options: list[str]
     answer_index: int
     explanation: str
+    status: str = "approved"
 
 
 class AIGeneratedGameRead(BaseModel):
@@ -559,6 +560,15 @@ class AddGameQuestionRequest(BaseModel):
 
 class ReorderGameQuestionsRequest(BaseModel):
     question_ids: list[str] = Field(min_length=1)
+
+
+class GenerateMoreGameQuestionsRequest(BaseModel):
+    count: int = Field(default=3, ge=1, le=10)
+    idempotency_key: str | None = Field(default=None, max_length=80)
+
+
+class ReviewGameQuestionRequest(BaseModel):
+    action: str = Field(pattern="^(approve|reject)$")
 
 
 class ContentQualityItem(BaseModel):

@@ -288,6 +288,92 @@ class AdminGameReviewService:
         self.db.refresh(game)
         return self._game_to_read(game)
 
+    def generate_more_questions(
+        self,
+        game_id: int,
+        *,
+        count: int,
+        admin_user_id: int | None,
+        idempotency_key: str | None = None,
+    ) -> AIGeneratedGameRead:
+        """REQ-2 (jogo-ia-perguntas-existentes): gera novas perguntas por IA reusando
+        skill/categoria/dificuldade do jogo e as anexa como `pending` — nao mexe nas ja existentes,
+        nao republica nada sozinho (fica a cargo de review_question)."""
+        game = self._get_or_404(game_id)
+        agent = GameGeneratorAgent()
+        result = agent.generate(
+            skill=game.skill,
+            category=game.category,
+            difficulty=game.difficulty,
+            count=count,
+            user_id=admin_user_id,
+        )
+        record_version(
+            self.db,
+            content_type="AIGeneratedGame",
+            content_id=game.id,
+            snapshot={"name": game.name, "questions": game.questions},
+            edited_by=admin_user_id,
+        )
+        new_questions, _ = assign_question_ids(
+            [
+                {
+                    "prompt": q.prompt,
+                    "options": q.options,
+                    "answer_index": q.answer_index,
+                    "explanation": q.explanation,
+                    "status": "pending",
+                }
+                for q in result.questions
+            ]
+        )
+        game.questions = [*(game.questions or []), *new_questions]
+        self.db.flush()
+        record_ai_interaction(
+            self.db,
+            workflow="admin_game_question_addition",
+            agent="GameGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"game_id": game.id, "count": count, "skill": game.skill, "difficulty": game.difficulty},
+            content_id=game.id,
+            content_type="AIGeneratedGame",
+            idempotency_key=idempotency_key,
+        )
+        self.db.commit()
+        self.db.refresh(game)
+        return self._game_to_read(game)
+
+    def review_question(
+        self,
+        game_id: int,
+        *,
+        question_id: str,
+        action: str,
+        admin_user_id: int | None,
+    ) -> AIGeneratedGameRead:
+        """REQ-5: aprova/rejeita 1 pergunta pendente sem reabrir a revisao do jogo inteiro."""
+        game = self._get_or_404(game_id)
+        questions = game.questions or []
+        if not any(q.get("id") == question_id for q in questions):
+            raise AppError("Pergunta não encontrada.", status_code=404, code="question_not_found")
+        record_version(
+            self.db,
+            content_type="AIGeneratedGame",
+            content_id=game.id,
+            snapshot={"name": game.name, "questions": game.questions},
+            edited_by=admin_user_id,
+        )
+        if action == "approve":
+            game.questions = [
+                {**q, "status": "approved"} if q.get("id") == question_id else q for q in questions
+            ]
+        else:
+            game.questions = [q for q in questions if q.get("id") != question_id]
+        self.db.commit()
+        self.db.refresh(game)
+        return self._game_to_read(game)
+
     def _get_or_404(self, game_id: int) -> AIGeneratedGame:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
@@ -336,6 +422,7 @@ class AdminGameReviewService:
                 options=q.get("options", []),
                 answer_index=q.get("answer_index", 0),
                 explanation=q.get("explanation", ""),
+                status=q.get("status", "approved"),
             )
             for q in (game.questions or [])
         ]
