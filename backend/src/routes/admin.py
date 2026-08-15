@@ -11,7 +11,9 @@ from src.models import User
 from src.schemas.admin import (
     AddGameQuestionRequest,
     AdminEssayThemeReviewRequest,
+    GenerateMoreGameQuestionsRequest,
     ReorderGameQuestionsRequest,
+    ReviewGameQuestionRequest,
     ReviewQueueItem,
     AdminContentActionResponse,
     AdminContentQualityResponse,
@@ -689,6 +691,43 @@ def regenerate_game_question(
 ) -> ApiResponse[AIGeneratedGameRead]:
     game = AdminGameReviewService(db).regenerate_question(game_id, question_id=question_id, admin_user_id=current_admin.id)
     return success_response(game, "Pergunta regenerada.")
+
+
+@router.post(
+    "/ai-games/{game_id}/questions/generate",
+    response_model=ApiResponse[AIGeneratedGameRead],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_game_question_addition"))],
+)
+def generate_more_game_questions(
+    game_id: int,
+    payload: GenerateMoreGameQuestionsRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).generate_more_questions(
+        game_id,
+        count=payload.count,
+        admin_user_id=current_admin.id,
+        idempotency_key=payload.idempotency_key,
+    )
+    return success_response(game, "Perguntas geradas. Revise antes de publicar.")
+
+
+@router.post("/ai-games/{game_id}/questions/{question_id}/review", response_model=ApiResponse[AIGeneratedGameRead])
+def review_game_question(
+    game_id: int,
+    question_id: str,
+    payload: ReviewGameQuestionRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).review_question(
+        game_id,
+        question_id=question_id,
+        action=payload.action,
+        admin_user_id=current_admin.id,
+    )
+    return success_response(game, "Pergunta revisada.")
 
 
 @router.post("/ai-games/{game_id}/archive", response_model=ApiResponse[AIGeneratedGameRead])

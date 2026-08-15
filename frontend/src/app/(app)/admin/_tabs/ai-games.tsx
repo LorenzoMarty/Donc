@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Eye, Loader2, Plus, Save, Trash2, Wand2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Eye, Loader2, Plus, Save, Sparkles, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
@@ -41,8 +41,11 @@ function GameCard({
   const [deleting, setDeleting] = useState(false);
   const [structuralBusy, setStructuralBusy] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [generateCount, setGenerateCount] = useState(3);
+  const [generatingMore, setGeneratingMore] = useState(false);
 
   const questions = editingQ ?? game.questions;
+  const pendingCount = game.questions.filter((q) => q.status === "pending").length;
 
   function guardUnsavedEdits(): boolean {
     if (editingQ) {
@@ -113,6 +116,40 @@ function GameCard({
       toast.success("Pergunta regenerada.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao regenerar pergunta.");
+    } finally {
+      setStructuralBusy(null);
+    }
+  }
+
+  async function generateMore() {
+    if (!guardUnsavedEdits()) return;
+    setGeneratingMore(true);
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions/generate`, {
+        method: "POST",
+        body: JSON.stringify({ count: generateCount }),
+      });
+      onReviewed(result);
+      toast.success("Perguntas geradas — revise antes de aprovar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar perguntas.");
+    } finally {
+      setGeneratingMore(false);
+    }
+  }
+
+  async function reviewQuestion(questionId: string, action: "approve" | "reject") {
+    if (!guardUnsavedEdits()) return;
+    setStructuralBusy(questionId);
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions/${questionId}/review`, {
+        method: "POST",
+        body: JSON.stringify({ action }),
+      });
+      onReviewed(result);
+      toast.success(action === "approve" ? "Pergunta aprovada." : "Pergunta rejeitada.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao revisar pergunta.");
     } finally {
       setStructuralBusy(null);
     }
@@ -197,6 +234,7 @@ function GameCard({
             <Badge variant="outline" className="text-xs">{game.difficulty}</Badge>
             {!game.targets.length ? <Badge variant="destructive" className="text-xs">Sem target</Badge> : null}
             {game.edited_after_generation ? <Badge variant="outline" className="text-xs">Editado</Badge> : null}
+            {pendingCount > 0 ? <Badge variant="secondary" className="text-xs">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</Badge> : null}
           </div>
           <p className="mt-1 font-semibold">{game.name}</p>
           <p className="text-xs text-muted-foreground">{game.skill} · {game.questions.length} questões</p>
@@ -211,6 +249,7 @@ function GameCard({
               <div key={q.id} className="rounded-control bg-background/60 p-3 shadow-soft space-y-2.5">
                 <div className="flex items-start gap-2">
                   <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[0.65rem] font-bold text-primary">Q{qi + 1}</span>
+                  {q.status === "pending" ? <Badge variant="secondary" className="mt-2 shrink-0 text-[10px]">Pendente</Badge> : null}
                   <Textarea
                     value={q.prompt}
                     onChange={(e) => updateField(qi, "prompt", e.target.value)}
@@ -240,6 +279,30 @@ function GameCard({
                   <Input value={q.explanation} onChange={(e) => updateField(qi, "explanation", e.target.value)} className="h-9 text-xs" />
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 pl-8">
+                  {q.status === "pending" && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => reviewQuestion(q.id, "approve")}
+                        disabled={structuralBusy !== null}
+                      >
+                        {structuralBusy === q.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Aprovar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                        onClick={() => reviewQuestion(q.id, "reject")}
+                        disabled={structuralBusy !== null}
+                      >
+                        {structuralBusy === q.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                        Rejeitar
+                      </Button>
+                    </>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -285,7 +348,7 @@ function GameCard({
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" onClick={addQuestion} disabled={structuralBusy !== null}>
               {structuralBusy === "add" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               Adicionar pergunta
@@ -294,6 +357,21 @@ function GameCard({
               <Eye className="h-3.5 w-3.5" />
               Pré-visualizar
             </Button>
+            <div className="ml-auto flex items-center gap-1.5">
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                value={generateCount}
+                onChange={(e) => setGenerateCount(Number(e.target.value))}
+                className="h-8 w-16 text-xs"
+                aria-label="Quantidade de perguntas a gerar"
+              />
+              <Button size="sm" onClick={generateMore} disabled={generatingMore || structuralBusy !== null}>
+                {generatingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                Gerar mais perguntas com IA
+              </Button>
+            </div>
           </div>
 
           <GamePreviewModal

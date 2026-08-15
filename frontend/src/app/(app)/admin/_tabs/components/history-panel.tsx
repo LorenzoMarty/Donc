@@ -12,6 +12,7 @@ import type { AdminUser, AIGenerationTrace, ContentVersion } from "@/types/api";
 const HISTORY_EVENT_LABELS: Record<string, string> = {
   admin_game_generation: "Jogo criado com assistência de IA",
   admin_game_question_regeneration: "Pergunta regenerada com assistência de IA",
+  admin_game_question_addition: "Novas perguntas geradas com assistência de IA",
   admin_activity_generation: "Exercício criado com assistência de IA",
   admin_theme_generation: "Tema criado com assistência de IA",
 };

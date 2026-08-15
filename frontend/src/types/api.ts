@@ -558,6 +558,7 @@ export type GameQuestion = {
   options: string[];
   answer_index: number;
   explanation: string;
+  status: "pending" | "approved";
 };
 
 export type AIGeneratedGame = {
