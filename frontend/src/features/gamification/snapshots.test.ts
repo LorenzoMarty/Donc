@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { HUB_IDS } from "@/features/gamification/symptoms";
 import { emptyAdaptiveProfile, eventsForOutcome, gradeToSeverity, recommendHub } from "@/features/gamification/adaptive";
 import { getAllGames, getGameById } from "@/features/gamification/catalog";
+import { enrichedTestCatalog } from "@/features/gamification/catalog.test-fixtures";
 import type { Grade, GameDefinition } from "@/features/gamification/types";
 
 /**
@@ -52,7 +53,7 @@ describe("anti-regressão: estruturas-núcleo", () => {
   });
 
   it("saída do recommendation engine (perfil vazio)", () => {
-    const rec = recommendHub(emptyAdaptiveProfile(), getAllGames());
+    const rec = recommendHub(emptyAdaptiveProfile(), getAllGames(enrichedTestCatalog));
     expect({ hub: rec.hub, hasMission: rec.missionGameId !== null }).toMatchInlineSnapshot(`
       {
         "hasMission": true,
@@ -92,7 +93,7 @@ describe("anti-regressão: estruturas-núcleo", () => {
   it("metadados das missões profundas (payload de contrato)", () => {
     const ids = ["version-duel", "argument-escalation", "text-surgery", "artificiality-detector", "corrector-diagnosis"];
     const meta = ids.map((id) => {
-      const g = getGameById(id) as GameDefinition;
+      const g = getGameById(id, enrichedTestCatalog) as GameDefinition;
       return { id: g.id, engine: g.engine, hubs: g.hubs, focus: g.cognitiveFocus };
     });
     expect(meta).toMatchInlineSnapshot(`
@@ -162,7 +163,7 @@ describe("anti-regressão: estruturas-núcleo", () => {
   });
 
   it("exemplo de feedback qualitativo (eventos emitidos por nota)", () => {
-    const duel = getGameById("version-duel") as GameDefinition;
+    const duel = getGameById("version-duel", enrichedTestCatalog) as GameDefinition;
     const sEvents = eventsForOutcome(duel, { tags: ["texto-robotico"], grade: "S" }, "T").map((e) => ({ type: e.type, hub: e.hub, severity: e.severity }));
     expect(sEvents).toMatchInlineSnapshot(`
       [

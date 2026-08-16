@@ -32,6 +32,7 @@ const NEXT_ROUND_DELAY_MS = { correct: 480, wrong: 900 };
 /** Engine `survival`: maratona agregada de vários jogos, timer agressivo e vidas limitadas. */
 export function SurvivalSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const remoteGames = useGameStore((state) => state.remoteGames);
 
   const [attempt, setAttempt] = useState(0);
   // `attempt` força reembaralhar (pool e alternativas) a cada "Repetir" — sem isso o useMemo
@@ -39,12 +40,12 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
   // montado, fazendo a resposta certa parecer sempre no mesmo lugar.
   const questions = useMemo<GameQuestion[]>(() => {
     const pool = game.survival?.poolGameIds?.length
-      ? game.survival.poolGameIds.map((id) => getGameById(id)).filter(Boolean as unknown as (g: GameDefinition | undefined) => g is GameDefinition)
-      : getAllGames().filter((g) => g.id !== game.id && (g.questions?.length ?? 0) > 0);
+      ? game.survival.poolGameIds.map((id) => getGameById(id, remoteGames)).filter(Boolean as unknown as (g: GameDefinition | undefined) => g is GameDefinition)
+      : getAllGames(remoteGames).filter((g) => g.id !== game.id && (g.questions?.length ?? 0) > 0);
     const all = pool.flatMap((g) => g.questions ?? []);
     return shuffle(all).slice(0, RUN_LENGTH).map(shuffleQuestionOptions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game, attempt]);
+  }, [game, attempt, remoteGames]);
 
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);

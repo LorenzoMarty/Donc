@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import { HUBS, HUB_IDS, symptomHubs, gamesForHub } from "@/features/gamification/symptoms";
 import { getAllGames, getEnrichedCategories, enrichGame } from "@/features/gamification/catalog";
+import { enrichedTestCatalog } from "@/features/gamification/catalog.test-fixtures";
 import { missionForHub } from "@/features/gamification/adaptive";
 import type { SymptomHubId } from "@/features/gamification/types";
 
@@ -42,7 +43,7 @@ describe("registro de hubs", () => {
   });
 
   it("cada hub tem ao menos uma missão associada", () => {
-    const games = getAllGames();
+    const games = getAllGames(enrichedTestCatalog);
     for (const id of HUB_IDS) {
       expect(missionForHub(id, games), `hub ${id} sem missão`).toBeDefined();
     }
@@ -50,7 +51,7 @@ describe("registro de hubs", () => {
 });
 
 describe("contrato cognitivo das missões (enrichGame)", () => {
-  const games = getAllGames();
+  const games = getAllGames(enrichedTestCatalog);
 
   it("toda missão tem hubs, skills e possibleEvents definidos", () => {
     for (const game of games) {
@@ -98,7 +99,7 @@ describe("contrato cognitivo das missões (enrichGame)", () => {
 
 describe("categorias como organização interna", () => {
   it("os 7 grupos de categoria continuam disponíveis", () => {
-    const categories = getEnrichedCategories({});
+    const categories = getEnrichedCategories({}, enrichedTestCatalog);
     expect(categories).toHaveLength(7);
     expect(categories.map((c) => c.id)).toEqual(
       expect.arrayContaining(["estrutura", "coesao", "argumentacao", "repertorio", "gramatica", "competencias-enem", "desafios-diarios"]),
@@ -106,7 +107,7 @@ describe("categorias como organização interna", () => {
   });
 
   it("toda missão ainda carrega uma category (tag interna/URL)", () => {
-    for (const game of getAllGames()) {
+    for (const game of getAllGames(enrichedTestCatalog)) {
       expect(typeof game.category).toBe("string");
       expect(game.category.length).toBeGreaterThan(0);
     }
@@ -115,7 +116,7 @@ describe("categorias como organização interna", () => {
 
 describe("gamesForHub", () => {
   it("retorna missões cuja tag cruza com o hub", () => {
-    const games = getAllGames();
+    const games = getAllGames(enrichedTestCatalog);
     const list = gamesForHub(games, HUBS["texto-robotico"]);
     expect(list.length).toBeGreaterThan(0);
   });

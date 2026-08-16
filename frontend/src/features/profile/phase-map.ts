@@ -1,6 +1,6 @@
 import { MASTERY_TIER_THRESHOLDS } from "@/features/gamification/adaptive";
 import { getAllGames, getRecommendedGames } from "@/features/gamification/catalog";
-import type { GameProgress } from "@/features/gamification/types";
+import type { GameDefinition, GameProgress } from "@/features/gamification/types";
 
 /**
  * Transformador puro do "Mapa de fases": todos os jogos do catálogo, bucketados por estado de
@@ -28,13 +28,13 @@ export type PhaseMap = {
   nextGame: { id: string; category: string } | undefined;
 };
 
-export function buildPhaseMap(progress: Record<string, GameProgress>): PhaseMap {
-  const nodes: PhaseNode[] = getAllGames().map((game) => ({
+export function buildPhaseMap(progress: Record<string, GameProgress>, games: GameDefinition[] = []): PhaseMap {
+  const nodes: PhaseNode[] = getAllGames(games).map((game) => ({
     gameId: game.id,
     name: game.name,
     category: game.category,
     state: stateForProgress(progress[game.id]?.progress ?? 0),
   }));
 
-  return { nodes, nextGame: getRecommendedGames(progress)[0] };
+  return { nodes, nextGame: getRecommendedGames(progress, games)[0] };
 }

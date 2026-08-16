@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { Surface } from "@/components/shared/premium-ui";
 import type { GameProgress } from "@/features/gamification/types";
 import { buildPhaseMap, type PhaseNode, type PhaseNodeState } from "@/features/profile/phase-map";
+import { useGameStore } from "@/stores/game-store";
 
 const STATE_COLOR: Record<PhaseNodeState, string> = {
   bloqueado: "hsl(var(--muted-foreground))",
@@ -97,7 +98,12 @@ function categoryLinks(points: LaidOutNode[]): { key: string; x1: number; y1: nu
 }
 
 export function PhaseMapCard({ progress }: { progress: Record<string, GameProgress> }) {
-  const { nodes, nextGame } = useMemo(() => buildPhaseMap(progress), [progress]);
+  const remoteGames = useGameStore((state) => state.remoteGames);
+  const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
+  useEffect(() => {
+    hydrateRemoteGames();
+  }, [hydrateRemoteGames]);
+  const { nodes, nextGame } = useMemo(() => buildPhaseMap(progress, remoteGames), [progress, remoteGames]);
   const points = useMemo(() => scatterNodes(nodes), [nodes]);
   const links = useMemo(() => categoryLinks(points), [points]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);

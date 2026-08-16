@@ -188,6 +188,38 @@ def test_reject_pending_question_removes_it(client):
     assert ids == ["q1"]
 
 
+def test_generate_more_rejects_non_question_engine(client):
+    """Spec migrar-jogos-estaticos-para-banco REQ-6: IA de gerar-mais-perguntas so vale pra
+    engines baseados em `questions` — engine `classify` (payload proprio) nao tem agente pra isso."""
+    db = SessionLocal()
+    try:
+        game = AIGeneratedGame(
+            name="Classifique",
+            category="repertorio",
+            skill="Repertorio",
+            difficulty="easy",
+            engine="classify",
+            status="approved",
+            targets=["WEAK_REPERTOIRE"],
+            payload={"instruction": "x", "buckets": [], "items": []},
+        )
+        db.add(game)
+        db.commit()
+        db.refresh(game)
+        game_id = game.id
+    finally:
+        db.close()
+
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        response = client.post(f"/api/v1/admin/ai-games/{game_id}/questions/generate", json={"count": 1})
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "unsupported_engine_for_ai_generation"
+
+
 def test_review_question_unknown_is_404(client):
     game_id = _seed_approved_game()
     app.dependency_overrides[require_admin] = override_admin

@@ -13,7 +13,7 @@ from src.schemas.admin import AIGeneratedGameRead, GameQuestionRead
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.content_versioning import record_version
 from src.utils.ai_idempotency import find_cached_generation
-from src.utils.game_questions import assign_question_ids
+from src.utils.game_questions import QUESTION_BASED_ENGINES, assign_question_ids
 
 
 class AdminGameReviewService:
@@ -82,6 +82,7 @@ class AdminGameReviewService:
         action: str,
         notes: str | None,
         questions: list[dict] | None,
+        payload: dict | None = None,
         name: str | None,
         targets: list[str] | None,
         reviewer_id: int,
@@ -97,14 +98,19 @@ class AdminGameReviewService:
                 status_code=422,
                 code="game_target_required",
             )
-        if (questions is not None and questions != game.questions) or (name is not None and name != game.name):
+        content_changed = (
+            (questions is not None and questions != game.questions)
+            or (payload is not None and payload != game.payload)
+            or (name is not None and name != game.name)
+        )
+        if content_changed:
             # REQ-7 (P2c): snapshot do estado ANTES da sobrescrita — grava so quando o conteudo
             # de fato muda, nao a cada review sem edicao.
             record_version(
                 self.db,
                 content_type="AIGeneratedGame",
                 content_id=game.id,
-                snapshot={"name": game.name, "questions": game.questions},
+                snapshot={"name": game.name, "questions": game.questions, "payload": game.payload},
                 edited_by=reviewer_id,
             )
         game.status = "approved" if action == "approve" else "rejected"
@@ -114,6 +120,9 @@ class AdminGameReviewService:
             game.admin_notes = notes
         if questions is not None and questions != game.questions:
             game.questions = questions
+            game.edited_after_generation = True
+        if payload is not None and payload != game.payload:
+            game.payload = payload
             game.edited_after_generation = True
         if name is not None and name != game.name:
             game.name = name
@@ -128,18 +137,24 @@ class AdminGameReviewService:
         *,
         name: str | None = None,
         questions: list[dict] | None = None,
+        payload: dict | None = None,
         targets: list[str] | None = None,
         admin_user_id: int | None = None,
     ) -> AIGeneratedGameRead:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
             raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
-        if (name is not None and name != game.name) or (questions is not None and questions != game.questions):
+        content_changed = (
+            (name is not None and name != game.name)
+            or (questions is not None and questions != game.questions)
+            or (payload is not None and payload != game.payload)
+        )
+        if content_changed:
             record_version(
                 self.db,
                 content_type="AIGeneratedGame",
                 content_id=game.id,
-                snapshot={"name": game.name, "questions": game.questions},
+                snapshot={"name": game.name, "questions": game.questions, "payload": game.payload},
                 edited_by=admin_user_id,
             )
         if name is not None and name != game.name:
@@ -147,6 +162,9 @@ class AdminGameReviewService:
             game.edited_after_generation = True
         if questions is not None and questions != game.questions:
             game.questions = questions
+            game.edited_after_generation = True
+        if payload is not None and payload != game.payload:
+            game.payload = payload
             game.edited_after_generation = True
         if targets is not None:
             game.targets = targets
@@ -298,8 +316,18 @@ class AdminGameReviewService:
     ) -> AIGeneratedGameRead:
         """REQ-2 (jogo-ia-perguntas-existentes): gera novas perguntas por IA reusando
         skill/categoria/dificuldade do jogo e as anexa como `pending` — nao mexe nas ja existentes,
-        nao republica nada sozinho (fica a cargo de review_question)."""
+        nao republica nada sozinho (fica a cargo de review_question).
+
+        REQ-6 (migrar-jogos-estaticos-para-banco): so suportado pra engines baseados em
+        `questions` — os outros 9 usam `payload` num formato que o GameGeneratorAgent nao sabe
+        gerar ainda."""
         game = self._get_or_404(game_id)
+        if game.engine not in QUESTION_BASED_ENGINES:
+            raise AppError(
+                f"Gerar perguntas com IA ainda não é suportado para o engine \"{game.engine}\".",
+                status_code=422,
+                code="unsupported_engine_for_ai_generation",
+            )
         agent = GameGeneratorAgent()
         result = agent.generate(
             skill=game.skill,
@@ -432,7 +460,12 @@ class AdminGameReviewService:
             category=game.category,
             skill=game.skill,
             difficulty=game.difficulty,
+            engine=game.engine,
             questions=questions,
+            payload=game.payload,
+            description=game.description,
+            thumbnail=game.thumbnail,
+            estimated_time=game.estimated_time,
             status=game.status,
             admin_notes=game.admin_notes,
             targets=game.targets or [],

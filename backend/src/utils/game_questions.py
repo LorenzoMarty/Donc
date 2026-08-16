@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import uuid
 
+# Engines cujo conteudo mora em `AIGeneratedGame.questions` (formato pergunta+alternativas).
+# Spec migrar-jogos-estaticos-para-banco REQ-6: geracao por IA so e suportada para esses engines —
+# os outros usam `payload` (formato especifico, sem agente de IA ainda).
+QUESTION_BASED_ENGINES = {"quiz", "timed-rush", "sequence", "choice"}
+
 
 def assign_question_ids(questions: list[dict]) -> tuple[list[dict], bool]:
     """Preenche `id`/`status` nas perguntas que ainda nao tem — idempotente, nao mexe em valor existente."""

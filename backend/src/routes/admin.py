@@ -614,6 +614,7 @@ def review_game(
         action=payload.action,
         notes=payload.notes,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
+        payload=payload.payload,
         name=payload.name,
         targets=payload.targets,
         reviewer_id=current_admin.id,
@@ -632,6 +633,7 @@ def update_game(
         game_id,
         name=payload.name,
         questions=[q.model_dump() for q in payload.questions] if payload.questions else None,
+        payload=payload.payload,
         targets=payload.targets,
         admin_user_id=current_admin.id,
     )

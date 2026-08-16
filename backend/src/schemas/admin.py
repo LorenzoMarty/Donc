@@ -509,7 +509,12 @@ class AIGeneratedGameRead(BaseModel):
     category: str
     skill: str
     difficulty: str
+    engine: str = "quiz"
     questions: list[GameQuestionRead]
+    payload: dict | None = None
+    description: str | None = None
+    thumbnail: str | None = None
+    estimated_time: str | None = None
     status: str
     admin_notes: str | None = None
     targets: list[str] = Field(default_factory=list)
@@ -531,6 +536,7 @@ class ReviewGameRequest(BaseModel):
     action: str = Field(pattern="^(approve|reject)$")
     notes: str | None = Field(default=None, max_length=500)
     questions: list[GameQuestionRead] | None = None
+    payload: dict | None = None
     name: str | None = Field(default=None, max_length=120)
     targets: list[str] | None = None
 
@@ -540,6 +546,7 @@ class ReviewGameRequest(BaseModel):
 class UpdateGameRequest(BaseModel):
     name: str | None = Field(default=None, max_length=120)
     questions: list[GameQuestionRead] | None = None
+    payload: dict | None = None
     targets: list[str] | None = None
 
     _validate_targets = field_validator("targets")(_validate_targets)
