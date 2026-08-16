@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, ChevronRight, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -41,6 +42,61 @@ function AddButton({ onClick, label }: { onClick: () => void; label: string }) {
 
 function ItemCard({ children }: { children: React.ReactNode }) {
   return <div className="rounded-control bg-background/60 p-3 shadow-soft space-y-2.5">{children}</div>;
+}
+
+/**
+ * Reaproveita o padrão de card recolhível já usado nas perguntas de quiz (Q1, Q2...) pros itens
+ * "wall of inputs" dos engines não-quiz (rodada/caso/escada) — só o item aberto no momento mostra
+ * todos os campos; os demais ficam resumidos por um título + prévia curta.
+ */
+function CollapsibleItemCard({
+  title,
+  summary,
+  open,
+  onToggle,
+  onRemove,
+  children,
+}: {
+  title: string;
+  summary?: string;
+  open: boolean;
+  onToggle: () => void;
+  onRemove: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-control bg-background/60 shadow-soft">
+      <div className="flex items-center gap-1 p-2.5">
+        <button type="button" onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+          {open ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold">{title}</p>
+            {summary ? <p className="truncate text-xs text-muted-foreground">{summary}</p> : null}
+          </div>
+        </button>
+        <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={onRemove} aria-label={`Remover ${title.toLowerCase()}`}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {open && <div className="space-y-2.5 border-t p-3">{children}</div>}
+    </div>
+  );
+}
+
+/** Gerencia quais itens (por id) estão abertos — novo item entra já aberto pra edição imediata. */
+function useExpandable() {
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  return {
+    isOpen: (id: string) => openIds.has(id),
+    toggle: (id: string) =>
+      setOpenIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      }),
+    expand: (id: string) => setOpenIds((prev) => new Set(prev).add(id)),
+  };
 }
 
 // ── classify ─────────────────────────────────────────────────────────────
@@ -121,15 +177,29 @@ function StringArrayField({ values, onChange, addLabel }: { values: string[]; on
 
 function OrderEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const rounds = (payload.rounds as { id: string; instruction: string; items: string[]; explanation: string }[]) ?? [];
+  const expandable = useExpandable();
 
   function updateRound(i: number, patch: Partial<(typeof rounds)[number]>) {
     onChange({ ...payload, rounds: rounds.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
   }
+  function addRound() {
+    const id = uid();
+    onChange({ ...payload, rounds: [...rounds, { id, instruction: "", items: [""], explanation: "" }] });
+    expandable.expand(id);
+  }
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{rounds.length} rodada{rounds.length === 1 ? "" : "s"}</p>
       {rounds.map((round, ri) => (
-        <ItemCard key={round.id}>
+        <CollapsibleItemCard
+          key={round.id}
+          title={`Rodada ${ri + 1}`}
+          summary={round.instruction || "(sem instrução)"}
+          open={expandable.isOpen(round.id)}
+          onToggle={() => expandable.toggle(round.id)}
+          onRemove={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })}
+        >
           <Field label="Instrução">
             <Input value={round.instruction} onChange={(e) => updateRound(ri, { instruction: e.target.value })} className="h-9 text-xs" />
           </Field>
@@ -138,13 +208,9 @@ function OrderEditor({ payload, onChange }: { payload: Payload; onChange: (p: Pa
           <Field label="Explicação">
             <Input value={round.explanation} onChange={(e) => updateRound(ri, { explanation: e.target.value })} className="h-9 text-xs" />
           </Field>
-          <RemoveButton label="Remover rodada" onClick={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton
-        label="Adicionar rodada"
-        onClick={() => onChange({ ...payload, rounds: [...rounds, { id: uid(), instruction: "", items: [""], explanation: "" }] })}
-      />
+      <AddButton label="Adicionar rodada" onClick={addRound} />
     </div>
   );
 }
@@ -153,15 +219,29 @@ function OrderEditor({ payload, onChange }: { payload: Payload; onChange: (p: Pa
 
 function FillBlankEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const rounds = (payload.rounds as { id: string; prompt: string; accepted: string[]; explanation: string }[]) ?? [];
+  const expandable = useExpandable();
 
   function updateRound(i: number, patch: Partial<(typeof rounds)[number]>) {
     onChange({ ...payload, rounds: rounds.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
   }
+  function addRound() {
+    const id = uid();
+    onChange({ ...payload, rounds: [...rounds, { id, prompt: "", accepted: [""], explanation: "" }] });
+    expandable.expand(id);
+  }
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{rounds.length} rodada{rounds.length === 1 ? "" : "s"}</p>
       {rounds.map((round, ri) => (
-        <ItemCard key={round.id}>
+        <CollapsibleItemCard
+          key={round.id}
+          title={`Rodada ${ri + 1}`}
+          summary={round.prompt || "(sem enunciado)"}
+          open={expandable.isOpen(round.id)}
+          onToggle={() => expandable.toggle(round.id)}
+          onRemove={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })}
+        >
           <Field label="Enunciado (use ___ para a lacuna)">
             <Textarea value={round.prompt} onChange={(e) => updateRound(ri, { prompt: e.target.value })} rows={2} className="min-h-0 resize-none text-xs" />
           </Field>
@@ -170,13 +250,9 @@ function FillBlankEditor({ payload, onChange }: { payload: Payload; onChange: (p
           <Field label="Explicação">
             <Input value={round.explanation} onChange={(e) => updateRound(ri, { explanation: e.target.value })} className="h-9 text-xs" />
           </Field>
-          <RemoveButton label="Remover rodada" onClick={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton
-        label="Adicionar rodada"
-        onClick={() => onChange({ ...payload, rounds: [...rounds, { id: uid(), prompt: "", accepted: [""], explanation: "" }] })}
-      />
+      <AddButton label="Adicionar rodada" onClick={addRound} />
     </div>
   );
 }
@@ -185,15 +261,29 @@ function FillBlankEditor({ payload, onChange }: { payload: Payload; onChange: (p
 
 function DuelEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const rounds = (payload.rounds as { id: string; context: string; a: string; b: string; winner: "a" | "b"; dimension: string; explanation: string }[]) ?? [];
+  const expandable = useExpandable();
 
   function updateRound(i: number, patch: Partial<(typeof rounds)[number]>) {
     onChange({ ...payload, rounds: rounds.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
   }
+  function addRound() {
+    const id = uid();
+    onChange({ ...payload, rounds: [...rounds, { id, context: "", a: "", b: "", winner: "a", dimension: "", explanation: "" }] });
+    expandable.expand(id);
+  }
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{rounds.length} rodada{rounds.length === 1 ? "" : "s"}</p>
       {rounds.map((round, ri) => (
-        <ItemCard key={round.id}>
+        <CollapsibleItemCard
+          key={round.id}
+          title={`Rodada ${ri + 1}`}
+          summary={round.context || "(sem contexto)"}
+          open={expandable.isOpen(round.id)}
+          onToggle={() => expandable.toggle(round.id)}
+          onRemove={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })}
+        >
           <Field label="Contexto">
             <Input value={round.context} onChange={(e) => updateRound(ri, { context: e.target.value })} className="h-9 text-xs" />
           </Field>
@@ -219,13 +309,9 @@ function DuelEditor({ payload, onChange }: { payload: Payload; onChange: (p: Pay
           <Field label="Explicação">
             <Input value={round.explanation} onChange={(e) => updateRound(ri, { explanation: e.target.value })} className="h-9 text-xs" />
           </Field>
-          <RemoveButton label="Remover rodada" onClick={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton
-        label="Adicionar rodada"
-        onClick={() => onChange({ ...payload, rounds: [...rounds, { id: uid(), context: "", a: "", b: "", winner: "a", dimension: "", explanation: "" }] })}
-      />
+      <AddButton label="Adicionar rodada" onClick={addRound} />
     </div>
   );
 }
@@ -238,6 +324,16 @@ type EscalationLadder = { id: string; theme: string; rungs: EscalationRung[] };
 
 function EscalationEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const ladders = (payload.ladders as EscalationLadder[]) ?? [];
+  const expandable = useExpandable();
+
+  function addLadder() {
+    const id = uid();
+    onChange({
+      ...payload,
+      ladders: [...ladders, { id, theme: "", rungs: [{ level: 1, instruction: "", options: [{ text: "", correct: true, note: "" }] }] }],
+    });
+    expandable.expand(id);
+  }
 
   function updateLadder(i: number, patch: Partial<EscalationLadder>) {
     onChange({ ...payload, ladders: ladders.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
@@ -252,8 +348,16 @@ function EscalationEditor({ payload, onChange }: { payload: Payload; onChange: (
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{ladders.length} escada{ladders.length === 1 ? "" : "s"}</p>
       {ladders.map((ladder, li) => (
-        <ItemCard key={ladder.id}>
+        <CollapsibleItemCard
+          key={ladder.id}
+          title={`Escada ${li + 1}`}
+          summary={ladder.theme || "(sem tema)"}
+          open={expandable.isOpen(ladder.id)}
+          onToggle={() => expandable.toggle(ladder.id)}
+          onRemove={() => onChange({ ...payload, ladders: ladders.filter((_, j) => j !== li) })}
+        >
           <Field label="Tema">
             <Input value={ladder.theme} onChange={(e) => updateLadder(li, { theme: e.target.value })} className="h-9 text-xs" />
           </Field>
@@ -277,18 +381,9 @@ function EscalationEditor({ payload, onChange }: { payload: Payload; onChange: (
               ))}
             </div>
           ))}
-          <RemoveButton label="Remover escada" onClick={() => onChange({ ...payload, ladders: ladders.filter((_, j) => j !== li) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton
-        label="Adicionar escada"
-        onClick={() =>
-          onChange({
-            ...payload,
-            ladders: [...ladders, { id: uid(), theme: "", rungs: [{ level: 1, instruction: "", options: [{ text: "", correct: true, note: "" }] }] }],
-          })
-        }
-      />
+      <AddButton label="Adicionar escada" onClick={addLadder} />
     </div>
   );
 }
@@ -297,15 +392,29 @@ function EscalationEditor({ payload, onChange }: { payload: Payload; onChange: (
 
 function ArtificialityEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const rounds = (payload.rounds as { id: string; passage: string; verdict: "humano" | "artificial"; explanation: string }[]) ?? [];
+  const expandable = useExpandable();
 
   function updateRound(i: number, patch: Partial<(typeof rounds)[number]>) {
     onChange({ ...payload, rounds: rounds.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
   }
+  function addRound() {
+    const id = uid();
+    onChange({ ...payload, rounds: [...rounds, { id, passage: "", verdict: "humano", explanation: "" }] });
+    expandable.expand(id);
+  }
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{rounds.length} rodada{rounds.length === 1 ? "" : "s"}</p>
       {rounds.map((round, ri) => (
-        <ItemCard key={round.id}>
+        <CollapsibleItemCard
+          key={round.id}
+          title={`Rodada ${ri + 1}`}
+          summary={round.passage || "(sem trecho)"}
+          open={expandable.isOpen(round.id)}
+          onToggle={() => expandable.toggle(round.id)}
+          onRemove={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })}
+        >
           <Field label="Trecho">
             <Textarea value={round.passage} onChange={(e) => updateRound(ri, { passage: e.target.value })} rows={3} className="min-h-0 resize-none text-xs" />
           </Field>
@@ -318,13 +427,9 @@ function ArtificialityEditor({ payload, onChange }: { payload: Payload; onChange
           <Field label="Explicação">
             <Input value={round.explanation} onChange={(e) => updateRound(ri, { explanation: e.target.value })} className="h-9 text-xs" />
           </Field>
-          <RemoveButton label="Remover rodada" onClick={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton
-        label="Adicionar rodada"
-        onClick={() => onChange({ ...payload, rounds: [...rounds, { id: uid(), passage: "", verdict: "humano", explanation: "" }] })}
-      />
+      <AddButton label="Adicionar rodada" onClick={addRound} />
     </div>
   );
 }
@@ -336,6 +441,13 @@ type CorrectorCase = { id: string; paragraph: string; candidates: CorrectorCandi
 
 function CorrectorEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const cases = (payload.cases as CorrectorCase[]) ?? [];
+  const expandable = useExpandable();
+
+  function addCase() {
+    const id = uid();
+    onChange({ ...payload, cases: [...cases, { id, paragraph: "", candidates: [] }] });
+    expandable.expand(id);
+  }
 
   function updateCase(i: number, patch: Partial<CorrectorCase>) {
     onChange({ ...payload, cases: cases.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
@@ -346,8 +458,16 @@ function CorrectorEditor({ payload, onChange }: { payload: Payload; onChange: (p
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{cases.length} caso{cases.length === 1 ? "" : "s"}</p>
       {cases.map((c, ci) => (
-        <ItemCard key={c.id}>
+        <CollapsibleItemCard
+          key={c.id}
+          title={`Caso ${ci + 1}`}
+          summary={c.paragraph || "(sem parágrafo)"}
+          open={expandable.isOpen(c.id)}
+          onToggle={() => expandable.toggle(c.id)}
+          onRemove={() => onChange({ ...payload, cases: cases.filter((_, j) => j !== ci) })}
+        >
           <Field label="Parágrafo">
             <Textarea value={c.paragraph} onChange={(e) => updateCase(ci, { paragraph: e.target.value })} rows={3} className="min-h-0 resize-none text-xs" />
           </Field>
@@ -372,10 +492,9 @@ function CorrectorEditor({ payload, onChange }: { payload: Payload; onChange: (p
             label="Adicionar candidato"
             onClick={() => updateCase(ci, { candidates: [...c.candidates, { id: uid(), label: "", competency: "C1", present: false, note: "" }] })}
           />
-          <RemoveButton label="Remover caso" onClick={() => onChange({ ...payload, cases: cases.filter((_, j) => j !== ci) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton label="Adicionar caso" onClick={() => onChange({ ...payload, cases: [...cases, { id: uid(), paragraph: "", candidates: [] }] })} />
+      <AddButton label="Adicionar caso" onClick={addCase} />
     </div>
   );
 }
@@ -389,6 +508,13 @@ type CollapseRound = { id: string; brief: string; fragments: CollapseFragment[];
 
 function EssayCollapseEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const rounds = (payload.rounds as CollapseRound[]) ?? [];
+  const expandable = useExpandable();
+
+  function addRound() {
+    const id = uid();
+    onChange({ ...payload, rounds: [...rounds, { id, brief: "", fragments: [], connectors: [], explanation: "" }] });
+    expandable.expand(id);
+  }
 
   function updateRound(i: number, patch: Partial<CollapseRound>) {
     onChange({ ...payload, rounds: rounds.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
@@ -404,10 +530,18 @@ function EssayCollapseEditor({ payload, onChange }: { payload: Payload; onChange
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{rounds.length} rodada{rounds.length === 1 ? "" : "s"}</p>
       {rounds.map((round, ri) => {
         const connectors = round.connectors ?? [];
         return (
-          <ItemCard key={round.id}>
+          <CollapsibleItemCard
+            key={round.id}
+            title={`Rodada ${ri + 1}`}
+            summary={round.brief || "(sem contexto)"}
+            open={expandable.isOpen(round.id)}
+            onToggle={() => expandable.toggle(round.id)}
+            onRemove={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })}
+          >
             <Field label="Contexto (brief)">
               <Textarea value={round.brief} onChange={(e) => updateRound(ri, { brief: e.target.value })} rows={2} className="min-h-0 resize-none text-xs" />
             </Field>
@@ -463,14 +597,10 @@ function EssayCollapseEditor({ payload, onChange }: { payload: Payload; onChange
             <Field label="Explicação">
               <Input value={round.explanation} onChange={(e) => updateRound(ri, { explanation: e.target.value })} className="h-9 text-xs" />
             </Field>
-            <RemoveButton label="Remover rodada" onClick={() => onChange({ ...payload, rounds: rounds.filter((_, j) => j !== ri) })} />
-          </ItemCard>
+          </CollapsibleItemCard>
         );
       })}
-      <AddButton
-        label="Adicionar rodada"
-        onClick={() => onChange({ ...payload, rounds: [...rounds, { id: uid(), brief: "", fragments: [], connectors: [], explanation: "" }] })}
-      />
+      <AddButton label="Adicionar rodada" onClick={addRound} />
     </div>
   );
 }
@@ -501,6 +631,7 @@ const GRADES: SurgeryChoiceOption["grade"][] = ["S", "A", "B", "C", "Fraco"];
 function TextSurgeryEditor({ payload, onChange }: { payload: Payload; onChange: (p: Payload) => void }) {
   const rawCases = (payload.cases as { id: string; brief: string; segments: unknown[] }[]) ?? [];
   const cases: SurgeryCase[] = rawCases.map((c) => ({ ...c, segments: c.segments.map(fromRawSegment) }));
+  const expandable = useExpandable();
 
   function updateCase(i: number, patch: Partial<SurgeryCase>) {
     const next = cases.map((c, j) => (j === i ? { ...c, ...patch } : c));
@@ -509,11 +640,24 @@ function TextSurgeryEditor({ payload, onChange }: { payload: Payload; onChange: 
   function updateSegment(ci: number, si: number, next: SurgerySegment) {
     updateCase(ci, { segments: cases[ci].segments.map((s, j) => (j === si ? next : s)) });
   }
+  function addCase() {
+    const id = uid();
+    onChange({ ...payload, cases: [...cases, { id, brief: "", segments: [] }].map((cc) => ({ ...cc, segments: cc.segments.map(toRawSegment) })) });
+    expandable.expand(id);
+  }
 
   return (
     <div className="space-y-3">
+      <p className="text-xs font-medium text-muted-foreground">{cases.length} caso{cases.length === 1 ? "" : "s"}</p>
       {cases.map((c, ci) => (
-        <ItemCard key={c.id}>
+        <CollapsibleItemCard
+          key={c.id}
+          title={`Caso ${ci + 1}`}
+          summary={c.brief || "(sem contexto)"}
+          open={expandable.isOpen(c.id)}
+          onToggle={() => expandable.toggle(c.id)}
+          onRemove={() => onChange({ ...payload, cases: cases.filter((_, j) => j !== ci).map((cc) => ({ ...cc, segments: cc.segments.map(toRawSegment) })) })}
+        >
           <Field label="Contexto (brief)">
             <Textarea value={c.brief} onChange={(e) => updateCase(ci, { brief: e.target.value })} rows={2} className="min-h-0 resize-none text-xs" />
           </Field>
@@ -570,10 +714,9 @@ function TextSurgeryEditor({ payload, onChange }: { payload: Payload; onChange: 
             </div>
           ))}
           <AddButton label="Adicionar segmento" onClick={() => updateCase(ci, { segments: [...c.segments, { kind: "text", text: "" }] })} />
-          <RemoveButton label="Remover caso" onClick={() => onChange({ ...payload, cases: cases.filter((_, j) => j !== ci).map((cc) => ({ ...cc, segments: cc.segments.map(toRawSegment) })) })} />
-        </ItemCard>
+        </CollapsibleItemCard>
       ))}
-      <AddButton label="Adicionar caso" onClick={() => onChange({ ...payload, cases: [...cases, { id: uid(), brief: "", segments: [] }].map((cc) => ({ ...cc, segments: cc.segments.map(toRawSegment) })) })} />
+      <AddButton label="Adicionar caso" onClick={addCase} />
     </div>
   );
 }

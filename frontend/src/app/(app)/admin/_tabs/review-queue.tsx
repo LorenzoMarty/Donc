@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FileText, Gamepad2, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,7 +26,7 @@ const DIFFICULTY_LABELS: Record<string, string> = { easy: "Essencial", medium: "
 
 const TYPE_META: Record<ReviewQueueItem["content_type"], { label: string; icon: typeof Gamepad2; tab: string }> = {
   game: { label: "Jogo", icon: Gamepad2, tab: "games" },
-  exercise: { label: "Exercício", icon: GraduationCap, tab: "modules" },
+  exercise: { label: "Exercício", icon: GraduationCap, tab: "exercises" },
   theme: { label: "Tema de redação", icon: FileText, tab: "themes" },
 };
 
@@ -55,6 +56,7 @@ export function ReviewQueueTab({
   onExerciseReviewed: (exercise: AIGeneratedExercise) => void;
   onThemeReviewed: (theme: EssayTheme) => void;
 }) {
+  const router = useRouter();
   const [items, setItems] = useState<ReviewQueueItem[] | null>(null);
   const [contentType, setContentType] = useState("");
   const [target, setTarget] = useState("");
@@ -165,7 +167,11 @@ export function ReviewQueueTab({
                   )}
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => onOpenTab(meta.tab)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => (item.content_type === "game" ? router.push(`/admin/jogos/${item.content_id}`) : onOpenTab(meta.tab))}
+                  >
                     Editar
                   </Button>
                   <Button size="sm" disabled={busy} onClick={() => review(item, "approve")}>

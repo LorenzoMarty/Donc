@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, ChevronDown, ChevronRight, ChevronUp, ClipboardList, Folder, FolderPlus, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, ChevronUp, ClipboardList, Folder, FolderPlus, Pencil, Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
+import { ExerciseGeneratorForm } from "@/app/(app)/admin/_tabs/create-with-ai";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -16,7 +18,7 @@ import { cn } from "@/utils";
 import { apiFetch } from "@/services/api";
 import type { AdminActivity, AdminLesson, AdminModule, AdminModuleItem } from "@/types/api";
 
-type ModalState =
+export type ModalState =
   | { kind: "module"; mode: "create" }
   | { kind: "module"; mode: "edit"; module: AdminModule }
   | { kind: "lesson"; mode: "create"; moduleId: number }
@@ -35,6 +37,7 @@ export function ModulesTab({
   onLessonCreated: (moduleId: number, lesson: AdminLesson) => void;
 }) {
   const [modal, setModal] = useState<ModalState>(null);
+  const [query, setQuery] = useState("");
 
   async function moveModule(moduleId: number, direction: "up" | "down") {
     try {
@@ -89,14 +92,27 @@ export function ModulesTab({
   }
 
   const sortedModules = [...modules].sort((a, b) => a.order - b.order);
+  const filteredModules = query
+    ? sortedModules.filter((m) => m.title.toLowerCase().includes(query.toLowerCase()))
+    : sortedModules;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Estrutura de conteúdo</Badge>
-          <Badge variant="outline">{modules.length} módulos</Badge>
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar módulo..." className="pl-9" />
         </div>
+        <Badge variant="outline">{modules.length} módulos</Badge>
+        <GenerateWithAiButton
+          label="Gerar exercício com IA"
+          title="Gerar exercício com IA"
+          description="Escolha o módulo e as aulas base — o exercício nasce pendente de revisão."
+        >
+          {(close) => (
+            <ExerciseGeneratorForm modules={modules} onGenerated={() => close()} />
+          )}
+        </GenerateWithAiButton>
         <Button type="button" size="sm" onClick={() => setModal({ kind: "module", mode: "create" })}>
           <FolderPlus className="h-4 w-4" aria-hidden="true" />
           Novo módulo
@@ -104,12 +120,12 @@ export function ModulesTab({
       </div>
 
       <div className="grid gap-3">
-        {sortedModules.map((module, index) => (
+        {filteredModules.map((module) => (
           <ModuleNode
             key={module.id}
             module={module}
-            isFirst={index === 0}
-            isLast={index === sortedModules.length - 1}
+            isFirst={module.order === sortedModules[0]?.order}
+            isLast={module.order === sortedModules[sortedModules.length - 1]?.order}
             onEdit={() => setModal({ kind: "module", mode: "edit", module })}
             onDelete={() => deleteModule(module)}
             onMove={(direction) => moveModule(module.id, direction)}
@@ -122,7 +138,11 @@ export function ModulesTab({
             onMoveItem={moveItem}
           />
         ))}
-        {!modules.length ? <p className="rounded-card bg-card p-6 text-sm text-muted-foreground shadow-soft">Nenhum módulo cadastrado ainda. Crie o primeiro acima pra liberar aulas e atividades.</p> : null}
+        {!filteredModules.length ? (
+          <p className="rounded-card bg-card p-6 text-sm text-muted-foreground shadow-soft">
+            {modules.length ? "Nenhum módulo encontrado com essa busca." : "Nenhum módulo cadastrado ainda. Crie o primeiro acima pra liberar aulas e atividades."}
+          </p>
+        ) : null}
       </div>
 
       {modal?.kind === "module" ? (
@@ -225,7 +245,7 @@ function ModuleNode({
   );
 }
 
-function normalizedItems(module: AdminModule): AdminModuleItem[] {
+export function normalizedItems(module: AdminModule): AdminModuleItem[] {
   if (module.items?.length) return [...module.items].sort((a, b) => a.order - b.order);
   return [...module.lessons]
     .sort((a, b) => a.order - b.order)
@@ -413,7 +433,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   );
 }
 
-function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalState, { kind: "activity" }>; onClose: () => void; onUpdated: (modules: AdminModule[]) => void }) {
+export function ActivityModal({ state, onClose, onUpdated }: { state: Extract<ModalState, { kind: "activity" }>; onClose: () => void; onUpdated: (modules: AdminModule[]) => void }) {
   const editing = state.mode === "edit" ? state.activity : null;
   const contentModule = state.module;
   const [draft, setDraft] = useState<AdminActivity>(

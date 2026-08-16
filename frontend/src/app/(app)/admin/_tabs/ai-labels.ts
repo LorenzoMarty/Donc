@@ -4,6 +4,7 @@
 export const WORKFLOW_LABELS: Record<string, string> = {
   admin_game_generation: "Geração de jogo",
   admin_game_question_regeneration: "Regeneração de pergunta de jogo",
+  admin_game_payload_generation: "Geração de conteúdo de jogo",
   admin_activity_generation: "Geração de exercício",
   admin_theme_generation: "Geração de tema de redação",
   essay_correction: "Correção de redação",
@@ -21,6 +22,7 @@ export function workflowLabel(workflow: string): string {
 
 const AGENT_LABELS: Record<string, string> = {
   GameGeneratorAgent: "Gerador de jogo",
+  GamePayloadItemAgent: "Gerador de conteúdo de jogo",
   ThemeGeneratorAgent: "Gerador de tema",
   ExerciseGeneratorAgent: "Gerador de exercício",
   RewriteEvaluatorAgent: "Avaliador de reescrita",

@@ -6,7 +6,7 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.agents.game_generator import GameGeneratorAgent
+from src.agents.game_generator import GameGeneratorAgent, GamePayloadItemAgent, SUPPORTED_PAYLOAD_ENGINES
 from src.middlewares.errors import AppError
 from src.models.events import AIGeneratedGame
 from src.schemas.admin import AIGeneratedGameRead, GameQuestionRead
@@ -372,6 +372,62 @@ class AdminGameReviewService:
         self.db.refresh(game)
         return self._game_to_read(game)
 
+    def generate_payload_items(
+        self,
+        game_id: int,
+        *,
+        count: int,
+        admin_user_id: int | None,
+        idempotency_key: str | None = None,
+    ) -> AIGeneratedGameRead:
+        """Gera rodada(s)/caso(s)/escada(s) novo(s) via IA pros engines nao-quiz e anexa ao
+        `payload` existente — equivalente a `generate_more_questions`, so que pro outro formato
+        de conteudo. `survival` fica de fora (nao guarda conteudo proprio, so pool de jogos)."""
+        game = self._get_or_404(game_id)
+        if game.engine not in SUPPORTED_PAYLOAD_ENGINES:
+            raise AppError(
+                f"Gerar conteúdo com IA não é suportado para o engine \"{game.engine}\".",
+                status_code=422,
+                code="unsupported_engine_for_ai_generation",
+            )
+        payload = dict(game.payload or {})
+        existing_buckets = [b.get("label") for b in payload.get("buckets", []) if b.get("label")] if game.engine == "classify" else None
+
+        agent = GamePayloadItemAgent()
+        result = agent.generate(
+            engine=game.engine,
+            skill=game.skill,
+            category=game.category,
+            difficulty=game.difficulty,
+            count=count,
+            existing_buckets=existing_buckets,
+            user_id=admin_user_id,
+        )
+        record_version(
+            self.db,
+            content_type="AIGeneratedGame",
+            content_id=game.id,
+            snapshot={"name": game.name, "payload": game.payload},
+            edited_by=admin_user_id,
+        )
+        game.payload = _merge_payload_items(game.engine, payload, result)
+        game.edited_after_generation = True
+        self.db.flush()
+        record_ai_interaction(
+            self.db,
+            workflow="admin_game_payload_generation",
+            agent="GamePayloadItemAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"game_id": game.id, "engine": game.engine, "count": count, "skill": game.skill, "difficulty": game.difficulty},
+            content_id=game.id,
+            content_type="AIGeneratedGame",
+            idempotency_key=idempotency_key,
+        )
+        self.db.commit()
+        self.db.refresh(game)
+        return self._game_to_read(game)
+
     def review_question(
         self,
         game_id: int,
@@ -473,3 +529,93 @@ class AdminGameReviewService:
             created_at=game.created_at,
             reviewed_at=game.reviewed_at,
         )
+
+
+def _merge_payload_items(engine: str, payload: dict, result) -> dict:
+    """Converte o resultado tipado da IA pro formato bruto de `payload` que o frontend espera
+    (mesmo shape que `GamePayloadEditor` grava manualmente) e anexa aos itens ja existentes."""
+    if engine == "order":
+        new_rounds = [{"id": uuid4().hex[:8], "instruction": r.instruction, "items": r.items, "explanation": r.explanation} for r in result.rounds]
+        return {**payload, "rounds": [*payload.get("rounds", []), *new_rounds]}
+
+    if engine == "fill-blank":
+        new_rounds = [{"id": uuid4().hex[:8], "prompt": r.prompt, "accepted": r.accepted, "explanation": r.explanation} for r in result.rounds]
+        return {**payload, "rounds": [*payload.get("rounds", []), *new_rounds]}
+
+    if engine == "duel":
+        new_rounds = [
+            {"id": uuid4().hex[:8], "context": r.context, "a": r.a, "b": r.b, "winner": r.winner, "dimension": r.dimension, "explanation": r.explanation}
+            for r in result.rounds
+        ]
+        return {**payload, "rounds": [*payload.get("rounds", []), *new_rounds]}
+
+    if engine == "argument-escalation":
+        new_ladders = [
+            {
+                "id": uuid4().hex[:8],
+                "theme": ladder.theme,
+                "rungs": [
+                    {"level": rung.level, "instruction": rung.instruction, "options": [o.model_dump() for o in rung.options]}
+                    for rung in ladder.rungs
+                ],
+            }
+            for ladder in result.ladders
+        ]
+        return {**payload, "ladders": [*payload.get("ladders", []), *new_ladders]}
+
+    if engine == "artificiality":
+        new_rounds = [{"id": uuid4().hex[:8], "passage": r.passage, "verdict": r.verdict, "explanation": r.explanation} for r in result.rounds]
+        return {**payload, "rounds": [*payload.get("rounds", []), *new_rounds]}
+
+    if engine == "corrector":
+        new_cases = [
+            {
+                "id": uuid4().hex[:8],
+                "paragraph": c.paragraph,
+                "candidates": [
+                    {"id": uuid4().hex[:8], "label": cand.label, "competency": cand.competency, "present": cand.present, "note": ""}
+                    for cand in c.candidates
+                ],
+            }
+            for c in result.cases
+        ]
+        return {**payload, "cases": [*payload.get("cases", []), *new_cases]}
+
+    if engine == "essay-collapse":
+        new_rounds = [
+            {
+                "id": uuid4().hex[:8],
+                "brief": r.brief,
+                "fragments": [{"id": uuid4().hex[:8], "text": text, "correctIndex": i} for i, text in enumerate(r.fragments)],
+                "connectors": [],
+                "explanation": r.explanation,
+            }
+            for r in result.rounds
+        ]
+        return {**payload, "rounds": [*payload.get("rounds", []), *new_rounds]}
+
+    if engine == "text-surgery":
+        def raw_segment(seg):
+            if seg.kind == "text":
+                return seg.text or ""
+            return {"slotId": uuid4().hex[:8], "mode": "choice", "options": [o.model_dump() for o in (seg.options or [])]}
+
+        new_cases = [{"id": uuid4().hex[:8], "brief": c.brief, "segments": [raw_segment(s) for s in c.segments]} for c in result.cases]
+        return {**payload, "cases": [*payload.get("cases", []), *new_cases]}
+
+    # classify
+    existing_buckets = list(payload.get("buckets", []))
+    label_to_id = {b.get("label"): b.get("id") for b in existing_buckets}
+    new_buckets = list(existing_buckets)
+    for label in result.buckets:
+        if label not in label_to_id:
+            bucket_id = uuid4().hex[:8]
+            label_to_id[label] = bucket_id
+            new_buckets.append({"id": bucket_id, "label": label})
+
+    fallback_bucket_id = new_buckets[0]["id"] if new_buckets else uuid4().hex[:8]
+    new_items = [
+        {"id": uuid4().hex[:8], "text": item.text, "bucketId": label_to_id.get(item.bucket, fallback_bucket_id)}
+        for item in result.items
+    ]
+    return {**payload, "buckets": new_buckets, "items": [*payload.get("items", []), *new_items]}

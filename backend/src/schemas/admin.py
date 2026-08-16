@@ -574,6 +574,11 @@ class GenerateMoreGameQuestionsRequest(BaseModel):
     idempotency_key: str | None = Field(default=None, max_length=80)
 
 
+class GeneratePayloadItemsRequest(BaseModel):
+    count: int = Field(default=2, ge=1, le=5)
+    idempotency_key: str | None = Field(default=None, max_length=80)
+
+
 class ReviewGameQuestionRequest(BaseModel):
     action: str = Field(pattern="^(approve|reject)$")
 

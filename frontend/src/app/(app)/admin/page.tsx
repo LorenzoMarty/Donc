@@ -24,12 +24,41 @@ import { AdaptiveHealthTab } from "./_tabs/adaptive-health";
 import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
 import { ContentQualityTab } from "./_tabs/content-quality";
-import { CreateWithAiTab } from "./_tabs/create-with-ai";
+import { ExercisesTab } from "./_tabs/exercises";
 import { ReviewQueueTab } from "./_tabs/review-queue";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
 import { ModulesTab } from "./_tabs/modules";
 import { ThemesTab } from "./_tabs/themes";
+
+// REQ-1 (admin-reorganizacao-ux): navegação por função em vez de 10 abas soltas no mesmo nível.
+const NAV_GROUPS: { label: string; tabs: { value: string; label: string }[] }[] = [
+  { label: "Painel", tabs: [{ value: "overview", label: "Dashboard" }] },
+  {
+    label: "Conteúdo",
+    tabs: [
+      { value: "games", label: "Jogos" },
+      { value: "modules", label: "Módulos" },
+      { value: "exercises", label: "Exercícios" },
+      { value: "themes", label: "Temas" },
+    ],
+  },
+  {
+    label: "Operação",
+    tabs: [
+      { value: "review-queue", label: "Revisões" },
+      { value: "content-quality", label: "Qualidade" },
+      { value: "users", label: "Alunos" },
+    ],
+  },
+  {
+    label: "Sistema",
+    tabs: [
+      { value: "ai", label: "IA" },
+      { value: "adaptive-health", label: "Saúde adaptativa" },
+    ],
+  },
+];
 
 const EMPTY_TELEMETRY: AITelemetry = {
   period_days: 30,
@@ -63,7 +92,9 @@ export default function AdminPage() {
   const [adaptiveHealth, setAdaptiveHealth] = useState<AdminAdaptiveHealth | null>(null);
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState(() =>
+    typeof window === "undefined" ? "overview" : new URLSearchParams(window.location.search).get("tab") ?? "overview",
+  );
 
   const isAdmin = user?.role === "admin";
 
@@ -122,17 +153,19 @@ export default function AdminPage() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1">
-          <TabsTrigger value="overview">Visão geral</TabsTrigger>
-          <TabsTrigger value="ai">Custos de IA</TabsTrigger>
-          <TabsTrigger value="users">Alunos</TabsTrigger>
-          <TabsTrigger value="themes">Temas</TabsTrigger>
-          <TabsTrigger value="modules">Módulos</TabsTrigger>
-          <TabsTrigger value="games">Jogos IA</TabsTrigger>
-          <TabsTrigger value="create-with-ai">Criar com IA</TabsTrigger>
-          <TabsTrigger value="review-queue">Revisões</TabsTrigger>
-          <TabsTrigger value="content-quality">Qualidade</TabsTrigger>
-          <TabsTrigger value="adaptive-health">Saúde</TabsTrigger>
+        <TabsList className="h-auto w-full flex-wrap items-start justify-start gap-x-5 gap-y-3 border-none bg-transparent p-0">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label} className="flex flex-col gap-1.5">
+              <span className="px-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</span>
+              <div className="flex flex-wrap gap-1 rounded-md border border-border bg-muted/70 p-1">
+                {group.tabs.map((item) => (
+                  <TabsTrigger key={item.value} value={item.value}>
+                    {item.label}
+                  </TabsTrigger>
+                ))}
+              </div>
+            </div>
+          ))}
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
@@ -172,6 +205,7 @@ export default function AdminPage() {
             users={users}
             onUpdated={(theme) => setThemes((prev) => prev.map((item) => (item.id === theme.id ? theme : item)))}
             onDeleted={(themeId) => setThemes((prev) => prev.filter((item) => item.id !== themeId))}
+            onGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])}
           />
         </TabsContent>
 
@@ -195,22 +229,12 @@ export default function AdminPage() {
           />
         </TabsContent>
 
-        <TabsContent value="games" className="mt-4">
-          <AIGamesTab
-            games={games}
-            users={users}
-            onReviewed={(updated) => setGames((prev) => prev.map((g) => (g.id === updated.id ? updated : g)))}
-            onDeleted={(gameId) => setGames((prev) => prev.filter((g) => g.id !== gameId))}
-          />
+        <TabsContent value="exercises" className="mt-4">
+          <ExercisesTab modules={modules} onModulesChanged={setModules} />
         </TabsContent>
 
-        <TabsContent value="create-with-ai" className="mt-4">
-          <CreateWithAiTab
-            modules={modules}
-            onGameGenerated={(game) => setGames((prev) => [game, ...prev])}
-            onExerciseGenerated={() => {}}
-            onThemeGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])}
-          />
+        <TabsContent value="games" className="mt-4">
+          <AIGamesTab games={games} />
         </TabsContent>
 
         <TabsContent value="review-queue" className="mt-4">
