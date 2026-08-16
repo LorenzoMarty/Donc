@@ -1,4 +1,10 @@
-"""P2b Bloco 3 (REQ-8) — idempotency key real nos 3 endpoints de geracao admin."""
+"""P2b Bloco 3 (REQ-8) — idempotency key real no endpoint de geracao de tema.
+
+Nota: os testes equivalentes para jogo (idempotencia de `POST /ai-games/generate`) foram removidos
+junto com esse endpoint — jogos nao sao mais criados via IA (admin-reorganizacao-ux, pedido do
+usuario: "os jogos não podem ser criados, os que existem são os que vão ter"). As acoes de IA que
+restaram pra jogo (adicionar pergunta/conteudo) sao "append", nao "create", e nunca tiveram
+idempotency-dedup — so registram a chave pra auditoria."""
 
 from fastapi import Depends
 from sqlalchemy import func, select
@@ -7,7 +13,7 @@ from sqlalchemy.orm import Session
 from src.database.session import SessionLocal, get_db
 from src.dependencies import require_admin
 from src.main import app
-from src.models import AIGeneratedGame, AIInteractionLog, EssayTheme, User
+from src.models import EssayTheme, User
 
 
 def api_data(response):
@@ -20,56 +26,6 @@ def override_admin(db: Session = Depends(get_db)) -> User:
     user = db.scalar(select(User).where(User.email == "admin@demo.com"))
     assert user is not None
     return user
-
-
-def test_repeated_game_generation_with_same_key_does_not_duplicate(client):
-    app.dependency_overrides[require_admin] = override_admin
-    try:
-        payload = {
-            "skill": "coesao textual",
-            "category": "gramatica",
-            "difficulty": "medium",
-            "count": 3,
-            "idempotency_key": "test-game-key-1",
-        }
-        first = api_data(client.post("/api/v1/admin/ai-games/generate", json=payload))
-        second = api_data(client.post("/api/v1/admin/ai-games/generate", json=payload))
-    finally:
-        app.dependency_overrides.pop(require_admin, None)
-
-    assert first["id"] == second["id"]
-
-    db = SessionLocal()
-    try:
-        game_count = db.scalar(select(func.count()).select_from(AIGeneratedGame).where(AIGeneratedGame.id == first["id"]))
-        log_count = db.scalar(
-            select(func.count()).select_from(AIInteractionLog).where(AIInteractionLog.idempotency_key == "test-game-key-1")
-        )
-    finally:
-        db.close()
-    assert game_count == 1
-    assert log_count == 1
-
-
-def test_different_key_generates_a_new_game(client):
-    app.dependency_overrides[require_admin] = override_admin
-    try:
-        first = api_data(
-            client.post(
-                "/api/v1/admin/ai-games/generate",
-                json={"skill": "coesao textual", "category": "gramatica", "difficulty": "medium", "count": 3, "idempotency_key": "key-a"},
-            )
-        )
-        second = api_data(
-            client.post(
-                "/api/v1/admin/ai-games/generate",
-                json={"skill": "coesao textual", "category": "gramatica", "difficulty": "medium", "count": 3, "idempotency_key": "key-b"},
-            )
-        )
-    finally:
-        app.dependency_overrides.pop(require_admin, None)
-
-    assert first["id"] != second["id"]
 
 
 def test_repeated_theme_generation_with_same_key_does_not_duplicate(client):

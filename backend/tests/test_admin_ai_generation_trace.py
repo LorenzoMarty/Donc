@@ -8,6 +8,7 @@ from src.database.session import SessionLocal, get_db
 from src.dependencies import require_admin
 from src.main import app
 from src.models import User
+from src.models.events import AIGeneratedGame
 
 
 def api_data(response):
@@ -22,27 +23,44 @@ def override_admin(db: Session = Depends(get_db)) -> User:
     return user
 
 
+def _seed_approved_quiz_game() -> int:
+    db = SessionLocal()
+    try:
+        game = AIGeneratedGame(
+            name="Jogo teste trace",
+            category="argumentacao",
+            skill="coesao textual",
+            difficulty="medium",
+            questions=[],
+            status="approved",
+            targets=["WEAK_THESIS"],
+        )
+        db.add(game)
+        db.commit()
+        db.refresh(game)
+        return game.id
+    finally:
+        db.close()
+
+
 def test_student_cannot_access_ai_generation_trace(client):
     response = client.get("/api/v1/admin/ai-generations/AIGeneratedGame/1")
     assert response.status_code == 403
 
 
 def test_trace_reconstructs_who_when_and_cost_of_a_generated_game(client):
+    game_id = _seed_approved_quiz_game()
     app.dependency_overrides[require_admin] = override_admin
     try:
-        gen_response = client.post(
-            "/api/v1/admin/ai-games/generate",
-            json={"skill": "coesao textual", "category": "gramatica", "difficulty": "medium", "count": 3},
-        )
-        game = api_data(gen_response)
+        client.post(f"/api/v1/admin/ai-games/{game_id}/questions/generate", json={"count": 2})
 
-        trace = api_data(client.get(f"/api/v1/admin/ai-generations/AIGeneratedGame/{game['id']}"))
+        trace = api_data(client.get(f"/api/v1/admin/ai-generations/AIGeneratedGame/{game_id}"))
     finally:
         app.dependency_overrides.pop(require_admin, None)
 
     assert len(trace) == 1
     entry = trace[0]
-    assert entry["workflow"] == "admin_game_generation"
+    assert entry["workflow"] == "admin_game_question_addition"
     assert entry["agent"] == "GameGeneratorAgent"
     assert entry["user_id"] is not None
     assert entry["created_at"] is not None

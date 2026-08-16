@@ -23,6 +23,25 @@ def override_admin(db: Session = Depends(get_db)) -> User:
     return user
 
 
+def _seed_pending_game() -> int:
+    db = SessionLocal()
+    try:
+        game = AIGeneratedGame(
+            name="Jogo teste arquivamento",
+            category="argumentacao",
+            skill="coesao textual",
+            difficulty="medium",
+            questions=[{"id": "q1", "prompt": "P1", "options": ["a", "b"], "answer_index": 0, "explanation": "e1"}],
+            status="pending",
+        )
+        db.add(game)
+        db.commit()
+        db.refresh(game)
+        return game.id
+    finally:
+        db.close()
+
+
 def _seed_exercise() -> int:
     db = SessionLocal()
     try:
@@ -45,15 +64,9 @@ def _seed_exercise() -> int:
 
 
 def test_archive_game_removes_it_from_published_list_but_keeps_row(client):
+    game_id = _seed_pending_game()
     app.dependency_overrides[require_admin] = override_admin
     try:
-        game = api_data(
-            client.post(
-                "/api/v1/admin/ai-games/generate",
-                json={"skill": "coesao", "category": "gramatica", "difficulty": "medium", "count": 3},
-            )
-        )
-        game_id = game["id"]
         client.post(f"/api/v1/admin/ai-games/{game_id}/review", json={"action": "approve", "targets": ["C3_LOW"]})
 
         published_before = api_data(client.get("/api/v1/games/published"))
@@ -77,15 +90,9 @@ def test_archive_game_removes_it_from_published_list_but_keeps_row(client):
 
 
 def test_unarchive_game_restores_it_to_published_list(client):
+    game_id = _seed_pending_game()
     app.dependency_overrides[require_admin] = override_admin
     try:
-        game = api_data(
-            client.post(
-                "/api/v1/admin/ai-games/generate",
-                json={"skill": "coesao", "category": "gramatica", "difficulty": "medium", "count": 3},
-            )
-        )
-        game_id = game["id"]
         client.post(f"/api/v1/admin/ai-games/{game_id}/review", json={"action": "approve", "targets": ["C3_LOW"]})
         client.post(f"/api/v1/admin/ai-games/{game_id}/archive")
 

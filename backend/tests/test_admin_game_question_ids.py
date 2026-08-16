@@ -24,13 +24,31 @@ def override_admin(db: Session = Depends(get_db)) -> User:
     return user
 
 
+def _seed_approved_quiz_game() -> int:
+    db = SessionLocal()
+    try:
+        game = AIGeneratedGame(
+            name="Jogo teste",
+            category="argumentacao",
+            skill="coesao textual",
+            difficulty="medium",
+            questions=[],
+            status="approved",
+            targets=["WEAK_THESIS"],
+        )
+        db.add(game)
+        db.commit()
+        db.refresh(game)
+        return game.id
+    finally:
+        db.close()
+
+
 def test_generated_game_questions_have_stable_ids(client):
+    game_id = _seed_approved_quiz_game()
     app.dependency_overrides[require_admin] = override_admin
     try:
-        response = client.post(
-            "/api/v1/admin/ai-games/generate",
-            json={"skill": "coesao textual", "category": "gramatica", "difficulty": "medium", "count": 3},
-        )
+        response = client.post(f"/api/v1/admin/ai-games/{game_id}/questions/generate", json={"count": 3})
         game = api_data(response)
     finally:
         app.dependency_overrides.pop(require_admin, None)

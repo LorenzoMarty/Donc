@@ -300,6 +300,28 @@ html:not(.dark) .dark .force-light {
   color-scheme: light;
 }
 
+/* ---- Marketing (landing/sobre/pricing/plataforma/trilhas): cor fixa verde da marca, independente
+   de tema claro/escuro e da accent color escolhida em /perfil (que só vale pra área logada). */
+.force-brand-green {
+  --primary: var(--green-500);
+  --primary-foreground: 0 0% 100%;
+  --accent-50: var(--green-50);
+  --accent-100: var(--green-100);
+  --accent-200: var(--green-200);
+  --accent-300: var(--green-300);
+  --accent-400: var(--green-400);
+  --accent-500: var(--green-500);
+  --accent-600: var(--green-600);
+  --accent-700: var(--green-700);
+  --accent-800: var(--green-800);
+  --accent-900: var(--green-900);
+  --accent: var(--green-500);
+  --accent-foreground: 0 0% 100%;
+  --success: var(--green-600);
+  --success-foreground: 0 0% 100%;
+  --ring: var(--green-500);
+}
+
 * {
   border-color: hsl(var(--border));
 }

@@ -23,18 +23,30 @@ def override_admin(db: Session = Depends(get_db)) -> User:
     return user
 
 
+def _seed_approved_game() -> tuple[int, str]:
+    db = SessionLocal()
+    try:
+        game = AIGeneratedGame(
+            name="Jogo teste versionamento",
+            category="argumentacao",
+            skill="coesao textual",
+            difficulty="medium",
+            questions=[{"id": "q1", "prompt": "P1", "options": ["a", "b"], "answer_index": 0, "explanation": "e1"}],
+            status="approved",
+            targets=["WEAK_THESIS"],
+        )
+        db.add(game)
+        db.commit()
+        db.refresh(game)
+        return game.id, game.name
+    finally:
+        db.close()
+
+
 def test_editing_ai_generated_game_records_previous_version(client):
+    game_id, original_name = _seed_approved_game()
     app.dependency_overrides[require_admin] = override_admin
     try:
-        game = api_data(
-            client.post(
-                "/api/v1/admin/ai-games/generate",
-                json={"skill": "coesao", "category": "gramatica", "difficulty": "medium", "count": 3},
-            )
-        )
-        game_id = game["id"]
-        original_name = game["name"]
-
         update_resp = client.patch(f"/api/v1/admin/ai-games/{game_id}", json={"name": "Nome totalmente novo"})
         assert update_resp.status_code == 200
     finally:
