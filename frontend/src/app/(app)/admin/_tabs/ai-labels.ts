@@ -41,12 +41,35 @@ export function agentLabel(agent: string): string {
   return AGENT_LABELS[agent] ?? humanize(agent);
 }
 
-/** Fallback pra nome de agente/workflow ainda não catalogado: nunca quebra (sempre mostra algo
- * legível), mas prioriza os dicionários acima pra rótulo idiomático. */
+/** admin-redesign-clareza REQ-4: nome de engine (`game.engine`, ex. "text-surgery") nunca aparece
+ * cru — mesmo vocabulário já usado nos nomes dos jogos desse engine no catálogo. */
+const ENGINE_LABELS: Record<string, string> = {
+  quiz: "Quiz",
+  "timed-rush": "Corrida contra o tempo",
+  sequence: "Sequência",
+  choice: "Escolha",
+  classify: "Classificação",
+  order: "Ordenação",
+  "fill-blank": "Completar lacuna",
+  duel: "Duelo de versões",
+  "argument-escalation": "Escalada argumentativa",
+  artificiality: "Detector de artificialidade",
+  corrector: "Diagnóstico de corretor",
+  "essay-collapse": "Montagem de parágrafo",
+  "text-surgery": "Cirurgia textual",
+  survival: "Modo sobrevivência",
+};
+
+export function engineLabel(engine: string): string {
+  return ENGINE_LABELS[engine] ?? humanize(engine);
+}
+
+/** Fallback pra nome de agente/workflow/engine ainda não catalogado: nunca quebra (sempre mostra
+ * algo legível), mas prioriza os dicionários acima pra rótulo idiomático. */
 function humanize(value: string): string {
   const spaced = value
     .replace(/Agent$/, "")
-    .replace(/_/g, " ")
+    .replace(/[_-]/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
 }

@@ -46,7 +46,6 @@ from src.schemas.admin import (
     AIGeneratedExerciseRead,
     AIGeneratedGameRead,
     AITelemetryResponse,
-    GenerateGameRequest,
     ReviewExerciseRequest,
     ReviewGameRequest,
     TrackEventRequest,
@@ -579,28 +578,6 @@ def list_ai_games(
     db: Session = Depends(get_db),
 ) -> ApiResponse[list[AIGeneratedGameRead]]:
     return success_response(AdminGameReviewService(db).list_ai_games(status=status))
-
-
-@router.post(
-    "/ai-games/generate",
-    response_model=ApiResponse[AIGeneratedGameRead],
-    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_game_generation"))],
-)
-def generate_game(
-    payload: GenerateGameRequest,
-    current_admin: User = Depends(require_admin),
-    db: Session = Depends(get_db),
-) -> ApiResponse[AIGeneratedGameRead]:
-    game = AdminGameReviewService(db).generate_game(
-        skill=payload.skill,
-        category=payload.category,
-        difficulty=payload.difficulty,
-        count=payload.count,
-        name=payload.name,
-        admin_user_id=current_admin.id,
-        idempotency_key=payload.idempotency_key,
-    )
-    return success_response(game, "Jogo gerado com sucesso.")
 
 
 @router.post("/ai-games/{game_id}/review", response_model=ApiResponse[AIGeneratedGameRead])

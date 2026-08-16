@@ -181,7 +181,7 @@ export function ThemesTab({
           const isEditing = editingId === theme.id;
           const isBusy = busyId === theme.id;
           return (
-            <article key={theme.id} className={isEditing ? "rounded-card bg-card p-4 shadow-soft ring-1 ring-primary/30" : "game-tile bg-card p-4"}>
+            <article key={theme.id} className={isEditing ? "rounded-card bg-card p-4 shadow-soft ring-1 ring-primary/30" : "game-tile bg-background/60 p-4"}>
               {isEditing && draft ? (
                 <ThemeEditor
                   draft={draft}

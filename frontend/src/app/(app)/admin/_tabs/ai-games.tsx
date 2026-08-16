@@ -6,6 +6,7 @@ import { Check, Eye, Loader2, Plus, Save, Search, Sparkles, Trash2, Wand2, X } f
 import { toast } from "sonner";
 
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
+import { engineLabel } from "@/app/(app)/admin/_tabs/ai-labels";
 import { GamePayloadEditor } from "@/app/(app)/admin/_tabs/game-payload-editors";
 import { GamePreviewModal } from "@/app/(app)/admin/_tabs/game-preview";
 import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
@@ -245,7 +246,7 @@ export function GameEditorPanel({
         </div>
         <p className="mt-1 font-semibold">{game.name}</p>
         <p className="text-xs text-muted-foreground">
-          {game.skill} · {game.engine}
+          {game.skill} · {engineLabel(game.engine)}
           {isQuestionEngine ? ` · ${game.questions.length} questões` : ""}
         </p>
       </div>
@@ -476,7 +477,7 @@ export function AIGamesTab({ games }: { games: AIGeneratedGame[] }) {
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">Categoria</th>
                 <th className="px-4 py-3 font-medium">Dificuldade</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Situação</th>
                 <th className="px-4 py-3 font-medium tabular-nums">Perguntas</th>
               </tr>
             </thead>

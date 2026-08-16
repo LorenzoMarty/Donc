@@ -149,7 +149,7 @@ export function UsersTab({
             className="pl-9"
           />
         </div>
-        <Badge variant="secondary">{online} online agora</Badge>
+        <Badge variant="secondary">{online} ativo{online === 1 ? "" : "s"} agora</Badge>
         <Badge variant="outline">{users.length} usuários</Badge>
       </div>
 
@@ -179,14 +179,14 @@ export function UsersTab({
                     <tr className="border-b last:border-b-0 hover:bg-muted/40">
                       <td className="px-4 py-3 font-medium">
                         <div className="flex items-center gap-2">
-                          {isOnline && <span className="h-2 w-2 rounded-full bg-success" title="Online" />}
+                          {isOnline && <span className="h-2 w-2 rounded-full bg-success" title="Ativo agora" />}
                           {user.name}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
                       <td className="px-4 py-3">
                         <Badge variant={user.role === "admin" ? "secondary" : "outline"} className="text-xs">
-                          {user.role}
+                          {user.role === "admin" ? "Administrador" : "Aluno"}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 tabular-nums">{user.streak_days}d</td>

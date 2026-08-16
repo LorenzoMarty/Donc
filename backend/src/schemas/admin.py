@@ -523,15 +523,6 @@ class AIGeneratedGameRead(BaseModel):
     reviewed_at: datetime | None = None
 
 
-class GenerateGameRequest(BaseModel):
-    skill: str = Field(min_length=3, max_length=120)
-    category: str = Field(min_length=3, max_length=60)
-    difficulty: str = Field(default="medium", pattern="^(easy|medium|hard)$")
-    count: int = Field(default=5, ge=3, le=10)
-    name: str | None = Field(default=None, max_length=120)
-    idempotency_key: str | None = Field(default=None, max_length=80)
-
-
 class ReviewGameRequest(BaseModel):
     action: str = Field(pattern="^(approve|reject)$")
     notes: str | None = Field(default=None, max_length=500)

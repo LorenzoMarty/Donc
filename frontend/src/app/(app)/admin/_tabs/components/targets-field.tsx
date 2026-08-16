@@ -35,7 +35,7 @@ export function TargetsField({
 
   return (
     <Field label="Problemas trabalhados" hint={hint} error={error}>
-      <div className="grid gap-1 rounded-control bg-card p-2 shadow-soft sm:grid-cols-2">
+      <div className="grid gap-1 rounded-control bg-background/60 p-2 shadow-soft sm:grid-cols-2">
         {ISSUE_OPTIONS.map((option) => {
           const checked = value.includes(option.code);
           return (

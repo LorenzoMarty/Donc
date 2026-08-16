@@ -12,61 +12,12 @@ from src.models.events import AIGeneratedGame
 from src.schemas.admin import AIGeneratedGameRead, GameQuestionRead
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.content_versioning import record_version
-from src.utils.ai_idempotency import find_cached_generation
 from src.utils.game_questions import QUESTION_BASED_ENGINES, assign_question_ids
 
 
 class AdminGameReviewService:
     def __init__(self, db: Session) -> None:
         self.db = db
-
-    def generate_game(
-        self,
-        *,
-        skill: str,
-        category: str,
-        difficulty: str,
-        count: int,
-        name: str | None,
-        admin_user_id: int,
-        idempotency_key: str | None = None,
-    ) -> AIGeneratedGameRead:
-        cached = find_cached_generation(
-            self.db, user_id=admin_user_id, workflow="admin_game_generation", idempotency_key=idempotency_key
-        )
-        if cached is not None and cached.content_id is not None:
-            existing = self.db.get(AIGeneratedGame, cached.content_id)
-            if existing is not None:
-                return self._game_to_read(existing)
-
-        agent = GameGeneratorAgent()
-        result = agent.generate(skill=skill, category=category, difficulty=difficulty, count=count, user_id=admin_user_id)
-        game = AIGeneratedGame(
-            name=name or result.name,
-            category=category,
-            skill=skill,
-            difficulty=difficulty,
-            questions=assign_question_ids(
-                [{"prompt": q.prompt, "options": q.options, "answer_index": q.answer_index, "explanation": q.explanation} for q in result.questions]
-            )[0],
-            status="pending",
-        )
-        self.db.add(game)
-        self.db.flush()  # popula game.id — usado como content_id do AIInteractionLog abaixo.
-        record_ai_interaction(
-            self.db,
-            workflow="admin_game_generation",
-            agent="GameGeneratorAgent",
-            user_id=admin_user_id,
-            runner=agent.runner,
-            meta={"skill": skill, "category": category, "difficulty": difficulty, "count": count},
-            content_id=game.id,
-            content_type="AIGeneratedGame",
-            idempotency_key=idempotency_key,
-        )
-        self.db.commit()
-        self.db.refresh(game)
-        return self._game_to_read(game)
 
     def list_ai_games(self, status: str | None = None) -> list[AIGeneratedGameRead]:
         query = select(AIGeneratedGame).order_by(AIGeneratedGame.created_at.desc())
