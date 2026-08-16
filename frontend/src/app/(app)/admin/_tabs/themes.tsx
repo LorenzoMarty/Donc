@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Edit2, FileText, Plus, Save, Trash2, X } from "lucide-react";
+import { Edit2, FileText, Plus, Save, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
 import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
+import { ThemeGeneratorForm } from "@/app/(app)/admin/_tabs/create-with-ai";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -56,15 +58,19 @@ export function ThemesTab({
   users,
   onUpdated,
   onDeleted,
+  onGenerated,
 }: {
   themes: EssayTheme[];
   users: AdminUser[];
   onUpdated: (theme: EssayTheme) => void;
   onDeleted: (themeId: number) => void;
+  onGenerated: (theme: EssayTheme) => void;
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<ThemeDraft | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const filteredThemes = query ? themes.filter((t) => t.title.toLowerCase().includes(query.toLowerCase())) : themes;
 
   async function reviewTheme(theme: EssayTheme, action: "approve" | "reject") {
     if (busyId) return;
@@ -148,13 +154,30 @@ export function ThemesTab({
   return (
     <div className="rounded-card bg-card shadow-soft">
       <div className="border-b px-4 py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary">Banco de temas</Badge>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar tema..." className="pl-9" />
+          </div>
           <Badge variant="outline">{themes.length} temas</Badge>
+          <GenerateWithAiButton
+            label="Gerar tema com IA"
+            title="Gerar tema com IA"
+            description="Gera um tema com textos motivadores — nasce pendente de revisão."
+          >
+            {(close) => (
+              <ThemeGeneratorForm
+                onGenerated={(theme) => {
+                  onGenerated(theme);
+                  close();
+                }}
+              />
+            )}
+          </GenerateWithAiButton>
         </div>
       </div>
       <div className="grid gap-3 p-4 md:grid-cols-2">
-        {themes.map((theme) => {
+        {filteredThemes.map((theme) => {
           const isEditing = editingId === theme.id;
           const isBusy = busyId === theme.id;
           return (
@@ -213,7 +236,11 @@ export function ThemesTab({
             </article>
           );
         })}
-        {!themes.length ? <p className="text-sm text-muted-foreground">Nenhum tema cadastrado ainda. Use &ldquo;Criar com IA&rdquo; para gerar um.</p> : null}
+        {!filteredThemes.length ? (
+          <p className="text-sm text-muted-foreground">
+            {themes.length ? "Nenhum tema encontrado com essa busca." : 'Nenhum tema cadastrado ainda. Use "Gerar tema com IA" para criar um.'}
+          </p>
+        ) : null}
       </div>
     </div>
   );

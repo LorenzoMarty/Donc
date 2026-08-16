@@ -1,7 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Check, ChevronDown, ChevronRight, Eye, Loader2, Plus, Save, Sparkles, Trash2, Wand2, X } from "lucide-react";
+import { Check, Eye, Loader2, Plus, Save, Search, Sparkles, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
@@ -26,7 +27,11 @@ function statusBadge(status: string) {
   return <Badge variant="outline" className="text-xs">Pendente</Badge>;
 }
 
-function GameCard({
+/**
+ * Editor completo de um jogo — antes vivia dentro do dropdown de `GameCard` na lista; agora é a
+ * tela dedicada `/admin/jogos/[id]` (pedido do usuário: tabela + tela separada em vez de dropdown).
+ */
+export function GameEditorPanel({
   game,
   users,
   allGames,
@@ -39,18 +44,17 @@ function GameCard({
   onReviewed: (updated: AIGeneratedGame) => void;
   onDeleted: (gameId: number) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [editingQ, setEditingQ] = useState<GameQuestion[] | null>(null);
   const [editingPayload, setEditingPayload] = useState<Record<string, unknown> | null>(null);
-  const [notes, setNotes] = useState("");
   const [targets, setTargets] = useState<string[]>(game.targets);
-  const [reviewing, setReviewing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [structuralBusy, setStructuralBusy] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generateCount, setGenerateCount] = useState(3);
   const [generatingMore, setGeneratingMore] = useState(false);
+  const [payloadGenerateCount, setPayloadGenerateCount] = useState(2);
+  const [generatingPayload, setGeneratingPayload] = useState(false);
 
   const isQuestionEngine = QUESTION_BASED_ENGINES.has(game.engine);
   const questions = editingQ ?? game.questions;
@@ -147,6 +151,26 @@ function GameCard({
     }
   }
 
+  async function generateMorePayloadItems() {
+    if (editingPayload) {
+      toast.error("Salve ou descarte as alterações antes de gerar mais conteúdo.");
+      return;
+    }
+    setGeneratingPayload(true);
+    try {
+      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/payload-items/generate`, {
+        method: "POST",
+        body: JSON.stringify({ count: payloadGenerateCount }),
+      });
+      onReviewed(result);
+      toast.success("Conteúdo gerado — revise antes de publicar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar conteúdo.");
+    } finally {
+      setGeneratingPayload(false);
+    }
+  }
+
   async function reviewQuestion(questionId: string, action: "approve" | "reject") {
     if (!guardUnsavedEdits()) return;
     setStructuralBusy(questionId);
@@ -161,30 +185,6 @@ function GameCard({
       toast.error(err instanceof Error ? err.message : "Erro ao revisar pergunta.");
     } finally {
       setStructuralBusy(null);
-    }
-  }
-
-  async function review(action: "approve" | "reject") {
-    setReviewing(true);
-    try {
-      const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/review`, {
-        method: "POST",
-        body: JSON.stringify({
-          action,
-          notes: notes || null,
-          questions: editingQ,
-          payload: editingPayload,
-          targets,
-        }),
-      });
-      onReviewed(result);
-      setEditingQ(null);
-      setEditingPayload(null);
-      toast.success(action === "approve" ? "Jogo aprovado." : "Jogo rejeitado.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao revisar.");
-    } finally {
-      setReviewing(false);
     }
   }
 
@@ -234,39 +234,50 @@ function GameCard({
 
   return (
     <div className="rounded-card bg-card shadow-soft">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between gap-3 p-4 text-left"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {statusBadge(game.status)}
-            <Badge variant="outline" className="text-xs">{game.category}</Badge>
-            <Badge variant="outline" className="text-xs">{game.difficulty}</Badge>
-            {!game.targets.length ? <Badge variant="destructive" className="text-xs">Sem target</Badge> : null}
-            {game.edited_after_generation ? <Badge variant="outline" className="text-xs">Editado</Badge> : null}
-            {pendingCount > 0 ? <Badge variant="secondary" className="text-xs">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</Badge> : null}
-          </div>
-          <p className="mt-1 font-semibold">{game.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {game.skill} · {game.engine}
-            {isQuestionEngine ? ` · ${game.questions.length} questões` : ""}
-          </p>
+      <div className="p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {statusBadge(game.status)}
+          <Badge variant="outline" className="text-xs">{game.category}</Badge>
+          <Badge variant="outline" className="text-xs">{game.difficulty}</Badge>
+          {!game.targets.length ? <Badge variant="destructive" className="text-xs">Sem objetivo</Badge> : null}
+          {game.edited_after_generation ? <Badge variant="outline" className="text-xs">Editado</Badge> : null}
+          {pendingCount > 0 ? <Badge variant="secondary" className="text-xs">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</Badge> : null}
         </div>
-        {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-      </button>
+        <p className="mt-1 font-semibold">{game.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {game.skill} · {game.engine}
+          {isQuestionEngine ? ` · ${game.questions.length} questões` : ""}
+        </p>
+      </div>
 
-      {open && (
-        <div className="collapse-in border-t p-4 space-y-4">
+      <div className="border-t p-4 space-y-4">
           {!isQuestionEngine && (
-            <GamePayloadEditor
-              engine={game.engine}
-              payload={editingPayload ?? game.payload ?? {}}
-              onChange={setEditingPayload}
-              allGames={allGames}
-              currentGameId={game.id}
-            />
+            <>
+              <GamePayloadEditor
+                engine={game.engine}
+                payload={editingPayload ?? game.payload ?? {}}
+                onChange={setEditingPayload}
+                allGames={allGames}
+                currentGameId={game.id}
+              />
+              {game.engine !== "survival" && (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={payloadGenerateCount}
+                    onChange={(e) => setPayloadGenerateCount(Number(e.target.value))}
+                    className="h-8 w-16 text-xs"
+                    aria-label="Quantidade de itens a gerar"
+                  />
+                  <Button size="sm" onClick={generateMorePayloadItems} disabled={generatingPayload}>
+                    {generatingPayload ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    Gerar mais conteúdo com IA
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
           {isQuestionEngine && (
@@ -413,111 +424,104 @@ function GameCard({
           </>
           )}
 
-          {(editingQ || editingPayload) && game.status === "pending" && (
-            <p className="text-xs text-streak">Alterações pendentes. Serão salvas ao aprovar/rejeitar.</p>
-          )}
-
           <TargetsField
             value={targets}
             onChange={setTargets}
-            hint="Obrigatório para aprovar — define quando o RecommendationEngine indica este jogo."
+            hint="Define quando o motor de recomendação indica este jogo."
           />
 
-          {game.status === "pending" ? (
-            <div className="space-y-3">
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas internas (opcional)..."
-                className="min-h-0 resize-none"
-                rows={2}
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => review("approve")} disabled={reviewing || !targets.length}>
-                  {reviewing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  Aprovar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => review("reject")} disabled={reviewing}>
-                  Rejeitar
-                </Button>
-                <Button size="sm" variant="destructive" onClick={remove} disabled={deleting} className="ml-auto">
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Excluir
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              {(editingQ || editingPayload) && (
-                <Button size="sm" onClick={saveEdits} disabled={saving}>
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                  Salvar alterações
-                </Button>
-              )}
-              <Button size="sm" variant="destructive" onClick={remove} disabled={deleting} className="ml-auto">
-                <Trash2 className="h-3.5 w-3.5" />
-                Excluir
+          <div className="flex flex-wrap items-center gap-2">
+            {(editingQ || editingPayload) && (
+              <Button size="sm" onClick={saveEdits} disabled={saving}>
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Salvar alterações
               </Button>
-            </div>
-          )}
+            )}
+            <Button size="sm" variant="destructive" onClick={remove} disabled={deleting} className="ml-auto">
+              <Trash2 className="h-3.5 w-3.5" />
+              Excluir
+            </Button>
+          </div>
 
           {game.admin_notes && (
             <p className="text-xs text-muted-foreground italic">Notas: {game.admin_notes}</p>
           )}
 
           <HistoryPanel contentType="AIGeneratedGame" contentId={game.id} users={users} />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
 
-export function AIGamesTab({
-  games,
-  users,
-  onReviewed,
-  onDeleted,
-}: {
-  games: AIGeneratedGame[];
-  users: AdminUser[];
-  onReviewed: (updated: AIGeneratedGame) => void;
-  onDeleted: (gameId: number) => void;
-}) {
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+export function AIGamesTab({ games }: { games: AIGeneratedGame[] }) {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
 
-  const filtered = statusFilter === "all" ? games : games.filter((g) => g.status === statusFilter);
-  const pendingCount = games.filter((g) => g.status === "pending").length;
+  const filtered = query
+    ? games.filter((g) => g.name.toLowerCase().includes(query.toLowerCase()) || g.skill.toLowerCase().includes(query.toLowerCase()))
+    : games;
 
   return (
     <div className="space-y-6">
-      {/* Filter + list */}
-      <div className="flex flex-wrap gap-2">
-        {(["all", "pending", "approved", "rejected"] as const).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setStatusFilter(s)}
-            className={cn(
-              "rounded-control border px-3 py-1.5 text-xs font-medium transition-colors",
-              statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted",
-            )}
-          >
-            {s === "all" ? "Todos" : s === "pending" ? `Pendentes (${pendingCount})` : s === "approved" ? "Aprovados" : "Rejeitados"}
-          </button>
-        ))}
+      <div className="relative min-w-[200px] flex-1">
+        <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar jogo por nome ou habilidade..." className="pl-9" />
       </div>
 
-      <div className="space-y-3">
-        {filtered.map((game) => (
-          <GameCard key={game.id} game={game} users={users} allGames={games} onReviewed={onReviewed} onDeleted={onDeleted} />
-        ))}
-        {filtered.length === 0 && (
-          <div className="rounded-card bg-card p-8 text-center shadow-soft">
-            <p className="text-sm text-muted-foreground">
-              {statusFilter === "pending" ? "Nenhum jogo pendente de revisão — tudo em dia." : "Nenhum jogo encontrado com esse filtro."}
-            </p>
-          </div>
-        )}
+      <div className="rounded-card bg-card shadow-soft">
+        <div className="mobile-scroll overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Nome</th>
+                <th className="px-4 py-3 font-medium">Categoria</th>
+                <th className="px-4 py-3 font-medium">Dificuldade</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium tabular-nums">Perguntas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((game) => {
+                const isQuestionEngine = QUESTION_BASED_ENGINES.has(game.engine);
+                return (
+                  <tr
+                    key={game.id}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Abrir jogo ${game.name}`}
+                    onClick={() => router.push(`/admin/jogos/${game.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") router.push(`/admin/jogos/${game.id}`);
+                    }}
+                    className="cursor-pointer border-b last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+                  >
+                    <td className="px-4 py-3 font-medium">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {game.name}
+                        {!game.targets.length ? <Badge variant="destructive" className="text-[10px]">Sem objetivo</Badge> : null}
+                        {game.edited_after_generation ? <Badge variant="outline" className="text-[10px]">Editado</Badge> : null}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{game.skill}</p>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{game.category}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{game.difficulty}</td>
+                    <td className="px-4 py-3">{statusBadge(game.status)}</td>
+                    <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                      {isQuestionEngine ? game.questions.length : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                    Nenhum jogo encontrado com essa busca.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

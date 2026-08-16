@@ -12,6 +12,7 @@ from src.schemas.admin import (
     AddGameQuestionRequest,
     AdminEssayThemeReviewRequest,
     GenerateMoreGameQuestionsRequest,
+    GeneratePayloadItemsRequest,
     ReorderGameQuestionsRequest,
     ReviewGameQuestionRequest,
     ReviewQueueItem,
@@ -713,6 +714,26 @@ def generate_more_game_questions(
         idempotency_key=payload.idempotency_key,
     )
     return success_response(game, "Perguntas geradas. Revise antes de publicar.")
+
+
+@router.post(
+    "/ai-games/{game_id}/payload-items/generate",
+    response_model=ApiResponse[AIGeneratedGameRead],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_game_payload_generation"))],
+)
+def generate_game_payload_items(
+    game_id: int,
+    payload: GeneratePayloadItemsRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AIGeneratedGameRead]:
+    game = AdminGameReviewService(db).generate_payload_items(
+        game_id,
+        count=payload.count,
+        admin_user_id=current_admin.id,
+        idempotency_key=payload.idempotency_key,
+    )
+    return success_response(game, "Conteúdo gerado. Revise antes de publicar.")
 
 
 @router.post("/ai-games/{game_id}/questions/{question_id}/review", response_model=ApiResponse[AIGeneratedGameRead])

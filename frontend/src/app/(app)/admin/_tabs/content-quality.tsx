@@ -46,14 +46,14 @@ export function ContentQualityTab({ report }: { report: AdminContentQuality }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 rounded-card bg-primary/5 p-3.5 text-sm text-muted-foreground shadow-soft">
         <AlertTriangle className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-        Conteúdo listado aqui não participa (ou participa mal) do <code>RecommendationEngine</code> — sem target, o
-        motor não consegue indicá-lo; sem uso, ele nunca chegou de fato ao aluno.
+        Conteúdo listado aqui não participa (ou participa mal) do motor de recomendação — sem problema trabalhado
+        definido, ele não consegue ser indicado; sem uso, nunca chegou de fato ao aluno.
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <ItemList title="Aulas sem target" items={report.lessons_without_target} />
-        <ItemList title="Exercícios sem target" items={report.exercises_without_target} />
-        <ItemList title="Jogos IA sem target" items={report.games_without_target} />
+        <ItemList title="Aulas sem objetivo" items={report.lessons_without_target} />
+        <ItemList title="Exercícios sem objetivo" items={report.exercises_without_target} />
+        <ItemList title="Jogos IA sem objetivo" items={report.games_without_target} />
         <ItemList title="Aulas nunca assistidas" items={report.unused_lessons} />
         <ItemList title="Exercícios nunca respondidos" items={report.unused_exercises} />
         <ItemList title="Jogos IA nunca jogados" items={report.unused_games} />

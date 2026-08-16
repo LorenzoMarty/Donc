@@ -86,7 +86,7 @@ export function AdaptiveHealthTab({
       >
         <div>
           <p className="text-sm font-semibold">Saúde do conteúdo</p>
-          <p className="text-xs text-muted-foreground">Aulas, exercícios e jogos sem target, sem uso, rejeitados ou editados após geração.</p>
+          <p className="text-xs text-muted-foreground">Aulas, exercícios e jogos sem objetivo, sem uso, rejeitados ou editados após geração.</p>
         </div>
         <Badge variant={contentIssues ? "destructive" : "outline"} className="shrink-0 text-xs">
           {contentIssues} · ver na aba Qualidade
