@@ -94,6 +94,8 @@
   --info-tint: 221 82% 95%;
   --highlight-500: 253 91% 71%; /* violet, exclusive to secondary stat tiles */
   --highlight-tint: 253 91% 96%;
+  --chart-c4-500: 199 89% 48%; /* sky, exclusive to CompetencyTrendChart C4 */
+  --chart-c5-500: 350 89% 60%; /* rose, exclusive to CompetencyTrendChart C5 */
 
   /* ---- Semantic layer (components should reference these, not primitives) ---- */
   --background: 42 26% 93%; /* #f1eee7 — fundo creme exato do mock Apple-inspired (painel interno) */
@@ -133,6 +135,8 @@
   --info-foreground: 0 0% 100%;
   --highlight: var(--highlight-500);
   --highlight-foreground: 0 0% 100%;
+  --chart-c4: var(--chart-c4-500);
+  --chart-c5: var(--chart-c5-500);
   --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
   --border: var(--neutral-200);
@@ -201,6 +205,8 @@
   --highlight: 253 91% 78%;
   --highlight-foreground: var(--dark-fg);
   --highlight-tint: 253 45% 24%;
+  --chart-c4: 199 89% 62%;
+  --chart-c5: 350 89% 70%;
   --destructive: 354 70% 62%;
   --destructive-foreground: var(--dark-fg);
   --border: 224 18% 22%;
@@ -287,6 +293,8 @@ html:not(.dark) .dark .force-light {
   --highlight: var(--highlight-500);
   --highlight-foreground: 0 0% 100%;
   --highlight-tint: 253 91% 96%;
+  --chart-c4: var(--chart-c4-500);
+  --chart-c5: var(--chart-c5-500);
   --destructive: 354 70% 54%;
   --destructive-foreground: 0 0% 100%;
   --border: var(--neutral-200);

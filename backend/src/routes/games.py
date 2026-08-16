@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from typing import Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, model_validator

@@ -21,7 +21,7 @@ from src.schemas.admin import (
     AIGeneratedExerciseRead,
 )
 from src.services.ai_telemetry import record_ai_interaction, safe_persist_interaction
-from src.services.content_versioning import list_versions, record_version
+from src.services.content_versioning import record_version
 from src.utils.ai_idempotency import find_cached_generation
 
 

@@ -40,8 +40,8 @@ const COMPETENCY_TREND_SERIES: { key: "c1" | "c2" | "c3" | "c4" | "c5"; label: s
   { key: "c1", label: "C1 — Norma culta", color: "hsl(var(--primary))" },
   { key: "c2", label: "C2 — Tema e gênero", color: "hsl(var(--highlight))" },
   { key: "c3", label: "C3 — Argumentação", color: "hsl(var(--streak))" },
-  { key: "c4", label: "C4 — Coesão", color: "#0EA5E9" },
-  { key: "c5", label: "C5 — Intervenção", color: "#F43F5E" },
+  { key: "c4", label: "C4 — Coesão", color: "hsl(var(--chart-c4))" },
+  { key: "c5", label: "C5 — Intervenção", color: "hsl(var(--chart-c5))" },
 ];
 
 export function CompetencyTrendChart({

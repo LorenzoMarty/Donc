@@ -219,28 +219,6 @@ export function eventsForOutcome(
 }
 
 /**
- * Ponte legada: traduz `{tag, correct}` (usado por drills) em eventos cognitivos binários.
- * Mantida para os engines rasos que ainda chamam `recordSkillOutcomes`.
- */
-export function tagOutcomeToEvents(
-  outcomes: { tag: SkillTag; correct: boolean }[],
-  at: string,
-): CognitiveEventRecord[] {
-  const events: CognitiveEventRecord[] = [];
-  for (const { tag, correct } of outcomes) {
-    const hub = TAG_TO_HUB[tag];
-    if (!hub) continue;
-    const def = HUBS[hub];
-    events.push(
-      correct
-        ? { type: def.positiveEvents[0], severity: 0.4, hub, at }
-        : { type: def.negativeEvents[0], severity: 0.7, hub, at },
-    );
-  }
-  return events;
-}
-
-/**
  * Selects games for a training session targeting a hub.
  *
  * Adapts to the student's mastery level: lower mastery → easier games first; higher → harder.

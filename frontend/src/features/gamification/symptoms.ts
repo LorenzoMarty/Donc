@@ -10,10 +10,6 @@ import type {
   SymptomHubId,
 } from "@/features/gamification/types";
 
-/** Perfil legado: por tag, quantas tentativas e quantos erros o aluno acumulou (compat). */
-export type SkillStat = { attempts: number; errors: number };
-export type SkillProfile = Partial<Record<SkillTag, SkillStat>>;
-
 /**
  * Registro completo de um hub de sintoma — a unidade de navegação cognitiva. Fonte única de
  * verdade: metadados de UI (título/ícone/cor) + contrato cognitivo (eventos, foco, engines).
@@ -190,45 +186,6 @@ export function gameTags(game: GameDefinition): SkillTag[] {
   const tags = [...set];
   gameTagsCache.set(game, tags);
   return tags;
-}
-
-/** Maestria (0–100) de uma tag: 100 quando sem erros; cai com a taxa de erro. (legado) */
-export function masteryFor(profile: SkillProfile, tag: SkillTag): number {
-  const stat = profile[tag];
-  if (!stat || stat.attempts === 0) return 0;
-  return Math.round(((stat.attempts - stat.errors) / stat.attempts) * 100);
-}
-
-/** Maestria média de um conjunto de tags (ignora tags nunca praticadas). (legado) */
-export function masteryForTags(profile: SkillProfile, tags: SkillTag[]): number | null {
-  const seen = tags.filter((t) => profile[t]?.attempts);
-  if (seen.length === 0) return null;
-  return Math.round(seen.reduce((sum, t) => sum + masteryFor(profile, t), 0) / seen.length);
-}
-
-/** Fraquezas ordenadas por nº de erros e taxa de erro (mais fraco primeiro). (legado) */
-export function topWeaknesses(profile: SkillProfile): { tag: SkillTag; errors: number; rate: number }[] {
-  return (Object.entries(profile) as [SkillTag, SkillStat][])
-    .filter(([, s]) => s.attempts > 0 && s.errors > 0)
-    .map(([tag, s]) => ({ tag, errors: s.errors, rate: s.errors / s.attempts }))
-    .sort((a, b) => b.rate - a.rate || b.errors - a.errors);
-}
-
-/**
- * Recomenda treinos por interseção de tags com as fraquezas legadas.
- * (Mantido para compat; o treinador principal usa `recommendHub` em `adaptive.ts`.)
- */
-export function recommendTrainings(games: GameDefinition[], profile: SkillProfile, limit = 4): GameDefinition[] {
-  const weak = new Map(topWeaknesses(profile).map((w) => [w.tag, w.rate]));
-  return [...games]
-    .map((game) => {
-      const tags = gameTags(game);
-      const score = tags.reduce((sum, t) => sum + (weak.get(t) ?? 0), 0);
-      return { game, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map((entry) => entry.game);
 }
 
 /** Jogos pertinentes a um hub de sintoma (interseção de tags). */

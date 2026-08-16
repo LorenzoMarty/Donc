@@ -4,10 +4,9 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import { mapPublishedGame } from "@/features/gamification/catalog";
-import { applyEvent, emptyAdaptiveProfile, eventsForOutcome, tagOutcomeToEvents } from "@/features/gamification/adaptive";
+import { applyEvent, emptyAdaptiveProfile, eventsForOutcome } from "@/features/gamification/adaptive";
 import type { CognitiveDecision } from "@/features/gamification/adaptive";
-import type { SkillProfile } from "@/features/gamification/symptoms";
-import type { AdaptiveProfile, CognitiveEventRecord, GameAttempt, GameCompletion, GameDefinition, GameProgress, IssueUpdate, SkillTag, StreakState } from "@/features/gamification/types";
+import type { AdaptiveProfile, CognitiveEventRecord, GameAttempt, GameCompletion, GameDefinition, GameProgress, IssueUpdate, StreakState } from "@/features/gamification/types";
 import { todayKey, updateStreak } from "@/features/streak/streak";
 import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
@@ -16,7 +15,6 @@ type GameStore = {
   streak: StreakState;
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
-  skills: SkillProfile;
   adaptive: AdaptiveProfile;
   /** Eventos cognitivos emitidos desde o último `completeGame` — enviados ao backend como
    * `cognitive_outcomes` e limpos ao fechar a tentativa. O backend, não o cliente, decide como
@@ -30,7 +28,6 @@ type GameStore = {
   remoteGames: GameDefinition[];
   remoteGamesHydrated: boolean;
   completeGame: (game: GameDefinition, score: number, total: number, durationSeconds: number) => GameCompletion;
-  recordSkillOutcomes: (entries: { tag: SkillTag; correct: boolean }[]) => void;
   recordCognitiveOutcome: (game: GameDefinition, decision: CognitiveDecision) => void;
   trackCognitiveEvent: (event: Omit<CognitiveEventRecord, "at">) => void;
   getGameProgress: (gameId: string) => GameProgress | undefined;
@@ -51,7 +48,6 @@ export const useGameStore = create<GameStore>()(
       streak: initialStreak,
       attempts: [],
       progress: {},
-      skills: {},
       adaptive: emptyAdaptiveProfile(),
       pendingCognitiveEvents: [],
       lastIssueUpdates: [],
@@ -59,34 +55,12 @@ export const useGameStore = create<GameStore>()(
       remoteGames: [],
       remoteGamesHydrated: false,
       getGameProgress: (gameId) => get().progress[gameId],
-      recordSkillOutcomes: (entries) => {
-        if (!entries.length) return;
-        const skills: SkillProfile = { ...get().skills };
-        for (const { tag, correct } of entries) {
-          const prev = skills[tag] ?? { attempts: 0, errors: 0 };
-          skills[tag] = { attempts: prev.attempts + 1, errors: prev.errors + (correct ? 0 : 1) };
-        }
-        // Ponte com a camada cognitiva: traduz acerto/erro por tag em eventos com severidade.
-        const events = tagOutcomeToEvents(entries, new Date().toISOString());
-        const adaptive = events.reduce((profile, event) => applyEvent(profile, event), get().adaptive);
-        set({ skills, adaptive });
-      },
       recordCognitiveOutcome: (game, decision) => {
         const at = new Date().toISOString();
         // Camada cognitiva é a fonte principal: deriva eventos por hub a partir da qualidade.
         const events = eventsForOutcome(game, decision, at);
         const adaptive = events.reduce((profile, event) => applyEvent(profile, event), get().adaptive);
-        // Compat legada: mantém attempts/errors por tag para consumidores antigos.
-        let skills = get().skills;
-        if (decision.tags?.length) {
-          const correct = decision.grade ? decision.grade === "S" || decision.grade === "A" : !!decision.correct;
-          skills = { ...skills };
-          for (const tag of decision.tags) {
-            const prev = skills[tag] ?? { attempts: 0, errors: 0 };
-            skills[tag] = { attempts: prev.attempts + 1, errors: prev.errors + (correct ? 0 : 1) };
-          }
-        }
-        set({ adaptive, skills, pendingCognitiveEvents: [...get().pendingCognitiveEvents, ...events] });
+        set({ adaptive, pendingCognitiveEvents: [...get().pendingCognitiveEvents, ...events] });
       },
       trackCognitiveEvent: (event) => {
         const record = { ...event, at: new Date().toISOString() };
@@ -125,8 +99,8 @@ export const useGameStore = create<GameStore>()(
         }
       },
       exportProgress: () => {
-        const { streak, attempts, progress, skills } = get();
-        const blob = new Blob([JSON.stringify({ streak, attempts, progress, skills, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
+        const { streak, attempts, progress } = get();
+        const blob = new Blob([JSON.stringify({ streak, attempts, progress, exportedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -136,12 +110,11 @@ export const useGameStore = create<GameStore>()(
       },
       importProgress: (json) => {
         try {
-          const parsed = JSON.parse(json) as { streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress>; skills?: SkillProfile };
+          const parsed = JSON.parse(json) as { streak?: StreakState; attempts?: GameAttempt[]; progress?: Record<string, GameProgress> };
           set({
             streak: parsed.streak ?? get().streak,
             attempts: Array.isArray(parsed.attempts) ? parsed.attempts : get().attempts,
             progress: parsed.progress && typeof parsed.progress === "object" ? parsed.progress : get().progress,
-            skills: parsed.skills && typeof parsed.skills === "object" ? parsed.skills : get().skills,
           });
           return true;
         } catch {
@@ -212,7 +185,7 @@ export const useGameStore = create<GameStore>()(
       version: 2,
       storage: createJSONStorage(() => localStorage),
       // v2: AdaptiveProfile mudou para 7 hubs pt-BR. Reinicia o perfil cognitivo preservando
-      // streak/attempts/progress/skills. attempts/errors seguem só como compat legada.
+      // streak/attempts/progress.
       migrate: (persisted, from) => {
         const state = (persisted ?? {}) as Partial<GameStore>;
         if (from < 2) {
@@ -224,7 +197,6 @@ export const useGameStore = create<GameStore>()(
         streak: state.streak,
         attempts: state.attempts,
         progress: state.progress,
-        skills: state.skills,
         adaptive: state.adaptive,
       }),
     },

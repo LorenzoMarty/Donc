@@ -16,7 +16,6 @@ from src.schemas.admin import (
     ReorderGameQuestionsRequest,
     ReviewGameQuestionRequest,
     ReviewQueueItem,
-    AdminContentActionResponse,
     AdminContentQualityResponse,
     AdminActivityCreateRequest,
     AdminActivityGenerateRequest,
