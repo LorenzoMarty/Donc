@@ -17,7 +17,6 @@ function readPersisted() {
 
 beforeEach(() => {
   useGameStore.setState({
-    skills: {},
     adaptive: emptyAdaptiveProfile(),
     attempts: [],
     progress: {},
@@ -56,26 +55,10 @@ describe("recordCognitiveOutcome", () => {
     expect(isNegativeEvent(adaptive.recentEvents[0].type)).toBe(false);
   });
 
-  it("mantém compat legada (attempts/errors) ao registrar a decisão", () => {
-    useGameStore.getState().recordCognitiveOutcome(duel, { tags: ["texto-robotico"], grade: "Fraco" });
-    const stat = useGameStore.getState().skills["texto-robotico"];
-    expect(stat?.attempts).toBe(1);
-    expect(stat?.errors).toBe(1); // Fraco = erro na contagem legada
-  });
-
   it("persiste o adaptive no localStorage após a decisão", () => {
     useGameStore.getState().recordCognitiveOutcome(duel, { tags: ["texto-robotico"], grade: "Fraco" });
     const persisted = readPersisted();
     expect(persisted.state.adaptive.weaknessSignals["texto-robotico"]).toBeGreaterThan(0);
-  });
-});
-
-describe("recordSkillOutcomes (ponte legada)", () => {
-  it("atualiza skills e também emite eventos cognitivos", () => {
-    useGameStore.getState().recordSkillOutcomes([{ tag: "c2", correct: false }]);
-    const state = useGameStore.getState();
-    expect(state.skills["c2"]?.errors).toBe(1);
-    expect(state.adaptive.weaknessSignals["repertorio-nao-encaixa"]).toBeGreaterThan(0);
   });
 });
 
@@ -95,19 +78,17 @@ describe("completeGame", () => {
 });
 
 describe("importProgress", () => {
-  it("restaura streak/attempts/progress/skills de um JSON válido e retorna true", () => {
+  it("restaura streak/attempts/progress de um JSON válido e retorna true", () => {
     const backup = JSON.stringify({
       streak: { current: 3, best: 5 },
       attempts: [],
       progress: {},
-      skills: { "texto-robotico": { attempts: 2, errors: 1 } },
     });
 
     const ok = useGameStore.getState().importProgress(backup);
 
     expect(ok).toBe(true);
     expect(useGameStore.getState().streak).toEqual({ current: 3, best: 5 });
-    expect(useGameStore.getState().skills["texto-robotico"]).toEqual({ attempts: 2, errors: 1 });
   });
 
   it("mantém o estado atual e retorna false para JSON inválido, sem lançar exceção", () => {
@@ -120,12 +101,11 @@ describe("importProgress", () => {
   });
 
   it("preserva campos ausentes no backup usando o estado atual como fallback", () => {
-    useGameStore.setState({ streak: { current: 7, best: 7 }, skills: { "texto-robotico": { attempts: 1, errors: 0 } } });
+    useGameStore.setState({ streak: { current: 7, best: 7 } });
 
     const ok = useGameStore.getState().importProgress(JSON.stringify({ streak: { current: 8, best: 8 } }));
 
     expect(ok).toBe(true);
     expect(useGameStore.getState().streak).toEqual({ current: 8, best: 8 });
-    expect(useGameStore.getState().skills["texto-robotico"]).toEqual({ attempts: 1, errors: 0 });
   });
 });

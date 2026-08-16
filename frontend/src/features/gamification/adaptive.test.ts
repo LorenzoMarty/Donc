@@ -13,7 +13,6 @@ import {
   rankHubsByWeakness,
   recommendHub,
   selectItemsBySkill,
-  tagOutcomeToEvents,
 } from "@/features/gamification/adaptive";
 import { HUBS, HUB_IDS } from "@/features/gamification/symptoms";
 import type { CognitiveEventRecord, GameDefinition, ItemDifficulty } from "@/features/gamification/types";
@@ -152,15 +151,6 @@ describe("eventsForOutcome", () => {
     const game = fakeGame({ tags: [], hubs: ["nao-aprofunda"] });
     const events = eventsForOutcome(game, { correct: false }, AT);
     expect(events[0].hub).toBe("nao-aprofunda");
-  });
-});
-
-describe("tagOutcomeToEvents (ponte legada)", () => {
-  it("traduz {tag, correct} em eventos por hub", () => {
-    const events = tagOutcomeToEvents([{ tag: "c2", correct: false }], AT);
-    expect(events).toHaveLength(1);
-    expect(events[0].hub).toBe("repertorio-nao-encaixa");
-    expect(isNegativeEvent(events[0].type)).toBe(true);
   });
 });
 

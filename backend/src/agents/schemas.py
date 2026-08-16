@@ -8,43 +8,6 @@ from pydantic import BaseModel, Field
 DifficultyLevel = Literal["easy", "medium", "hard"]
 
 
-class ThesisAnalysis(BaseModel):
-    thesis_present: bool
-    thesis: str
-    clarity_score: int = Field(ge=0, le=100)
-    argument_strength: int = Field(ge=0, le=100)
-    issues: list[str] = Field(default_factory=list)
-    improvements: list[str] = Field(default_factory=list)
-
-
-class GrammarAnalysis(BaseModel):
-    grammar_score: int = Field(ge=0, le=100)
-    cohesion_score: int = Field(ge=0, le=100)
-    formality_score: int = Field(ge=0, le=100)
-    repeated_terms: list[str] = Field(default_factory=list)
-    mistakes: list[str] = Field(default_factory=list)
-    suggestions: list[str] = Field(default_factory=list)
-
-
-class RepertoireAnalysis(BaseModel):
-    repertoire_score: int = Field(ge=0, le=100)
-    repertories_found: list[str] = Field(default_factory=list)
-    weak_connections: list[str] = Field(default_factory=list)
-    suggested_repertories: list[str] = Field(default_factory=list)
-    sociocultural_links: list[str] = Field(default_factory=list)
-
-
-class ENEMCompetencyAnalysis(BaseModel):
-    c1: int = Field(ge=0, le=200, description="Competencia I: dominio da modalidade escrita formal.")
-    c2: int = Field(ge=0, le=200, description="Competencia II: compreensao do tema e genero dissertativo-argumentativo.")
-    c3: int = Field(ge=0, le=200, description="Competencia III: organizacao de argumentos em defesa de ponto de vista.")
-    c4: int = Field(ge=0, le=200, description="Competencia IV: mecanismos linguisticos de coesao e argumentacao.")
-    c5: int = Field(ge=0, le=200, description="Competencia V: proposta de intervencao completa e respeitosa aos direitos humanos.")
-    justifications: dict[str, str] = Field(default_factory=dict, description="Justificativas curtas por chave c1, c2, c3, c4 e c5.")
-    pedagogical_feedback: list[str] = Field(default_factory=list, description="Orientacoes praticas para elevar as competencias mais fracas.")
-    weak_competencies: list[str] = Field(default_factory=list, description="Competencias abaixo de 160, usando chaves c1, c2, c3, c4 e c5.")
-
-
 class InlineAnnotation(BaseModel):
     paragraph_index: int = Field(ge=0, description="Indice do paragrafo (base 0).")
     quote: str = Field(min_length=4, description="Trecho exato do texto do aluno.")

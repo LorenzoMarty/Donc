@@ -283,12 +283,6 @@ class AdminMoveRequest(BaseModel):
     direction: Literal["up", "down"]
 
 
-class AdminContentActionResponse(BaseModel):
-    action: Literal["deleted"]
-    id: int
-    kind: Literal["module", "lesson", "activity"]
-
-
 # ── User detail ──────────────────────────────────────────────────────────────
 
 class MasteryPointRead(BaseModel):
