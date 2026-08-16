@@ -4,36 +4,7 @@ import type { GameCategory, GameCategoryId, GameDefinition, GameDifficulty, Game
 import { deriveHubsFromTags, possibleEventsForHubs } from "@/features/gamification/adaptive";
 import { tagPositionalDifficulty } from "@/features/gamification/item-difficulty";
 import { gameTags } from "@/features/gamification/symptoms";
-import { challengeGames } from "@/games/challenges";
-import { competencyGames } from "@/games/competencies";
-import { connectiveGames } from "@/games/connectives";
-import { grammarGames } from "@/games/grammar";
-import { repertoireGames } from "@/games/repertoire";
-import { structureGames } from "@/games/structure";
-import { thesisGames } from "@/games/thesis";
-import { duelGames } from "@/games/duel";
-import { escalationGames } from "@/games/escalation";
-import { artificialityGames } from "@/games/artificiality";
-import { correctorGames } from "@/games/corrector";
-import { surgeryGames } from "@/games/text-surgery";
-import { survivalGames } from "@/games/survival";
 import type { PublishedGame } from "@/types/api";
-
-const gamesCatalog: GameDefinition[] = [
-  ...structureGames,
-  ...connectiveGames,
-  ...thesisGames,
-  ...repertoireGames,
-  ...grammarGames,
-  ...competencyGames,
-  ...challengeGames,
-  ...duelGames,
-  ...escalationGames,
-  ...artificialityGames,
-  ...correctorGames,
-  ...surgeryGames,
-  ...survivalGames,
-];
 
 /**
  * Garante o contrato cognitivo de toda missão: preenche `skills`/`hubs`/`possibleEvents` a partir
@@ -76,31 +47,58 @@ const DIFFICULTY_LABEL: Record<string, GameDifficulty> = {
   hard: "Avancado",
 };
 
-/** Converte um jogo aprovado vindo do backend em GameDefinition jogavel pelo aluno. */
+// Engines cujo conteudo mora em `questions` (mesmo payload pergunta+alternativas).
+const QUESTION_BASED_ENGINES = new Set(["quiz", "timed-rush", "sequence", "choice"]);
+
+// engine -> chave de GameDefinition onde o `payload` do backend deve entrar.
+const PAYLOAD_FIELD_BY_ENGINE: Record<string, keyof GameDefinition> = {
+  classify: "classify",
+  order: "order",
+  "fill-blank": "fillBlank",
+  duel: "duel",
+  "argument-escalation": "escalation",
+  artificiality: "artificiality",
+  corrector: "corrector",
+  "essay-collapse": "essayCollapse",
+  "text-surgery": "textSurgery",
+  survival: "survival",
+};
+
+/** Converte um jogo aprovado vindo do backend em GameDefinition jogavel pelo aluno — banco e a
+ * unica fonte (spec migrar-jogos-estaticos-para-banco REQ-4), suporta qualquer um dos 13 engines. */
 export function mapPublishedGame(game: PublishedGame): GameDefinition {
   const category = (VALID_CATEGORIES.includes(game.category as GameCategoryId)
     ? game.category
     : "competencias-enem") as GameCategoryId;
-  return enrichGame({
+  const engine = game.engine as GameDefinition["engine"];
+  const base: GameDefinition = {
     id: `ai-${game.id}`,
     name: game.name,
     category,
-    description: game.skill ? `Atividade gerada para treinar ${game.skill}.` : "Atividade gerada por IA.",
+    description: game.description ?? (game.skill ? `Atividade gerada para treinar ${game.skill}.` : "Atividade gerada por IA."),
     difficulty: DIFFICULTY_LABEL[game.difficulty] ?? "Intermediario",
-    estimatedTime: `${Math.max(2, Math.round(game.questions.length * 0.5))} min`,
-    thumbnail: `${category}-ia`,
+    estimatedTime: game.estimated_time ?? `${Math.max(2, Math.round(game.questions.length * 0.5))} min`,
+    thumbnail: game.thumbnail ?? `${category}-ia`,
     progress: 0,
     unlocked: true,
-    engine: "quiz",
+    engine,
     skill: game.skill || "Treino",
-    questions: game.questions.map((q, index) => ({
+  };
+  if (QUESTION_BASED_ENGINES.has(engine)) {
+    base.questions = game.questions.map((q, index) => ({
       id: `ai-${game.id}-q${index}`,
       prompt: q.prompt,
       options: q.options,
       answerIndex: q.answer_index,
       explanation: q.explanation,
-    })),
-  });
+    }));
+  } else {
+    const field = PAYLOAD_FIELD_BY_ENGINE[engine];
+    if (field && game.payload) {
+      (base as Record<string, unknown>)[field] = game.payload;
+    }
+  }
+  return enrichGame(base);
 }
 
 const baseCategories: GameCategory[] = [
@@ -187,24 +185,22 @@ export function getCategoryBySlug(slug: string) {
   return baseCategories.find((category) => category.slug === slug);
 }
 
-/** Catálogo estático com o contrato cognitivo garantido (hubs/skills/possibleEvents). */
-const enrichedCatalog: GameDefinition[] = gamesCatalog.map(enrichGame);
-
+/** Jogos vem 100% do banco (spec migrar-jogos-estaticos-para-banco REQ-4) — `extra` e a lista
+ * hidratada de `/games/published` (`useGameStore.remoteGames`), ja passada por `mapPublishedGame`. */
 export function getGameById(gameId: string, extra: GameDefinition[] = []) {
-  return [...enrichedCatalog, ...extra].find((game) => game.id === gameId);
+  return extra.find((game) => game.id === gameId);
 }
 
-/** Todos os jogos estáticos (sem os remotos de IA). Usado pelo modo Survival e pelos hubs. */
 export function getAllGames(extra: GameDefinition[] = []) {
-  return [...enrichedCatalog, ...extra];
+  return extra;
 }
 
 export function getGamesByCategory(category: GameCategoryId, extra: GameDefinition[] = []) {
-  return [...enrichedCatalog, ...extra].filter((game) => game.category === category);
+  return extra.filter((game) => game.category === category);
 }
 
 export function getRecommendedGames(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
-  return [...enrichedCatalog, ...extra]
+  return [...extra]
     .sort((a, b) => {
       const aProgress = progress[a.id]?.progress ?? 0;
       const bProgress = progress[b.id]?.progress ?? 0;
@@ -214,7 +210,7 @@ export function getRecommendedGames(progress: Record<string, GameProgress>, extr
 }
 
 export function getEnrichedGames(progress: Record<string, GameProgress>, extra: GameDefinition[] = []) {
-  return [...enrichedCatalog, ...extra].map((game) => ({
+  return extra.map((game) => ({
     ...game,
     progress: progress[game.id]?.progress ?? game.progress,
     unlocked: game.unlocked,

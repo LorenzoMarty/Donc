@@ -18,7 +18,12 @@ export type PublishedGame = {
   category: string;
   skill: string;
   difficulty: string;
+  engine: string;
   questions: PublishedGameQuestion[];
+  payload: Record<string, unknown> | null;
+  description: string | null;
+  thumbnail: string | null;
+  estimated_time: string | null;
 };
 
 export type ChartPoint = {
@@ -567,7 +572,12 @@ export type AIGeneratedGame = {
   category: string;
   skill: string;
   difficulty: string;
+  engine: string;
   questions: GameQuestion[];
+  payload: Record<string, unknown> | null;
+  description: string | null;
+  thumbnail: string | null;
+  estimated_time: string | null;
   status: "pending" | "approved" | "rejected" | "archived";
   admin_notes: string | null;
   targets: string[];

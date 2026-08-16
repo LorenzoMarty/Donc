@@ -29,7 +29,19 @@ class AIGeneratedGame(Base):
     category: Mapped[str] = mapped_column(String(60), nullable=False)
     skill: Mapped[str] = mapped_column(String(120), nullable=False)
     difficulty: Mapped[str] = mapped_column(String(30), nullable=False, default="medium")
+    # Spec migrar-jogos-estaticos-para-banco REQ-1: qual dos 13 engines de jogo este registro
+    # representa. "quiz" e o unico suportado antes desta spec (default cobre linhas existentes).
+    engine: Mapped[str] = mapped_column(String(30), nullable=False, default="quiz")
     questions: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    # Payload generico pros 12 engines nao-quiz (classify/order/fillBlank/duel/escalation/
+    # artificiality/corrector/essayCollapse/textSurgery/survival) — formato depende de `engine`,
+    # nunca usado junto com `questions` no mesmo registro.
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Copy curada dos jogos migrados do catalogo estatico (REQ-2) — nulo pros gerados por IA, que
+    # continuam sintetizando esses campos em runtime (ver mapPublishedGame no frontend).
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    thumbnail: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    estimated_time: Mapped[str | None] = mapped_column(String(20), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
     admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Codigos de CognitiveIssue que este jogo treina — obrigatorio para aprovar (ver

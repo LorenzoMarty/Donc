@@ -5,6 +5,7 @@ import { Check, ChevronDown, ChevronRight, Eye, Loader2, Plus, Save, Sparkles, T
 import { toast } from "sonner";
 
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
+import { GamePayloadEditor } from "@/app/(app)/admin/_tabs/game-payload-editors";
 import { GamePreviewModal } from "@/app/(app)/admin/_tabs/game-preview";
 import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,10 @@ import { apiFetch } from "@/lib/http-client";
 import type { AdminUser, AIGeneratedGame, GameQuestion } from "@/types/api";
 import { cn } from "@/utils";
 
+// Engines cujo conteudo mora em `questions` — os outros usam `payload`, editor dedicado por tipo
+// (spec migrar-jogos-estaticos-para-banco REQ-5).
+const QUESTION_BASED_ENGINES = new Set(["quiz", "timed-rush", "sequence", "choice"]);
+
 function statusBadge(status: string) {
   if (status === "approved") return <Badge variant="success" className="text-xs">Aprovado</Badge>;
   if (status === "rejected") return <Badge variant="destructive" className="text-xs">Rejeitado</Badge>;
@@ -24,16 +29,19 @@ function statusBadge(status: string) {
 function GameCard({
   game,
   users,
+  allGames,
   onReviewed,
   onDeleted,
 }: {
   game: AIGeneratedGame;
   users: AdminUser[];
+  allGames: AIGeneratedGame[];
   onReviewed: (updated: AIGeneratedGame) => void;
   onDeleted: (gameId: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingQ, setEditingQ] = useState<GameQuestion[] | null>(null);
+  const [editingPayload, setEditingPayload] = useState<Record<string, unknown> | null>(null);
   const [notes, setNotes] = useState("");
   const [targets, setTargets] = useState<string[]>(game.targets);
   const [reviewing, setReviewing] = useState(false);
@@ -44,6 +52,7 @@ function GameCard({
   const [generateCount, setGenerateCount] = useState(3);
   const [generatingMore, setGeneratingMore] = useState(false);
 
+  const isQuestionEngine = QUESTION_BASED_ENGINES.has(game.engine);
   const questions = editingQ ?? game.questions;
   const pendingCount = game.questions.filter((q) => q.status === "pending").length;
 
@@ -164,11 +173,13 @@ function GameCard({
           action,
           notes: notes || null,
           questions: editingQ,
+          payload: editingPayload,
           targets,
         }),
       });
       onReviewed(result);
       setEditingQ(null);
+      setEditingPayload(null);
       toast.success(action === "approve" ? "Jogo aprovado." : "Jogo rejeitado.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao revisar.");
@@ -178,15 +189,16 @@ function GameCard({
   }
 
   async function saveEdits() {
-    if (!editingQ) return;
+    if (!editingQ && !editingPayload) return;
     setSaving(true);
     try {
       const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ questions: editingQ, targets }),
+        body: JSON.stringify({ questions: editingQ, payload: editingPayload, targets }),
       });
       onReviewed(result);
       setEditingQ(null);
+      setEditingPayload(null);
       toast.success("Alteracoes salvas.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
@@ -237,13 +249,28 @@ function GameCard({
             {pendingCount > 0 ? <Badge variant="secondary" className="text-xs">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</Badge> : null}
           </div>
           <p className="mt-1 font-semibold">{game.name}</p>
-          <p className="text-xs text-muted-foreground">{game.skill} · {game.questions.length} questões</p>
+          <p className="text-xs text-muted-foreground">
+            {game.skill} · {game.engine}
+            {isQuestionEngine ? ` · ${game.questions.length} questões` : ""}
+          </p>
         </div>
         {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
       </button>
 
       {open && (
         <div className="collapse-in border-t p-4 space-y-4">
+          {!isQuestionEngine && (
+            <GamePayloadEditor
+              engine={game.engine}
+              payload={editingPayload ?? game.payload ?? {}}
+              onChange={setEditingPayload}
+              allGames={allGames}
+              currentGameId={game.id}
+            />
+          )}
+
+          {isQuestionEngine && (
+          <>
           <div className="space-y-4">
             {questions.map((q, qi) => (
               <div key={q.id} className="rounded-control bg-background/60 p-3 shadow-soft space-y-2.5">
@@ -383,9 +410,11 @@ function GameCard({
             difficulty={game.difficulty}
             questions={questions}
           />
+          </>
+          )}
 
-          {editingQ && game.status === "pending" && (
-            <p className="text-xs text-streak">Questões editadas. As alterações serão salvas ao aprovar/rejeitar.</p>
+          {(editingQ || editingPayload) && game.status === "pending" && (
+            <p className="text-xs text-streak">Alterações pendentes. Serão salvas ao aprovar/rejeitar.</p>
           )}
 
           <TargetsField
@@ -419,7 +448,7 @@ function GameCard({
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              {editingQ && (
+              {(editingQ || editingPayload) && (
                 <Button size="sm" onClick={saveEdits} disabled={saving}>
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                   Salvar alterações
@@ -480,7 +509,7 @@ export function AIGamesTab({
 
       <div className="space-y-3">
         {filtered.map((game) => (
-          <GameCard key={game.id} game={game} users={users} onReviewed={onReviewed} onDeleted={onDeleted} />
+          <GameCard key={game.id} game={game} users={users} allGames={games} onReviewed={onReviewed} onDeleted={onDeleted} />
         ))}
         {filtered.length === 0 && (
           <div className="rounded-card bg-card p-8 text-center shadow-soft">

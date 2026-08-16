@@ -3,11 +3,12 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { useGameStore } from "@/stores/game-store";
 import { emptyAdaptiveProfile, isNegativeEvent } from "@/features/gamification/adaptive";
 import { getGameById } from "@/features/gamification/catalog";
+import { enrichedTestCatalog } from "@/features/gamification/catalog.test-fixtures";
 import { HUB_IDS } from "@/features/gamification/symptoms";
 import type { GameDefinition } from "@/features/gamification/types";
 
 const PERSIST_KEY = "donk.games.v1";
-const duel = getGameById("version-duel") as GameDefinition;
+const duel = getGameById("version-duel", enrichedTestCatalog) as GameDefinition;
 
 function readPersisted() {
   const raw = localStorage.getItem(PERSIST_KEY);

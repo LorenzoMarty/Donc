@@ -47,7 +47,12 @@ class PublishedGameRead(BaseModel):
     category: str
     skill: str
     difficulty: str
+    engine: str = "quiz"
     questions: list[PublishedGameQuestion]
+    payload: dict | None = None
+    description: str | None = None
+    thumbnail: str | None = None
+    estimated_time: str | None = None
 
 
 class CognitiveOutcomeIn(BaseModel):
@@ -127,6 +132,11 @@ def published_games(
                 category=game.category,
                 skill=game.skill,
                 difficulty=game.difficulty,
+                engine=game.engine,
+                payload=game.payload,
+                description=game.description,
+                thumbnail=game.thumbnail,
+                estimated_time=game.estimated_time,
                 questions=[
                     PublishedGameQuestion(
                         prompt=q.get("prompt", ""),
