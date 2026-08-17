@@ -130,7 +130,7 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
                     !checked && marked && "border-primary/60 bg-primary/10",
                     !checked && !marked && "hover:border-primary/40",
                     verdictOk && "border-emerald-500/55 bg-emerald-500/10",
-                    verdictWrong && "border-destructive/55 bg-destructive/10",
+                    verdictWrong && "border-warning/55 bg-warning/10",
                   )}
                 >
                   <span className={cn("mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded border", marked ? "border-primary bg-primary text-primary-foreground" : "border-border")}>
@@ -144,7 +144,7 @@ export function CorrectorSession({ game, category }: { game: GameDefinition; cat
                       </span>
                     )}
                   </span>
-                  {checked ? (verdictOk ? <Check className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" /> : <X className="h-4 w-4 shrink-0 text-red-700" aria-hidden="true" />) : null}
+                  {checked ? (verdictOk ? <Check className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" /> : <X className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />) : null}
                 </button>
               );
             })}

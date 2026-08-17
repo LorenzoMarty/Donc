@@ -163,7 +163,7 @@ export function EssayCollapseSession({ game, category }: { game: GameDefinition;
                             "rounded-md border px-3 py-1.5 text-sm transition-colors",
                             !checked && isPicked ? "border-primary bg-primary/10" : "border-border bg-background/70",
                             reveal && "border-emerald-500/55 bg-emerald-500/10",
-                            wrong && "border-destructive/55 bg-destructive/10",
+                            wrong && "border-warning/55 bg-warning/10",
                           )}
                         >
                           {option.text}
@@ -219,13 +219,13 @@ function CollapseRow({ cell, position, disabled, verdict }: { cell: Cell; positi
         !disabled && "cursor-grab",
         isDragging && "opacity-50 shadow-lg",
         verdict === "ok" && "border-emerald-500/55 bg-emerald-500/10",
-        verdict === "no" && "border-destructive/55 bg-destructive/10",
+        verdict === "no" && "border-warning/55 bg-warning/10",
       )}
       {...(disabled ? {} : listeners)}
       {...attributes}
     >
       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-card text-xs font-semibold">{position}</span>
-      {verdict === "ok" ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" /> : verdict === "no" ? <X className="mt-0.5 h-4 w-4 shrink-0 text-red-700" aria-hidden="true" /> : <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
+      {verdict === "ok" ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" /> : verdict === "no" ? <X className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" /> : <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
       <span>{cell.text}</span>
     </li>
   );

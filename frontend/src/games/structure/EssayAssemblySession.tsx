@@ -216,7 +216,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
             transition={{ duration: feedback === "wrong" ? 0.34 : 0.44 }}
             className={cn(
               "game-surface relative overflow-hidden bg-card p-4 md:p-5",
-              feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "",
+              feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-warning/45" : "",
             )}
           >
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-primary/45" aria-hidden="true" />
@@ -340,7 +340,7 @@ function DropZone({
         "game-tile min-h-52 bg-card p-3 transition-all duration-200",
         isOver && "border-primary/55 bg-primary/10",
         sectionStatus === "correct" && "border-emerald-500/35 bg-emerald-500/10",
-        sectionStatus === "wrong" && "border-destructive/35 bg-destructive/10",
+        sectionStatus === "wrong" && "border-warning/35 bg-warning/10",
       )}
     >
       <div className="mb-3 flex items-start justify-between gap-3">

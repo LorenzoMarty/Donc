@@ -33,7 +33,7 @@ por projeto, não registro de decisões/arquitetura).
 ## Contexto no Obsidian
 
 O contexto que cresce (registros de tarefa, arquitetura, decisões) vive no vault **E_Mind**, em
-`02 - Projetos/Donc ENEM/` (hub `Donc ENEM.md` + `Arquitetura.md` + `Decisões.md` + `Registros/`).
+`02 - Projetos/Donc/` (hub `Donc.md` + `Arquitetura.md` + `Decisões.md` + `Registros/`).
 Gravado/atualizado pela skill `knowledge-manager` (regra 3). Para dúvidas sobre o sistema, leia este
 arquivo e o contexto lá antes de explorar código (regra 2). **Não** recriar `claude/docs/` no repo.
 
@@ -82,7 +82,7 @@ No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz pr
 - `src/components/ui/` — primitivos shadcn/radix; formulários usam `Input`/`Textarea`/`Select`/`Field`/`Modal` compartilhados (nunca `<input>` cru)
 - `src/lib/http-client.ts` — `apiFetch<T>()` (Bearer token + desempacota `ApiEnvelope<T>`); `src/services/api.ts` re-exporta tudo
 
-Detalhes (sidebar, primitivos de formulário, categorias de jogos): registro `2026-06-11-enxugamento-claude-md` no Obsidian (`02 - Projetos/Donc ENEM/Registros/`).
+Detalhes (sidebar, primitivos de formulário, categorias de jogos): registro `2026-06-11-enxugamento-claude-md` no Obsidian (`02 - Projetos/Donc/Registros/`).
 
 ### Autenticação
 Token em `localStorage` (`access_token`) + cookie (SSR/middleware). `AuthContext` + `useAuth()` (com `refresh()`) em `providers/app-providers.tsx`. Backend: JWT (HS256) via `python-jose`; `get_current_user` lê header ou cookie; `require_admin` verifica `UserRole.ADMIN`. `AppError` usa códigos como `not_authenticated`, `invalid_token`. Conta: `PATCH /auth/me` (editar nome) e `POST /auth/change-password` (senha atual + nova; erros `invalid_current_password`/`password_unchanged`). `UserRead` expõe `created_at`.

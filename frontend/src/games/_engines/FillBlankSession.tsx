@@ -118,7 +118,7 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
                   verdict === "correct"
                     ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-800"
                     : verdict === "wrong"
-                      ? "border-destructive/60 bg-destructive/10 text-red-800"
+                      ? "border-warning/60 bg-warning/10 text-warning"
                       : "border-primary/50 bg-primary/5 text-primary",
                 )}
               >
@@ -166,7 +166,7 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
                     "mt-5 rounded-md border p-4 text-sm leading-6",
                     verdict === "correct"
                       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
-                      : "border-destructive/25 bg-destructive/10 text-red-800",
+                      : "border-warning/25 bg-warning/10 text-warning",
                   )}
                 >
                   <p className="flex items-center gap-2 font-semibold">

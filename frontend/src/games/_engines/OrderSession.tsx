@@ -179,7 +179,7 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
                     "mt-5 rounded-md border p-4 text-sm leading-6",
                     verdict === "correct"
                       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
-                      : "border-destructive/25 bg-destructive/10 text-red-800",
+                      : "border-warning/25 bg-warning/10 text-warning",
                   )}
                 >
                   <p className="font-semibold">{verdict === "correct" ? "Sequência correta!" : "Ainda não está na ordem ideal."}</p>
@@ -235,7 +235,7 @@ function SortableRow({
         !disabled && "cursor-grab",
         isDragging && "opacity-50 shadow-lg",
         verdict === "correct" && "border-emerald-500/55 bg-emerald-500/10",
-        verdict === "wrong" && "border-destructive/55 bg-destructive/10",
+        verdict === "wrong" && "border-warning/55 bg-warning/10",
       )}
       {...(disabled ? {} : listeners)}
       {...attributes}
@@ -246,7 +246,7 @@ function SortableRow({
       {verdict === "correct" ? (
         <Check className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
       ) : verdict === "wrong" ? (
-        <X className="h-4 w-4 shrink-0 text-red-700" aria-hidden="true" />
+        <X className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
       ) : (
         <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       )}

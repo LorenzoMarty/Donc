@@ -158,7 +158,7 @@ export function QuizSession({
                         className={cn(
                           "min-h-16 rounded-2xl border border-border bg-card px-6 py-5 text-left text-base font-semibold leading-6 shadow-soft transition-colors md:text-lg",
                           isCorrect && "border-primary/70 bg-primary/18",
-                          isWrong && "border-destructive/50 bg-destructive/10",
+                          isWrong && "border-warning/50 bg-warning/10",
                         )}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -166,7 +166,7 @@ export function QuizSession({
                           {isCorrect ? (
                             <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
                           ) : isWrong ? (
-                            <XCircle className="h-5 w-5 shrink-0 text-destructive" />
+                            <XCircle className="h-5 w-5 shrink-0 text-warning" />
                           ) : null}
                         </div>
                       </motion.button>

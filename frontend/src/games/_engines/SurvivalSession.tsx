@@ -173,12 +173,12 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
                       "min-h-16 rounded-2xl border border-border bg-card px-6 py-5 text-left text-base font-medium leading-6 shadow-soft transition-colors md:text-lg",
                       selected === null && "hover:border-primary/50 hover:bg-primary/5",
                       isRight && "border-emerald-500/55 bg-emerald-500/10",
-                      isWrong && "border-destructive/55 bg-destructive/10",
+                      isWrong && "border-warning/55 bg-warning/10",
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <span>{option}</span>
-                      {isRight ? <Check className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden="true" /> : isWrong ? <X className="h-5 w-5 shrink-0 text-red-700" aria-hidden="true" /> : null}
+                      {isRight ? <Check className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden="true" /> : isWrong ? <X className="h-5 w-5 shrink-0 text-warning" aria-hidden="true" /> : null}
                     </div>
                   </button>
                 );
