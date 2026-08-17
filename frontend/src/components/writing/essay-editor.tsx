@@ -551,30 +551,17 @@ function MotivatorsBooklet({
 }) {
   if (!theme) return null;
 
-  if (!theme.supporting_texts?.length) {
-    return (
-      <div className="mx-auto max-w-[720px]">
-        <div className="rounded-card bg-card px-5 py-6 shadow-elevated md:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
-          <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal md:text-2xl">{theme.title}</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{theme.context}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-[720px] space-y-4">
-      <div className="rounded-card bg-card px-5 py-6 shadow-elevated md:px-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
-        <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal md:text-2xl">{theme.title}</h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{theme.context}</p>
-      </div>
-      {theme.supporting_texts.map((text, index) => (
-        <div key={index} className="rounded-card bg-card px-5 py-5 shadow-elevated md:px-8">
+    <div className="mx-auto max-w-[940px] rounded-card bg-[#fffdf8] px-5 py-6 shadow-elevated md:px-6 lg:px-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
+      <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal text-[#26241f] md:text-2xl">{theme.title}</h2>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3c3c43]/72">{theme.context}</p>
+
+      {theme.supporting_texts?.map((text, index) => (
+        <div key={index} className="mt-6 border-t border-[#3c3c43]/12 pt-5">
           <div className="mb-3 flex items-center gap-2">
             <SupportingTextIcon type={text.type} />
-            <h3 className="text-sm font-semibold leading-snug">{text.title}</h3>
+            <h3 className="text-sm font-semibold leading-snug text-[#26241f]">{text.title}</h3>
           </div>
           <SupportingTextBody text={text} themeId={theme.id} textIndex={index} activeTool={activeTool} />
         </div>
