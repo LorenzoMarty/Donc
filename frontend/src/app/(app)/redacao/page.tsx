@@ -232,7 +232,7 @@ function ThemePicker({
               <p className="text-safe mt-2.5 line-clamp-2 flex-1 text-sm text-muted-foreground">{theme.context}</p>
               <div className="mt-4 flex items-center justify-between border-t border-border pt-3.5">
                 <span className="text-sm text-muted-foreground">{theme.source}</span>
-                <span className="flex items-center gap-1.5 text-sm font-bold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="flex items-center gap-1.5 text-sm font-bold text-primary opacity-70 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                   Escrever
                   <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </span>

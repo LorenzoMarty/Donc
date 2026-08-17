@@ -6,22 +6,20 @@ import {
   closestCorners,
   DndContext,
   DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
   useDraggable,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { CSS as DndCss } from "@dnd-kit/utilities";
-import { Check, GripVertical, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { ClassifyItem, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
+import { DragHandle } from "@/games/_engines/DragHandle";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
+import { useDragSensors } from "@/games/_engines/useDragSensors";
 import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,10 +47,7 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
   const [checked, setChecked] = useState(false);
   const [result, setResult] = useState<GameCompletion | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor),
-  );
+  const sensors = useDragSensors();
 
   const itemMap = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
   const placedCount = useMemo(() => items.filter((item) => placement[item.id] !== "bank").length, [items, placement]);
@@ -220,29 +215,31 @@ function DraggableChip({ item, disabled, verdict }: { item: ClassifyItem; disabl
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: item.id, disabled });
   const style = transform ? { transform: DndCss.Translate.toString(transform) } : undefined;
   return (
-    <button
+    <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
-      type="button"
       className={cn(
-        "flex max-w-full items-center gap-1.5 rounded-md border bg-background/70 px-3 py-2 text-left text-sm font-medium transition-colors",
-        !disabled && "cursor-grab hover:border-primary/50 hover:bg-primary/5",
+        "group flex max-w-full items-center gap-1 rounded-md border bg-background/70 py-1 pl-1 pr-3 text-sm font-medium transition-colors",
         isDragging && "opacity-40",
         verdict === "correct" && "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
         verdict === "wrong" && "border-warning/60 bg-warning/10 text-warning",
       )}
     >
       {verdict === "correct" ? (
-        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <Check className="ml-2 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       ) : verdict === "wrong" ? (
-        <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <X className="ml-2 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       ) : (
-        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <DragHandle
+          attributes={attributes}
+          listeners={listeners}
+          disabled={disabled}
+          className="h-8 w-8"
+          label={`Arrastar "${item.text}"`}
+        />
       )}
-      <span className="leading-5">{item.text}</span>
-    </button>
+      <span className="min-w-0 leading-5">{item.text}</span>
+    </div>
   );
 }
 
@@ -250,11 +247,10 @@ function ChipBody({ text, dragging }: { text: string; dragging?: boolean }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 rounded-md border bg-card px-3 py-2 text-sm font-medium shadow-lg",
+        "flex items-center rounded-md border bg-card px-3 py-2 text-sm font-medium shadow-lg",
         dragging && "border-primary/60",
       )}
     >
-      <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="leading-5">{text}</span>
     </div>
   );

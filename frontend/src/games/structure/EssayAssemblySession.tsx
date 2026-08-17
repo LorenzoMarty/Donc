@@ -6,22 +6,22 @@ import {
   closestCorners,
   DndContext,
   DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
   type UniqueIdentifier,
   useDroppable,
-  useSensor,
-  useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Clock, GripVertical, RotateCcw, Trophy } from "lucide-react";
+import { CheckCircle2, Clock, RotateCcw, Trophy } from "lucide-react";
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
+import { DragHandle } from "@/games/_engines/DragHandle";
+import { useDragSensors } from "@/games/_engines/useDragSensors";
 import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
@@ -62,10 +62,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
   const [result, setResult] = useState<GameCompletion | null>(null);
   const [finalValidation, setFinalValidation] = useState<ValidationResult | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useDragSensors({ keyboardCoordinateGetter: sortableKeyboardCoordinates });
 
   const blockMap = useMemo(() => new Map(level.blocks.map((block) => [block.id, block])), [level.blocks]);
   const activeBlock = activeId ? blockMap.get(activeId) : undefined;
@@ -402,8 +399,8 @@ function EssayBlockCard({
   active?: boolean;
   dragging?: boolean;
   refCallback?: (node: HTMLElement | null) => void;
-  attributes?: React.HTMLAttributes<HTMLElement>;
-  listeners?: Record<string, unknown>;
+  attributes?: DraggableAttributes;
+  listeners?: DraggableSyntheticListeners;
   style?: React.CSSProperties;
 }) {
   return (
@@ -415,24 +412,17 @@ function EssayBlockCard({
       exit={{ opacity: 0, scale: 0.98 }}
       style={style}
       className={cn(
-        "game-tile touch-none bg-background/70 p-3 text-sm leading-6 text-foreground transition-colors",
+        "group game-tile bg-background/70 p-2 text-sm leading-6 text-foreground transition-colors",
         active && "border-primary/45 bg-card shadow-lg",
         block.distractor && "bg-muted/50 text-muted-foreground",
       )}
     >
-      <div className="flex items-start gap-3">
-        <button
-          type="button"
-          className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-md border border-primary/20 bg-primary/10 text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/45"
-          {...(attributes as React.ButtonHTMLAttributes<HTMLButtonElement> | undefined)}
-          {...(listeners as React.ButtonHTMLAttributes<HTMLButtonElement> | undefined)}
-        >
-          <GripVertical className="h-4 w-4" aria-hidden="true" />
-        </button>
-        <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1 px-1 py-1">
           <p>{block.text}</p>
           {block.distractor && <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Distrator</p>}
         </div>
+        <DragHandle attributes={attributes} listeners={listeners} label="Arrastar bloco" />
       </div>
     </motion.article>
   );

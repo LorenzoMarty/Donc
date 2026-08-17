@@ -84,6 +84,31 @@ No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz pr
 
 Detalhes (sidebar, primitivos de formulário, categorias de jogos): registro `2026-06-11-enxugamento-claude-md` no Obsidian (`02 - Projetos/Donc/Registros/`).
 
+### Interação multi-input (mouse, touch, caneta/stylus)
+Padrões obrigatórios pra qualquer manipulação direta nova (drag, seleção, gestos) — evita reintroduzir
+os problemas mapeados na auditoria de UX multi-input (2026-08-16):
+
+- **Pointer Events, nunca mouse/touch separados.** `onPointerDown/Move/Up/Cancel` cobre mouse, touch e
+  caneta com o mesmo código. Nunca adicionar `onMouseUp`/`onTouchStart` em paralelo no mesmo fluxo de
+  manipulação direta. Referências corretas no código: Dock arrastável e marca-texto em
+  `components/writing/essay-editor.tsx` (`handleDragPointerDown/Move/Up`, `setPointerCapture`) e
+  `hooks/useMarkOnSelection.ts` (`onPointerUp` cobre Apple Pencil/Safari, que não dispara `mouseup`).
+- **Drag-and-drop**: sensors do dnd-kit centralizados em `games/_engines/useDragSensors.ts` — nunca
+  configurar `PointerSensor`/`KeyboardSensor` direto num engine novo, sempre importar esse hook. Handle
+  de arrasto sempre isolado do corpo do item via `games/_engines/DragHandle.tsx` (44×44,
+  `touch-action: none` só no handle, sem ícone de "6 pontinhos") — o card/item nunca é o handle
+  inteiro, senão arrastar entra em conflito com rolar a página em listas verticais (touch/tablet).
+- **Alvo de toque mínimo 44×44** (`h-11 w-11` no Tailwind) em qualquer controle voltado ao aluno.
+- **Affordance nunca só em `:hover`** — todo indicador funcional relevante precisa de estado
+  sempre-visível (ou opacidade base) + `group-focus-visible`, hover só intensifica.
+- **`useCoarsePointer()`/`useHoverCapable()`** (`hooks/useMediaQuery.ts`) — única fonte de verdade pra
+  decisões de comportamento por tipo de input (ex.: pular `autoFocus` em touch pra não abrir teclado
+  virtual antes da hora). Nunca decidir isso por largura de tela.
+- **Modal vira bottom sheet abaixo de `sm`** automaticamente (`components/ui/modal.tsx`) — mesmo
+  componente, não criar uma variante mobile separada por tela.
+- **Timers de jogo**: folga fixa `games/_engines/timing.ts#INPUT_GRACE_MS` entre o cronômetro chegar a
+  zero e o timeout valer — absorve latência de input de touch/caneta sem mudar a duração exibida.
+
 ### Autenticação
 Token em `localStorage` (`access_token`) + cookie (SSR/middleware). `AuthContext` + `useAuth()` (com `refresh()`) em `providers/app-providers.tsx`. Backend: JWT (HS256) via `python-jose`; `get_current_user` lê header ou cookie; `require_admin` verifica `UserRole.ADMIN`. `AppError` usa códigos como `not_authenticated`, `invalid_token`. Conta: `PATCH /auth/me` (editar nome) e `POST /auth/change-password` (senha atual + nova; erros `invalid_current_password`/`password_unchanged`). `UserRead` expõe `created_at`.
 

@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
@@ -20,12 +12,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS as DndCss } from "@dnd-kit/utilities";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, GripVertical, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, OrderRound } from "@/features/gamification/types";
+import { DragHandle } from "@/games/_engines/DragHandle";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
+import { useDragSensors } from "@/games/_engines/useDragSensors";
 import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
 import { Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -79,10 +73,7 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
     setCells(initialCells);
   }
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useDragSensors({ keyboardCoordinateGetter: sortableKeyboardCoordinates });
 
   if (!round && !result) {
     return (
@@ -231,26 +222,23 @@ function SortableRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-3 rounded-md border bg-background/70 p-3 text-sm",
-        !disabled && "cursor-grab",
+        "group flex items-center gap-2 rounded-md border bg-background/70 py-1.5 pl-3 pr-1.5 text-sm sm:gap-3",
         isDragging && "opacity-50 shadow-lg",
         verdict === "correct" && "border-emerald-500/55 bg-emerald-500/10",
         verdict === "wrong" && "border-warning/55 bg-warning/10",
       )}
-      {...(disabled ? {} : listeners)}
-      {...attributes}
     >
       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-border bg-card text-xs font-semibold">
         {position}
       </span>
+      <span className="min-w-0 flex-1 leading-6">{cell.text}</span>
       {verdict === "correct" ? (
-        <Check className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
+        <Check className="mr-2 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
       ) : verdict === "wrong" ? (
-        <X className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+        <X className="mr-2 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
       ) : (
-        <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <DragHandle attributes={attributes} listeners={listeners} disabled={disabled} />
       )}
-      <span className="leading-6">{cell.text}</span>
     </li>
   );
 }
