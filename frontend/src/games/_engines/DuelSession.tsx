@@ -118,12 +118,12 @@ export function DuelSession({ game, category }: { game: GameDefinition; category
                     "rounded-2xl border border-border bg-card p-5 text-left text-sm leading-6 shadow-soft transition-colors",
                     picked === null && "hover:border-primary/50 hover:bg-primary/5",
                     isWinner && "border-emerald-500/55 bg-emerald-500/10",
-                    isWrongPick && "border-destructive/55 bg-destructive/10",
+                    isWrongPick && "border-warning/55 bg-warning/10",
                   )}
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Versão {side.toUpperCase()}</span>
-                    {isWinner ? <Check className="h-4 w-4 text-emerald-700" aria-hidden="true" /> : isWrongPick ? <X className="h-4 w-4 text-red-700" aria-hidden="true" /> : null}
+                    {isWinner ? <Check className="h-4 w-4 text-emerald-700" aria-hidden="true" /> : isWrongPick ? <X className="h-4 w-4 text-warning" aria-hidden="true" /> : null}
                   </div>
                   {side === "a" ? round.a : round.b}
                 </button>

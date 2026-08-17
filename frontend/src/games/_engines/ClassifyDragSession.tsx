@@ -231,7 +231,7 @@ function DraggableChip({ item, disabled, verdict }: { item: ClassifyItem; disabl
         !disabled && "cursor-grab hover:border-primary/50 hover:bg-primary/5",
         isDragging && "opacity-40",
         verdict === "correct" && "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
-        verdict === "wrong" && "border-destructive/60 bg-destructive/10 text-red-800",
+        verdict === "wrong" && "border-warning/60 bg-warning/10 text-warning",
       )}
     >
       {verdict === "correct" ? (

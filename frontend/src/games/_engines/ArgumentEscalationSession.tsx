@@ -164,12 +164,12 @@ export function ArgumentEscalationSession({ game, category }: { game: GameDefini
                     "game-tile bg-background/64 p-4 text-left text-sm leading-6 transition-colors",
                     picked === null && "hover:border-primary/50 hover:bg-primary/5",
                     isRight && "border-emerald-500/55 bg-emerald-500/10",
-                    isWrongPick && "border-destructive/55 bg-destructive/10",
+                    isWrongPick && "border-warning/55 bg-warning/10",
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span>{option.text}</span>
-                    {isRight ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" /> : isWrongPick ? <X className="mt-0.5 h-4 w-4 shrink-0 text-red-700" aria-hidden="true" /> : null}
+                    {isRight ? <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" /> : isWrongPick ? <X className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" /> : null}
                   </div>
                   {picked !== null && option.note && (isRight || isWrongPick) && (
                     <p className="mt-2 text-xs text-muted-foreground">{option.note}</p>

@@ -213,7 +213,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
               <div
                 className={cn(
                   "mt-4 rounded-3xl border bg-card px-8 py-6 shadow-elevated md:px-12 md:py-10",
-                  feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-destructive/45" : "border-transparent",
+                  feedback === "correct" ? "border-emerald-500/45" : feedback === "wrong" ? "border-warning/45" : "border-transparent",
                 )}
               >
                 <h2 className="font-display text-2xl font-semibold leading-snug tracking-normal text-foreground md:text-4xl">
@@ -237,7 +237,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
                       className={cn(
                         "min-h-16 rounded-2xl border border-border bg-card px-6 py-5 text-left text-base font-semibold leading-6 tracking-normal text-foreground shadow-soft transition-all duration-200 hover:bg-primary/10 md:text-lg",
                         isCorrectOption && "border-emerald-500/55 bg-emerald-500/10",
-                        isWrong && "border-destructive/55 bg-destructive/10",
+                        isWrong && "border-warning/55 bg-warning/10",
                       )}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -245,7 +245,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
                         {isCorrectOption ? (
                           <Check className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden="true" />
                         ) : isWrong ? (
-                          <X className="h-5 w-5 shrink-0 text-red-700" aria-hidden="true" />
+                          <X className="h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
                         ) : null}
                       </div>
                     </motion.button>
@@ -263,7 +263,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
                       "mt-5 rounded-2xl border p-4 text-left text-sm leading-6",
                       feedback === "correct"
                         ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
-                        : "border-destructive/25 bg-destructive/10 text-red-800",
+                        : "border-warning/25 bg-warning/10 text-warning",
                     )}
                   >
                     {feedback === "correct" ? "Boa. " : "Revise: "}

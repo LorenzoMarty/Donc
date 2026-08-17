@@ -158,7 +158,7 @@ export function ArtificialitySession({ game, category }: { game: GameDefinition;
                   "mt-5 rounded-2xl border p-4 text-left text-sm leading-6",
                   verdictOk && (flawPick === null || round.flaw?.options.find((o) => o.id === flawPick)?.correct)
                     ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800"
-                    : "border-destructive/25 bg-destructive/10 text-red-800",
+                    : "border-warning/25 bg-warning/10 text-warning",
                 )}
               >
                 <p className="flex items-center gap-2 font-semibold">

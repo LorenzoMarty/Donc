@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Eraser, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Eraser, GripVertical, Send, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RewardAnimation, SupportingTextBody, SupportingTextIcon } from "@/components/shared/motion-system";
@@ -333,11 +333,16 @@ function PageTab({ active, onClick, label }: { active: boolean; onClick: () => v
   );
 }
 
+/** Posição arrastada do dock persiste entre sessões (fração 0..1 da área da folha). */
+const DOCK_POSITION_STORAGE_KEY = "donk.dock-position.v1";
+
 /**
  * Dock fixo estilo macOS — canetas/marca-texto sublinham o trecho selecionado na folha (não
  * desenho livre), borracha/limpar removem marcações, e "+" cria um post-it livre arrastável por
  * toda a tela (`useFreePostItsStore`), reunindo no mesmo lugar as ferramentas que antes viviam no
- * `PenBar`.
+ * `PenBar`. O próprio dock é arrastável pelo grip à esquerda — em tablet a posição padrão pode
+ * conflitar com controles do sistema (barra de gestos, opções da tela), então o usuário pode
+ * reposicioná-lo; a posição escolhida fica salva em localStorage.
  */
 function Dock({
   activeTool,
@@ -352,9 +357,97 @@ function Dock({
   hasMarks: boolean;
   onAddPostIt: () => void;
 }) {
+  const dockRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef<{
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    parentWidth: number;
+    parentHeight: number;
+  } | null>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(DOCK_POSITION_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+
+  function handleDragPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    const dock = dockRef.current;
+    const parent = dock?.offsetParent as HTMLElement | null;
+    if (!dock || !parent) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const parentRect = parent.getBoundingClientRect();
+    const dockRect = dock.getBoundingClientRect();
+    draggingRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: (dockRect.left - parentRect.left) / parentRect.width,
+      originY: (dockRect.top - parentRect.top) / parentRect.height,
+      parentWidth: parentRect.width,
+      parentHeight: parentRect.height,
+    };
+  }
+
+  function handleDragPointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const dragging = draggingRef.current;
+    if (!dragging) return;
+    const dx = (event.clientX - dragging.startX) / dragging.parentWidth;
+    const dy = (event.clientY - dragging.startY) / dragging.parentHeight;
+    const nextX = Math.min(0.92, Math.max(0, dragging.originX + dx));
+    const nextY = Math.min(0.94, Math.max(0, dragging.originY + dy));
+    setDragPosition({ x: nextX, y: nextY });
+  }
+
+  function handleDragPointerUp() {
+    if (!draggingRef.current) return;
+    draggingRef.current = null;
+    setDragPosition((current) => {
+      if (current) {
+        setPosition(current);
+        try {
+          localStorage.setItem(DOCK_POSITION_STORAGE_KEY, JSON.stringify(current));
+        } catch {
+          // localStorage indisponível — posição fica só na sessão atual
+        }
+      }
+      return null;
+    });
+  }
+
+  const livePosition = dragPosition ?? position;
+
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-      <div className="pointer-events-auto flex items-end gap-1.5 rounded-card border border-white/60 bg-card/80 px-2.5 py-2 shadow-elevated backdrop-blur-xl">
+    <div
+      ref={dockRef}
+      className={cn(
+        "pointer-events-auto absolute flex items-end gap-1 rounded-card border border-white/60 bg-card/80 px-2.5 py-2 shadow-elevated backdrop-blur-xl",
+        !livePosition && "inset-x-0 bottom-6 mx-auto w-fit",
+      )}
+      style={livePosition ? { left: `${livePosition.x * 100}%`, top: `${livePosition.y * 100}%` } : undefined}
+    >
+      <div
+        onPointerDown={handleDragPointerDown}
+        onPointerMove={handleDragPointerMove}
+        onPointerUp={handleDragPointerUp}
+        onPointerCancel={handleDragPointerUp}
+        role="button"
+        tabIndex={0}
+        aria-label="Mover dock"
+        title="Arrastar dock"
+        className="mb-1.5 grid h-9 w-4 shrink-0 cursor-grab touch-none place-items-center self-stretch rounded-control text-muted-foreground/40 hover:bg-muted/60 hover:text-muted-foreground active:cursor-grabbing"
+      >
+        <GripVertical className="h-4 w-4" aria-hidden="true" />
+      </div>
+
+      <div className="mr-0.5 h-7 w-px self-center bg-border" aria-hidden="true" />
+
+      <div className="flex items-end gap-1.5">
         {PEN_SWATCHES.map((pen) => {
           const armed = activeTool === pen.tool;
           return (
