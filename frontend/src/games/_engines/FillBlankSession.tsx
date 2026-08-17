@@ -12,6 +12,7 @@ import { shuffle } from "@/games/_engines/shuffleOptions";
 import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
 import { Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
+import { useCoarsePointer } from "@/hooks/useMediaQuery";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
@@ -44,6 +45,9 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
   const [score, setScore] = useState(0);
   const [seconds] = useState(0);
   const [result, setResult] = useState<GameCompletion | null>(null);
+  // Em touch/tablet, autoFocus abre o teclado virtual antes do aluno ler o enunciado — só foca
+  // sozinho quando o dispositivo tem ponteiro fino (mouse/trackpad).
+  const isCoarsePointer = useCoarsePointer();
 
   const round = rounds[step];
   const acceptedSet = useMemo(() => new Set((round?.accepted ?? []).map(normalize)), [round]);
@@ -140,7 +144,7 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
                 disabled={verdict !== null}
-                autoFocus
+                autoFocus={!isCoarsePointer}
                 placeholder="Digite sua resposta..."
                 className="flex-1 rounded-md border border-border bg-background/70 px-4 py-3 text-base outline-none transition-colors focus:border-primary focus:bg-background disabled:opacity-70"
               />

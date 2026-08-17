@@ -10,6 +10,7 @@ import type { GameCategory, GameCompletion, GameDefinition, GameQuestion } from 
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle, shuffleQuestionOptions } from "@/games/_engines/shuffleOptions";
 import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
+import { INPUT_GRACE_MS } from "@/games/_engines/timing";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
@@ -105,7 +106,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
 
   useEffect(() => {
     if (result || selected !== null || timeLeft > 0) return;
-    const id = window.setTimeout(() => answer(-1, true), 0);
+    const id = window.setTimeout(() => answer(-1, true), INPUT_GRACE_MS);
     return () => window.clearTimeout(id);
   }, [answer, result, selected, timeLeft]);
 

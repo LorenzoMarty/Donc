@@ -377,6 +377,9 @@ function HighlightableText({
     (quote: string, tool: EssayMarkTool) => {
       addHighlight(themeId, textIndex, textTitle, quote, tool);
       window.getSelection()?.removeAllRanges();
+      // Uma 2ª limpeza no próximo frame — em touch, o SO às vezes decide mostrar a barra de
+      // "Copiar/Recortar" um frame depois do release, mesmo com a seleção já removida aqui.
+      requestAnimationFrame(() => window.getSelection()?.removeAllRanges());
     },
     [addHighlight, themeId, textIndex, textTitle],
   );
@@ -393,7 +396,11 @@ function HighlightableText({
   const segments = buildHighlightedSegments(content, textHighlights);
 
   return (
-    <p ref={containerRef} onPointerUp={handleSelectionRelease} className="text-xs leading-5 text-muted-foreground">
+    <p
+      ref={containerRef}
+      onPointerUp={handleSelectionRelease}
+      className={cn("text-xs leading-5 text-muted-foreground", activeTool && "[-webkit-touch-callout:none]")}
+    >
       {segments.map((segment, index) =>
         segment.highlightId ? (
           <mark

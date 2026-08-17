@@ -84,7 +84,7 @@ export function LessonPosterCard({ lesson, className }: { lesson: LessonPosterIn
               ? "bg-background/80 text-foreground"
               : lesson.completed
                 ? "bg-primary text-primary-foreground"
-                : "bg-background/80 text-foreground opacity-0 group-hover:opacity-100",
+                : "bg-background/80 text-foreground opacity-80 group-hover:opacity-100 group-focus-visible:opacity-100",
           )}
         >
           {locked ? (

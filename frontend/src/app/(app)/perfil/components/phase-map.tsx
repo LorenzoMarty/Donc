@@ -142,9 +142,10 @@ export function PhaseMapCard({ progress }: { progress: Record<string, GameProgre
                 fill={STATE_COLOR[p.node.state]}
                 stroke="hsl(var(--card))"
                 strokeWidth={2}
-                className="cursor-default"
-                onMouseEnter={() => setHoveredId(p.node.gameId)}
-                onMouseLeave={() => setHoveredId((current) => (current === p.node.gameId ? null : current))}
+                className="cursor-pointer"
+                onPointerEnter={(event) => event.pointerType !== "touch" && setHoveredId(p.node.gameId)}
+                onPointerLeave={(event) => event.pointerType !== "touch" && setHoveredId((current) => (current === p.node.gameId ? null : current))}
+                onClick={() => setHoveredId((current) => (current === p.node.gameId ? null : p.node.gameId))}
               >
                 <title>
                   {p.node.name} — {STATE_LABEL[p.node.state]}

@@ -9,6 +9,7 @@ import { Check, Clock, Flame, X } from "lucide-react";
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
 import { masteryForHub, selectItemsBySkill } from "@/features/gamification/adaptive";
 import { EngineResult } from "@/games/_engines/EngineResult";
+import { INPUT_GRACE_MS } from "@/games/_engines/timing";
 import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,7 +145,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
 
   useEffect(() => {
     if (result || feedback || selected !== null || timeLeft > 0) return;
-    const id = window.setTimeout(() => answer(-1, true), 0);
+    const id = window.setTimeout(() => answer(-1, true), INPUT_GRACE_MS);
     return () => window.clearTimeout(id);
   }, [answer, feedback, result, selected, timeLeft]);
 

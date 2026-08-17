@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Eraser, GripVertical, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Eraser, Send, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RewardAnimation, SupportingTextBody, SupportingTextIcon } from "@/components/shared/motion-system";
@@ -157,12 +157,33 @@ export function EssayEditor({
     setMarks((prev) => prev.filter((mark) => !mark.quote.includes(quote) && !quote.includes(mark.quote)));
   }, []);
 
-  const handleSelectionRelease = useMarkOnSelection({
+  const handleMarkOnSelection = useMarkOnSelection({
     activeTool,
     getSelectedQuote,
     onMark: handleMark,
     onErase: handleErase,
   });
+
+  /**
+   * Com ferramenta armada, colapsa a seleção do textarea logo depois de marcar — sem isso, em
+   * touch/stylus o menu nativo do SO (Copiar/Recortar/Colar) fica sobreposto exatamente onde o
+   * grifo acabou de aparecer, competindo pela mesma seleção. `requestAnimationFrame` porque
+   * `setSelectionRange` síncrono no mesmo `pointerup` pode ser sobrescrito pela finalização da
+   * seleção nativa do navegador.
+   */
+  const handleSelectionRelease = useCallback(
+    (event: React.PointerEvent<HTMLTextAreaElement>) => {
+      const hadActiveTool = Boolean(activeTool);
+      handleMarkOnSelection();
+      if (!hadActiveTool) return;
+      const textarea = event.currentTarget;
+      const collapseAt = textarea.selectionEnd;
+      requestAnimationFrame(() => {
+        textarea.setSelectionRange(collapseAt, collapseAt);
+      });
+    },
+    [activeTool, handleMarkOnSelection],
+  );
 
   function syncOverlayScroll() {
     if (overlayRef.current && textareaRef.current) {
@@ -280,7 +301,10 @@ export function EssayEditor({
                       onPointerUp={handleSelectionRelease}
                       spellCheck
                       placeholder="Comece sua redação aqui..."
-                      className="font-display absolute inset-0 h-full w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-transparent caret-primary outline-none placeholder:italic placeholder:text-[#3c3c43]/34 [--essay-line-height:2.82rem]"
+                      className={cn(
+                        "font-display absolute inset-0 h-full w-full resize-none bg-transparent pt-1 text-[1.48rem] leading-[var(--essay-line-height)] text-transparent caret-primary outline-none placeholder:italic placeholder:text-[#3c3c43]/34 [--essay-line-height:2.82rem]",
+                        activeTool && "[-webkit-touch-callout:none]",
+                      )}
                     />
                   </div>
                 </div>
@@ -440,9 +464,9 @@ function Dock({
         tabIndex={0}
         aria-label="Mover dock"
         title="Arrastar dock"
-        className="mb-1.5 grid h-9 w-4 shrink-0 cursor-grab touch-none place-items-center self-stretch rounded-control text-muted-foreground/40 hover:bg-muted/60 hover:text-muted-foreground active:cursor-grabbing"
+        className="mb-1.5 grid h-9 w-6 shrink-0 cursor-grab touch-none place-items-center self-stretch rounded-control hover:bg-muted/60 active:cursor-grabbing"
       >
-        <GripVertical className="h-4 w-4" aria-hidden="true" />
+        <span aria-hidden="true" className="h-5 w-[3px] rounded-full bg-muted-foreground/35" />
       </div>
 
       <div className="mr-0.5 h-7 w-px self-center bg-border" aria-hidden="true" />
