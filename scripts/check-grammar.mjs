@@ -35,6 +35,7 @@ const IGNORE_STRINGS = new Map([
   ["de 1000", "fragmento de frase quebrado por interpolacao JSX vizinha, nao e frase real isolada"],
   ["Boletim · Donc", "nome de marca"],
   ["IA Donc", "nome de marca"],
+  ["Como seria usar o Donc", "nome de marca"],
   ["Mover dock", "termo de design ja documentado no CLAUDE.md do projeto"],
   ["Arrastar dock", "idem — termo de design documentado"],
   ["Voltar ao hub", "termo de navegacao hub-first ja documentado no CLAUDE.md"],

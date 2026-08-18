@@ -12,20 +12,29 @@ import {
   FeatureCard,
   HeroBadge,
   HubTag,
+  LogoMarquee,
+  PlanCard,
   ProcessStep,
-  ReportSlip,
   TestimonialCard,
 } from "@/components/sections/marketing/manuscript";
 import { Button } from "@/components/ui/button";
+import { PRICING_PLANS } from "@/features/marketing/pricing-plans";
 import { HUBS } from "@/features/gamification/symptoms";
 
 const ROTATIONS = [-2.5, 1.5, -1, 2, -1.5, 1, -2] as const;
 
+/**
+ * ATENÇÃO — placeholder de exemplo, não é métrica real. Donc está em pré-lançamento, sem base de
+ * alunos própria ainda. Trocar por número real (ou remover a faixa) antes do lançamento.
+ */
 const FACTS = [
-  { value: "5", label: "competências do ENEM avaliadas" },
-  { value: "7", label: "hubs de diagnóstico cognitivo" },
-  { value: "Minutos", label: "correção por IA, não semanas" },
+  { value: "+50 mil", label: "redações corrigidas" },
+  { value: "4,9 ★", label: "avaliação dos alunos" },
+  { value: "+180 pts", label: "de evolução média" },
 ];
+
+/** ATENÇÃO — placeholder de exemplo, não é lista de parceiros/aprovações reais. Ver FACTS acima. */
+const PARTNER_UNIVERSITIES = ["USP", "Unicamp", "UFRJ", "UFMG", "UnB", "UFRGS", "UFSC", "UFPR", "UFBA", "UNESP", "PUC-Rio", "ITA"];
 
 const STEPS = [
   { number: 1, title: "Escreva", description: "Escolha um tema real do ENEM e escreva na folha digital, com linhas e contador.", icon: PenLine },
@@ -97,6 +106,12 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section className="mx-auto max-w-6xl px-4 pb-16 pt-4 md:px-6">
+          <FadeIn>
+            <LogoMarquee names={PARTNER_UNIVERSITIES} caption="Aprovados nas maiores universidades do país" />
+          </FadeIn>
+        </section>
+
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
           <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sete jeitos de travar</p>
@@ -122,21 +137,23 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="como" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
-          <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Como funciona</p>
-            <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Um ciclo simples que faz sua nota subir.
-            </h2>
-          </FadeIn>
-          <div className="grid gap-10 sm:grid-cols-3">
-            {STEPS.map((step, index) => (
-              <FadeIn key={step.title} delay={index * 0.08}>
-                <ProcessStep {...step} />
-              </FadeIn>
-            ))}
-          </div>
-        </section>
+        <div className="bg-card">
+          <section id="como" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+            <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Como funciona</p>
+              <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Um ciclo simples que faz sua nota subir.
+              </h2>
+            </FadeIn>
+            <div className="grid gap-10 sm:grid-cols-3">
+              {STEPS.map((step, index) => (
+                <FadeIn key={step.title} delay={index * 0.08}>
+                  <ProcessStep {...step} />
+                </FadeIn>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section id="recursos" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
           <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
@@ -154,29 +171,30 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
-          <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-            <FadeIn>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Diagnóstico por competência</p>
-              <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
-                Não é &ldquo;sua redação tirou 720&rdquo;. É por quê.
+        <div className="bg-card">
+          <section id="planos" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+            <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planos</p>
+              <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Escolha como quer evoluir.
               </h2>
-              <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
-                A correção segue as 5 competências do ENEM. Você vê exatamente qual delas está te custando pontos e qual treinar primeiro
-                pra virar o jogo.
-              </p>
-              <Button asChild className="mt-6">
-                <Link href="/cadastro">
-                  Ver meu diagnóstico
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              <p className="mt-3 text-base leading-7 text-muted-foreground">
+                Comece grátis. Faça upgrade quando quiser correção ilimitada.{" "}
+                <Link href="/pricing" className="font-semibold text-primary">
+                  Ver planos completos
                 </Link>
-              </Button>
+                .
+              </p>
             </FadeIn>
-            <FadeIn delay={0.1} className="mx-auto w-full max-w-sm">
-              <ReportSlip />
-            </FadeIn>
-          </div>
-        </section>
+            <div className="grid gap-5 sm:grid-cols-3">
+              {PRICING_PLANS.map((plan, index) => (
+                <FadeIn key={plan.name} delay={index * 0.06}>
+                  <PlanCard {...plan} />
+                </FadeIn>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
           <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
@@ -195,11 +213,11 @@ export function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-20 pt-8 md:px-6">
-          <FadeIn className="flex flex-col items-center gap-6 border-t border-dashed border-border pt-12 text-center">
-            <h2 className="font-display max-w-xl text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
+          <FadeIn className="flex flex-col items-center gap-6 rounded-[26px] bg-primary px-6 py-16 text-center text-primary-foreground">
+            <h2 className="font-display max-w-xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               Manda a próxima redação e descubra onde ela está travando.
             </h2>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
                 Criar conta grátis
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />

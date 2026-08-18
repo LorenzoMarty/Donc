@@ -41,6 +41,15 @@ class SupportingTextRead(BaseModel):
     type: Literal[
         "motivador", "dados", "repertorio", "imagem", "grafico", "infografico", "postagem", "manchete", "tirinha", "charge"
     ]
+    chart_points: list[dict] | None = None
+    stat_items: list[dict] | None = None
+    comic_panels: list[str] | None = None
+    post_author: str | None = None
+    post_handle: str | None = None
+    headline_subtitle: str | None = None
+    headline_source: str | None = None
+    image_prompt: str | None = None
+    image_url: str | None = None
 
     @field_validator("type", mode="before")
     @classmethod
