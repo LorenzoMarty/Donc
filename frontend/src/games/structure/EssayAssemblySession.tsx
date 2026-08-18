@@ -262,7 +262,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
                   <DropZone
                     id="intro"
                     title="Introducao"
-                    subtitle="Contextualizacao e tese"
+                    subtitle="Contextualização e tese"
                     items={board.intro}
                     blockMap={blockMap}
                     validation={validation}
@@ -270,7 +270,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
                   <DropZone
                     id="development"
                     title="Desenvolvimento"
-                    subtitle="Argumentos, provas e progressao"
+                    subtitle="Argumentos, provas e progressão"
                     items={board.development}
                     blockMap={blockMap}
                     validation={validation}
@@ -278,7 +278,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
                   <DropZone
                     id="conclusion"
                     title="Conclusao"
-                    subtitle="Retomada e intervencao"
+                    subtitle="Retomada e intervenção"
                     items={board.conclusion}
                     blockMap={blockMap}
                     validation={validation}
@@ -471,7 +471,7 @@ function ResultModal({
                 <Trophy className="h-8 w-8" aria-hidden="true" />
               </div>
               <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tentativa finalizada</p>
-              <h2 className="mt-2 text-4xl font-semibold tracking-normal">Monte a Redacao</h2>
+              <h2 className="mt-2 text-4xl font-semibold tracking-normal">Monte a Redação</h2>
             </div>
 
             <div className="mt-6 grid grid-cols-3 gap-3">

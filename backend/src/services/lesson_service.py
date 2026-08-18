@@ -31,7 +31,7 @@ class LessonService:
         unlock_map = self.progression.unlock_map(self.repo.list_modules(), user_id)
         if not unlock_map.get(module.id, True):
             raise AppError(
-                "Este modulo ainda esta bloqueado. Conclua o modulo anterior para liberar esta aula.",
+                "Este módulo ainda está bloqueado. Conclua o módulo anterior para liberar esta aula.",
                 status_code=403,
                 code="lesson_locked",
             )

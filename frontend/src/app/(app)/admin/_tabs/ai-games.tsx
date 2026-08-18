@@ -200,7 +200,7 @@ export function GameEditorPanel({
       onReviewed(result);
       setEditingQ(null);
       setEditingPayload(null);
-      toast.success("Alteracoes salvas.");
+      toast.success("Alterações salvas.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
     } finally {
@@ -214,7 +214,7 @@ export function GameEditorPanel({
     try {
       await apiFetch(`/admin/ai-games/${game.id}`, { method: "DELETE" });
       onDeleted(game.id);
-      toast.success("Jogo excluido.");
+      toast.success("Jogo excluído.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao excluir.");
       setDeleting(false);

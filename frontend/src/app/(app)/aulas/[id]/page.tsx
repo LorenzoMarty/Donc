@@ -107,7 +107,7 @@ export default function LessonPage() {
               </div>
               <textarea
                 className="min-h-44 w-full resize-y rounded-md border border-input bg-card/90 p-4 text-base leading-7 outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-ring/15 md:text-sm"
-                placeholder="Registre tese, repertorios, exemplos e duvidas para revisar depois."
+                placeholder="Registre tese, repertórios, exemplos e dúvidas para revisar depois."
               />
             </div>
           </Surface>
@@ -140,8 +140,8 @@ export default function LessonPage() {
 
           <Surface>
             <div className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Exercicios relacionados</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-normal">Pratica de fixacao</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Exercícios relacionados</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-normal">Prática de fixação</h2>
             </div>
             <div className="space-y-3">
               {lesson.exercises.length ? (

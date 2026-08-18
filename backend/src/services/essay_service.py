@@ -253,7 +253,7 @@ class EssayService:
             # marcando o job como failed) tambem falha com PendingRollbackError.
             self.db.rollback()
             raise AppError(
-                "Esta redacao ja foi corrigida por outra requisicao em andamento.",
+                "Esta redação já foi corrigida por outra requisição em andamento.",
                 status_code=409,
                 code="correction_already_in_progress",
             ) from None
@@ -344,7 +344,7 @@ class EssayService:
             return
         if self._normalize_content(latest.content) == self._normalize_content(essay.content):
             raise AppError(
-                "Faca uma edicao no texto antes de corrigir novamente.",
+                "Faça uma edição no texto antes de corrigir novamente.",
                 status_code=422,
                 code="edit_required",
             )

@@ -28,7 +28,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
   if (!category) {
     return (
       <Surface className="text-center">
-        <h1 className="text-2xl font-semibold">Categoria nao encontrada</h1>
+        <h1 className="text-2xl font-semibold">Categoria não encontrada</h1>
         <Button asChild className="mt-4">
           <Link href="/games">Voltar ao hub</Link>
         </Button>

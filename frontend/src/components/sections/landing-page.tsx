@@ -2,14 +2,51 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PenLine, Sparkles, TrendingUp, Video, Gamepad2, Target, LineChart, Compass } from "lucide-react";
 
 import { MarketingShell } from "@/components/sections/marketing-shell";
-import { AnnotatedManuscript, FadeIn, HubTag, PullQuote, ReportSlip } from "@/components/sections/marketing/manuscript";
+import {
+  AnnotatedManuscript,
+  FactRow,
+  FadeIn,
+  FeatureCard,
+  HeroBadge,
+  HubTag,
+  ProcessStep,
+  ReportSlip,
+  TestimonialCard,
+} from "@/components/sections/marketing/manuscript";
 import { Button } from "@/components/ui/button";
 import { HUBS } from "@/features/gamification/symptoms";
 
 const ROTATIONS = [-2.5, 1.5, -1, 2, -1.5, 1, -2] as const;
+
+const FACTS = [
+  { value: "5", label: "competências do ENEM avaliadas" },
+  { value: "7", label: "hubs de diagnóstico cognitivo" },
+  { value: "Minutos", label: "correção por IA, não semanas" },
+];
+
+const STEPS = [
+  { number: 1, title: "Escreva", description: "Escolha um tema real do ENEM e escreva na folha digital, com linhas e contador.", icon: PenLine },
+  { number: 2, title: "Receba o diagnóstico", description: "Análise por competência (C1–C5), com pontos fortes e o que travou em cada trecho.", icon: Sparkles },
+  { number: 3, title: "Evolua", description: "Treinos gamificados focados no seu ponto fraco e um painel que mostra sua evolução.", icon: TrendingUp },
+];
+
+const FEATURES = [
+  { title: "Correção que ensina", description: "Não é só a nota: comentários trecho a trecho mostram por que você perdeu (ou ganhou) pontos.", icon: Sparkles, featured: true },
+  { title: "Aulas em vídeo", description: "Trilhas do básico ao avançado, com professores que decompõem a redação nota 1000.", icon: Video },
+  { title: "Treino gamificado", description: "Mini-jogos de coesão, argumentação e repertório para fixar sem decoreba.", icon: Gamepad2 },
+  { title: "Temas de verdade", description: "Banco de propostas no formato ENEM, com textos motivadores e nível de dificuldade.", icon: Target },
+  { title: "Raio-X do escritor", description: "Veja sua média por competência e acompanhe o mapa de fases da sua evolução.", icon: LineChart },
+  { title: "Foco no seu ponto fraco", description: "O motor adaptativo detecta onde você trava e prioriza treinos e temas ali.", icon: Compass },
+];
+
+const TESTIMONIALS = [
+  { quote: "A correção por competência foi um divisor de águas. Entendi exatamente onde perdia na C4.", name: "Marina Costa", role: "Aluno(a) do 3º ano" },
+  { quote: "Os mini-jogos viciam de um jeito bom. Estudar conectivos virou rotina e minha coesão melhorou.", name: "Lucas Ferreira", role: "Aluno(a) do 3º ano" },
+  { quote: "O painel me mostra a evolução de verdade. Ver o mapa de fases preencher me mantém motivada.", name: "Beatriz Almeida", role: "Aluno(a) do 3º ano" },
+];
 
 export function LandingPage() {
   const hubs = Object.values(HUBS);
@@ -23,8 +60,8 @@ export function LandingPage() {
           </div>
           <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
             <FadeIn>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Português e Redação para o ENEM</p>
-              <h1 className="font-display mt-3 text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              <HeroBadge icon={PenLine}>Redação para o ENEM, do rascunho ao 1000</HeroBadge>
+              <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                 A gente lê sua redação como a banca lê.
               </h1>
               <p className="mt-5 max-w-lg text-lg leading-8 text-muted-foreground">
@@ -42,6 +79,7 @@ export function LandingPage() {
                   <Link href="/login">Já tenho conta</Link>
                 </Button>
               </div>
+              <FactRow facts={FACTS} />
             </FadeIn>
 
             <FadeIn delay={0.1}>
@@ -84,6 +122,38 @@ export function LandingPage() {
           </div>
         </section>
 
+        <section id="como" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Como funciona</p>
+            <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Um ciclo simples que faz sua nota subir.
+            </h2>
+          </FadeIn>
+          <div className="grid gap-10 sm:grid-cols-3">
+            {STEPS.map((step, index) => (
+              <FadeIn key={step.title} delay={index * 0.08}>
+                <ProcessStep {...step} />
+              </FadeIn>
+            ))}
+          </div>
+        </section>
+
+        <section id="recursos" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Recursos</p>
+            <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Tudo para escrever a redação nota 1000.
+            </h2>
+          </FadeIn>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature, index) => (
+              <FadeIn key={feature.title} delay={index * 0.05}>
+                <FeatureCard {...feature} />
+              </FadeIn>
+            ))}
+          </div>
+        </section>
+
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
           <div className="grid gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <FadeIn>
@@ -108,14 +178,20 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-3xl px-4 py-16 md:px-6">
-          <FadeIn>
-            <PullQuote
-              quote="Eu treinava sem saber onde estava travando. Agora sei exatamente qual competência revisar antes da próxima redação."
-              name="Exemplo ilustrativo"
-              role="Aluno(a) do 3º ano"
-            />
+        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Como seria usar o Donc</p>
+            <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Cenários ilustrativos de quem treina toda semana.
+            </h2>
           </FadeIn>
+          <div className="grid gap-5 sm:grid-cols-3">
+            {TESTIMONIALS.map((testimonial, index) => (
+              <FadeIn key={testimonial.name} delay={index * 0.06}>
+                <TestimonialCard {...testimonial} />
+              </FadeIn>
+            ))}
+          </div>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-20 pt-8 md:px-6">

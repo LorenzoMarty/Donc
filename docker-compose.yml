@@ -76,6 +76,17 @@ services:
       redis:
         condition: service_healthy
 
+  languagetool:
+    image: erikvl87/languagetool:latest
+    container_name: enem-redacao-languagetool
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8010/v2/languages || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   frontend:
     build:
       context: ./frontend
