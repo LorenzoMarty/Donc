@@ -46,7 +46,7 @@ export default function GameSession({ categorySlug, gameId }: { categorySlug: st
   if (!game || !category || game.category !== category.id) {
     return (
       <Surface className="text-center">
-        <h1 className="text-2xl font-semibold">Jogo nao encontrado</h1>
+        <h1 className="text-2xl font-semibold">Jogo não encontrado</h1>
         <Button asChild className="mt-4">
           <Link href="/games">Voltar ao hub</Link>
         </Button>

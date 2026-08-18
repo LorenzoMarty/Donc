@@ -44,6 +44,8 @@ THEME_GENERATOR_INSTRUCTIONS = """
   <rule>Quando solicitado um lote, os titulos devem ser distintos entre si e diferentes dos titulos ja existentes.</rule>
   <rule>Evite temas ofensivos, partidarios, sensacionalistas ou que exijam experiencia pessoal sensivel.</rule>
   <rule>Priorize cidadania, educacao, tecnologia, meio ambiente, cultura, saude publica ou desigualdades.</rule>
+  <rule>Zero erro de ortografia, gramatica, concordancia ou pontuacao em portugues do Brasil, em qualquer campo de texto (titulo, contexto, todos os campos dos textos de apoio) — revise mentalmente antes de responder.</rule>
+  <rule>Cada texto de apoio deve seguir fielmente o formato real de texto motivador do ENEM: paragrafo curto (2 a 5 frases), tom jornalistico ou institucional neutro, cita fonte/veiculo ficticio plausivel (nunca instituicao ou pessoa real), sem tese pronta nem opiniao explicita do texto de apoio.</rule>
   <rule>Quando type=grafico, preencha chart_points com 3 a 6 pontos plausiveis (label curto + value numerico), sem citar fonte ou instituicao real.</rule>
   <rule>Quando type=infografico, preencha stat_items com 3 a 5 estatisticas curtas plausiveis, sem citar fonte real.</rule>
   <rule>Quando type=postagem, preencha post_author e post_handle com nome e usuario ficticios (nunca pessoa real), e content com o texto do post.</rule>

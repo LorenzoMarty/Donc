@@ -14,4 +14,8 @@ Write-Host "==> Pytest + cobertura" -ForegroundColor Cyan
 & $py -m pytest --cov
 if ($LASTEXITCODE -ne 0) { throw "pytest falhou" }
 
+Write-Host "==> check-grammar (LanguageTool)" -ForegroundColor Cyan
+node ..\scripts\check-grammar.mjs
+if ($LASTEXITCODE -ne 0) { throw "check-grammar falhou" }
+
 Write-Host "OK: qualidade do backend verde." -ForegroundColor Green

@@ -92,7 +92,7 @@ def logout() -> ApiResponse[MessageResponse]:
 @router.post("/password-recovery", response_model=ApiResponse[MessageResponse])
 def password_recovery(_: PasswordRecoveryRequest) -> ApiResponse[MessageResponse]:
     raise AppError(
-        "Recuperacao de senha por e-mail ainda nao esta configurada.",
+        "Recuperação de senha por e-mail ainda não está configurada.",
         status_code=501,
         code="password_recovery_not_configured",
     )

@@ -261,7 +261,7 @@ function MobileDrawer({
           <aside
             role="dialog"
             aria-modal="true"
-            aria-label="Menu de navegacao"
+            aria-label="Menu de navegação"
             className="safe-bottom mobile-scroll absolute inset-y-0 left-0 flex w-[min(86vw,22.5rem)] flex-col overflow-y-auto bg-card p-4 shadow-2xl"
           >
             <div className="mb-5 flex items-center justify-between gap-3">

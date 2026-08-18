@@ -129,7 +129,7 @@ export function UsersTab({
         setEditingId(null);
         setDraft(null);
       }
-      toast.success("Aluno excluido.");
+      toast.success("Aluno excluído.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível excluir o aluno.");
     } finally {
@@ -292,12 +292,12 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Progresso" value={`${progress.progress_general}%`} />
         <Stat label="Média redação" value={String(progress.essay_average)} />
-        <Stat label="Aulas concluidas" value={String(progress.completed_lessons)} />
-        <Stat label="Acerto exercicios" value={`${progress.correct_exercises_rate}%`} />
+        <Stat label="Aulas concluídas" value={String(progress.completed_lessons)} />
+        <Stat label="Acerto em exercícios" value={`${progress.correct_exercises_rate}%`} />
       </div>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold">Dominio por competencia</h3>
+        <h3 className="mb-2 text-sm font-semibold">Domínio por competência</h3>
         <CompetencyBarChart data={masteryData} />
       </section>
 
@@ -329,10 +329,10 @@ function UserDetailView({ detail }: { detail: AdminUserDetail }) {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
-        <DetailList title="Competencias fracas" items={Object.entries(profile.weak_competencies).map(([k, v]) => `${k.toUpperCase()}: ${v}x`)} />
+        <DetailList title="Competências fracas" items={Object.entries(profile.weak_competencies).map(([k, v]) => `${k.toUpperCase()}: ${v}x`)} />
         <DetailList title="Erros recorrentes" items={profile.recurring_errors.length ? profile.recurring_errors : progress.recurrent_errors} />
         <DetailList title="Recomendacoes" items={profile.recommendations} />
-        <DetailList title="Repertorios usados" items={profile.repertories_used} />
+        <DetailList title="Repertórios usados" items={profile.repertories_used} />
       </section>
     </div>
   );
@@ -391,7 +391,7 @@ function StudentEditor({
           disabled={busy}
         />
       </Field>
-      <Field label="Meta diaria">
+      <Field label="Meta diária">
         <Input
           type="number"
           min={10}

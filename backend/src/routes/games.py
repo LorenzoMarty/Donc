@@ -164,10 +164,10 @@ def _assert_game_playable(db: Session, game_id: str) -> None:
         return
     raw_id = game_id.removeprefix("ai-")
     if not raw_id.isdigit():
-        raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+        raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
     game = db.get(AIGeneratedGame, int(raw_id))
     if not game or game.status != "approved":
-        raise AppError("Jogo nao encontrado.", status_code=404, code="game_not_found")
+        raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
 
 
 @router.post("/complete", response_model=ApiResponse[GameCompleteResponse])
@@ -304,7 +304,7 @@ def get_game_attempt(
         GameAttempt.user_id == current_user.id,
     ).first()
     if not attempt:
-        raise AppError("Tentativa nao encontrada.", status_code=404, code="attempt_not_found")
+        raise AppError("Tentativa não encontrada.", status_code=404, code="attempt_not_found")
     return success_response(GameAttemptRead.model_validate(attempt))
 
 

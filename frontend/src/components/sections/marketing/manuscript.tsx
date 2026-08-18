@@ -207,6 +207,123 @@ function AnimatedNumber({ active, target }: { active: boolean; target: number })
 }
 
 /**
+ * Selo do hero — pill com ícone, mesmo tratamento de cor accent-12/accent-strong dos hubs.
+ */
+export function HeroBadge({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary">
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Faixa de fatos estruturais do hero — nunca métrica de uso (produto em pré-lançamento, sem
+ * base de alunos real ainda). Ver landing-page.tsx para o conteúdo.
+ */
+export function FactRow({ facts }: { facts: { value: string; label: string }[] }) {
+  return (
+    <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+      {facts.map((fact, index) => (
+        <div key={fact.label} className="flex items-center gap-6">
+          {index > 0 && <span className="hidden h-8 w-px bg-border sm:block" aria-hidden="true" />}
+          <div>
+            <p className="font-display text-xl font-semibold text-foreground">{fact.value}</p>
+            <p className="text-xs text-muted-foreground">{fact.label}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Passo do "como funciona" — círculo numerado sobre ícone, mesma lógica de card papel leve dos
+ * hubs, sem rotação (sequência linear, não mural).
+ */
+export function ProcessStep({
+  number,
+  title,
+  description,
+  icon: Icon,
+}: {
+  number: number;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div className="text-center">
+      <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <Icon className="h-7 w-7 text-primary" aria-hidden="true" />
+        <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          {number}
+        </span>
+      </div>
+      <p className="text-base font-semibold text-foreground">{title}</p>
+      <p className="mx-auto mt-1.5 max-w-[15rem] text-sm leading-6 text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+/**
+ * Card de recurso — mesmo tratamento "recado no mural" do HubTag mas sem rotação (grid regular,
+ * não mural). Variante `featured` reaproveita o escuro do ReportSlip/CTA final pra destacar um item.
+ */
+export function FeatureCard({
+  title,
+  description,
+  icon: Icon,
+  featured = false,
+}: {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  featured?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[10px] border bg-card p-6 shadow-[0_3px_10px_rgba(20,20,20,0.06)]",
+        featured ? "border-primary/30 ring-1 ring-primary/15" : "border-border"
+      )}
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+        <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+      </div>
+      <p className="mt-4 text-base font-semibold text-foreground">{title}</p>
+      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+/**
+ * Card de depoimento — versão em grid do PullQuote, mesma proveniência "cenário ilustrativo"
+ * (produto em pré-lançamento, sem base de alunos real ainda).
+ */
+export function TestimonialCard({ quote, name, role }: { quote: string; name: string; role: string }) {
+  return (
+    <div className="rounded-[10px] border border-border bg-card p-6 shadow-[0_3px_10px_rgba(20,20,20,0.06)]">
+      <p className="text-sm leading-7 text-foreground">&ldquo;{quote}&rdquo;</p>
+      <footer className="mt-5 flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary" aria-hidden="true">
+          {name
+            .split(" ")
+            .map((part) => part[0])
+            .slice(0, 2)
+            .join("")}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{name}</p>
+          <p className="text-xs text-muted-foreground">{role} · cenário ilustrativo</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/**
  * Citação editorial — uma só, grande, sem moldura de card. Marcada com proveniência discreta
  * (não é depoimento real, Donc está em pré-lançamento).
  */

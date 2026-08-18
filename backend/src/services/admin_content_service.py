@@ -25,6 +25,9 @@ from src.services.content_versioning import record_version
 from src.utils.ai_idempotency import find_cached_generation
 
 
+MAX_THEME_GENERATION_ATTEMPTS = 3
+
+
 class AdminContentService:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -59,36 +62,49 @@ class AdminContentService:
                 return existing
 
         existing_titles = [theme.title for theme in self.db.scalars(select(EssayTheme))]
-        agent = ThemeGeneratorAgent()
-        result = agent.generate_batch(
-            focus=focus,
-            existing_titles=existing_titles,
-            count=1,
-            supporting_text_requirements=supporting_text_requirements,
-            user_id=admin_user_id,
-            session_id=f"admin:{admin_user_id}:theme-generator",
-        )
-        generated = result.themes[0]
-        title = self._clean_theme_title(generated.title)
-        if self._normalize_theme_title(title) in {self._normalize_theme_title(item) for item in existing_titles}:
-            raise AppError("A IA retornou um tema já existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
+        # REQ-1: tipos menos comuns (ex.: postagem+manchete+tirinha+charge juntos) sao mais dificeis
+        # da IA acertar de primeira — retry antes de bloquear o admin com erro. Titulo duplicado
+        # (abaixo) nao entra nesse retry: e decisao imediata, nao falha de geracao.
+        last_error: AppError | None = None
+        for _attempt in range(MAX_THEME_GENERATION_ATTEMPTS):
+            agent = ThemeGeneratorAgent()
+            result = agent.generate_batch(
+                focus=focus,
+                existing_titles=existing_titles,
+                count=1,
+                supporting_text_requirements=supporting_text_requirements,
+                user_id=admin_user_id,
+                session_id=f"admin:{admin_user_id}:theme-generator",
+            )
+            generated = result.themes[0]
+            title = self._clean_theme_title(generated.title)
+            if self._normalize_theme_title(title) in {self._normalize_theme_title(item) for item in existing_titles}:
+                raise AppError("A IA retornou um tema já existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
 
-        self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
-        # So valida contra o sorteio aleatorio interno quando a IA real de fato rodou — em modo
-        # fallback (sem OPENAI_API_KEY ou falha do agno) o conteudo fixo de degradacao graciosa
-        # nao tem como respeitar tipos sorteados, e isso e esperado, nao um erro do usuario.
-        effective_requirements = supporting_text_requirements
-        if effective_requirements is None and not agent.runner.last_used_fallback:
-            effective_requirements = agent.last_effective_requirements
+            self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+            # So valida contra o sorteio aleatorio interno quando a IA real de fato rodou — em modo
+            # fallback (sem OPENAI_API_KEY ou falha do agno) o conteudo fixo de degradacao graciosa
+            # nao tem como respeitar tipos sorteados, e isso e esperado, nao um erro do usuario.
+            effective_requirements = supporting_text_requirements
+            if effective_requirements is None and not agent.runner.last_used_fallback:
+                effective_requirements = agent.last_effective_requirements
+            try:
+                normalized_texts = self._normalize_supporting_texts(
+                    [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+                    requirements=effective_requirements,
+                )
+            except AppError as exc:
+                last_error = exc
+                continue
+            break
+        else:
+            raise last_error  # type: ignore[misc]
 
         theme = EssayTheme(
             title=title,
             context=generated.context,
             source="IA Donc",
-            supporting_texts=self._normalize_supporting_texts(
-                [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
-                requirements=effective_requirements,
-            ),
+            supporting_texts=normalized_texts,
             is_active=False,
             status="pending",
         )
@@ -119,21 +135,33 @@ class AdminContentService:
         """REQ-4: gera novo lote de textos de apoio a partir do tema ja salvo, sem persistir —
         o admin revisa/edita o retorno e confirma via update_essay_theme (PATCH)."""
         theme = self._get_manageable_essay_theme(theme_id)
-        agent = ThemeGeneratorAgent()
-        generated = agent.generate(
-            focus=f"{theme.title}. {theme.context}",
-            supporting_text_requirements=supporting_text_requirements,
-            user_id=admin_user_id,
-            session_id=f"admin:{admin_user_id}:theme-generator:{theme_id}",
-        )
-        self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
-        effective_requirements = supporting_text_requirements
-        if effective_requirements is None and not agent.runner.last_used_fallback:
-            effective_requirements = agent.last_effective_requirements
-        normalized = self._normalize_supporting_texts(
-            [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
-            requirements=effective_requirements,
-        )
+        # REQ-1: mesmo retry de generate_essay_theme — combinacoes de tipo menos comuns exigem
+        # segunda/terceira chance antes de bloquear o admin com erro.
+        last_error: AppError | None = None
+        for _attempt in range(MAX_THEME_GENERATION_ATTEMPTS):
+            agent = ThemeGeneratorAgent()
+            generated = agent.generate(
+                focus=f"{theme.title}. {theme.context}",
+                supporting_text_requirements=supporting_text_requirements,
+                user_id=admin_user_id,
+                session_id=f"admin:{admin_user_id}:theme-generator:{theme_id}",
+            )
+            self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+            effective_requirements = supporting_text_requirements
+            if effective_requirements is None and not agent.runner.last_used_fallback:
+                effective_requirements = agent.last_effective_requirements
+            try:
+                normalized = self._normalize_supporting_texts(
+                    [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+                    requirements=effective_requirements,
+                )
+            except AppError as exc:
+                last_error = exc
+                continue
+            break
+        else:
+            raise last_error  # type: ignore[misc]
+
         record_ai_interaction(
             self.db,
             workflow="admin_theme_generation",

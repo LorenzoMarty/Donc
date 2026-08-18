@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium",
-    "quality": "npm run lint && npm run typecheck && npm run test"
+    "check:grammar": "node ../scripts/check-grammar.mjs",
+    "quality": "npm run lint && npm run typecheck && npm run test && npm run check:grammar"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

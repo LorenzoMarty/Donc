@@ -285,7 +285,7 @@ function AIFeedbackPanel({
             </span>
             <h2 className="text-xl font-semibold">IA Donc</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onSelectAnnotation(null)} aria-label="Limpar comentario selecionado">
+          <Button variant="ghost" size="icon" onClick={() => onSelectAnnotation(null)} aria-label="Limpar comentário selecionado">
             <X className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>

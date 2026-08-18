@@ -103,7 +103,7 @@ export function AdaptiveHealthTab({
         </HealthPanel>
 
         <HealthPanel
-          title="Alunos com diagnóstico mas sem recomendação exibida"
+          title="Alunos com diagnóstico, mas sem recomendação exibida"
           count={report.students_without_recommendation.length}
           empty="Todo aluno com diagnóstico já recebeu ao menos uma recomendação."
         >
