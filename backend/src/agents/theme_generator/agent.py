@@ -1,10 +1,37 @@
 from __future__ import annotations
 
+import random
 import re
 import unicodedata
 
 from src.agents.base import AgnoAgentRunner
-from src.agents.schemas import EssayThemeBatchGenerationResult, EssayThemeGenerationResult, GeneratedSupportingText
+from src.agents.schemas import (
+    EssayThemeBatchGenerationResult,
+    EssayThemeGenerationResult,
+    GeneratedSupportingText,
+    SupportingTextType,
+)
+
+
+SUPPORTING_TEXT_TYPES: tuple[SupportingTextType, ...] = (
+    "motivador",
+    "dados",
+    "repertorio",
+    "imagem",
+    "grafico",
+    "infografico",
+    "postagem",
+    "manchete",
+    "tirinha",
+    "charge",
+)
+
+
+def _random_supporting_text_requirements() -> dict[str, int]:
+    """REQ-2: nenhum tipo escolhido -> sorteia 3-4 tipos dentre os 10, count=1 cada."""
+    amount = random.randint(3, 4)  # nosec B311 - sorteio pedagogico, sem uso criptografico/seguranca
+    chosen = random.sample(SUPPORTING_TEXT_TYPES, amount)  # nosec B311
+    return {kind: 1 for kind in chosen}
 
 
 THEME_GENERATOR_INSTRUCTIONS = """
@@ -62,8 +89,8 @@ class ThemeGeneratorAgent:
         safe_count = min(max(count, 1), 4)
         known_titles = existing_titles or []
         requirements = {
-            key: max(0, min(5, int(value)))
-            for key, value in (supporting_text_requirements or {"motivador": 3}).items()
+            key: max(0, min(4, int(value)))
+            for key, value in (supporting_text_requirements or _random_supporting_text_requirements()).items()
             if int(value) > 0
         }
         requirements_block = "\n".join(f"- {kind}: {amount}" for kind, amount in requirements.items()) or "- motivador: 2"

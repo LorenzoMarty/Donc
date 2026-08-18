@@ -73,26 +73,52 @@ class AdminSupportingTextRequest(BaseModel):
 
 class AdminSupportingTextRequirement(BaseModel):
     type: SupportingTextType
-    count: int = Field(ge=0, le=5)
+    count: int = Field(ge=0, le=4)
 
 
 class AdminEssayThemeUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=8, max_length=220)
     context: str | None = Field(default=None, min_length=20, max_length=5000)
-    supporting_texts: list[AdminSupportingTextRequest] | None = Field(default=None, max_length=8)
+    supporting_texts: list[AdminSupportingTextRequest] | None = Field(default=None, max_length=4)
 
 
 class AdminEssayThemeGenerateRequest(BaseModel):
     focus: str | None = Field(default=None, max_length=160)
-    supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=5)
+    supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=10)
     idempotency_key: str | None = Field(default=None, max_length=80)
 
     @model_validator(mode="after")
     def ensure_requested_texts(self):
         total = sum(item.count for item in self.supporting_text_requirements)
-        if total > 8:
-            raise ValueError("A proposta pode ter no maximo 8 textos de apoio.")
+        if total > 4:
+            raise ValueError("A proposta pode ter no maximo 4 textos de apoio.")
         return self
+
+
+class AdminEssayThemeRegenerateSupportingTextsRequest(BaseModel):
+    supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=10)
+
+    @model_validator(mode="after")
+    def ensure_requested_texts(self):
+        total = sum(item.count for item in self.supporting_text_requirements)
+        if total > 4:
+            raise ValueError("A proposta pode ter no maximo 4 textos de apoio.")
+        return self
+
+
+class AdminGeneratedSupportingTextRead(BaseModel):
+    title: str
+    content: str
+    type: SupportingTextType
+    chart_points: list[dict] | None = None
+    stat_items: list[dict] | None = None
+    comic_panels: list[str] | None = None
+    post_author: str | None = None
+    post_handle: str | None = None
+    headline_subtitle: str | None = None
+    headline_source: str | None = None
+    image_prompt: str | None = None
+    image_url: str | None = None
 
 
 class AdminEssayThemeActionResponse(BaseModel):
