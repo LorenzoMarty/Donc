@@ -6,8 +6,6 @@ import { apiFetch, type Essay, type EssayTheme } from "@/services/api";
 
 export type EssayViewMode = "editor" | "resultado" | "analysis";
 
-const THEME_CHOICES_LIMIT = 4;
-
 export function useEssayDraft() {
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<EssayTheme | null>(null);
@@ -208,11 +206,7 @@ export function useEssayDraft() {
 }
 
 async function fetchThemeChoices() {
-  const themes = await apiFetch<EssayTheme[]>("/essays/themes/generate", {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
-  return themes.slice(0, THEME_CHOICES_LIMIT);
+  return apiFetch<EssayTheme[]>("/essays/themes");
 }
 
 /**

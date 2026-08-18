@@ -330,6 +330,49 @@ html:not(.dark) .dark .force-light {
   --ring: var(--green-500);
 }
 
+/* Marketing sempre em tema claro, independente do tema global (Sistema/Escuro) escolhido em
+   /perfil ou do prefers-color-scheme do SO — página pública, não deve herdar preferência de conta
+   nem do dispositivo. Mesmos valores do `:root` claro, reaplicados quando `html.dark` está ativo. */
+html.dark .force-brand-green {
+  background-color: hsl(42 26% 93%);
+  color: hsl(var(--neutral-800));
+
+  --background: 42 26% 93%;
+  --foreground: var(--neutral-800);
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 20%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 20%;
+
+  --secondary: var(--neutral-50);
+  --secondary-foreground: var(--neutral-800);
+  --muted: 220 44% 97%;
+  --muted-foreground: var(--neutral-500);
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+  --streak: var(--streak-500);
+  --streak-foreground: 0 0% 100%;
+  --streak-tint: 32 85% 94%;
+  --info: var(--info-500);
+  --info-foreground: 0 0% 100%;
+  --info-tint: 221 82% 95%;
+  --highlight: var(--highlight-500);
+  --highlight-foreground: 0 0% 100%;
+  --highlight-tint: 253 91% 96%;
+  --chart-c4: var(--chart-c4-500);
+  --chart-c5: var(--chart-c5-500);
+  --destructive: 354 70% 54%;
+  --destructive-foreground: 0 0% 100%;
+  --border: var(--neutral-200);
+  --input: var(--neutral-200);
+
+  --shadow-soft: 0 1px 2px rgba(20, 30, 55, 0.04), 0 12px 28px -18px rgba(30, 30, 40, 0.28);
+  --shadow-elevated: 0 12px 36px rgba(20, 30, 55, 0.08);
+  --shadow-control: 0 10px 24px hsl(var(--primary) / 0.16);
+
+  color-scheme: light;
+}
+
 * {
   border-color: hsl(var(--border));
 }
@@ -644,6 +687,15 @@ li {
   }
   50% {
     transform: translateY(-8px);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 

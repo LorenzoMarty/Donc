@@ -4,29 +4,10 @@ import { ArrowRight, Check } from "lucide-react";
 import { HoverGlowCard, Reveal } from "@/components/sections/aceternity-primitives";
 import { MarketingShell } from "@/components/sections/marketing-shell";
 import { Button } from "@/components/ui/button";
+import { PRICING_PLANS } from "@/features/marketing/pricing-plans";
 import { cn } from "@/utils";
 
-const plans = [
-  {
-    name: "Início",
-    price: "R$ 29",
-    description: "Pra sair do zero e criar rotina de Português.",
-    features: ["Trilhas básicas de Português", "Painel de progresso", "Marcos de constância"],
-  },
-  {
-    name: "Avançado",
-    price: "R$ 59",
-    description: "Pra quem já treina e quer evoluir a redação.",
-    features: ["Tudo do Início", "Correção de redação por IA", "Laboratório de redação (editor + repertório)", "Histórico de notas por competência"],
-    featured: true,
-  },
-  {
-    name: "Mentoria",
-    price: "R$ 129",
-    description: "Pra reta final, com acompanhamento próximo.",
-    features: ["Tudo do Avançado", "Mentoria personalizada", "Plano de estudo semanal"],
-  },
-];
+const plans = PRICING_PLANS;
 
 const faq = [
   {

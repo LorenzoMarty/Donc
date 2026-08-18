@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import { motion, useInView, useReducedMotion } from "framer-motion";
+import { Check } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/utils";
 
 /**
@@ -129,84 +132,6 @@ export function HubTag({
 }
 
 /**
- * "Boletim" de nota — recibo/ticket com talão picotado, não um card branco arredondado igual ao
- * resto do produto. Nota ENEM (0-1000) contando ao vivo + 5 competências.
- */
-const COMPETENCIES = [
-  { id: "C1", label: "Norma culta", value: 180 },
-  { id: "C2", label: "Compreensão do tema", value: 200 },
-  { id: "C3", label: "Argumentação", value: 180 },
-  { id: "C4", label: "Coesão textual", value: 180 },
-  { id: "C5", label: "Proposta de intervenção", value: 180 },
-] as const;
-
-const TARGET_SCORE = COMPETENCIES.reduce((sum, c) => sum + c.value, 0);
-
-export function ReportSlip({ className }: { className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <div ref={ref} className={cn("relative", className)}>
-      <div className="rounded-t-[10px] bg-foreground px-6 py-3 text-background">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">Boletim · Donc</p>
-      </div>
-      <div className="relative border-x border-b border-border bg-card px-6 pb-6 pt-5 shadow-[0_10px_30px_rgba(20,20,20,0.08)]">
-        <span aria-hidden="true" className="absolute -left-2.5 top-0 h-5 w-5 -translate-y-1/2 rounded-full bg-background" />
-        <span aria-hidden="true" className="absolute -right-2.5 top-0 h-5 w-5 -translate-y-1/2 rounded-full bg-background" />
-        <div className="border-b border-dashed border-border pb-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Nota estimada</p>
-          <p className="font-display mt-1 text-6xl font-semibold leading-none tabular-nums tracking-tight text-foreground">
-            {reduceMotion ? TARGET_SCORE : <AnimatedNumber active={inView} target={TARGET_SCORE} />}
-            <span className="ml-2 text-base font-medium text-muted-foreground">/1000</span>
-          </p>
-        </div>
-        <div className="mt-4 space-y-3">
-          {COMPETENCIES.map((competency, index) => (
-            <div key={competency.id} className="flex items-center gap-3">
-              <span className="w-8 shrink-0 text-center text-[11px] font-semibold text-muted-foreground">{competency.id}</span>
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
-                  <span className="truncate">{competency.label}</span>
-                  <span className="tabular-nums">{competency.value}</span>
-                </div>
-                <div className="h-1 overflow-hidden rounded-full bg-muted">
-                  <motion.div
-                    className="h-full rounded-full bg-primary"
-                    initial={reduceMotion ? { width: `${(competency.value / 200) * 100}%` } : { width: 0 }}
-                    animate={{ width: inView || reduceMotion ? `${(competency.value / 200) * 100}%` : 0 }}
-                    transition={{ duration: 0.5, delay: reduceMotion ? 0 : 0.1 + index * 0.08, ease: "easeOut" }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AnimatedNumber({ active, target }: { active: boolean; target: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  return (
-    <motion.span
-      ref={ref}
-      initial={{ "--num": 0 } as never}
-      animate={active ? ({ "--num": target } as never) : undefined}
-      transition={{ duration: 1.1, ease: "easeOut" }}
-      onUpdate={(latest) => {
-        const value = (latest as { "--num"?: number })["--num"];
-        if (ref.current && typeof value === "number") ref.current.textContent = String(Math.round(value));
-      }}
-    >
-      0
-    </motion.span>
-  );
-}
-
-/**
  * Selo do hero — pill com ícone, mesmo tratamento de cor accent-12/accent-strong dos hubs.
  */
 export function HeroBadge({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
@@ -219,8 +144,9 @@ export function HeroBadge({ icon: Icon, children }: { icon: LucideIcon; children
 }
 
 /**
- * Faixa de fatos estruturais do hero — nunca métrica de uso (produto em pré-lançamento, sem
- * base de alunos real ainda). Ver landing-page.tsx para o conteúdo.
+ * Faixa de números do hero. ATENÇÃO: valores atuais em landing-page.tsx são placeholder de
+ * exemplo (produto em pré-lançamento, sem base de alunos real ainda) — trocar por métrica real
+ * antes do lançamento.
  */
 export function FactRow({ facts }: { facts: { value: string; label: string }[] }) {
   return (
@@ -353,6 +279,82 @@ export function PullQuote({
           <p className="text-xs text-muted-foreground">{role} · cenário ilustrativo</p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/**
+ * Faixa de logos em marquee (auto-scroll infinito, pausa no hover). ATENÇÃO: lista de instituições
+ * em landing-page.tsx é placeholder de exemplo — trocar por parceiros/aprovações reais antes do
+ * lançamento.
+ */
+export function LogoMarquee({ names, caption }: { names: string[]; caption: string }) {
+  const track = [...names, ...names];
+  return (
+    <div>
+      <p className="mb-5 text-center text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{caption}</p>
+      <div className="group relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
+        <div className="flex w-max animate-[marquee_32s_linear_infinite] items-center gap-14 group-hover:[animation-play-state:paused]">
+          {track.map((name, index) => (
+            <span key={`${name}-${index}`} className="font-display shrink-0 whitespace-nowrap text-xl font-medium text-muted-foreground/70">
+              {name}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Card de plano — preview dos planos reais de `/pricing` (fonte única em
+ * `features/marketing/pricing-plans.ts`). Destaque do plano `featured` só com borda/ring accent,
+ * nunca fundo escuro isolado (ver landing-page.tsx: home sempre em tema claro).
+ */
+export function PlanCard({
+  name,
+  price,
+  description,
+  features,
+  featured,
+}: {
+  name: string;
+  price: string;
+  description: string;
+  features: readonly string[];
+  featured: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative rounded-[14px] border bg-card p-7",
+        featured
+          ? "border-primary/40 shadow-[0_16px_36px_-18px_hsl(var(--primary)/0.45)] ring-1 ring-primary/20"
+          : "border-border shadow-[0_3px_10px_rgba(20,20,20,0.06)]"
+      )}
+    >
+      {featured && (
+        <span className="absolute right-6 top-6 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-foreground">
+          Mais popular
+        </span>
+      )}
+      <p className="text-base font-semibold text-foreground">{name}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <p className="font-display mt-5 text-4xl font-semibold tracking-tight text-foreground">
+        {price}
+        <span className="ml-1 text-sm font-medium text-muted-foreground">/mês</span>
+      </p>
+      <Button asChild className="mt-6 w-full" variant={featured ? "default" : "outline"}>
+        <Link href="/cadastro">Escolher {name}</Link>
+      </Button>
+      <div className="mt-6 space-y-2.5 border-t border-dashed border-border pt-5">
+        {features.map((feature) => (
+          <div key={feature} className="flex items-start gap-2.5 text-sm text-foreground">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span>{feature}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
