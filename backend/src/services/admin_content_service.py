@@ -74,6 +74,12 @@ class AdminContentService:
             raise AppError("A IA retornou um tema já existente. Tente gerar novamente.", status_code=409, code="duplicate_theme")
 
         self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+        # So valida contra o sorteio aleatorio interno quando a IA real de fato rodou — em modo
+        # fallback (sem OPENAI_API_KEY ou falha do agno) o conteudo fixo de degradacao graciosa
+        # nao tem como respeitar tipos sorteados, e isso e esperado, nao um erro do usuario.
+        effective_requirements = supporting_text_requirements
+        if effective_requirements is None and not agent.runner.last_used_fallback:
+            effective_requirements = agent.last_effective_requirements
 
         theme = EssayTheme(
             title=title,
@@ -81,7 +87,7 @@ class AdminContentService:
             source="IA Donc",
             supporting_texts=self._normalize_supporting_texts(
                 [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
-                requirements=supporting_text_requirements,
+                requirements=effective_requirements,
             ),
             is_active=False,
             status="pending",
@@ -94,7 +100,7 @@ class AdminContentService:
             agent="ThemeGeneratorAgent",
             user_id=admin_user_id,
             runner=agent.runner,
-            meta={"focus": focus, "generated_count": 1, "supporting_text_requirements": supporting_text_requirements or {}},
+            meta={"focus": focus, "generated_count": 1, "supporting_text_requirements": effective_requirements},
             content_id=theme.id,
             content_type="EssayTheme",
             idempotency_key=idempotency_key,
@@ -121,9 +127,12 @@ class AdminContentService:
             session_id=f"admin:{admin_user_id}:theme-generator:{theme_id}",
         )
         self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+        effective_requirements = supporting_text_requirements
+        if effective_requirements is None and not agent.runner.last_used_fallback:
+            effective_requirements = agent.last_effective_requirements
         normalized = self._normalize_supporting_texts(
             [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
-            requirements=supporting_text_requirements,
+            requirements=effective_requirements,
         )
         record_ai_interaction(
             self.db,
@@ -133,7 +142,7 @@ class AdminContentService:
             runner=agent.runner,
             meta={
                 "theme_id": theme_id,
-                "supporting_text_requirements": supporting_text_requirements or {},
+                "supporting_text_requirements": effective_requirements,
                 "action": "regenerate_supporting_texts",
             },
             content_id=theme_id,
