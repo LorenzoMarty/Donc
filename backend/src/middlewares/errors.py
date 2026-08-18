@@ -33,7 +33,20 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-        return error_response(422, "Dados enviados são inválidos.", str(exc.errors()))
+        errors = exc.errors()
+        message = "Dados enviados são inválidos."
+        first = errors[0] if errors else {}
+        if first.get("type") == "value_error":
+            # model_validator/field_validator que levantam ValueError chegam aqui prefixados
+            # com "Value error, " pelo pydantic v2 — a mensagem especifica que escrevemos no
+            # validador (ex.: "A proposta pode ter no maximo 4 textos de apoio.") fica presa
+            # nesse prefixo e nunca alcancava o usuario antes desta extracao. Outros tipos de
+            # erro (campo faltando, tipo errado) ficam com a mensagem generica — sao menos
+            # acionaveis como frase unica quando varios campos podem estar errados.
+            cleaned = str(first.get("msg") or "").removeprefix("Value error, ").strip()
+            if cleaned:
+                message = cleaned
+        return error_response(422, message, "validation_error")
 
     @app.exception_handler(Exception)
     async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:

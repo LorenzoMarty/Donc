@@ -58,6 +58,7 @@ THEME_GENERATOR_INSTRUCTIONS = """
 class ThemeGeneratorAgent:
     def __init__(self, runner: AgnoAgentRunner | None = None) -> None:
         self.runner = runner or AgnoAgentRunner()
+        self.last_effective_requirements: dict[str, int] = {}
 
     def generate(
         self,
@@ -93,6 +94,7 @@ class ThemeGeneratorAgent:
             for key, value in (supporting_text_requirements or _random_supporting_text_requirements()).items()
             if int(value) > 0
         }
+        self.last_effective_requirements = dict(requirements)
         requirements_block = "\n".join(f"- {kind}: {amount}" for kind, amount in requirements.items()) or "- motivador: 2"
         fallback = self._fallback_batch(focus=safe_focus, existing_titles=known_titles, count=safe_count)
         existing_block = "\n".join(f"- {title}" for title in known_titles[:80]) or "Nenhum titulo existente informado."
