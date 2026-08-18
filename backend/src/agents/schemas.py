@@ -88,7 +88,7 @@ class GeneratedSupportingText(BaseModel):
 class EssayThemeGenerationResult(BaseModel):
     title: str = Field(min_length=20, max_length=220)
     context: str = Field(min_length=120, max_length=1800)
-    supporting_texts: list[GeneratedSupportingText] = Field(min_length=1, max_length=8)
+    supporting_texts: list[GeneratedSupportingText] = Field(min_length=1, max_length=4)
     rationale: str = Field(min_length=20, max_length=500)
 
 

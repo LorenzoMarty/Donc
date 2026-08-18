@@ -6,11 +6,18 @@ import { toast } from "sonner";
 
 import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
 import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
+import {
+  MAX_SUPPORTING_TEXTS_PER_THEME,
+  SupportingTextTypePicker,
+  requirementsToPayload,
+  type SupportingTextType,
+} from "@/app/(app)/admin/_tabs/components/supporting-text-type-picker";
 import { ThemeGeneratorForm } from "@/app/(app)/admin/_tabs/create-with-ai";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/services/api";
@@ -184,6 +191,7 @@ export function ThemesTab({
             <article key={theme.id} className={isEditing ? "rounded-card bg-card p-4 shadow-soft ring-1 ring-primary/30" : "game-tile bg-background/60 p-4"}>
               {isEditing && draft ? (
                 <ThemeEditor
+                  themeId={theme.id}
                   draft={draft}
                   busy={isBusy}
                   onChange={setDraft}
@@ -247,12 +255,14 @@ export function ThemesTab({
 }
 
 function ThemeEditor({
+  themeId,
   draft,
   busy,
   onChange,
   onCancel,
   onSave,
 }: {
+  themeId: number;
   draft: ThemeDraft;
   busy: boolean;
   onChange: (draft: ThemeDraft) => void;
@@ -286,12 +296,25 @@ function ThemeEditor({
         <Textarea value={draft.context} maxLength={5000} onChange={(event) => onChange({ ...draft, context: event.target.value })} disabled={busy} rows={5} />
       </Field>
       <div className="grid gap-2">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-semibold text-muted-foreground">Textos motivadores</p>
-          <Button type="button" size="sm" variant="outline" onClick={addText} disabled={busy || draft.supporting_texts.length >= 8}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Adicionar
-          </Button>
+          <div className="flex gap-2">
+            <RegenerateSupportingTextsButton
+              themeId={themeId}
+              busy={busy}
+              onGenerated={(supportingTexts) => onChange({ ...draft, supporting_texts: supportingTexts })}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={addText}
+              disabled={busy || draft.supporting_texts.length >= MAX_SUPPORTING_TEXTS_PER_THEME}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Adicionar
+            </Button>
+          </div>
         </div>
         {draft.supporting_texts.map((text, index) => (
           <div key={`${text.title}-${index}`} className="grid gap-2 rounded-control bg-background/50 p-3 shadow-soft">
@@ -337,4 +360,57 @@ function ThemeEditor({
 
 function labelForType(type: TextType) {
   return TEXT_TYPES.find((item) => item.value === type)?.label ?? "Texto";
+}
+
+function RegenerateSupportingTextsButton({
+  themeId,
+  busy,
+  onGenerated,
+}: {
+  themeId: number;
+  busy: boolean;
+  onGenerated: (supportingTexts: SupportingText[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [quantities, setQuantities] = useState<Partial<Record<SupportingTextType, number>>>({});
+  const [generating, setGenerating] = useState(false);
+
+  async function generate() {
+    setGenerating(true);
+    try {
+      const supportingTexts = await apiFetch<SupportingText[]>(`/admin/essay-themes/${themeId}/supporting-texts/generate`, {
+        method: "POST",
+        body: JSON.stringify({ supporting_text_requirements: requirementsToPayload(quantities) }),
+      });
+      onGenerated(supportingTexts);
+      setOpen(false);
+      setQuantities({});
+      toast.success("Textos motivadores gerados — revise antes de salvar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar textos motivadores.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <>
+      <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setOpen(true)}>
+        Gerar com IA
+      </Button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Gerar textos motivadores com IA"
+        description="Substitui todos os textos motivadores atuais do tema pelo lote gerado — revise antes de salvar."
+      >
+        <div className="grid gap-3">
+          <SupportingTextTypePicker quantities={quantities} onChange={setQuantities} disabled={generating} />
+          <Button onClick={generate} disabled={generating}>
+            {generating ? "Gerando..." : "Gerar e substituir"}
+          </Button>
+        </div>
+      </Modal>
+    </>
+  );
 }

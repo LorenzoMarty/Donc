@@ -22,7 +22,9 @@ from src.schemas.admin import (
     AdminActivityUpdateRequest,
     AdminEssayThemeActionResponse,
     AdminEssayThemeGenerateRequest,
+    AdminEssayThemeRegenerateSupportingTextsRequest,
     AdminEssayThemeUpdateRequest,
+    AdminGeneratedSupportingTextRead,
     AdminLessonCreateRequest,
     AdminLessonRead,
     AdminLessonUpdateRequest,
@@ -159,6 +161,26 @@ def generate_essay_theme(
         ),
         "Tema gerado.",
     )
+
+
+@router.post(
+    "/essay-themes/{theme_id}/supporting-texts/generate",
+    response_model=ApiResponse[list[AdminGeneratedSupportingTextRead]],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_theme_generation"))],
+)
+def regenerate_essay_theme_supporting_texts(
+    theme_id: int,
+    payload: AdminEssayThemeRegenerateSupportingTextsRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[AdminGeneratedSupportingTextRead]]:
+    requirements = {item.type: item.count for item in payload.supporting_text_requirements if item.count > 0}
+    generated = AdminContentService(db).regenerate_essay_theme_supporting_texts(
+        theme_id=theme_id,
+        admin_user_id=current_admin.id,
+        supporting_text_requirements=requirements or None,
+    )
+    return success_response(generated, "Textos motivadores gerados.")
 
 
 @router.patch("/essay-themes/{theme_id}", response_model=ApiResponse[EssayThemeRead])

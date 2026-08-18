@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
+import { SupportingTextTypePicker, requirementsToPayload, type SupportingTextType } from "@/app/(app)/admin/_tabs/components/supporting-text-type-picker";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,7 @@ export function ExerciseGeneratorForm({
 
 export function ThemeGeneratorForm({ onGenerated }: { onGenerated: (theme: EssayTheme) => void }) {
   const [focus, setFocus] = useState("");
+  const [quantities, setQuantities] = useState<Partial<Record<SupportingTextType, number>>>({});
   const [generating, setGenerating] = useState(false);
 
   async function generate() {
@@ -114,10 +116,11 @@ export function ThemeGeneratorForm({ onGenerated }: { onGenerated: (theme: Essay
     try {
       const theme = await apiFetch<EssayTheme>("/admin/essay-themes/generate", {
         method: "POST",
-        body: JSON.stringify({ focus: focus.trim() || null, supporting_text_requirements: [{ type: "motivador", count: 3 }] }),
+        body: JSON.stringify({ focus: focus.trim() || null, supporting_text_requirements: requirementsToPayload(quantities) }),
       });
       onGenerated(theme);
       setFocus("");
+      setQuantities({});
       toast.success("Tema gerado. Revise na aba Revisões.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar tema.");
@@ -131,7 +134,7 @@ export function ThemeGeneratorForm({ onGenerated }: { onGenerated: (theme: Essay
       <Field label="Objetivo pedagógico (opcional)">
         <Input value={focus} onChange={(e) => setFocus(e.target.value)} placeholder="ex.: tecnologia, saúde pública" />
       </Field>
-      <p className="text-xs text-muted-foreground">Gera 3 textos motivadores por padrão — ajuste os detalhes depois, na aba Temas.</p>
+      <SupportingTextTypePicker quantities={quantities} onChange={setQuantities} disabled={generating} />
       <Button onClick={generate} disabled={generating}>
         {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {generating ? "Gerando..." : "Gerar conteúdo"}

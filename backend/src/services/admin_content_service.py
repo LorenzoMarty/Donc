@@ -103,6 +103,45 @@ class AdminContentService:
         self.db.refresh(theme)
         return theme
 
+    def regenerate_essay_theme_supporting_texts(
+        self,
+        *,
+        theme_id: int,
+        admin_user_id: int,
+        supporting_text_requirements: dict[str, int] | None = None,
+    ) -> list[dict]:
+        """REQ-4: gera novo lote de textos de apoio a partir do tema ja salvo, sem persistir —
+        o admin revisa/edita o retorno e confirma via update_essay_theme (PATCH)."""
+        theme = self._get_manageable_essay_theme(theme_id)
+        agent = ThemeGeneratorAgent()
+        generated = agent.generate(
+            focus=f"{theme.title}. {theme.context}",
+            supporting_text_requirements=supporting_text_requirements,
+            user_id=admin_user_id,
+            session_id=f"admin:{admin_user_id}:theme-generator:{theme_id}",
+        )
+        self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+        normalized = self._normalize_supporting_texts(
+            [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+            requirements=supporting_text_requirements,
+        )
+        record_ai_interaction(
+            self.db,
+            workflow="admin_theme_generation",
+            agent="ThemeGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={
+                "theme_id": theme_id,
+                "supporting_text_requirements": supporting_text_requirements or {},
+                "action": "regenerate_supporting_texts",
+            },
+            content_id=theme_id,
+            content_type="EssayTheme",
+        )
+        self.db.commit()
+        return normalized
+
     def update_essay_theme(
         self,
         *,
@@ -224,8 +263,8 @@ class AdminContentService:
             cleaned.append(normalized)
         if not cleaned:
             raise AppError("Adicione pelo menos um texto motivador.", status_code=422, code="missing_supporting_texts")
-        if len(cleaned) > 8:
-            raise AppError("Use no máximo 8 textos motivadores por tema.", status_code=422, code="too_many_supporting_texts")
+        if len(cleaned) > 4:
+            raise AppError("Use no máximo 4 textos motivadores por tema.", status_code=422, code="too_many_supporting_texts")
         for kind, amount in (requirements or {}).items():
             if amount > 0 and sum(1 for item in cleaned if item["type"] == kind) < amount:
                 raise AppError("A IA não gerou a quantidade solicitada de textos motivadores.", status_code=422, code="supporting_text_count_mismatch")
