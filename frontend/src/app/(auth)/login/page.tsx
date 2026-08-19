@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { ArrowRight } from "lucide-react";
@@ -72,8 +73,9 @@ export default function LoginPage() {
           </Card>
         </MotionShell>
       </section>
-      <section className="hidden bg-card lg:block">
-        <div className="flex h-full items-end bg-cover bg-center p-10" style={{ backgroundImage: "url('/study-collaboration.jpg')" }}>
+      <section className="relative hidden bg-card lg:block">
+        <Image src="/study-collaboration.jpg" alt="" fill sizes="45vw" className="object-cover" />
+        <div className="relative z-10 flex h-full items-end p-10">
           <div className="game-surface max-w-lg bg-background/90 p-5">
             <p className="mb-3 text-sm font-semibold text-primary">Redação, dados e IA</p>
             <h2 className="text-4xl font-semibold tracking-normal">Estudo guiado para evoluir com clareza.</h2>

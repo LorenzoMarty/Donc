@@ -380,7 +380,6 @@ html.dark .force-brand-green {
 html {
   min-width: 320px;
   overflow-x: hidden;
-  scroll-behavior: smooth;
   font-size: calc(70% * var(--ui-font-scale, 1));
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
