@@ -16,7 +16,6 @@ import { Check, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { GameCategory, GameCompletion, GameDefinition, OrderRound } from "@/features/gamification/types";
-import { DragHandle } from "@/games/_engines/DragHandle";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
 import { useDragSensors } from "@/games/_engines/useDragSensors";
@@ -221,8 +220,11 @@ function SortableRow({
     <li
       ref={setNodeRef}
       style={style}
+      {...(disabled ? {} : attributes)}
+      {...(disabled ? {} : listeners)}
       className={cn(
-        "group flex items-center gap-2 rounded-md border bg-background/70 py-1.5 pl-3 pr-1.5 text-sm sm:gap-3",
+        "group flex touch-none items-center gap-2 rounded-md border bg-background/70 py-1.5 pl-3 pr-1.5 text-sm sm:gap-3",
+        !disabled && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50 shadow-lg",
         verdict === "correct" && "border-emerald-500/55 bg-emerald-500/10",
         verdict === "wrong" && "border-warning/55 bg-warning/10",
@@ -236,9 +238,7 @@ function SortableRow({
         <Check className="mr-2 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
       ) : verdict === "wrong" ? (
         <X className="mr-2 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-      ) : (
-        <DragHandle attributes={attributes} listeners={listeners} disabled={disabled} />
-      )}
+      ) : null}
     </li>
   );
 }

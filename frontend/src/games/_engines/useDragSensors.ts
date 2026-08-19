@@ -10,9 +10,9 @@ import type { KeyboardCoordinateGetter } from "@dnd-kit/core";
  * ativação do gesto. `activationConstraint.distance` evita que um toque parado (tap) ou o início
  * de um scroll acidental já contem como início de drag.
  *
- * Pré-requisito pra isso funcionar bem em touch: o listener do sensor deve estar só no handle
- * (ver `DragHandle`), nunca no card inteiro — sem isso, `distance` sozinho não resolve o conflito
- * entre arrastar e rolar a página em listas verticais.
+ * Área de arraste é o bloco inteiro (decisão de produto: sem handle dedicado) — em listas
+ * verticais isso entra em conflito com rolar a página no touch; `distance` reduz mas não elimina
+ * o atrito.
  *
  * `keyboardCoordinateGetter` é opcional: passe `sortableKeyboardCoordinates` (de
  * `@dnd-kit/sortable`) quando o contexto for uma `SortableContext`; omita em drag-and-drop entre
