@@ -65,9 +65,16 @@ Redacao:
             dev_score = min(dev_score, 70)
             issues: list[str] = []
             if len(words) < 25:
-                issues.append("Parágrafo muito curto, sem desenvolvimento suficiente.")
+                issues.append(
+                    f"Parágrafo com apenas {len(words)} palavras — desenvolvimento insuficiente para "
+                    "sustentar um argumento completo (explicação + evidência + relação com a tese)."
+                )
             if arg_count == 0 and i not in (0, len(paragraphs) - 1):
-                issues.append("Ausência de marcadores argumentativos.")
+                issues.append(
+                    "Nenhum conectivo argumentativo (porque, portanto, logo, dessa forma) encontrado — "
+                    "a banca exige relação de causa e consequência explícita entre a ideia e a tese, "
+                    "não apenas afirmação."
+                )
             quote_words = words[:15]
             sample_quote = " ".join(quote_words) if quote_words else ""
             para_analyses.append(ParagraphAnalysis(

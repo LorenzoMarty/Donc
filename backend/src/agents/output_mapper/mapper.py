@@ -141,12 +141,24 @@ class OutputMapper:
 
         # Intervention quote
         if a.intervention.sample_quote and (a.intervention.absent or a.intervention.is_generic):
-            comment = "Proposta ausente ou incompleta — indique agente, ação, meio, finalidade e detalhamento."
+            el = a.intervention.elements
+            missing = [n for n, v in [("agente", el.agente), ("ação", el.acao), ("meio", el.meio), ("finalidade", el.finalidade), ("detalhamento", el.detalhamento)] if not v]
+            comment = (
+                f"Faltam os elementos {', '.join(missing)} da proposta de intervenção — "
+                "sem eles a banca não consegue avaliar quem age, como e com que efeito, e C5 é penalizada."
+                if missing
+                else "Proposta presente mas genérica: poderia se aplicar a qualquer tema, sem detalhamento concreto de execução."
+            )
             add(len(a.argumentation.paragraphs) - 1, a.intervention.sample_quote, comment, "c5")
 
         # Theme evidence
         if a.theme.tangenciamento and a.theme.evidence:
-            add(0, a.theme.evidence[:80], f"Tangenciamento ({a.theme.severity}): o texto não aborda o tema central.", "c2")
+            comment = (
+                f"Tangenciamento de severidade {a.theme.severity}: este trecho desenvolve um recorte "
+                "diferente do proposto pelo tema, o que reduz a nota de C2 porque o texto deixa de "
+                "responder diretamente à proposta."
+            )
+            add(0, a.theme.evidence[:80], comment, "c2")
 
         # Thesis
         if a.thesis.thesis_present and a.thesis.thesis_text and scores["c3"] >= 160:
@@ -155,7 +167,11 @@ class OutputMapper:
         elif not a.thesis.thesis_present:
             paragraphs = a.argumentation.paragraphs
             if paragraphs and paragraphs[0].sample_quote:
-                add(0, paragraphs[0].sample_quote, "Tese ausente ou não identificável neste parágrafo.", "c2")
+                comment = (
+                    "Nenhum posicionamento claro sobre o tema aparece na introdução — sem uma tese "
+                    "explícita a banca não sabe qual ponto de vista o texto vai defender, o que derruba C2 e C3."
+                )
+                add(0, paragraphs[0].sample_quote, comment, "c2")
 
         # Good coesão strength
         if scores["c4"] >= 160 and a.argumentation.paragraphs:

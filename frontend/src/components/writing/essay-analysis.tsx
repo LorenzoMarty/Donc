@@ -82,7 +82,6 @@ export function EssayAnalysisWorkspace({
   error: string;
 }) {
   const [activeAnnotationKey, setActiveAnnotationKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"geral" | "estrutura" | "clareza" | "estilo" | "fontes">("geral");
   const annotations = correction?.inline_annotations ?? [];
   const activeAnnotation = annotations.find((annotation) => annotationKey(annotation) === activeAnnotationKey) ?? null;
   const words = countWords(content);
@@ -160,8 +159,6 @@ export function EssayAnalysisWorkspace({
       <AIFeedbackPanel
         correction={correction}
         error={error}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         annotations={annotations}
         activeAnnotation={activeAnnotation}
         onSelectAnnotation={selectAnnotation}
@@ -253,26 +250,20 @@ function EssayDocumentPanel({
   );
 }
 
-type AnalysisTab = "geral" | "estrutura" | "clareza" | "estilo" | "fontes";
-
 function AIFeedbackPanel({
   correction,
   error,
-  activeTab,
-  onTabChange,
   annotations,
   activeAnnotation,
   onSelectAnnotation,
 }: {
   correction: Essay["correction"];
   error: string;
-  activeTab: AnalysisTab;
-  onTabChange: (tab: AnalysisTab) => void;
   annotations: InlineAnnotation[];
   activeAnnotation: InlineAnnotation | null;
   onSelectAnnotation: (annotation: InlineAnnotation | null) => void;
 }) {
-  const suggestions = buildSuggestionCards(correction, annotations, activeTab);
+  const suggestions = buildSuggestionCards(correction, annotations);
   const score = correction?.total_score ?? 0;
 
   return (
@@ -288,24 +279,6 @@ function AIFeedbackPanel({
           <Button variant="ghost" size="icon" onClick={() => onSelectAnnotation(null)} aria-label="Limpar comentário selecionado">
             <X className="h-5 w-5" aria-hidden="true" />
           </Button>
-        </div>
-        <div className="mt-5 flex gap-5 overflow-x-auto text-sm font-semibold text-muted-foreground no-scrollbar">
-          {[
-            ["geral", "Geral"],
-            ["estrutura", "Estrutura"],
-            ["clareza", "Clareza"],
-            ["estilo", "Estilo"],
-            ["fontes", "Fontes"],
-          ].map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onTabChange(key as AnalysisTab)}
-              className={cn("border-b-2 border-transparent pb-3 transition-colors", activeTab === key && "border-primary text-foreground")}
-            >
-              {label}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -333,7 +306,9 @@ function AIFeedbackPanel({
               <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"}>
                 {activeAnnotation.type === "error" ? "Ajuste" : "Força"}
               </Badge>
-              <Badge variant="outline">{competencyLabel(activeAnnotation.competency)}</Badge>
+              <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", annotationTone(activeAnnotation).badge)}>
+                {competencyLabel(activeAnnotation.competency)}
+              </span>
             </div>
             <p className="text-sm font-semibold italic text-muted-foreground">&quot;{activeAnnotation.quote}&quot;</p>
             <p className="mt-2 text-sm leading-6">{activeAnnotation.comment}</p>
@@ -375,7 +350,11 @@ function AIFeedbackPanel({
               ].map(([label, value]) => (
                 <div key={label} className="grid grid-cols-[2rem_1fr_3rem] items-center gap-2 text-sm">
                   <CompetencyLabel code={String(label)} />
-                  <Progress value={(Number(value) / 200) * 100} className="h-2" />
+                  <Progress
+                    value={(Number(value) / 200) * 100}
+                    className="h-2"
+                    indicatorClassName={competencyTone(String(label)).bar}
+                  />
                   <span className="text-right font-semibold">{value}</span>
                 </div>
               ))}
@@ -430,12 +409,12 @@ type Suggestion = {
 };
 
 function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestion; active: boolean; onClick: () => void }) {
-  const impactTone =
+  const impactDot =
     suggestion.impact === "Alto impacto"
-      ? "bg-primary/12 text-primary"
+      ? "bg-red-600"
       : suggestion.impact === "Médio impacto"
-        ? "bg-secondary text-foreground"
-        : "bg-accent/12 text-accent";
+        ? "bg-amber-600"
+        : "bg-slate-400";
 
   return (
     <button
@@ -459,11 +438,16 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
           <div>
             <p className="font-semibold">{suggestion.title}</p>
             {suggestion.annotation ? (
-              <p className="mt-1 text-xs font-semibold text-muted-foreground">{competencyLabel(suggestion.annotation.competency)}</p>
+              <span className={cn("mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold", annotationTone(suggestion.annotation).badge)}>
+                {competencyLabel(suggestion.annotation.competency)}
+              </span>
             ) : null}
           </div>
         </div>
-        <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold", impactTone)}>{suggestion.impact}</span>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-foreground">
+          <span className={cn("h-2 w-2 rounded-full", impactDot)} aria-hidden="true" />
+          {suggestion.impact}
+        </span>
       </div>
       <p className="text-sm leading-6 text-foreground/85">{suggestion.text}</p>
       <div className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-primary">
@@ -481,7 +465,7 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
   );
 }
 
-function buildSuggestionCards(correction: Essay["correction"], annotations: InlineAnnotation[], tab: AnalysisTab): Suggestion[] {
+function buildSuggestionCards(correction: Essay["correction"], annotations: InlineAnnotation[]): Suggestion[] {
   const base = annotations.map((annotation, index) => ({
     index: index + 1,
     title: suggestionTitle(annotation, index),
@@ -491,15 +475,7 @@ function buildSuggestionCards(correction: Essay["correction"], annotations: Inli
     annotation,
   })) satisfies Suggestion[];
 
-  const filtered = base.filter((item) => {
-    if (tab === "geral") return true;
-    if (tab === "estrutura") return ["c2", "c3", "c5"].includes(item.annotation.competency);
-    if (tab === "clareza") return ["c1", "c4"].includes(item.annotation.competency);
-    if (tab === "estilo") return item.annotation.type === "strength" || item.annotation.competency === "c4";
-    return ["c2", "c3"].includes(item.annotation.competency);
-  });
-
-  if (filtered.length) return filtered;
+  if (base.length) return base;
   return (correction?.suggestions ?? []).slice(0, 4).map((text, index) => ({
     index: index + 1,
     title: ["Força da tese", "Evidência", "Transições", "Conclusão"][index] ?? "Ajuste fino",
@@ -509,29 +485,70 @@ function buildSuggestionCards(correction: Essay["correction"], annotations: Inli
   }));
 }
 
+// Cor fixa por competência ENEM — não depende de tema/dark mode, pra manter a mesma
+// identidade visual (C1 azul, C2 violeta, C3 âmbar, C4 verde-azulado, C5 rosa) em qualquer contexto.
+// Classes escritas por extenso (sem interpolação) porque o Tailwind precisa achá-las como literais no scan.
+type Tone = { mark: string; marker: string; panel: string; number: string; badge: string; bar: string };
+
+const DEFAULT_TONE: Tone = {
+  mark: "bg-slate-200 decoration-slate-600 dark:bg-slate-800/60 dark:decoration-slate-300",
+  marker: "border-slate-700 bg-slate-600 text-white",
+  panel: "border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40",
+  number: "bg-slate-600 text-white",
+  badge: "bg-slate-600 text-white",
+  bar: "bg-slate-600",
+};
+
+const COMPETENCY_TONES: Record<string, Tone> = {
+  c1: {
+    mark: "bg-blue-200 decoration-blue-600 dark:bg-blue-900/60 dark:decoration-blue-300",
+    marker: "border-blue-700 bg-blue-600 text-white",
+    panel: "border-blue-300 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/40",
+    number: "bg-blue-600 text-white",
+    badge: "bg-blue-600 text-white",
+    bar: "bg-blue-600",
+  },
+  c2: {
+    mark: "bg-violet-200 decoration-violet-600 dark:bg-violet-900/60 dark:decoration-violet-300",
+    marker: "border-violet-700 bg-violet-600 text-white",
+    panel: "border-violet-300 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/40",
+    number: "bg-violet-600 text-white",
+    badge: "bg-violet-600 text-white",
+    bar: "bg-violet-600",
+  },
+  c3: {
+    mark: "bg-amber-200 decoration-amber-700 dark:bg-amber-900/60 dark:decoration-amber-300",
+    marker: "border-amber-700 bg-amber-600 text-white",
+    panel: "border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40",
+    number: "bg-amber-600 text-white",
+    badge: "bg-amber-600 text-white",
+    bar: "bg-amber-600",
+  },
+  c4: {
+    mark: "bg-teal-200 decoration-teal-700 dark:bg-teal-900/60 dark:decoration-teal-300",
+    marker: "border-teal-700 bg-teal-600 text-white",
+    panel: "border-teal-300 bg-teal-50 dark:border-teal-800 dark:bg-teal-950/40",
+    number: "bg-teal-600 text-white",
+    badge: "bg-teal-600 text-white",
+    bar: "bg-teal-600",
+  },
+  c5: {
+    mark: "bg-rose-200 decoration-rose-600 dark:bg-rose-900/60 dark:decoration-rose-300",
+    marker: "border-rose-700 bg-rose-600 text-white",
+    panel: "border-rose-300 bg-rose-50 dark:border-rose-800 dark:bg-rose-950/40",
+    number: "bg-rose-600 text-white",
+    badge: "bg-rose-600 text-white",
+    bar: "bg-rose-600",
+  },
+};
+
 function annotationTone(annotation?: InlineAnnotation | null) {
-  if (!annotation) {
-    return {
-      mark: "bg-primary/20 decoration-primary",
-      marker: "border-primary bg-primary/10 text-primary-foreground",
-      panel: "border-primary/30 bg-primary/10",
-      number: "bg-primary/20 text-primary-foreground",
-    };
-  }
-  if (annotation.type === "strength") {
-    return {
-      mark: "bg-emerald-100 decoration-emerald-500",
-      marker: "border-emerald-300 bg-emerald-50 text-emerald-700",
-      panel: "border-emerald-200 bg-emerald-50",
-      number: "bg-emerald-100 text-emerald-700",
-    };
-  }
-  return {
-    mark: "bg-primary/25 decoration-primary",
-    marker: "border-primary bg-primary/10 text-primary-foreground",
-    panel: "border-primary/30 bg-primary/10",
-    number: "bg-primary/25 text-primary-foreground",
-  };
+  if (!annotation) return DEFAULT_TONE;
+  return COMPETENCY_TONES[annotation.competency] ?? DEFAULT_TONE;
+}
+
+function competencyTone(code: string) {
+  return COMPETENCY_TONES[code.toLowerCase()] ?? DEFAULT_TONE;
 }
 
 function suggestionTitle(annotation: InlineAnnotation, index: number) {
