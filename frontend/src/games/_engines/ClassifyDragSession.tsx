@@ -16,7 +16,6 @@ import { Check, X } from "lucide-react";
 
 import { selectAdaptivePool } from "@/features/gamification/adaptive";
 import type { ClassifyItem, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
-import { DragHandle } from "@/games/_engines/DragHandle";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { shuffle } from "@/games/_engines/shuffleOptions";
 import { useDragSensors } from "@/games/_engines/useDragSensors";
@@ -218,26 +217,21 @@ function DraggableChip({ item, disabled, verdict }: { item: ClassifyItem; disabl
     <div
       ref={setNodeRef}
       style={style}
+      {...(disabled ? {} : attributes)}
+      {...(disabled ? {} : listeners)}
       className={cn(
-        "group flex max-w-full items-center gap-1 rounded-md border bg-background/70 py-1 pl-1 pr-3 text-sm font-medium transition-colors",
+        "group flex max-w-full touch-none items-center gap-1 rounded-md border bg-background/70 py-1 pl-3 pr-3 text-sm font-medium transition-colors",
+        !disabled && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-40",
         verdict === "correct" && "border-emerald-500/60 bg-emerald-500/10 text-emerald-800",
         verdict === "wrong" && "border-warning/60 bg-warning/10 text-warning",
       )}
     >
       {verdict === "correct" ? (
-        <Check className="ml-2 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       ) : verdict === "wrong" ? (
-        <X className="ml-2 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-      ) : (
-        <DragHandle
-          attributes={attributes}
-          listeners={listeners}
-          disabled={disabled}
-          className="h-8 w-8"
-          label={`Arrastar "${item.text}"`}
-        />
-      )}
+        <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      ) : null}
       <span className="min-w-0 leading-5">{item.text}</span>
     </div>
   );

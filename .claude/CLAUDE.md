@@ -94,10 +94,12 @@ os problemas mapeados na auditoria de UX multi-input (2026-08-16):
   `components/writing/essay-editor.tsx` (`handleDragPointerDown/Move/Up`, `setPointerCapture`) e
   `hooks/useMarkOnSelection.ts` (`onPointerUp` cobre Apple Pencil/Safari, que não dispara `mouseup`).
 - **Drag-and-drop**: sensors do dnd-kit centralizados em `games/_engines/useDragSensors.ts` — nunca
-  configurar `PointerSensor`/`KeyboardSensor` direto num engine novo, sempre importar esse hook. Handle
-  de arrasto sempre isolado do corpo do item via `games/_engines/DragHandle.tsx` (44×44,
-  `touch-action: none` só no handle, sem ícone de "6 pontinhos") — o card/item nunca é o handle
-  inteiro, senão arrastar entra em conflito com rolar a página em listas verticais (touch/tablet).
+  configurar `PointerSensor`/`KeyboardSensor` direto num engine novo, sempre importar esse hook. Área
+  de arraste é o card/item inteiro (decisão de produto, 2026-08-18 — não handle isolado): aplique
+  `attributes`+`listeners` de `useSortable`/`useDraggable` direto no elemento raiz do item, com
+  `touch-action: none` (`touch-none`) nele, e só spread os listeners quando o item não estiver
+  `disabled`. Trade-off aceito: em listas verticais isso conflita com rolar a página no touch/tablet
+  (`activationConstraint.distance` do sensor reduz mas não elimina o atrito).
 - **Alvo de toque mínimo 44×44** (`h-11 w-11` no Tailwind) em qualquer controle voltado ao aluno.
 - **Affordance nunca só em `:hover`** — todo indicador funcional relevante precisa de estado
   sempre-visível (ou opacidade base) + `group-focus-visible`, hover só intensifica.

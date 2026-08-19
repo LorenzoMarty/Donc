@@ -9,7 +9,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Wrench, X } from "lucide-react";
 
 import type { CollapseRound, GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
-import { DragHandle } from "@/games/_engines/DragHandle";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, pointsToGrade } from "@/games/_engines/grade";
 import { shuffle } from "@/games/_engines/shuffleOptions";
@@ -213,8 +212,11 @@ function CollapseRow({ cell, position, disabled, verdict }: { cell: Cell; positi
     <li
       ref={setNodeRef}
       style={style}
+      {...(disabled ? {} : attributes)}
+      {...(disabled ? {} : listeners)}
       className={cn(
-        "group flex items-center gap-2 rounded-md border bg-background/70 py-2 pl-3 pr-1.5 text-sm leading-6 sm:gap-3",
+        "group flex touch-none items-center gap-2 rounded-md border bg-background/70 py-2 pl-3 pr-1.5 text-sm leading-6 sm:gap-3",
+        !disabled && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50 shadow-lg",
         verdict === "ok" && "border-emerald-500/55 bg-emerald-500/10",
         verdict === "no" && "border-warning/55 bg-warning/10",
@@ -226,9 +228,7 @@ function CollapseRow({ cell, position, disabled, verdict }: { cell: Cell; positi
         <Check className="mr-2 h-4 w-4 shrink-0 text-emerald-700" aria-hidden="true" />
       ) : verdict === "no" ? (
         <X className="mr-2 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-      ) : (
-        <DragHandle attributes={attributes} listeners={listeners} disabled={disabled} />
-      )}
+      ) : null}
     </li>
   );
 }

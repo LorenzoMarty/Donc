@@ -20,7 +20,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Clock, RotateCcw, Trophy } from "lucide-react";
 
 import type { GameCategory, GameCompletion, GameDefinition } from "@/features/gamification/types";
-import { DragHandle } from "@/games/_engines/DragHandle";
 import { useDragSensors } from "@/games/_engines/useDragSensors";
 import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Button } from "@/components/ui/button";
@@ -411,18 +410,18 @@ function EssayBlockCard({
       animate={{ opacity: dragging ? 0.35 : 1, y: 0, scale: active ? 1.03 : 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "group game-tile bg-background/70 p-2 text-sm leading-6 text-foreground transition-colors",
+        "group game-tile touch-none bg-background/70 p-2 text-sm leading-6 text-foreground transition-colors",
+        listeners && "cursor-grab active:cursor-grabbing",
         active && "border-primary/45 bg-card shadow-lg",
         block.distractor && "bg-muted/50 text-muted-foreground",
       )}
     >
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1 px-1 py-1">
-          <p>{block.text}</p>
-          {block.distractor && <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Distrator</p>}
-        </div>
-        <DragHandle attributes={attributes} listeners={listeners} label="Arrastar bloco" />
+      <div className="min-w-0 px-1 py-1">
+        <p>{block.text}</p>
+        {block.distractor && <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Distrator</p>}
       </div>
     </motion.article>
   );
