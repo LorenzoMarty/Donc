@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import json
+import logging
 import time
 from collections.abc import Generator
 
@@ -45,6 +46,7 @@ from src.utils.rate_limit import require_ai_rate_limit
 
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+logger = logging.getLogger("src.routes.ai")
 
 
 @router.post(
@@ -311,6 +313,7 @@ def _history_payload(db: Session, user: User) -> dict:
     try:
         return EssayService(db).history(user.id).model_dump(mode="json")
     except Exception:
+        logger.exception("EssayService.history failed for user_id=%s", user.id)
         return {}
 
 

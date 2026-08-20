@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     enable_pgvector: bool = False
     redis_url: str = "redis://localhost:6379/0"
     ai_sync_timeout_seconds: int = 45
+    # Job async (queued/running) parado por mais tempo que isso e considerado travado (ex.: Redis
+    # vivo mas worker Celery morto — enqueue "funciona" mas ninguem consome) e marcado failed no
+    # proximo poll/SSE, em vez de ficar preso pra sempre.
+    ai_job_stale_seconds: int = 180
     enable_agentos: bool = False
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None

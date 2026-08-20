@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -14,6 +15,7 @@ from src.services.streak_service import touch_last_seen
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_prefix}/auth/login", auto_error=False)
+logger = logging.getLogger("src.dependencies")
 
 
 def get_current_user(
@@ -39,6 +41,7 @@ def get_current_user(
     try:
         user = touch_last_seen(db, user)
     except Exception:
+        logger.exception("touch_last_seen failed for user_id=%s", user.id)
         db.rollback()
 
     return user

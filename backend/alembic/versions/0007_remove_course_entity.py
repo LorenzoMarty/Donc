@@ -36,9 +36,9 @@ def upgrade() -> None:
     if "slug" not in module_columns:
         op.add_column("modules", sa.Column("slug", sa.String(140), nullable=True))
 
-    # A guarda de runtime (`_ensure_runtime_columns` em src/main.py) pode já ter criado
-    # `slug`/`color` como coluna simples antes desta migracao rodar — a constraint unique
-    # so essa migracao cria, entao verifica independente do ADD COLUMN acima.
+    # Historico: a guarda de runtime `_ensure_runtime_columns` (ja removida de src/main.py)
+    # podia ter criado `slug`/`color` como coluna simples antes desta migracao rodar — a
+    # constraint unique so essa migracao cria, entao verifica independente do ADD COLUMN acima.
     existing_constraints = {c["name"] for c in inspector.get_unique_constraints("modules")}
     if "uq_modules_slug" not in existing_constraints:
         op.create_unique_constraint("uq_modules_slug", "modules", ["slug"])

@@ -41,7 +41,7 @@ class AIJobService:
         job = self.db.get(AIJob, job_id)
         if not job or job.user_id != user_id:
             raise AppError("Job de IA não encontrado.", status_code=404, code="ai_job_not_found")
-        return job
+        return expire_stale_job(self.db, job)
 
     def get_active_for_essay(self, *, user_id: int, essay_id: int, kind: str = "essay_correction") -> AIJob | None:
         # Idempotencia: evita criar um job novo (e rodar o pipeline de IA de novo) se ja existe
@@ -120,6 +120,25 @@ class AIJobService:
                 type(exc).__name__,
                 exc,
             )
+
+
+def expire_stale_job(db: Session, job: AIJob) -> AIJob:
+    """Job async 'queued'/'running' parado por mais tempo que `ai_job_stale_seconds` e considerado
+    travado (Redis vivo mas worker Celery morto: `enqueue_correct_essay` reporta sucesso pelo
+    `.ping()`/`.delay()`, mas ninguem consome a fila) — marca failed em vez de deixar poll/SSE
+    esperando pra sempre."""
+    if job.status not in ("queued", "running"):
+        return job
+    age_seconds = (datetime.now(UTC) - job.created_at).total_seconds()
+    if age_seconds <= settings.ai_job_stale_seconds:
+        return job
+    logger.warning("Job %s parado ha %.0fs sem concluir (worker provavelmente morto/travado) — marcando failed.", job.id, age_seconds)
+    job.status = "failed"
+    job.error = "Tempo de processamento excedido. Tente reenviar a redação."
+    job.finished_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(job)
+    return job
 
 
 def job_payload(job: AIJob) -> dict:

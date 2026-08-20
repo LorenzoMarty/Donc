@@ -12,12 +12,6 @@ class ApiResponse(BaseModel, Generic[DataT]):
     data: DataT
 
 
-class ApiErrorResponse(BaseModel):
-    success: Literal[False] = False
-    message: str
-    error: str
-
-
 def success_response(data: DataT, message: str = "") -> ApiResponse[DataT]:
     return ApiResponse(data=data, message=message)
 

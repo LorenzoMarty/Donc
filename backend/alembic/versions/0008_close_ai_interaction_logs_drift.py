@@ -1,5 +1,6 @@
 """Close schema drift: ai_interaction_logs columns that were only ever created by
-the manual startup guard (`_ensure_runtime_columns` in src/main.py), never by Alembic.
+the manual startup guard `_ensure_runtime_columns` (since removed from src/main.py),
+never by Alembic.
 
 Revision ID: 0008_ai_logs_drift
 Revises: 0007_remove_course_entity

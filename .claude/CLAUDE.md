@@ -73,7 +73,7 @@ pytest / pytest --cov           # testes
 No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz proxy de `/api/backend/*` → `http://backend:8000/api/v1/*`, repassando headers de auth e cookies — frontend nunca chama backend diretamente. Em dev local sem Docker, `NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1` dá acesso direto.
 
 ### Estrutura do Frontend
-- `src/app/(app)/` — rotas protegidas via `AppShell` (`dashboard`, `redacao`, `redacoes`, `aulas`, `games`, `simulados`, `conquistas`, `trilhas`, `perfil`, `onboarding`, `admin`)
+- `src/app/(app)/` — rotas protegidas via `AppShell` (`dashboard`, `redacao`, `redacoes`, `aulas`, `games`, `perfil`, `onboarding`, `admin`). `trilhas` existe só como página de marketing pública em `src/app/(marketing)/trilhas/` — não há `simulados`/`conquistas` no app.
 - `src/app/(auth)/` — login/cadastro/recuperação; `src/app/` raiz — marketing
 - `src/features/gamification/` — XP, ranks, streaks (client-side, localStorage via Zustand)
 - `src/games/` — definições estáticas dos jogos; `src/games/_engines/` — engines interativos
