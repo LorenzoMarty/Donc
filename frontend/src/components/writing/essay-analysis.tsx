@@ -196,7 +196,7 @@ function EssayDocumentPanel({
               const paragraphAnnotations = annotationsByParagraph(pIndex);
               const segments = buildSegments(paragraph, paragraphAnnotations);
               return (
-                <p key={pIndex} className="relative pr-14">
+                <p key={pIndex}>
                   {segments.map((seg) =>
                     seg.annotation ? (
                       <button
@@ -214,30 +214,14 @@ function EssayDocumentPanel({
                         )}
                       >
                         {seg.text}
-                        <sup className={cn("ml-1 inline-grid h-5 min-w-5 place-items-center rounded-full px-1 text-[0.62rem] font-bold leading-none no-underline", annotationTone(seg.annotation).number)}>
+                        <span className={cn("ml-1 inline-grid h-5 min-w-5 translate-y-[-3px] place-items-center rounded-full px-1 align-middle text-[0.62rem] font-bold leading-none no-underline", annotationTone(seg.annotation).number)}>
                           {annotationNumber(annotations, seg.annotation)}
-                        </sup>
+                        </span>
                       </button>
                     ) : (
                       <span key={seg.index}>{seg.text}</span>
                     ),
                   )}
-                  {paragraphAnnotations.map((annotation, index) => (
-                    <button
-                      key={`${annotation.quote}-${index}`}
-                      type="button"
-                      onClick={() => onSelectAnnotation(annotation)}
-                      className={cn(
-                        "absolute right-0 inline-grid h-8 w-8 place-items-center rounded-full border text-xs font-bold shadow-sm transition-colors hover:scale-105",
-                        annotationTone(annotation).marker,
-                        index > 0 && "translate-y-10",
-                        activeAnnotation && annotationKey(activeAnnotation) === annotationKey(annotation) && "ring-2 ring-primary/50",
-                      )}
-                      aria-label={`Comentario ${annotationNumber(annotations, annotation)}`}
-                    >
-                      {annotationNumber(annotations, annotation)}
-                    </button>
-                  ))}
                 </p>
               );
             })
@@ -300,7 +284,7 @@ function AIFeedbackPanel({
         )}
 
         {activeAnnotation ? (
-          <div className={cn("rounded-md border p-4", annotationTone(activeAnnotation).panel)}>
+          <div className={cn("rounded-card border p-4 shadow-soft", annotationTone(activeAnnotation).panel)}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <Badge variant="outline">#{annotationNumber(annotations, activeAnnotation)}</Badge>
               <Badge variant={activeAnnotation.type === "error" ? "destructive" : "success"}>
@@ -334,7 +318,7 @@ function AIFeedbackPanel({
           </div>
         </section>
 
-        <section className="rounded-md border border-border bg-card p-4">
+        <section className="rounded-card border border-border bg-card p-4 shadow-soft">
           <div className="mb-3 flex items-center gap-2 font-semibold">
             <BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
             Competências
@@ -421,7 +405,7 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full rounded-md border border-border bg-card p-4 text-left transition-colors hover:border-primary/45",
+        "w-full rounded-card border border-border bg-card p-4 text-left shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-[var(--shadow-control)]",
         active && "border-primary bg-primary/10",
       )}
     >
