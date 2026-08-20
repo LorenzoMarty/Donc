@@ -162,15 +162,30 @@ function ClassifyEditor({ payload, onChange }: { payload: Payload; onChange: (p:
 // ── order ────────────────────────────────────────────────────────────────
 
 function StringArrayField({ values, onChange, addLabel }: { values: string[]; onChange: (v: string[]) => void; addLabel: string }) {
+  const [ids, setIds] = useState<string[]>(() => values.map(() => uid()));
+  const rows = values.map((v, i) => ({ value: v, id: ids[i] ?? uid() }));
+
   return (
     <div className="space-y-1.5 pl-4">
-      {values.map((v, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <Input value={v} onChange={(e) => onChange(values.map((x, j) => (j === i ? e.target.value : x)))} className="h-8 flex-1 text-xs" />
-          <RemoveButton label="" onClick={() => onChange(values.filter((_, j) => j !== i))} />
+      {rows.map((row, i) => (
+        <div key={row.id} className="flex items-center gap-2">
+          <Input value={row.value} onChange={(e) => onChange(values.map((x, j) => (j === i ? e.target.value : x)))} className="h-8 flex-1 text-xs" />
+          <RemoveButton
+            label=""
+            onClick={() => {
+              setIds((prev) => prev.filter((_, j) => j !== i));
+              onChange(values.filter((_, j) => j !== i));
+            }}
+          />
         </div>
       ))}
-      <AddButton label={addLabel} onClick={() => onChange([...values, ""])} />
+      <AddButton
+        label={addLabel}
+        onClick={() => {
+          setIds((prev) => [...prev, uid()]);
+          onChange([...values, ""]);
+        }}
+      />
     </div>
   );
 }

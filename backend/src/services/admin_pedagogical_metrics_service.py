@@ -45,22 +45,39 @@ class AdminPedagogicalMetricsService:
         return {action_type: sum(values) / len(values) for action_type, values in durations.items()}
 
     def _before_after_by_issue(self, logs: list[RecommendationLog]) -> list[BeforeAfterIssueRow]:
+        relevant = [
+            log
+            for log in logs
+            if log.completed_at is not None and log.learning_outcome_id is not None and log.target_issue is not None
+        ]
+        if not relevant:
+            return []
+
+        after_ids = {log.learning_outcome_id for log in relevant}
+        after_by_id = {
+            outcome.id: outcome
+            for outcome in self.db.scalars(select(LearningOutcome).where(LearningOutcome.id.in_(after_ids)))
+        }
+
+        user_ids = {log.user_id for log in relevant}
+        issue_codes = {log.target_issue for log in relevant}
+        candidates = self.db.scalars(
+            select(LearningOutcome)
+            .where(LearningOutcome.user_id.in_(user_ids), LearningOutcome.cognitive_issue_code.in_(issue_codes))
+            .order_by(LearningOutcome.created_at.desc())
+        ).all()
+        candidates_by_key: dict[tuple[int, str], list[LearningOutcome]] = {}
+        for outcome in candidates:
+            candidates_by_key.setdefault((outcome.user_id, outcome.cognitive_issue_code), []).append(outcome)
+
         buckets: dict[str, dict[str, int]] = {}
-        for log in logs:
-            if log.completed_at is None or log.learning_outcome_id is None or log.target_issue is None:
-                continue
-            after = self.db.get(LearningOutcome, log.learning_outcome_id)
+        for log in relevant:
+            after = after_by_id.get(log.learning_outcome_id)
             if after is None:
                 continue
-            before = self.db.scalar(
-                select(LearningOutcome)
-                .where(
-                    LearningOutcome.user_id == log.user_id,
-                    LearningOutcome.cognitive_issue_code == log.target_issue,
-                    LearningOutcome.created_at < log.shown_at,
-                )
-                .order_by(LearningOutcome.created_at.desc())
-                .limit(1)
+            before = next(
+                (o for o in candidates_by_key.get((log.user_id, log.target_issue), []) if o.created_at < log.shown_at),
+                None,
             )
             bucket = buckets.setdefault(log.target_issue, {"cycles": 0, "improved": 0, "unchanged_or_worse": 0})
             bucket["cycles"] += 1

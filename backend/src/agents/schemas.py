@@ -163,16 +163,6 @@ class PreProcessorOutput(BaseModel):
     is_truncated: bool
 
 
-class EliminationStatus(str):
-    APPROVED = "APPROVED"
-    TANGENCIAMENTO = "TANGENCIAMENTO"
-    DESVIO_GRAVE = "DESVIO_GRAVE"
-    ZERO = "ZERO"
-
-
-ELIMINATION_STATUS_VALUES = {"APPROVED", "TANGENCIAMENTO", "DESVIO_GRAVE", "ZERO"}
-
-
 class EliminationGateOutput(BaseModel):
     status: Literal["APPROVED", "TANGENCIAMENTO", "DESVIO_GRAVE", "ZERO"]
     reason: str
@@ -195,13 +185,6 @@ class ThesisAnalysisV2(BaseModel):
     is_contradictory: bool = False
     sustained_throughout: bool = False
     score: int = Field(ge=0, le=100)
-
-
-class RepertoireQuality(str):
-    FORTE = "FORTE"
-    ACEITAVEL = "ACEITAVEL"
-    FRACO = "FRACO"
-    INVALIDO = "INVALIDO"
 
 
 class RepertoireAnalysisV2(BaseModel):
@@ -244,12 +227,6 @@ class InterventionAnalysisV2(BaseModel):
     absent: bool = False
     has_human_rights_violation: bool = False
     sample_quote: str = ""
-
-
-class GrammarSeverity(str):
-    LEVE = "LEVE"
-    MEDIA = "MEDIA"
-    GRAVE = "GRAVE"
 
 
 class GrammarErrorV2(BaseModel):

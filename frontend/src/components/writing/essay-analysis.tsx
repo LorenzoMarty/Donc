@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, BarChart3, Check, Download, Link2, MoreHorizontal, Share2, WandSparkles, X } from "lucide-react";
+import { AlertCircle, BarChart3, Check, Download, Share2, WandSparkles, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -118,9 +118,9 @@ export function EssayAnalysisWorkspace({
   }
 
   return (
-    <div className="grid h-[calc(100dvh-8.75rem)] min-h-[620px] grid-rows-[minmax(0,1fr)_minmax(19rem,42dvh)] overflow-hidden rounded-md border border-border bg-card md:h-dvh md:rounded-none md:border-0 lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:grid-rows-none">
+    <div className="grid h-[calc(100dvh-8.75rem)] min-h-[620px] grid-rows-[minmax(0,1fr)_minmax(19rem,42dvh)] overflow-hidden rounded-card border border-border bg-card lg:grid-cols-[minmax(0,1fr)_minmax(23rem,30rem)] lg:grid-rows-none">
       <div className="flex min-h-0 flex-col">
-        <header className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <header className="flex flex-col gap-3 bg-card px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="min-w-0">
               <h1 className="font-display text-safe text-lg font-medium leading-tight text-foreground lg:text-xl">{title}</h1>
@@ -251,8 +251,8 @@ function AIFeedbackPanel({
   const score = correction?.total_score ?? 0;
 
   return (
-    <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border bg-background lg:border-l lg:border-t-0">
-      <div className="sticky top-0 z-10 border-b border-border bg-background px-5 py-4">
+    <aside className="mobile-scroll min-h-0 overflow-y-auto border-t border-border bg-card lg:border-l lg:border-t-0">
+      <div className="sticky top-0 z-10 bg-card px-5 py-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground">
@@ -268,7 +268,7 @@ function AIFeedbackPanel({
 
       <div className="space-y-5 p-5">
         {correction ? (
-          <div className="grid gap-5 border-b border-border pb-5 sm:grid-cols-[7rem_1fr] sm:items-center">
+          <div className="grid gap-5 sm:grid-cols-[7rem_1fr] sm:items-center">
             <ScoreRing score={score} />
             <div>
               <h3 className="text-lg font-semibold">
@@ -318,7 +318,7 @@ function AIFeedbackPanel({
           </div>
         </section>
 
-        <section className="rounded-card border border-border bg-card p-4 shadow-soft">
+        <section className="rounded-card bg-muted p-4">
           <div className="mb-3 flex items-center gap-2 font-semibold">
             <BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
             Competências
@@ -387,7 +387,6 @@ type Suggestion = {
   index: number;
   title: string;
   text: string;
-  action: string;
   impact: "Alto impacto" | "Médio impacto" | "Baixo impacto";
   annotation?: InlineAnnotation;
 };
@@ -405,8 +404,8 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full rounded-card border border-border bg-card p-4 text-left shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-[var(--shadow-control)]",
-        active && "border-primary bg-primary/10",
+        "w-full rounded-card bg-muted p-4 text-left transition-colors hover:bg-primary/10",
+        active && "bg-primary/10",
       )}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -434,17 +433,6 @@ function SuggestionCard({ suggestion, active, onClick }: { suggestion: Suggestio
         </span>
       </div>
       <p className="text-sm leading-6 text-foreground/85">{suggestion.text}</p>
-      <div className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-primary">
-        <span className="inline-flex items-center gap-2">
-          {suggestion.action.includes("citação") ? (
-            <Link2 className="h-4 w-4" aria-hidden="true" />
-          ) : (
-            <WandSparkles className="h-4 w-4" aria-hidden="true" />
-          )}
-          {suggestion.action}
-        </span>
-        <MoreHorizontal className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-      </div>
     </button>
   );
 }
@@ -454,7 +442,6 @@ function buildSuggestionCards(correction: Essay["correction"], annotations: Inli
     index: index + 1,
     title: suggestionTitle(annotation, index),
     text: annotation.comment,
-    action: annotation.competency === "c2" || annotation.competency === "c3" ? "Adicionar citação" : "Reforçar com IA",
     impact: index === 0 ? "Alto impacto" : index === 1 ? "Médio impacto" : "Baixo impacto",
     annotation,
   })) satisfies Suggestion[];
@@ -464,7 +451,6 @@ function buildSuggestionCards(correction: Essay["correction"], annotations: Inli
     index: index + 1,
     title: ["Força da tese", "Evidência", "Transições", "Conclusão"][index] ?? "Ajuste fino",
     text,
-    action: index === 1 ? "Adicionar citação" : "Reforçar com IA",
     impact: index === 0 ? "Alto impacto" : index === 1 ? "Médio impacto" : "Baixo impacto",
   }));
 }

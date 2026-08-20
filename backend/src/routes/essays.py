@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.models import AIJob, User
-from src.queues.jobs import AIJobService, enqueue_correct_essay
+from src.queues.jobs import AIJobService, enqueue_correct_essay, expire_stale_job
 from src.queues.tasks import run_correct_essay_job
 from src.schemas.common import ApiResponse, MessageResponse, success_response
 from src.schemas.essays import (
@@ -123,6 +123,7 @@ def essay_job_status(essay_id: int, current_user: User = Depends(get_current_use
     if not job or job.user_id != current_user.id:
         from src.middlewares.errors import AppError
         raise AppError("Nenhum job encontrado para essa redação.", status_code=404, code="ai_job_not_found")
+    job = expire_stale_job(db, job)
     essay_read: EssayRead | None = None
     if job.status == "completed" and job.result_payload:
         essay_read = EssayRead.model_validate(job.result_payload)
