@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import time
 from contextlib import ExitStack
 from typing import Any, TypeVar
@@ -13,6 +14,20 @@ from src.telemetry import get_ai_telemetry_client
 
 
 T = TypeVar("T", bound=BaseModel)
+logger = logging.getLogger("src.agents.base")
+
+# Falha transiente (rede/timeout/rate limit/5xx) vale retry; erro de validacao/parse ou 4xx do
+# cliente nao — repetir a mesma chamada com o mesmo prompt invalido so desperdica custo.
+_TRANSIENT_ERROR_MARKERS = (
+    "timeout", "timed out", "connection", "rate limit", "rate_limit", "429", "500", "502", "503", "504",
+)
+_RETRY_ATTEMPTS_PER_MODEL = 2
+_RETRY_BACKOFF_SECONDS = 1.5
+
+
+def _is_transient(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return any(marker in text for marker in _TRANSIENT_ERROR_MARKERS)
 
 
 class AgnoAgentRunner:
@@ -64,51 +79,73 @@ class AgnoAgentRunner:
             except Exception as exc:
                 return self._finish_run(fallback, start=start, span=span, used_fallback=True, error=f"agno_import_failed: {exc}")
 
-            try:
-                model = OpenAIResponses(
-                    id=settings.openai_model,
-                    api_key=settings.openai_api_key,
-                    timeout=settings.ai_sync_timeout_seconds,
-                )
-                agent_kwargs: dict[str, Any] = {
-                    "model": model,
-                    "name": agent_name,
-                    "description": description,
-                    "instructions": instructions or description,
-                    "output_schema": output_schema,
-                    "telemetry": False,
-                }
-                db = self._build_agno_db()
-                if db is not None:
-                    agent_kwargs.update(
-                        {
-                            "db": db,
-                            "add_history_to_context": True,
-                            "enable_agentic_memory": True,
-                            "update_memory_on_run": True,
-                            "add_memories_to_context": True,
+            db = self._build_agno_db()
+            models_to_try = [settings.openai_model]
+            if settings.openai_fallback_model and settings.openai_fallback_model != settings.openai_model:
+                models_to_try.append(settings.openai_fallback_model)
+
+            last_exc: Exception | None = None
+            for model_index, model_id in enumerate(models_to_try):
+                for attempt in range(_RETRY_ATTEMPTS_PER_MODEL):
+                    try:
+                        model = OpenAIResponses(
+                            id=model_id,
+                            api_key=settings.openai_api_key,
+                            timeout=settings.ai_sync_timeout_seconds,
+                        )
+                        agent_kwargs: dict[str, Any] = {
+                            "model": model,
+                            "name": agent_name,
+                            "description": description,
+                            "instructions": instructions or description,
+                            "output_schema": output_schema,
+                            "telemetry": False,
                         }
-                    )
-                agent = Agent(**agent_kwargs)
-                run_output = agent.run(
-                    prompt,
-                    user_id=str(user_id) if user_id is not None else None,
-                    session_id=session_id,
-                )
-                raw_content = getattr(run_output, "content", None)
-                if raw_content:
-                    # Only trust metrics when agno actually returned content: on a swallowed API
-                    # failure (e.g. auth error logged internally, no exception raised) run_output.metrics
-                    # can report bogus token counts even though nothing real happened.
-                    metrics = getattr(run_output, "metrics", None)
-                    self.last_input_tokens = self._metric_value(metrics, {"input_tokens", "prompt_tokens"})
-                    self.last_output_tokens = self._metric_value(metrics, {"output_tokens", "completion_tokens"})
-                    self.last_token_count = self._extract_token_count(metrics)
-                result = self._coerce_output(raw_content, output_schema, fallback)
-                return self._finish_run(result, start=start, span=span, used_fallback=result is fallback)
-            except Exception as exc:
-                self._mark_span_error(span, str(exc))
-                return self._finish_run(fallback, start=start, span=span, used_fallback=True, error=str(exc))
+                        if db is not None:
+                            agent_kwargs.update(
+                                {
+                                    "db": db,
+                                    "add_history_to_context": True,
+                                    "enable_agentic_memory": True,
+                                    "update_memory_on_run": True,
+                                    "add_memories_to_context": True,
+                                }
+                            )
+                        agent = Agent(**agent_kwargs)
+                        run_output = agent.run(
+                            prompt,
+                            user_id=str(user_id) if user_id is not None else None,
+                            session_id=session_id,
+                        )
+                        raw_content = getattr(run_output, "content", None)
+                        if raw_content:
+                            # Only trust metrics when agno actually returned content: on a swallowed API
+                            # failure (e.g. auth error logged internally, no exception raised) run_output.metrics
+                            # can report bogus token counts even though nothing real happened.
+                            metrics = getattr(run_output, "metrics", None)
+                            self.last_input_tokens = self._metric_value(metrics, {"input_tokens", "prompt_tokens"})
+                            self.last_output_tokens = self._metric_value(metrics, {"output_tokens", "completion_tokens"})
+                            self.last_token_count = self._extract_token_count(metrics)
+                        self.last_model = model_id
+                        result = self._coerce_output(raw_content, output_schema, fallback)
+                        return self._finish_run(result, start=start, span=span, used_fallback=result is fallback)
+                    except Exception as exc:
+                        last_exc = exc
+                        transient = _is_transient(exc)
+                        logger.warning(
+                            "Chamada OpenAI falhou (agent=%s model=%s tentativa=%s/%s transiente=%s): %s",
+                            agent_name, model_id, attempt + 1, _RETRY_ATTEMPTS_PER_MODEL, transient, exc,
+                        )
+                        if not transient:
+                            break  # erro nao-transiente: nao adianta repetir no mesmo modelo
+                        if attempt < _RETRY_ATTEMPTS_PER_MODEL - 1:
+                            time.sleep(_RETRY_BACKOFF_SECONDS * (attempt + 1))
+                # esgotou tentativas neste modelo — tenta o proximo (fallback), se houver
+                if model_index < len(models_to_try) - 1:
+                    logger.warning("Trocando para modelo de fallback apos falha em %s (agent=%s)", model_id, agent_name)
+
+            self._mark_span_error(span, str(last_exc))
+            return self._finish_run(fallback, start=start, span=span, used_fallback=True, error=str(last_exc))
 
     def _reset_run_state(self, prompt: str) -> None:
         self.last_token_count = 0

@@ -6,37 +6,22 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { AuthContext, type AuthContextValue } from "@/contexts/auth-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AUTH_UNAUTHORIZED_EVENT } from "@/lib/http-client";
 import { authApi, type User } from "@/services/api";
 import { ensureGameStoreOwner } from "@/stores/game-store";
-
-function setSession(token: string) {
-  window.localStorage.setItem("access_token", token);
-  document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-}
-
-function clearSession() {
-  window.localStorage.removeItem("access_token");
-  document.cookie = "access_token=; path=/; max-age=0; SameSite=Lax";
-}
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const token = window.localStorage.getItem("access_token");
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-    document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+    // Sessão vive num cookie httpOnly (nunca legível por JS) — a única forma de saber se existe
+    // é perguntar ao backend. `credentials: "include"` (http-client.ts) já manda o cookie.
     try {
       const me = await authApi.me();
       ensureGameStoreOwner(me.id);
       setUser(me);
     } catch {
-      clearSession();
       setUser(null);
     } finally {
       setLoading(false);
@@ -50,6 +35,14 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(id);
   }, [refresh]);
 
+  useEffect(() => {
+    function handleUnauthorized() {
+      setUser(null);
+    }
+    window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -57,23 +50,22 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       refresh,
       login: async (email: string, password: string) => {
         const payload = await authApi.login(email, password);
-        setSession(payload.access_token);
         ensureGameStoreOwner(payload.user.id);
         setUser(payload.user);
       },
       register: async (name: string, email: string, password: string) => {
         const payload = await authApi.register(name, email, password);
-        setSession(payload.access_token);
         ensureGameStoreOwner(payload.user.id);
         setUser(payload.user);
       },
       logout: () => {
-        clearSession();
         setUser(null);
-        // Hard reload intencional: garante que nenhum estado de sessão anterior (React Query,
-        // caches em memória) sobreviva no client após logout.
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = "/login";
+        authApi.logout().catch(() => undefined).finally(() => {
+          // Hard reload intencional: garante que nenhum estado de sessão anterior (caches em
+          // memória, stores client-side) sobreviva no client após logout.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+          window.location.href = "/login";
+        });
       },
     }),
     [loading, refresh, user],

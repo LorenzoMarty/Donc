@@ -324,6 +324,7 @@ def upsert_game_progress(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[GameProgressRead]:
+    _assert_game_playable(db, game_id)
     row = db.query(UserGameProgress).filter(
         UserGameProgress.user_id == current_user.id,
         UserGameProgress.game_id == game_id,

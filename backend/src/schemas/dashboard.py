@@ -65,6 +65,7 @@ class NextActionRead(BaseModel):
     target: str | None = None
     reason: str
     estimated_minutes: int
+    recommendation_log_id: int | None = None
 
 
 class DashboardResponse(BaseModel):

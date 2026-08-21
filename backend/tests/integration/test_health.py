@@ -10,15 +10,37 @@ from tests.fixtures import VALID_GAME_COMPLETE, VALID_GAME_PROGRESS
 pytestmark = pytest.mark.integration
 
 
-def test_health_ok(client: TestClient) -> None:
+class _FakeRedisClient:
+    def ping(self) -> bool:
+        return True
+
+
+def test_health_ok(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("redis.from_url", lambda *_args, **_kwargs: _FakeRedisClient())
     res = client.get("/health")
     assert res.status_code == 200
     body = res.json()
     assert body["success"] is True
     assert body["data"]["status"] == "ok"
+    assert body["data"]["database"] == "ok"
+    assert body["data"]["redis"] == "ok"
 
 
-def test_root_mirrors_health(client: TestClient) -> None:
+def test_health_degraded_when_redis_down(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    def _boom(*_args, **_kwargs):
+        raise ConnectionError("redis indisponivel")
+
+    monkeypatch.setattr("redis.from_url", _boom)
+    res = client.get("/health")
+    assert res.status_code == 503
+    body = res.json()
+    assert body["data"]["status"] == "degraded"
+    assert body["data"]["redis"] == "down"
+    assert body["data"]["database"] == "ok"
+
+
+def test_root_mirrors_health(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("redis.from_url", lambda *_args, **_kwargs: _FakeRedisClient())
     res = client.get("/")
     assert res.status_code == 200
     assert res.json()["data"]["status"] == "ok"

@@ -112,6 +112,7 @@ export type NextRecommendedAction = {
   target: string | null;
   reason: string;
   estimated_minutes: number;
+  recommendation_log_id: number | null;
 };
 
 export type Dashboard = {

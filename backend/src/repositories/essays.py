@@ -34,6 +34,19 @@ class EssayRepository:
             stmt = stmt.where(Essay.user_id == user_id)
         return self.db.scalar(stmt)
 
+    def lock_essay_for_correction(self, essay_id: int, user_id: int) -> Essay | None:
+        """`FOR UPDATE` na linha da redação — serializa submissões concorrentes da mesma redação
+        (ex.: duplo clique, retry automático) na origem, em vez de deixar as duas rodarem o
+        pipeline de IA inteiro e só colidirem no fim, na constraint única de `EssayCorrection`.
+        Sem efeito real em SQLite (sem locking por linha; usado só nos testes)."""
+        stmt = (
+            select(Essay)
+            .options(selectinload(Essay.theme), selectinload(Essay.correction), selectinload(Essay.versions).selectinload(EssayVersion.correction))
+            .where(Essay.id == essay_id, Essay.user_id == user_id)
+            .with_for_update()
+        )
+        return self.db.scalar(stmt)
+
     def list_by_user(self, user_id: int) -> list[Essay]:
         stmt = (
             select(Essay)

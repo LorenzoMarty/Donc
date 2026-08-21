@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { apiFetch, type Essay, type JobStatus } from "@/services/api";
+import { ApiClientError, apiFetch, type Essay, type JobStatus } from "@/services/api";
 
 const AGENT_LABELS = [
   "Preparando análise...",
@@ -26,6 +26,10 @@ export type CorrectionStatus = {
 };
 
 const SLOW_THRESHOLD_SECONDS = 25;
+// Sem isso, job travado/preso em "queued" pra sempre pollava para sempre em silêncio — 10min é
+// bem acima do `AI_SYNC_TIMEOUT_SECONDS`/`ai_job_stale_seconds` do backend (45s/180s), então um job
+// saudável nunca bate nesse teto; só cobre o caso patológico.
+const MAX_POLL_SECONDS = 600;
 
 export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   const [phase, setPhase] = useState<CorrectionPhase>("idle");
@@ -34,13 +38,16 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   const [error, setError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const agentIndexRef = useRef(0);
+  const elapsedRef = useRef(0);
+  const stoppedRef = useRef(false);
 
   const stopAll = useCallback(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
+    stoppedRef.current = true;
+    if (pollRef.current) clearTimeout(pollRef.current);
     if (agentTickRef.current) clearInterval(agentTickRef.current);
     if (elapsedTickRef.current) clearInterval(elapsedTickRef.current);
     pollRef.current = null;
@@ -61,12 +68,21 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
   useEffect(() => {
     if (!essayId) return;
 
+    stoppedRef.current = false;
+    elapsedRef.current = 0;
+
     const resetId = window.setTimeout(() => {
       setPhase("queued");
       setAgentIndex(0);
       setEssay(null);
       setError(null);
     }, 0);
+
+    // Backoff simples: 2s nos primeiros 30s (janela em que a maioria das correções termina),
+    // 5s depois — reduz carga no backend sem atrasar perceptivelmente o caso comum.
+    function nextDelay() {
+      return elapsedRef.current < 30 ? 2000 : 5000;
+    }
 
     async function poll() {
       try {
@@ -86,14 +102,31 @@ export function useCorrectionStatus(essayId: number | null): CorrectionStatus {
           setPhase("failed");
           setError(status.error ?? "A correção falhou. Tente novamente.");
         }
-      } catch {
-        // transient error — keep polling
+      } catch (err) {
+        if (err instanceof ApiClientError && err.status === 401) {
+          stopAll();
+          setPhase("failed");
+          setError("Sessão expirada. Faça login novamente pra ver o resultado.");
+          return;
+        }
+        // outro erro transiente — mantém pollando
       }
+      if (!stoppedRef.current) pollRef.current = setTimeout(poll, nextDelay());
     }
 
-    poll();
-    pollRef.current = setInterval(poll, 2000);
-    elapsedTickRef.current = setInterval(() => setElapsedSeconds((value) => value + 1), 1000);
+    void poll();
+    elapsedTickRef.current = setInterval(() => {
+      setElapsedSeconds((value) => {
+        const next = value + 1;
+        elapsedRef.current = next;
+        if (next >= MAX_POLL_SECONDS) {
+          stopAll();
+          setPhase((current) => (current === "completed" ? current : "failed"));
+          setError((current) => current ?? "A correção está demorando demais. Tente novamente mais tarde.");
+        }
+        return next;
+      });
+    }, 1000);
 
     return () => {
       window.clearTimeout(resetId);

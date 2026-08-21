@@ -21,7 +21,7 @@ function fakeDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
     recent_essays: [],
     suggested_lessons: [],
     goals: [],
-    next_action: { type: "ESSAY", target_issue: null, target: null, reason: "Envie uma redação para continuarmos o diagnóstico.", estimated_minutes: 60 },
+    next_action: { type: "ESSAY", target_issue: null, target: null, reason: "Envie uma redação para continuarmos o diagnóstico.", estimated_minutes: 60, recommendation_log_id: null },
     ...overrides,
   };
 }

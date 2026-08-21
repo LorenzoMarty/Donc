@@ -157,14 +157,17 @@ def enqueue_correct_essay(job_id: str) -> bool:
         from src.queues.tasks import correct_essay_task
 
         if correct_essay_task is None:
-            logger.warning("Celery indisponivel para job %s (correct_essay_task=None); caindo para execucao sincrona.", job_id)
+            logger.error(
+                "SYNC_FALLBACK_TRIGGERED job=%s reason=celery_unavailable — correcao vai rodar dentro da request HTTP.",
+                job_id,
+            )
             return False
         redis.from_url(settings.redis_url, socket_connect_timeout=0.2, socket_timeout=0.2).ping()
         correct_essay_task.delay(job_id)
         return True
     except Exception as exc:
-        logger.warning(
-            "Falha ao enfileirar job %s no Celery/Redis (caindo para execucao sincrona): %s: %s",
+        logger.error(
+            "SYNC_FALLBACK_TRIGGERED job=%s reason=enqueue_failed error=%s: %s — correcao vai rodar dentro da request HTTP.",
             job_id,
             type(exc).__name__,
             exc,

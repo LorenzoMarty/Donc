@@ -16,4 +16,5 @@ export const authApi = {
     }),
   recover: (email: string) =>
     apiFetch<{ message: string }>("/auth/password-recovery", { method: "POST", body: JSON.stringify({ email }) }),
+  logout: () => apiFetch<{ message: string }>("/auth/logout", { method: "POST" }),
 };

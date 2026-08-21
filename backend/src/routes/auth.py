@@ -1,6 +1,7 @@
-﻿from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
+from src.config.settings import settings
 from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
@@ -23,18 +24,37 @@ from src.services.auth_service import AuthService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _set_session_cookie(response: Response, token: str) -> None:
+    # httpOnly: token nunca legível por JS (mitiga exfiltração via XSS). Secure só em produção
+    # (dev roda em http puro). SameSite=Lax: cobre o proxy same-origin (Docker) e o same-site
+    # localhost:3000->localhost:8000 (dev direto) sem abrir CSRF cross-site.
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+        httponly=True,
+        secure=settings.environment.lower() == "production",
+        samesite="lax",
+    )
+
+
 @router.post("/register", response_model=ApiResponse[TokenResponse], status_code=201)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
+def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
     service = AuthService(db)
     user = service.register(name=payload.name, email=str(payload.email), password=payload.password)
-    return success_response(TokenResponse(access_token=service.token_for(user), user=user), "Conta criada com sucesso.")
+    token = service.token_for(user)
+    _set_session_cookie(response, token)
+    return success_response(TokenResponse(access_token=token, user=user), "Conta criada com sucesso.")
 
 
 @router.post("/login", response_model=ApiResponse[TokenResponse])
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
+def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
     service = AuthService(db)
     user = service.authenticate(email=str(payload.email), password=payload.password)
-    return success_response(TokenResponse(access_token=service.token_for(user), user=user), "Login realizado com sucesso.")
+    token = service.token_for(user)
+    _set_session_cookie(response, token)
+    return success_response(TokenResponse(access_token=token, user=user), "Login realizado com sucesso.")
 
 
 @router.get("/me", response_model=ApiResponse[UserRead])
@@ -85,8 +105,9 @@ def update_onboarding(
 
 
 @router.post("/logout", response_model=ApiResponse[MessageResponse])
-def logout() -> ApiResponse[MessageResponse]:
-    return success_response(MessageResponse(message="Sessao encerrada no cliente."), "Sessao encerrada.")
+def logout(response: Response) -> ApiResponse[MessageResponse]:
+    response.delete_cookie(key="access_token", path="/")
+    return success_response(MessageResponse(message="Sessao encerrada."), "Sessao encerrada.")
 
 
 @router.post("/password-recovery", response_model=ApiResponse[MessageResponse])
