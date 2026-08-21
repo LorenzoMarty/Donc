@@ -22,8 +22,15 @@ class RecommendationLog(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     action_type: Mapped[str] = mapped_column(String(20), nullable=False)  # LESSON | EXERCISE | GAME | ESSAY
-    target_issue: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
-    target: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    target_issue: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("cognitive_issues.code"), nullable=True, index=True
+    )
+    # Substituem `target` genérico (auditoria arquitetural 2026-08-21) — só um preenchido,
+    # conforme `action_type`. GAME aponta pra um hub (`target_hub`), que não é entidade
+    # persistida (não existe tabela de hub) — FK real só é possível pra LESSON/EXERCISE.
+    lesson_id: Mapped[int | None] = mapped_column(ForeignKey("lessons.id", ondelete="SET NULL"), nullable=True)
+    exercise_id: Mapped[int | None] = mapped_column(ForeignKey("exercises.id", ondelete="SET NULL"), nullable=True)
+    target_hub: Mapped[str | None] = mapped_column(String(40), nullable=True)
     shown_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

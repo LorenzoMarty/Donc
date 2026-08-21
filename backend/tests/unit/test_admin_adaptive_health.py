@@ -90,7 +90,7 @@ def test_student_with_recommendation_log_is_not_listed():
             user_id=student.id, cognitive_issues={"C3_LOW": {"state": "DETECTED", "negative_count": 1, "positive_streak": 0}}
         )
     )
-    db.add(RecommendationLog(user_id=student.id, action_type="GAME", target_issue="C3_LOW", target="perde-na-c3"))
+    db.add(RecommendationLog(user_id=student.id, action_type="GAME", target_issue="C3_LOW", target_hub="perde-na-c3"))
     db.commit()
 
     report = AdminAdaptiveHealthService(db).report()
@@ -101,7 +101,7 @@ def test_student_with_recommendation_log_is_not_listed():
 def test_recommendation_without_content_target_is_listed():
     db = _session()
     student = _make_student(db, "essay-fallback@test.com")
-    db.add(RecommendationLog(user_id=student.id, action_type="ESSAY", target_issue=None, target=None))
+    db.add(RecommendationLog(user_id=student.id, action_type="ESSAY", target_issue=None))
     db.commit()
 
     report = AdminAdaptiveHealthService(db).report()

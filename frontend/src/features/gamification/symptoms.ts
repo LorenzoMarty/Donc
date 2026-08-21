@@ -37,7 +37,9 @@ export type SymptomHub = {
   weaknessNarrative: string;
 };
 
-/** Registro central dos 7 hubs. Toda a arquitetura cognitiva referencia daqui. */
+/** Registro central dos 7 hubs. Toda a arquitetura cognitiva referencia daqui. Ids espelhados à
+ * mão em backend/src/memory/cognitive_issues.py (HUB_TO_ISSUE) — hub novo aqui precisa de entrada
+ * lá também (auditoria arquitetural 2026-08-21, P2-5). */
 export const HUBS: Record<SymptomHubId, SymptomHub> = {
   "texto-robotico": {
     id: "texto-robotico",

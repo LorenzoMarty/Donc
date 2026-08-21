@@ -39,7 +39,7 @@ def test_recommended_actions_targets_detected_issue(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-endpoint-drill",
+            "game_id": "connectives-precision",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,
@@ -56,7 +56,7 @@ def test_recommended_actions_targeting_issue_expose_confidence_level(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-endpoint-confidence",
+            "game_id": "referential-cohesion",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,
@@ -77,7 +77,7 @@ def test_recommended_actions_expose_recommendation_log_id_and_are_recorded_as_sh
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-endpoint-log",
+            "game_id": "connective-function-match",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,
@@ -106,7 +106,7 @@ def test_start_recommendation_marks_started_at(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-endpoint-start",
+            "game_id": "competency-diagnosis",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,

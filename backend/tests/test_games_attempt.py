@@ -36,7 +36,7 @@ def _override_user(email: str):
 
 def _valid_payload(**overrides):
     payload = {
-        "game_id": "thesis-tese-vaga",
+        "game_id": "fallacy-hunt",
         "score": 7,
         "total": 10,
         "duration_seconds": 90,
@@ -52,14 +52,14 @@ def test_complete_game_persists_attempt_and_updates_progress(client):
     response = client.post("/api/v1/games/complete", json=_valid_payload())
     assert response.status_code == 200
     data = api_data(response)
-    assert data["game_id"] == "thesis-tese-vaga"
+    assert data["game_id"] == "fallacy-hunt"
     assert data["score"] == 7
     assert data["total"] == 10
     assert data["accuracy"] == 70
 
     db = SessionLocal()
     try:
-        row = db.scalar(select(GameAttempt).where(GameAttempt.game_id == "thesis-tese-vaga"))
+        row = db.scalar(select(GameAttempt).where(GameAttempt.game_id == "fallacy-hunt"))
         assert row is not None
         assert row.score == 7
         assert row.accuracy == 70
@@ -68,7 +68,7 @@ def test_complete_game_persists_attempt_and_updates_progress(client):
         db.close()
 
     progress_response = client.get("/api/v1/games/progress")
-    progress = next(p for p in api_data(progress_response) if p["game_id"] == "thesis-tese-vaga")
+    progress = next(p for p in api_data(progress_response) if p["game_id"] == "fallacy-hunt")
     assert progress["best_score"] == 7
     assert progress["plays"] == 1
 

@@ -10,6 +10,8 @@ import { BarChart3, Check, ChevronRight, Map, PenLine, Target, type LucideIcon }
 import { apiFetch } from "@/lib/http-client";
 import { cn } from "@/utils";
 
+// Ids espelhados em backend/src/schemas/auth.py (OnboardingUpdateRequest.goal Literal) — mudou um
+// id aqui, muda lá também, senão o backend rejeita com 422 silenciosamente pro usuário.
 const GOALS = [
   { id: "900+", label: "Nota 900+", description: "Mira no topo do ranking" },
   { id: "850-900", label: "850 – 900", description: "Acima da maioria dos candidatos" },
@@ -17,6 +19,8 @@ const GOALS = [
   { id: "consistencia", label: "Criar hábito", description: "Escrever com regularidade primeiro" },
 ];
 
+// Ids espelhados em backend/src/schemas/auth.py (OnboardingUpdateRequest.level Literal) — mesma
+// regra do GOALS acima.
 const LEVELS = [
   { id: "iniciante", label: "Iniciante", description: "Ainda não escrevi redações para o ENEM" },
   { id: "intermediario", label: "Intermediário", description: "Já escrevi algumas, quero subir a nota" },

@@ -67,7 +67,9 @@ SupportingTextType = Literal[
 
 class AdminSupportingTextRequest(BaseModel):
     title: str = Field(min_length=4, max_length=120)
-    content: str = Field(min_length=20, max_length=1200)
+    # min_length espelha o frontend (admin/_tabs/themes.tsx validateDraft) — os dois precisam
+    # continuar em 40 (auditoria arquitetural, REQ-8/P1-6: já tinham divergido pra 20 aqui).
+    content: str = Field(min_length=40, max_length=1200)
     type: SupportingTextType = "motivador"
 
 

@@ -12,7 +12,7 @@ class UserRepository:
         return self.db.get(User, user_id)
 
     def get_by_email(self, email: str) -> User | None:
-        return self.db.scalar(select(User).where(User.email == email.lower()))
+        return self.db.scalar(select(User).where(User.email == email.lower(), User.deleted_at.is_(None)))
 
     def create(self, *, name: str, email: str, hashed_password: str) -> User:
         user = User(name=name, email=email.lower(), hashed_password=hashed_password)
@@ -28,5 +28,5 @@ class UserRepository:
         return user
 
     def list_users(self) -> list[User]:
-        return list(self.db.scalars(select(User).order_by(User.created_at.desc())))
+        return list(self.db.scalars(select(User).where(User.deleted_at.is_(None)).order_by(User.created_at.desc())))
 

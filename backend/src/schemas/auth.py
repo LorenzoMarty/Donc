@@ -52,6 +52,8 @@ class TokenResponse(BaseModel):
 
 
 class OnboardingUpdateRequest(BaseModel):
+    # Ids espelhados em frontend/src/app/(app)/onboarding/page.tsx (GOALS/LEVELS) — mudou um id
+    # aqui, muda lá também, senão o onboarding do frontend passa a rejeitar com 422.
     goal: Literal["900+", "850-900", "800-850", "consistencia"] | None = None
     level: Literal["iniciante", "intermediario", "avancado"] | None = None
 

@@ -236,7 +236,7 @@ def test_learning_profile_cognitive_issues_expose_confidence(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "learning-profile-confidence",
+            "game_id": "grammar-hunt",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,
@@ -254,7 +254,7 @@ def test_learning_profile_cognitive_issues_expose_historical_timeline(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "learning-profile-timeline",
+            "game_id": "comma-surgeon",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,

@@ -28,6 +28,10 @@ class User(Base):
     # atividade pedagogica real (jogo concluido, exercicio, aula concluida, redacao enviada).
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Soft-delete (auditoria arquitetural 2026-08-21): exclusão de conta preserva histórico
+    # pedagógico (não é mais `db.delete()` + CASCADE) — linha continua existindo, só marcada.
+    # `None` = conta ativa. Toda leitura de autenticação/listagem admin filtra por isso.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")

@@ -9,6 +9,7 @@ from src.memory.recommendation_log import record_shown
 from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, Module, User
 from src.middlewares.errors import AppError
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, NextActionRead, PendingExercise, RecentEssay, RecentLesson, TrendPoint
+from src.services.competency_stats import mean_competency
 from src.services.recommendation_service import RecommendationEngine
 
 
@@ -244,9 +245,10 @@ class DashboardService:
             "C4": "competency_4",
             "C5": "competency_5",
         }
+        corrections = [essay.correction for essay in corrected]
         points: list[MasteryPoint] = []
         for competency, field in fields.items():
-            value = int(sum(getattr(essay.correction, field) for essay in corrected) / len(corrected)) if corrected else 0
+            value = mean_competency(corrections, field)
             points.append(MasteryPoint(competency=competency, label=labels[competency], value=value))
         return points
 

@@ -123,6 +123,6 @@ def test_low_c3_records_essay_learning_outcome_with_weight_two():
         select(LearningOutcome).where(LearningOutcome.user_id == user_id, LearningOutcome.cognitive_issue_code == "C3_LOW")
     ).one()
     assert row.source == "ESSAY"
-    assert row.source_id == 42
+    assert row.essay_id == 42
     assert row.direction == "negative"
     assert row.weight == 2

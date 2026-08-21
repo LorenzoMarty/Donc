@@ -11,7 +11,7 @@ import type { SymptomHubId } from "@/features/gamification/types";
 import { CategoryCard } from "@/game-pages/games/components/CategoryCard";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch, type NextRecommendedAction } from "@/services/api";
+import { apiFetch, type Dashboard, type NextRecommendedAction } from "@/services/api";
 import { useGameStore } from "@/stores/game-store";
 
 const KNOWN_HUB_IDS = new Set<string>([
@@ -27,9 +27,9 @@ const KNOWN_HUB_IDS = new Set<string>([
 export default function GamesHub() {
   const [ready, setReady] = useState(false);
   const [backendAction, setBackendAction] = useState<NextRecommendedAction | null>(null);
+  const [streakDays, setStreakDays] = useState<number | null>(null);
   const progress = useGameStore((state) => state.progress);
   const adaptive = useGameStore((state) => state.adaptive);
-  const streak = useGameStore((state) => state.streak);
   const remoteGames = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
 
@@ -46,7 +46,26 @@ export default function GamesHub() {
     let ignore = false;
     apiFetch<NextRecommendedAction[]>("/ai/recommended-actions")
       .then((actions) => {
-        if (!ignore) setBackendAction(actions[0] ?? null);
+        // REQ-3 (auditoria P1-1): olha a lista inteira por uma acao GAME, nao so a primeira —
+        // o backend normalmente prioriza LESSON/EXERCISE antes de GAME pro mesmo issue ativo, e
+        // descartar o resto da lista jogava fora uma recomendacao de jogo valida na maioria dos
+        // casos, caindo pro calculo local sem necessidade.
+        if (!ignore) setBackendAction(actions.find((action) => action.type === "GAME") ?? actions[0] ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+    // REQ-2 (auditoria P0-2): streak exibido aqui usava calculo client-side (corte de dia em
+    // UTC) que podia divergir do streak oficial (backend, fuso America/Sao_Paulo) numa janela
+    // de horario especifica — le direto do backend, mesma fonte que dashboard/perfil.
+    apiFetch<Dashboard>("/dashboard")
+      .then((dashboard) => {
+        if (!ignore) setStreakDays(dashboard.streak_days);
       })
       .catch(() => undefined);
     return () => {
@@ -77,7 +96,7 @@ export default function GamesHub() {
   }
 
   const metrics: { icon: LucideIcon; value: string; label: string; tint: string }[] = [
-    { icon: Zap, value: `${streak.current} dias`, label: "Sequência", tint: "#e5484d" },
+    { icon: Zap, value: `${streakDays ?? 0} dias`, label: "Sequência", tint: "#e5484d" },
     { icon: Gauge, value: `${overallProgress}%`, label: "Maestria geral", tint: "#0a84ff" },
   ];
 

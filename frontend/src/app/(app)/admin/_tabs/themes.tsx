@@ -44,6 +44,9 @@ const TEXT_TYPES: { value: TextType; label: string }[] = [
   { value: "charge", label: "Charge (IA gera imagem)" },
 ];
 
+// Números espelhados em backend/src/schemas/admin.py (AdminSupportingTextRequest/
+// AdminEssayThemeCreateRequest) e backend/src/services/admin_content_service.py
+// (_normalize_supporting_texts) — mudou aqui, muda lá também (auditoria arquitetural, P1-6).
 function validateDraft(current: ThemeDraft) {
   if (current.title.trim().length < 8) return "O título precisa ter pelo menos 8 caracteres.";
   if (current.context.trim().length < 20) return "O contexto precisa explicar a proposta com mais detalhe.";

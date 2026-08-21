@@ -11,6 +11,7 @@ from src.models import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVer
 from src.repositories.essays import EssayRepository
 from src.schemas.essays import EssayEvolutionPoint, EssayHistoryResponse
 from src.services.ai_telemetry import record_ai_interaction
+from src.services.competency_stats import mean_competencies
 from src.services.ai_service import EssayAIService
 
 
@@ -269,12 +270,15 @@ class EssayService:
             self._ensure_initial_version(essay)
         corrected = [essay for essay in essays if essay.correction]
         average = int(sum(essay.correction.total_score for essay in corrected) / len(corrected)) if corrected else 0
+        # REQ-6 (auditoria P1-4): média de competência via helper compartilhado (antes era soma
+        # própria, reimplementada aqui — ranking do "weakest" não muda, denominador é constante).
+        competency_means = mean_competencies([e.correction for e in corrected])
         competency_totals = {
-            "Competencia 1": sum(e.correction.competency_1 for e in corrected) if corrected else 0,
-            "Competencia 2": sum(e.correction.competency_2 for e in corrected) if corrected else 0,
-            "Competencia 3": sum(e.correction.competency_3 for e in corrected) if corrected else 0,
-            "Competencia 4": sum(e.correction.competency_4 for e in corrected) if corrected else 0,
-            "Competencia 5": sum(e.correction.competency_5 for e in corrected) if corrected else 0,
+            "Competencia 1": competency_means["competency_1"],
+            "Competencia 2": competency_means["competency_2"],
+            "Competencia 3": competency_means["competency_3"],
+            "Competencia 4": competency_means["competency_4"],
+            "Competencia 5": competency_means["competency_5"],
         }
         weakest = min(competency_totals, key=competency_totals.get) if corrected else "Sem dados"
         errors = Counter(error for essay in corrected for error in essay.correction.recurrent_patterns)

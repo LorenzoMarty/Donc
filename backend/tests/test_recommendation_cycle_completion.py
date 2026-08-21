@@ -40,7 +40,7 @@ def test_game_complete_with_recommendation_log_id_closes_the_cycle(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-cycle-seed",
+            "game_id": "daily-fill",
             "score": 2,
             "total": 10,
             "duration_seconds": 45,
@@ -55,7 +55,7 @@ def test_game_complete_with_recommendation_log_id_closes_the_cycle(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-cycle-complete",
+            "game_id": "daily-order",
             "score": 8,
             "total": 10,
             "duration_seconds": 45,
@@ -80,7 +80,7 @@ def test_game_complete_without_recommendation_log_id_still_works(client):
     response = client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "rec-cycle-freeplay",
+            "game_id": "daily-mixed-rush",
             "score": 5,
             "total": 10,
             "duration_seconds": 30,
