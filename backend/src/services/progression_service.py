@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.models import Essay, EssayCorrection, ExerciseAnswer, Module
+from src.services.competency_stats import mean_competency
 
 MODULE_MIN_ACTIVITY_ACCURACY = 0.7
 COMPETENCY_MASTERY_THRESHOLD = 160
@@ -142,7 +143,7 @@ class ProgressionService:
             field = _COMPETENCY_FIELDS.get(competency)
             if not field:
                 continue
-            average = sum(getattr(correction, field) for correction in corrected) / len(corrected)
+            average = mean_competency(corrected, field)
             if average < COMPETENCY_MASTERY_THRESHOLD:
                 weak.append(competency)
         return weak

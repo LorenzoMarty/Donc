@@ -8,7 +8,7 @@ def test_negative_game_outcome_detects_cognitive_issue(client):
     response = client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "cog-issue-thesis-drill",
+            "game_id": "argument-map",
             "score": 3,
             "total": 10,
             "duration_seconds": 60,
@@ -27,7 +27,7 @@ def test_unknown_cognitive_event_is_rejected(client):
     response = client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "cog-issue-thesis-drill",
+            "game_id": "argument-map",
             "score": 3,
             "total": 10,
             "duration_seconds": 60,

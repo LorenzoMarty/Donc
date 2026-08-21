@@ -30,7 +30,7 @@ def test_recommendation_log_persists_with_expected_fields():
         user_id=user.id,
         action_type="GAME",
         target_issue="C3_LOW",
-        target="perde-na-c3",
+        target_hub="perde-na-c3",
     )
     db.add(log)
     db.commit()

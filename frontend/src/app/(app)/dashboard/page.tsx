@@ -363,15 +363,18 @@ function buildCompetencyRows(data: Dashboard | null): CompetencyRow[] {
   }));
 }
 
+// REQ-7 (auditoria P1-5): label vem da API — o mapa hardcoded é só fallback defensivo pra
+// label vazio/ausente, não sobrescreve incondicionalmente o que o backend já manda.
 function normalizeCompetencyLabel(competency: string, label: string) {
-  const labels: Record<string, string> = {
+  if (label) return label;
+  const fallback: Record<string, string> = {
     C1: "Norma culta",
     C2: "Compreensão",
     C3: "Argumentação",
     C4: "Coesão",
     C5: "Intervenção",
   };
-  return labels[competency] ?? label;
+  return fallback[competency] ?? label;
 }
 
 function buildHeroCopy({ bestScore, progress }: { bestScore: number; progress: number }) {

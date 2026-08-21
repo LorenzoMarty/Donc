@@ -49,19 +49,19 @@ def test_detected_at_is_first_negative_evidence_and_ignores_earlier_positive():
 
     db.add(
         LearningOutcome(
-            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", source_id=1,
+            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", game_attempt_id=1,
             direction="positive", weight=1, created_at=first_positive,
         )
     )
     db.add(
         LearningOutcome(
-            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", source_id=1,
+            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", game_attempt_id=1,
             direction="negative", weight=1, created_at=first_negative,
         )
     )
     db.add(
         LearningOutcome(
-            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", source_id=1,
+            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", game_attempt_id=1,
             direction="negative", weight=1, created_at=latest,
         )
     )
@@ -80,7 +80,7 @@ def test_no_negative_evidence_yet_has_no_detected_at():
     user_id = _make_user(db)
     db.add(
         LearningOutcome(
-            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", source_id=1,
+            user_id=user_id, cognitive_issue_code="C3_LOW", source="GAME", game_attempt_id=1,
             direction="positive", weight=1, created_at=datetime.now(UTC),
         )
     )

@@ -23,8 +23,20 @@ def record_shown(
     target_issue: str | None,
     target: str | None,
 ) -> RecommendationLog:
-    """Grava que uma recomendacao foi exibida ao aluno (REQ-15). Nao commita."""
-    log = RecommendationLog(user_id=user_id, action_type=action_type, target_issue=target_issue, target=target)
+    """Grava que uma recomendacao foi exibida ao aluno (REQ-15). Nao commita.
+
+    `target` mantido genérico na assinatura por compat com os call sites existentes
+    (dashboard_service.py, routes/ai.py) — internamente vira a coluna tipada certa conforme
+    `action_type` (auditoria arquitetural 2026-08-21, `RecommendationLog` não tem mais `target`
+    genérico). LESSON/EXERCISE têm FK real; GAME aponta pra um hub (string, sem tabela própria)."""
+    log = RecommendationLog(
+        user_id=user_id,
+        action_type=action_type,
+        target_issue=target_issue,
+        lesson_id=int(target) if action_type == "LESSON" and target else None,
+        exercise_id=int(target) if action_type == "EXERCISE" and target else None,
+        target_hub=target if action_type == "GAME" else None,
+    )
     db.add(log)
     return log
 

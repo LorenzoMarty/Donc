@@ -44,13 +44,13 @@ def test_empty_state_reports_zero_funnel():
 def test_funnel_counts_shown_started_completed():
     db = _session()
     user_id = _make_user(db)
-    db.add(RecommendationLog(user_id=user_id, action_type="GAME", target_issue="C3_LOW", target="hub"))
+    db.add(RecommendationLog(user_id=user_id, action_type="GAME", target_issue="C3_LOW", target_hub="hub"))
     db.add(
         RecommendationLog(
             user_id=user_id,
             action_type="GAME",
             target_issue="C3_LOW",
-            target="hub",
+            target_hub="hub",
             started_at=datetime.now(UTC),
         )
     )
@@ -59,7 +59,7 @@ def test_funnel_counts_shown_started_completed():
             user_id=user_id,
             action_type="GAME",
             target_issue="C3_LOW",
-            target="hub",
+            target_hub="hub",
             started_at=datetime.now(UTC) - timedelta(minutes=5),
             completed_at=datetime.now(UTC),
         )
@@ -84,7 +84,7 @@ def test_avg_completion_seconds_grouped_by_action_type():
             user_id=user_id,
             action_type="GAME",
             target_issue="C3_LOW",
-            target="hub",
+            target_hub="hub",
             started_at=now - timedelta(seconds=60),
             completed_at=now,
         )
@@ -94,7 +94,7 @@ def test_avg_completion_seconds_grouped_by_action_type():
             user_id=user_id,
             action_type="GAME",
             target_issue="C3_LOW",
-            target="hub",
+            target_hub="hub",
             started_at=now - timedelta(seconds=120),
             completed_at=now,
         )
@@ -115,7 +115,7 @@ def test_before_after_by_issue_counts_improvement():
         user_id=user_id,
         cognitive_issue_code="C3_LOW",
         source="ESSAY",
-        source_id=1,
+        essay_id=1,
         direction="negative",
         weight=2,
         created_at=now - timedelta(days=2),
@@ -127,7 +127,7 @@ def test_before_after_by_issue_counts_improvement():
         user_id=user_id,
         action_type="GAME",
         target_issue="C3_LOW",
-        target="hub",
+        target_hub="hub",
         shown_at=now - timedelta(days=1),
         started_at=now - timedelta(hours=1),
         completed_at=now,
@@ -139,7 +139,7 @@ def test_before_after_by_issue_counts_improvement():
         user_id=user_id,
         cognitive_issue_code="C3_LOW",
         source="GAME",
-        source_id=1,
+        game_attempt_id=1,
         direction="positive",
         weight=1,
         created_at=now,

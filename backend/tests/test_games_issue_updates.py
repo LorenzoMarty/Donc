@@ -37,7 +37,7 @@ def test_response_includes_issue_updates_for_touched_issue(client):
     response = client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "issue-updates-drill",
+            "game_id": "paragraph-flow",
             "score": 3,
             "total": 10,
             "duration_seconds": 60,
@@ -53,7 +53,7 @@ def test_response_has_empty_issue_updates_when_no_outcomes(client):
     response = client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "issue-updates-no-outcome",
+            "game_id": "intervention-builder",
             "score": 5,
             "total": 10,
             "duration_seconds": 30,
@@ -67,7 +67,7 @@ def test_response_has_empty_issue_updates_when_no_outcomes(client):
 def test_issue_transitions_from_detected_to_training_on_second_call(client):
     _reset_weak_thesis_issue()
     payload_negative = {
-        "game_id": "issue-updates-progression",
+        "game_id": "survival-marathon",
         "score": 3,
         "total": 10,
         "duration_seconds": 60,

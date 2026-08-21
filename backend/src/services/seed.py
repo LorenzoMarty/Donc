@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from src.config.security import get_password_hash
 from src.config.settings import settings
 from src.models import (
+    CognitiveIssue,
     Difficulty,
     Essay,
     EssayCorrection,
@@ -16,9 +17,67 @@ from src.models import (
     Lesson,
     LessonProgress,
     Module,
+    StaticGame,
     User,
     UserRole,
 )
+
+# Espelha src/memory/cognitive_issues.py::ISSUE_CODES/HUB_TO_ISSUE — mesma lista da migration
+# 0030_cognitive_issues_table.py (alembic não roda em dev/test, `Base.metadata.create_all()`
+# cria a tabela mas não semeia; sem isso toda FK pra cognitive_issues.code falharia fora de prod).
+_COGNITIVE_ISSUE_SEED = [
+    ("TEXT_ROBOTIC", "Seu texto parece robótico", "texto-robotico"),
+    ("REPETITIVE_IDEAS", "Você repete ideias", "repete-ideias"),
+    ("WEAK_REPERTOIRE", "Seu repertório não encaixa", "repertorio-nao-encaixa"),
+    ("SHALLOW_ARGUMENTATION", "Seu texto não aprofunda", "nao-aprofunda"),
+    ("WEAK_THESIS", "Sua introdução não cria tese", "introducao-sem-tese"),
+    ("C3_LOW", "Você perde na Competência 3", "perde-na-c3"),
+    ("FORMULAIC_CONCLUSION", "Sua conclusão é fórmula pronta", "conclusao-formula"),
+]
+
+# Espelha o catálogo estático real (frontend/src/games/*/index.ts) — mesma lista da migration
+# 0033_static_games.py. Não sincroniza automaticamente.
+_STATIC_GAME_SEED = [
+    ("artificiality-detector", "coesao"),
+    ("daily-mixed-rush", "desafios-diarios"),
+    ("daily-fill", "desafios-diarios"),
+    ("daily-order", "desafios-diarios"),
+    ("competency-diagnosis", "competencias-enem"),
+    ("competency-classify", "competencias-enem"),
+    ("connectives-precision", "coesao"),
+    ("referential-cohesion", "coesao"),
+    ("connective-function-match", "coesao"),
+    ("corrector-diagnosis", "competencias-enem"),
+    ("version-duel", "argumentacao"),
+    ("argument-escalation", "argumentacao"),
+    ("grammar-hunt", "gramatica"),
+    ("comma-surgeon", "gramatica"),
+    ("register-classify", "gramatica"),
+    ("repertoire-match", "repertorio"),
+    ("cultural-bridge", "repertorio"),
+    ("repertoire-rush", "repertorio"),
+    ("essay-assembly", "estrutura"),
+    ("paragraph-flow", "estrutura"),
+    ("intervention-builder", "estrutura"),
+    ("survival-marathon", "desafios-diarios"),
+    ("text-surgery", "estrutura"),
+    ("argument-map", "argumentacao"),
+    ("fallacy-hunt", "argumentacao"),
+]
+
+
+def seed_cognitive_issues(db: Session) -> None:
+    existing = set(db.scalars(select(CognitiveIssue.code)))
+    for code, label, hub in _COGNITIVE_ISSUE_SEED:
+        if code not in existing:
+            db.add(CognitiveIssue(code=code, label=label, hub=hub))
+
+
+def seed_static_games(db: Session) -> None:
+    existing = set(db.scalars(select(StaticGame.id)))
+    for game_id, category in _STATIC_GAME_SEED:
+        if game_id not in existing:
+            db.add(StaticGame(id=game_id, category=category))
 
 EXERCISE_SPECS = [
     {
@@ -441,6 +500,10 @@ EXERCISE_SPECS = [
 
 
 def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
+    seed_cognitive_issues(db)
+    seed_static_games(db)
+    db.flush()
+
     user_count = db.scalar(select(func.count(User.id))) or 0
     if user_count:
         ensure_module_catalog(db)

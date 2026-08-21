@@ -1,5 +1,6 @@
 ﻿from datetime import UTC, datetime, timedelta
 import hashlib
+import secrets
 from typing import Any
 
 import bcrypt
@@ -33,3 +34,17 @@ def decode_access_token(token: str) -> dict[str, Any]:
         return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
     except JWTError as exc:
         raise ValueError("Token inválido ou expirado.") from exc
+
+
+def generate_refresh_token() -> str:
+    """Token opaco (não-JWT) — validado só contra o hash salvo em `refresh_tokens`, nunca
+    decodificado. Permite revogação real (JWT de acesso não permite; ver auditoria arquitetural
+    2026-08-21)."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_refresh_token(token: str) -> str:
+    # sha256 (não bcrypt): comparação de igualdade contra um valor já de alta entropia
+    # (token_urlsafe(32)), não uma senha — não precisa de salt/custo computacional, só
+    # impedir que o valor em claro fique legível se o banco vazar.
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

@@ -54,7 +54,13 @@ class AdminAdaptiveHealthService:
 
         recommendations_without_content = [
             {"id": log.id, "user_id": log.user_id, "action_type": log.action_type, "target_issue": log.target_issue}
-            for log in self.db.scalars(select(RecommendationLog).where(RecommendationLog.target.is_(None)))
+            for log in self.db.scalars(
+                select(RecommendationLog).where(
+                    RecommendationLog.lesson_id.is_(None),
+                    RecommendationLog.exercise_id.is_(None),
+                    RecommendationLog.target_hub.is_(None),
+                )
+            )
         ]
 
         targeted_codes: set[str] = set()

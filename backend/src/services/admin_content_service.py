@@ -322,8 +322,8 @@ class AdminContentService:
                 raise AppError("Tipo de texto motivador inválido.", status_code=422, code="invalid_supporting_text_type")
             if len(title) < 4:
                 raise AppError("Título do texto motivador precisa ter pelo menos 4 caracteres.", status_code=422, code="invalid_supporting_text")
-            if len(content) < 20:
-                raise AppError("Texto motivador precisa ter pelo menos 20 caracteres.", status_code=422, code="invalid_supporting_text")
+            if len(content) < 40:
+                raise AppError("Texto motivador precisa ter pelo menos 40 caracteres.", status_code=422, code="invalid_supporting_text")
             normalized = {"title": title, "content": content, "type": kind}
             for key in structured_keys:
                 if item.get(key) is not None:

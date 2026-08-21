@@ -36,7 +36,7 @@ def test_learning_outcome_persists_with_expected_fields():
         user_id=user.id,
         cognitive_issue_code="WEAK_THESIS",
         source="GAME",
-        source_id=1,
+        game_attempt_id=1,
         direction="negative",
         weight=SOURCE_WEIGHT["GAME"],
     )

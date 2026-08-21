@@ -2,6 +2,11 @@
  * Preferência de "accent color" (app-wide): sobrescreve --primary/--ring/--accent e a escala
  * --accent-50..900 a partir de uma das 6 opções fixas, seguindo o mesmo padrão de
  * persistência/anti-flash de `src/lib/appearance.ts`.
+ *
+ * Deliberadamente client-only (localStorage, sem campo em User no backend) — é preferência
+ * cosmética de navegador, não dado de conta; não sincroniza entre dispositivos por escolha, não
+ * por lacuna (auditoria arquitetural 2026-08-21, P2-1). Promover pra campo persistido só se
+ * virar pedido real de sincronizar entre dispositivos.
  */
 
 export type AccentOption = {

@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     database_connect_timeout_seconds: int = 5
     jwt_secret_key: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60 * 24 * 7
+    # Reduzido de 7 dias (auditoria arquitetural 2026-08-21) agora que existe refresh token —
+    # token de acesso de vida curta + refresh revogável em vez de um JWT de vida longa sem
+    # revogação server-side.
+    access_token_expire_minutes: int = 60
+    refresh_token_expire_days: int = 30
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     openai_fallback_model: str = "gpt-4o-mini"

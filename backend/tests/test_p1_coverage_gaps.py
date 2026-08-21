@@ -70,7 +70,7 @@ def test_recommendation_changes_after_game_outcome_moves_top_issue(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "p1-gap-c3",
+            "game_id": "cultural-bridge",
             "score": 3,
             "total": 10,
             "duration_seconds": 40,
@@ -85,7 +85,7 @@ def test_recommendation_changes_after_game_outcome_moves_top_issue(client):
         client.post(
             "/api/v1/games/complete",
             json={
-                "game_id": "p1-gap-thesis",
+                "game_id": "repertoire-rush",
                 "score": 2,
                 "total": 10,
                 "duration_seconds": 40,

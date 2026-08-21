@@ -86,7 +86,7 @@ def _profile(db, user, code="WEAK_THESIS", state="DETECTED") -> StudentLearningP
     db.add(profile)
     # REQ-12 (P2a/Bloco 4): recommend() so considera issue com >=1 LearningOutcome quando
     # user_id e passado — evidencia minima pra manter os testes v2 (pre-P2a) validos.
-    db.add(LearningOutcome(user_id=user.id, cognitive_issue_code=code, source="GAME", source_id=1, direction="negative", weight=1))
+    db.add(LearningOutcome(user_id=user.id, cognitive_issue_code=code, source="GAME", game_attempt_id=1, direction="negative", weight=1))
     db.flush()
     return profile
 

@@ -11,7 +11,7 @@ from src.memory.learning_outcomes import SOURCE_WEIGHT, record_learning_outcome
 from src.memory.profile import get_or_create_learning_profile
 from src.memory.recommendation_log import mark_completed
 from src.middlewares.errors import AppError
-from src.models import GameAttempt, User, UserGameProgress
+from src.models import GameAttempt, StaticGame, User, UserGameProgress
 from src.models.events import AIGeneratedGame
 from src.schemas.common import ApiResponse, success_response
 from src.services.game_service import GameService
@@ -98,13 +98,6 @@ class GameCompleteResponse(BaseModel):
     issue_updates: list[IssueUpdate]
 
 
-class GameProgressUpsertRequest(BaseModel):
-    plays: int = Field(ge=0)
-    best_score: int = Field(ge=0)
-    best_accuracy: int = Field(ge=0, le=100)
-    progress: int = Field(ge=0, le=100)
-
-
 class GameProgressRead(BaseModel):
     game_id: str
     plays: int
@@ -157,10 +150,12 @@ def published_games(
 
 def _assert_game_playable(db: Session, game_id: str) -> None:
     """Se o game_id referencia um jogo gerado por IA (`ai-<id>`), confirma que ele existe e esta
-    aprovado. Jogos estaticos (catalogo do frontend) nao tem registro no backend hoje — validamos
-    o que da pra validar (ownership, limites de score/duracao); nao ha tabela de jogos estaticos
-    pra checar "existencia" contra ela."""
+    aprovado. Jogo estatico (catalogo do frontend) valida contra `StaticGame` — registro minimo
+    (id+categoria) seedado a partir do catalogo real, nao sincronizado automaticamente (auditoria
+    arquitetural 2026-08-21)."""
     if not game_id.startswith("ai-"):
+        if not db.get(StaticGame, game_id):
+            raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
         return
     raw_id = game_id.removeprefix("ai-")
     if not raw_id.isdigit():
@@ -320,30 +315,45 @@ def list_game_progress(
 @router.put("/progress/{game_id}", response_model=ApiResponse[GameProgressRead])
 def upsert_game_progress(
     game_id: str,
-    payload: GameProgressUpsertRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[GameProgressRead]:
+    """Ressincroniza UserGameProgress a partir das GameAttempt reais do usuario pra esse jogo —
+    nao aceita mais best_score/best_accuracy/progress prontos do cliente (payload antigo permitia
+    qualquer cliente autenticado inflar o proprio progresso sem uma tentativa real por tras)."""
     _assert_game_playable(db, game_id)
+    attempts = db.query(GameAttempt).filter(
+        GameAttempt.user_id == current_user.id,
+        GameAttempt.game_id == game_id,
+    ).all()
+    if not attempts:
+        raise AppError("Nenhuma tentativa registrada para este jogo.", status_code=404, code="no_attempts_for_game")
+
+    plays = len(attempts)
+    best_score = max(a.score for a in attempts)
+    best_accuracy = max(a.accuracy for a in attempts)
+    progress = best_accuracy
+    last_played_at = max(a.completed_at for a in attempts)
+
     row = db.query(UserGameProgress).filter(
         UserGameProgress.user_id == current_user.id,
         UserGameProgress.game_id == game_id,
     ).first()
     if row:
-        row.plays = max(row.plays, payload.plays)
-        row.best_score = max(row.best_score, payload.best_score)
-        row.best_accuracy = max(row.best_accuracy, payload.best_accuracy)
-        row.progress = max(row.progress, payload.progress)
-        row.last_played_at = datetime.now(UTC)
+        row.plays = plays
+        row.best_score = best_score
+        row.best_accuracy = best_accuracy
+        row.progress = progress
+        row.last_played_at = last_played_at
     else:
         row = UserGameProgress(
             user_id=current_user.id,
             game_id=game_id,
-            plays=payload.plays,
-            best_score=payload.best_score,
-            best_accuracy=payload.best_accuracy,
-            progress=payload.progress,
-            last_played_at=datetime.now(UTC),
+            plays=plays,
+            best_score=best_score,
+            best_accuracy=best_accuracy,
+            progress=progress,
+            last_played_at=last_played_at,
         )
         db.add(row)
     db.commit()

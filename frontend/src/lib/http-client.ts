@@ -84,10 +84,25 @@ function errorFromPayload(payload: unknown, status: number) {
   return new ApiClientError("Erro inesperado.", status, "api_error", payload);
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  let response: Response;
+// Deduplica refresh concorrente: N requests 401 ao mesmo tempo disparam 1 chamada a /auth/refresh
+// só, não N (auditoria arquitetural 2026-08-21 — refresh token novo no backend).
+let refreshInFlight: Promise<boolean> | null = null;
+
+function tryRefreshSession(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = fetch(`${publicEnv.apiUrl}/auth/refresh`, { method: "POST", credentials: "include" })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
+async function performFetch(path: string, options: RequestInit): Promise<Response> {
   try {
-    response = await fetch(`${publicEnv.apiUrl}${path}`, {
+    return await fetch(`${publicEnv.apiUrl}${path}`, {
       ...options,
       headers: buildHeaders(options),
       credentials: "include",
@@ -95,10 +110,20 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   } catch {
     throw new ApiClientError("Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.", 0, "network_error");
   }
+}
 
+export async function apiFetch<T>(path: string, options: RequestInit = {}, _retried = false): Promise<T> {
+  const response = await performFetch(path, options);
   const payload = await readJson(response);
 
   if (!response.ok) {
+    // Access token expirado (não sessão realmente encerrada) — tenta renovar via refresh token
+    // httpOnly uma vez antes de desistir; evita derrubar o usuário no meio de uma tela por um
+    // token de acesso curto (1h) expirar. Nunca tenta de novo em /auth/refresh em si (evita loop).
+    if (response.status === 401 && !_retried && path !== "/auth/refresh") {
+      const refreshed = await tryRefreshSession();
+      if (refreshed) return apiFetch<T>(path, options, true);
+    }
     if (response.status === 401 && typeof window !== "undefined") {
       window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
     }

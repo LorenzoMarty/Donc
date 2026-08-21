@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from src.routes.games import GameCompleteRequest, GameProgressUpsertRequest
+from src.routes.games import GameCompleteRequest
 
 pytestmark = pytest.mark.unit
 
@@ -31,13 +31,3 @@ def test_game_complete_rejects_empty_game_id() -> None:
         GameCompleteRequest(game_id="", score=5, total=10, duration_seconds=60)
 
 
-@pytest.mark.parametrize("accuracy", [-1, 101])
-def test_progress_rejects_accuracy_out_of_range(accuracy: int) -> None:
-    with pytest.raises(ValidationError):
-        GameProgressUpsertRequest(plays=1, best_score=1, best_accuracy=accuracy, progress=10)
-
-
-def test_progress_accepts_boundaries() -> None:
-    req = GameProgressUpsertRequest(plays=0, best_score=0, best_accuracy=100, progress=100)
-    assert req.best_accuracy == 100
-    assert req.progress == 100

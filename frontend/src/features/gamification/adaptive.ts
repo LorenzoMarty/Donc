@@ -202,14 +202,10 @@ export function eventsForOutcome(
   const hubs = hubsForDecision(game, decision);
   if (!hubs.length) return [];
 
-  let negative: boolean;
-  let severity: number;
-  if (decision.grade) {
-    ({ negative, severity } = gradeToSeverity(decision.grade));
-  } else {
-    negative = !decision.correct;
-    severity = negative ? 0.7 : 0.4;
-  }
+  // REQ-4 (auditoria P1-2): fallback binário reusa a mesma escala de gradeToSeverity em vez de
+  // números independentes (antes: wrong=0.7/right=0.4, inconsistente com C=0.6/A=0.6) — sem nota
+  // fina, trata acerto como "A" e erro como "C", os dois pontos médios da escala existente.
+  const { negative, severity } = gradeToSeverity(decision.grade ?? (decision.correct ? "A" : "C"));
 
   return hubs.map((hub) => {
     const def = HUBS[hub];

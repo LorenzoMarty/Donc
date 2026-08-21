@@ -41,7 +41,7 @@ def test_game_complete_records_learning_outcome(client):
     client.post(
         "/api/v1/games/complete",
         json={
-            "game_id": "p2a-outcome-game",
+            "game_id": "repertoire-match",
             "score": 3,
             "total": 10,
             "duration_seconds": 40,

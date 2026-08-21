@@ -35,7 +35,7 @@ def get_current_user(
         raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token") from exc
 
     user = UserRepository(db).get_by_id(user_id)
-    if not user:
+    if not user or user.deleted_at is not None:
         raise AppError("Usuário não encontrado.", status_code=401, code="user_not_found")
 
     try:

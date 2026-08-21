@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -68,7 +70,9 @@ class AdminUserService:
         if user_id == admin_user_id:
             raise AppError("Você não pode excluir sua própria conta.", status_code=409, code="cannot_delete_self")
         user = self._get_student(user_id)
-        self.db.delete(user)
+        # Soft-delete (auditoria arquitetural 2026-08-21): preserva histórico pedagógico —
+        # antes era db.delete() + CASCADE, apagava redações/tentativas/outcomes do aluno.
+        user.deleted_at = datetime.now(UTC)
         self.db.commit()
 
     def user_detail(self, user_id: int) -> AdminUserDetailResponse:

@@ -34,12 +34,18 @@ def record_learning_outcome(
     direction: Direction,
 ) -> LearningOutcome:
     """Grava uma evidencia individual. Nao commita — caller decide o boundary da transacao
-    (mesmo padrao dos outros helpers de `memory/`, ver `apply_cognitive_signal`)."""
+    (mesmo padrao dos outros helpers de `memory/`, ver `apply_cognitive_signal`).
+
+    `source_id` mantido na assinatura por compat com os 3 call sites existentes (games.py,
+    exercise_service.py, profile.py) — internamente vira a FK tipada certa conforme `source`
+    (auditoria arquitetural 2026-08-21, `LearningOutcome` não tem mais `source_id` genérico)."""
     outcome = LearningOutcome(
         user_id=user_id,
         cognitive_issue_code=cognitive_issue_code,
         source=source,
-        source_id=source_id,
+        essay_id=source_id if source == "ESSAY" else None,
+        game_attempt_id=source_id if source == "GAME" else None,
+        exercise_answer_id=source_id if source == "EXERCISE" else None,
         direction=direction,
         weight=SOURCE_WEIGHT[source],
     )
