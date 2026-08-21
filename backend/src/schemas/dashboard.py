@@ -75,6 +75,7 @@ class DashboardResponse(BaseModel):
     completed_lessons: int
     correct_exercises_rate: int
     essays_written: int
+    exercises_answered: bool
     mastery_map: list[MasteryPoint]
     recurrent_errors: list[str]
     trend: list[TrendPoint]

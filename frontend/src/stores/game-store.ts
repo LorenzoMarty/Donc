@@ -12,6 +12,9 @@ import { apiFetch } from "@/lib/http-client";
 import type { PublishedGame } from "@/types/api";
 
 type GameStore = {
+  /** Dono atual do estado persistido (id do usuário logado). Usado por `ensureOwner` pra impedir
+   * que XP/progresso de uma conta vaze pra outra no mesmo navegador via localStorage. */
+  ownerUserId: number | null;
   streak: StreakState;
   attempts: GameAttempt[];
   progress: Record<string, GameProgress>;
@@ -31,6 +34,10 @@ type GameStore = {
   recordCognitiveOutcome: (game: GameDefinition, decision: CognitiveDecision) => void;
   trackCognitiveEvent: (event: Omit<CognitiveEventRecord, "at">) => void;
   getGameProgress: (gameId: string) => GameProgress | undefined;
+  /** Chamado ao resolver o usuário logado (login/registro/refresh de sessão). Se o estado
+   * persistido pertence a outro usuário (ou não tem dono ainda mas o navegador já tinha dado
+   * salvo), reseta pra evitar vazamento de XP/progresso entre contas no mesmo navegador. */
+  ensureOwner: (userId: number) => void;
   hydrateFromBackend: () => Promise<void>;
   hydrateRemoteGames: () => Promise<void>;
   exportProgress: () => void;
@@ -45,6 +52,7 @@ const initialStreak: StreakState = {
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
+      ownerUserId: null,
       streak: initialStreak,
       attempts: [],
       progress: {},
@@ -55,6 +63,24 @@ export const useGameStore = create<GameStore>()(
       remoteGames: [],
       remoteGamesHydrated: false,
       getGameProgress: (gameId) => get().progress[gameId],
+      ensureOwner: (userId) => {
+        const current = get().ownerUserId;
+        if (current === userId) return;
+        if (current !== null) {
+          set({
+            ownerUserId: userId,
+            streak: initialStreak,
+            attempts: [],
+            progress: {},
+            adaptive: emptyAdaptiveProfile(),
+            pendingCognitiveEvents: [],
+            lastIssueUpdates: [],
+            hydrated: false,
+          });
+          return;
+        }
+        set({ ownerUserId: userId });
+      },
       recordCognitiveOutcome: (game, decision) => {
         const at = new Date().toISOString();
         // Camada cognitiva é a fonte principal: deriva eventos por hub a partir da qualidade.
@@ -194,6 +220,7 @@ export const useGameStore = create<GameStore>()(
         return state;
       },
       partialize: (state) => ({
+        ownerUserId: state.ownerUserId,
         streak: state.streak,
         attempts: state.attempts,
         progress: state.progress,

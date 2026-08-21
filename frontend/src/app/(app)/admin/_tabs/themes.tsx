@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Edit2, FileText, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { Edit2, FilePlus2, FileText, Plus, Save, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
@@ -43,6 +43,15 @@ const TEXT_TYPES: { value: TextType; label: string }[] = [
   { value: "tirinha", label: "Tirinha (IA gera imagem)" },
   { value: "charge", label: "Charge (IA gera imagem)" },
 ];
+
+function validateDraft(current: ThemeDraft) {
+  if (current.title.trim().length < 8) return "O título precisa ter pelo menos 8 caracteres.";
+  if (current.context.trim().length < 20) return "O contexto precisa explicar a proposta com mais detalhe.";
+  if (!current.supporting_texts.length) return "Adicione pelo menos um texto motivador.";
+  const invalid = current.supporting_texts.find((text) => text.title.trim().length < 4 || text.content.trim().length < 40);
+  if (invalid) return "Cada texto motivador precisa ter título e pelo menos 40 caracteres.";
+  return "";
+}
 
 function draftFromTheme(theme: EssayTheme): ThemeDraft {
   return {
@@ -106,15 +115,6 @@ export function ThemesTab({
     setDraft(null);
   }
 
-  function validateDraft(current: ThemeDraft) {
-    if (current.title.trim().length < 8) return "O título precisa ter pelo menos 8 caracteres.";
-    if (current.context.trim().length < 20) return "O contexto precisa explicar a proposta com mais detalhe.";
-    if (!current.supporting_texts.length) return "Adicione pelo menos um texto motivador.";
-    const invalid = current.supporting_texts.find((text) => text.title.trim().length < 4 || text.content.trim().length < 40);
-    if (invalid) return "Cada texto motivador precisa ter título e pelo menos 40 caracteres.";
-    return "";
-  }
-
   async function saveTheme(theme: EssayTheme) {
     if (!draft || busyId) return;
     const validation = validateDraft(draft);
@@ -167,6 +167,7 @@ export function ThemesTab({
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar tema..." className="pl-9" />
           </div>
           <Badge variant="outline">{themes.length} temas</Badge>
+          <CreateThemeButton onCreated={onGenerated} />
           <GenerateWithAiButton
             label="Gerar tema com IA"
             title="Gerar tema com IA"
@@ -262,7 +263,7 @@ function ThemeEditor({
   onCancel,
   onSave,
 }: {
-  themeId: number;
+  themeId: number | null;
   draft: ThemeDraft;
   busy: boolean;
   onChange: (draft: ThemeDraft) => void;
@@ -299,11 +300,13 @@ function ThemeEditor({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-semibold text-muted-foreground">Textos motivadores</p>
           <div className="flex gap-2">
-            <RegenerateSupportingTextsButton
-              themeId={themeId}
-              busy={busy}
-              onGenerated={(supportingTexts) => onChange({ ...draft, supporting_texts: supportingTexts })}
-            />
+            {themeId ? (
+              <RegenerateSupportingTextsButton
+                themeId={themeId}
+                busy={busy}
+                onGenerated={(supportingTexts) => onChange({ ...draft, supporting_texts: supportingTexts })}
+              />
+            ) : null}
             <Button
               type="button"
               size="sm"
@@ -355,6 +358,55 @@ function ThemeEditor({
         </Button>
       </div>
     </div>
+  );
+}
+
+function CreateThemeButton({ onCreated }: { onCreated: (theme: EssayTheme) => void }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<ThemeDraft>({
+    title: "",
+    context: "",
+    supporting_texts: [{ title: "", content: "", type: "motivador" }],
+  });
+  const [saving, setSaving] = useState(false);
+
+  function close() {
+    setOpen(false);
+    setDraft({ title: "", context: "", supporting_texts: [{ title: "", content: "", type: "motivador" }] });
+  }
+
+  async function create() {
+    const validation = validateDraft(draft);
+    if (validation) {
+      toast.error(validation);
+      return;
+    }
+    setSaving(true);
+    try {
+      const created = await apiFetch<EssayTheme>("/admin/essay-themes", {
+        method: "POST",
+        body: JSON.stringify(draft),
+      });
+      onCreated(created);
+      close();
+      toast.success("Tema criado — aguardando revisão.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível criar o tema.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+        <FilePlus2 className="h-3.5 w-3.5" aria-hidden="true" />
+        Criar tema
+      </Button>
+      <Modal open={open} onClose={close} title="Criar tema" description="Tema nasce pendente de revisão — aprove depois na lista.">
+        <ThemeEditor themeId={null} draft={draft} busy={saving} onChange={setDraft} onCancel={close} onSave={create} />
+      </Modal>
+    </>
   );
 }
 

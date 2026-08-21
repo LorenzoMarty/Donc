@@ -118,7 +118,7 @@ export default function OnboardingPage() {
             />
           ))}
         </div>
-        <Link href="/dashboard" className="text-[14px] font-medium text-white/55 hover:text-white/80">
+        <Link href="/dashboard" className="text-[14px] font-medium text-white/70 hover:text-white/90">
           Pular
         </Link>
       </div>
@@ -263,7 +263,7 @@ function ChoiceStepBody({
             >
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-semibold text-white">{opt.label}</p>
-                <p className="mt-0.5 text-[13px] text-white/60">{opt.description}</p>
+                <p className="mt-0.5 text-[13px] text-white/75">{opt.description}</p>
               </div>
               <div
                 className={cn(
@@ -309,7 +309,7 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
             </div>
           )}
           <h3 className="text-[18px] font-semibold text-white">{current.title}</h3>
-          <p className="mt-2 text-[14px] leading-relaxed text-white/65">{current.description}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-white/78">{current.description}</p>
         </motion.div>
       </AnimatePresence>
 
@@ -351,11 +351,11 @@ function CTAStepBody({ goal, level }: { goal: string | null; level: string | nul
 
       <div className="mx-auto mt-7 grid max-w-[380px] gap-2 text-left">
         <div className="flex items-center justify-between rounded-control bg-white/5 px-4 py-3">
-          <span className="text-[13px] text-white/60">Meta</span>
+          <span className="text-[13px] text-white/75">Meta</span>
           <span className="text-[14px] font-semibold text-white">{goalLabel}</span>
         </div>
         <div className="flex items-center justify-between rounded-control bg-white/5 px-4 py-3">
-          <span className="text-[13px] text-white/60">Nível</span>
+          <span className="text-[13px] text-white/75">Nível</span>
           <span className="text-[14px] font-semibold text-white">{levelLabel}</span>
         </div>
       </div>

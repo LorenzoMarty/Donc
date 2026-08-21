@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Clock3, FileText, PenLine, Sparkles, Video } from "lucide-react";
+import { Clock3, FileText, Gamepad2, PenLine, Sparkles, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { NextActionCard } from "@/components/shared/next-action-card";
 import { apiFetch, type Dashboard, type EssayTheme } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
+import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 type CompetencyRow = {
@@ -25,6 +26,8 @@ export default function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
   const [themes, setThemes] = useState<EssayTheme[]>([]);
+  const gameAttempts = useGameStore((state) => state.attempts);
+  const gameHydrated = useGameStore((state) => state.hydrated);
 
   useEffect(() => {
     let ignore = false;
@@ -62,7 +65,7 @@ export default function DashboardPage() {
     return <ErrorState title="Dados indisponíveis" description={error} />;
   }
 
-  if (!data) {
+  if (!data || !gameHydrated) {
     return <LoadingCard />;
   }
 
@@ -70,6 +73,11 @@ export default function DashboardPage() {
   const average = data.essay_average || 0;
   const essaysWritten = data.essays_written ?? 0;
   const completedLessons = data.completed_lessons ?? 0;
+  const isNewUser = essaysWritten === 0 && completedLessons === 0 && !data.exercises_answered && gameAttempts.length === 0;
+
+  if (isNewUser) {
+    return <OnboardingChecklist name={studentName} />;
+  }
   const streak = data.streak_days ?? 0;
   const bestScore = data.best_essay_score || 0;
   const heroCopy = buildHeroCopy({ bestScore, progress: data.progress_general });
@@ -205,6 +213,44 @@ export default function DashboardPage() {
             })}
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
+
+const ONBOARDING_STEPS = [
+  { icon: PenLine, title: "Escreva sua primeira redação", description: "Escolha um tema e receba nota real por competência.", href: "/redacao" },
+  { icon: Video, title: "Assista sua primeira aula", description: "Aprenda os fundamentos direto no percurso de aulas.", href: "/aulas" },
+  { icon: FileText, title: "Responda seu primeiro exercício", description: "Pratique o que aprendeu nas aulas.", href: "/aulas" },
+  { icon: Gamepad2, title: "Jogue seu primeiro treino", description: "Treinos curtos pra destravar competências específicas.", href: "/games" },
+] as const;
+
+function OnboardingChecklist({ name }: { name: string }) {
+  return (
+    <div className="text-foreground">
+      <section className="pb-1">
+        <h1 className="font-display text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {name} 👋</h1>
+        <p className="mt-1.5 text-[15px] text-muted-foreground">
+          Bem-vindo ao Donc! Complete os 4 primeiros passos pra desbloquear seu painel completo de evolução.
+        </p>
+      </section>
+
+      <section className="mt-4 grid gap-3 sm:grid-cols-2">
+        {ONBOARDING_STEPS.map((step) => (
+          <Link
+            key={step.title}
+            href={step.href}
+            className="flex items-start gap-4 rounded-card bg-card p-5 shadow-soft transition-colors hover:bg-card/80"
+          >
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-primary/12 text-primary">
+              <step.icon className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold leading-tight">{step.title}</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">{step.description}</p>
+            </div>
+          </Link>
+        ))}
       </section>
     </div>
   );

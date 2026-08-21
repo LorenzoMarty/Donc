@@ -218,7 +218,7 @@ export function EssayEditor({
           <div className="min-w-0 flex-1">
             <p
               aria-label="Título da redação"
-              className="text-safe font-display min-w-0 truncate text-[25px] font-medium leading-tight text-foreground"
+              className="text-safe font-display min-w-0 text-[25px] font-medium leading-tight text-foreground"
             >
               {title || "Nomeie um tema para começar"}
             </p>

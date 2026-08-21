@@ -241,7 +241,7 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
       </div>
 
       <Link href={href} className="min-w-0 flex-1">
-        <h2 className="font-display truncate text-[18px] font-medium leading-tight">{essay.title}</h2>
+        <h2 className="font-display text-[18px] font-medium leading-tight">{essay.title}</h2>
         <div className="mt-1.5 flex flex-wrap items-center gap-3.5 text-[13px] text-muted-foreground">
           <span>{formatDate(essay.updated_at)}</span>
           <span>{essay.word_count} palavras</span>

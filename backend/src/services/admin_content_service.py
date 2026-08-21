@@ -125,6 +125,37 @@ class AdminContentService:
         self.db.refresh(theme)
         return theme
 
+    def create_essay_theme(
+        self,
+        *,
+        title: str,
+        context: str,
+        supporting_texts: list[dict],
+    ) -> EssayTheme:
+        """Criação manual (sem IA) — nasce pending, mesma fila de revisão do tema gerado."""
+        cleaned_title = self._clean_theme_title(title)
+        if len(cleaned_title) < 8:
+            raise AppError("Título do tema precisa ter pelo menos 8 caracteres.", status_code=422, code="invalid_theme_title")
+        normalized_title = self._normalize_theme_title(cleaned_title)
+        existing_titles = list(self.db.scalars(select(EssayTheme.title)))
+        if normalized_title in {self._normalize_theme_title(item) for item in existing_titles}:
+            raise AppError("Já existe um tema com esse título.", status_code=409, code="duplicate_theme")
+        cleaned_context = context.strip()
+        if len(cleaned_context) < 20:
+            raise AppError("Contexto do tema precisa ter pelo menos 20 caracteres.", status_code=422, code="invalid_theme_context")
+        theme = EssayTheme(
+            title=cleaned_title,
+            context=cleaned_context,
+            source="Admin",
+            supporting_texts=self._normalize_supporting_texts(supporting_texts),
+            is_active=False,
+            status="pending",
+        )
+        self.db.add(theme)
+        self.db.commit()
+        self.db.refresh(theme)
+        return theme
+
     def regenerate_essay_theme_supporting_texts(
         self,
         *,
@@ -319,6 +350,12 @@ class AdminContentService:
     def review_essay_theme(self, *, theme_id: int, action: str, reviewer_id: int | None) -> EssayTheme:
         """P3b REQ-2: aprovar publica (is_active=True); rejeitar mantem despublicado."""
         theme = self._get_manageable_essay_theme(theme_id)
+        if action == "approve" and len(theme.supporting_texts or []) < 2:
+            raise AppError(
+                "Tema precisa de pelo menos 2 textos motivadores para ser aprovado.",
+                status_code=422,
+                code="insufficient_supporting_texts",
+            )
         theme.status = "approved" if action == "approve" else "rejected"
         theme.is_active = action == "approve"
         self.db.commit()
