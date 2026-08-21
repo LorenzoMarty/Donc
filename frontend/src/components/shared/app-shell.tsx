@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
@@ -48,6 +48,7 @@ const workspaceNav: WorkspaceNavItem[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { loading, user, logout } = useAuth();
   const pathname = usePathname() ?? "";
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const sidebarCollapsed = useSidebarStore((s) => s.collapsed);
   const setSidebarCollapsed = useSidebarStore((s) => s.setCollapsed);
@@ -59,6 +60,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) hydrateFromBackend();
   }, [user, hydrateFromBackend]);
+
+  useEffect(() => {
+    // proxy.ts já bloqueia navegação direta sem sessão válida; isso cobre o caso em que a sessão
+    // cai *depois* de montado (401 em qualquer chamada -> AuthProvider zera `user`) — sem isso o
+    // shell inteiro continuava renderizado pra um usuário deslogado.
+    if (!loading && !user) router.replace("/login");
+  }, [loading, user, router]);
 
   function scrollContentArea(event: WheelEvent<HTMLElement>) {
     scrollAreaRef.current?.scrollBy({
@@ -82,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, [drawerOpen]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <main className="website-shell grid min-h-screen place-items-center bg-background p-4 xs:p-6">
         <div className="game-surface w-full max-w-md p-5 xs:p-6">

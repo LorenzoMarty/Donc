@@ -23,3 +23,5 @@ class MessageResponse(BaseModel):
 class HealthData(BaseModel):
     status: str
     service: str
+    database: str = "ok"
+    redis: str = "ok"

@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -73,10 +73,39 @@ app.include_router(admin.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health", response_model=ApiResponse[HealthData])
-def health() -> ApiResponse[HealthData]:
-    return success_response(HealthData(status="ok", service=settings.project_name), "API operacional.")
+def health(response: Response) -> ApiResponse[HealthData]:
+    # Antes era 200 estatico sem checar nada — orquestrador achava a API saudavel com Postgres ou
+    # Redis fora do ar. Timeout curto pra nao travar o probe de liveness/readiness.
+    database_status = "ok"
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        logger.exception("Health check: Postgres indisponivel")
+        database_status = "down"
+
+    redis_status = "ok"
+    try:
+        import redis as redis_client
+
+        redis_client.from_url(settings.redis_url, socket_connect_timeout=0.5, socket_timeout=0.5).ping()
+    except Exception:
+        logger.exception("Health check: Redis indisponivel")
+        redis_status = "down"
+
+    healthy = database_status == "ok" and redis_status == "ok"
+    response.status_code = 200 if healthy else 503
+    return success_response(
+        HealthData(
+            status="ok" if healthy else "degraded",
+            service=settings.project_name,
+            database=database_status,
+            redis=redis_status,
+        ),
+        "API operacional." if healthy else "Dependencia indisponivel.",
+    )
 
 
 @app.get("/", response_model=ApiResponse[HealthData])
-def root() -> ApiResponse[HealthData]:
-    return health()
+def root(response: Response) -> ApiResponse[HealthData]:
+    return health(response)

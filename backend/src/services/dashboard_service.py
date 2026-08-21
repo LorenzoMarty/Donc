@@ -5,6 +5,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, load_only, selectinload
 
 from src.memory.profile import get_or_create_learning_profile
+from src.memory.recommendation_log import record_shown
 from src.models import Essay, EssayStatus, Exercise, ExerciseAnswer, Goal, Lesson, LessonProgress, Module, User
 from src.middlewares.errors import AppError
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, NextActionRead, PendingExercise, RecentEssay, RecentLesson, TrendPoint
@@ -130,6 +131,20 @@ class DashboardService:
 
         profile = get_or_create_learning_profile(self.db, user_id)
         next_action = RecommendationEngine(self.db).recommend(profile, user_id=user_id)[0]
+        # Sem isso, a recomendacao mais vista do produto (aqui no dashboard) nunca gerava
+        # RecommendationLog nenhum — so /ai/recommended-actions chamava record_shown, uma
+        # superficie bem menos usada. Ciclo Recommendation->Started->Completed ficava sempre vazio
+        # pra quem via a recomendacao só pelo painel.
+        shown_log = record_shown(
+            self.db,
+            user_id=user_id,
+            action_type=next_action.type,
+            target_issue=next_action.target_issue,
+            target=next_action.target,
+        )
+        self.db.flush()
+        recommendation_log_id = shown_log.id
+        self.db.commit()
 
         return DashboardResponse(
             progress_general=progress_general,
@@ -154,6 +169,7 @@ class DashboardService:
                 target=next_action.target,
                 reason=next_action.reason,
                 estimated_minutes=next_action.estimated_minutes,
+                recommendation_log_id=recommendation_log_id,
             ),
         )
 

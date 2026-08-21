@@ -13,10 +13,11 @@ export class ApiClientError extends Error {
   }
 }
 
-function getToken() {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("access_token");
-}
+/** Disparado no primeiro 401 de qualquer chamada — `AuthProvider` escuta e limpa o `user` local.
+ * Sessão vive num cookie httpOnly (nunca lido por JS), então este é o único sinal client-side de
+ * que a sessão caiu; sem isso, telas ficavam com erro solto ou polling infinito (ver REQ de sessão
+ * do hardening 2026-08-21). */
+export const AUTH_UNAUTHORIZED_EVENT = "donc:auth-unauthorized";
 
 function isApiEnvelope<T>(payload: unknown): payload is ApiEnvelope<T> {
   return typeof payload === "object" && payload !== null && "success" in payload && "message" in payload;
@@ -29,15 +30,10 @@ async function readJson(response: Response) {
 
 function buildHeaders(options: RequestInit) {
   const headers = new Headers(options.headers);
-  const token = getToken();
   const hasFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
   if (options.body && !hasFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
-  }
-
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
   }
 
   return headers;
@@ -103,6 +99,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const payload = await readJson(response);
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
+    }
     throw errorFromPayload(payload, response.status);
   }
 

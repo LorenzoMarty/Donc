@@ -58,7 +58,12 @@ export function useEssaySubmission({
         body: JSON.stringify({ title, content }),
       });
       setEssay(saved);
-      await apiFetch<EssaySubmitResponse>(`/essays/${saved.id}/submit`, { method: "POST" });
+      // idempotency_key: se a chamada cair (rede falha depois do backend já ter criado o job) e o
+      // usuário reenviar, o backend devolve o job existente em vez de rodar o pipeline de IA de
+      // novo (backend/src/routes/essays.py, REQ-9 P2b — path já existia, só nunca era exercitado
+      // porque o frontend nunca mandava a chave).
+      const idempotencyKey = crypto.randomUUID();
+      await apiFetch<EssaySubmitResponse>(`/essays/${saved.id}/submit?idempotency_key=${idempotencyKey}`, { method: "POST" });
       trackEvent({ event_type: "essay_submitted", entity_id: String(saved.id), entity_type: "essay", meta: { word_count: wordCount } });
       // submitting stays true — CorrectionWaitingScreen polls via useCorrectionStatus
     } catch (err) {

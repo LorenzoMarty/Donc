@@ -112,13 +112,17 @@ class EssayService:
         return self.repo.get_essay(essay.id, user_id)  # type: ignore[return-value]
 
     def submit_for_correction(self, *, essay_id: int, user: User, job_id: str | None = None) -> Essay:
-        essay = self.repo.get_essay(essay_id, user.id)
+        # Lock adquirido antes de qualquer coisa: se já existe uma correção em andamento pra essa
+        # redação (mesma sessão de outra requisição concorrente), esta chamada bloqueia aqui —
+        # nunca chega a rodar o pipeline de IA duas vezes em paralelo pra depois só colidir no
+        # commit final.
+        essay = self.repo.lock_essay_for_correction(essay_id, user.id)
         if not essay:
             raise AppError("Redação não encontrada.", status_code=404, code="essay_not_found")
         if essay.word_count < 80:
             raise AppError("A redação ainda está curta para correção. Desenvolva melhor a tese antes de enviar.", status_code=422, code="essay_too_short")
         self._ensure_initial_version(essay)
-        essay = self.repo.get_essay(essay_id, user.id) or essay
+        essay = self.repo.lock_essay_for_correction(essay_id, user.id) or essay
         self._require_edit_before_new_correction(essay)
 
         return self._apply_correction(essay=essay, user=user, job_id=job_id)

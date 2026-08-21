@@ -56,11 +56,12 @@ def test_enqueue_correct_essay_logs_and_returns_false_on_redis_failure(
     monkeypatch.setattr("redis.from_url", _boom)
     monkeypatch.setattr("src.queues.tasks.correct_essay_task", object(), raising=False)
 
-    with caplog.at_level(logging.WARNING, logger="src.queues.jobs"):
+    with caplog.at_level(logging.ERROR, logger="src.queues.jobs"):
         result = enqueue_correct_essay("job-456")
 
     assert result is False
-    assert any("Falha ao enfileirar job" in record.message for record in caplog.records)
+    assert any("SYNC_FALLBACK_TRIGGERED" in record.message for record in caplog.records)
+    assert any(record.levelno == logging.ERROR for record in caplog.records)
 
 
 def test_check_ai_rate_limit_logs_when_redis_fails_but_falls_back_to_memory(
