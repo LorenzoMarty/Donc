@@ -229,3 +229,21 @@ export const useGameStore = create<GameStore>()(
     },
   ),
 );
+
+/**
+ * `persist` reidrata do localStorage de forma assíncrona (depois do primeiro render) e, ao
+ * terminar, faz merge do estado persistido por cima do que já estiver na store — inclusive por
+ * cima de um `ensureOwner` chamado antes da reidratação terminar (o que apagaria o reset). Por
+ * isso `ensureOwner` nunca deve ser chamado direto em código de auth: sempre por aqui, que espera
+ * a reidratação terminar antes de comparar o dono salvo com o usuário logando.
+ */
+export function ensureGameStoreOwner(userId: number) {
+  if (useGameStore.persist.hasHydrated()) {
+    useGameStore.getState().ensureOwner(userId);
+    return;
+  }
+  const unsubscribe = useGameStore.persist.onFinishHydration(() => {
+    unsubscribe();
+    useGameStore.getState().ensureOwner(userId);
+  });
+}
