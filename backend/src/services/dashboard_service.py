@@ -124,10 +124,6 @@ class DashboardService:
         trend = [
             TrendPoint(label=essay.created_at.strftime("%d/%m"), score=essay.score or 0)
             for essay in corrected[-6:]
-        ] or [
-            TrendPoint(label="Semana 1", score=640),
-            TrendPoint(label="Semana 2", score=720),
-            TrendPoint(label="Semana 3", score=780),
         ]
 
         streak = user.streak_days if user else 0
@@ -143,6 +139,7 @@ class DashboardService:
             completed_lessons=completed_lessons,
             correct_exercises_rate=correct_rate,
             essays_written=len(essays),
+            exercises_answered=len(answers) > 0,
             mastery_map=mastery_map,
             recurrent_errors=recurrent_errors,
             trend=trend,

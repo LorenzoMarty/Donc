@@ -40,6 +40,7 @@ const DASHBOARD: Dashboard = {
   completed_lessons: 1,
   correct_exercises_rate: 70,
   essays_written: 2,
+  exercises_answered: true,
   mastery_map: [],
   recurrent_errors: [],
   trend: [],

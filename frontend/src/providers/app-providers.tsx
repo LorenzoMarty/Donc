@@ -7,6 +7,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext, type AuthContextValue } from "@/contexts/auth-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { authApi, type User } from "@/services/api";
+import { useGameStore } from "@/stores/game-store";
 
 function setSession(token: string) {
   window.localStorage.setItem("access_token", token);
@@ -31,7 +32,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
     try {
-      setUser(await authApi.me());
+      const me = await authApi.me();
+      useGameStore.getState().ensureOwner(me.id);
+      setUser(me);
     } catch {
       clearSession();
       setUser(null);
@@ -55,11 +58,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       login: async (email: string, password: string) => {
         const payload = await authApi.login(email, password);
         setSession(payload.access_token);
+        useGameStore.getState().ensureOwner(payload.user.id);
         setUser(payload.user);
       },
       register: async (name: string, email: string, password: string) => {
         const payload = await authApi.register(name, email, password);
         setSession(payload.access_token);
+        useGameStore.getState().ensureOwner(payload.user.id);
         setUser(payload.user);
       },
       logout: () => {

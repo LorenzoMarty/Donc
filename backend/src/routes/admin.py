@@ -21,6 +21,7 @@ from src.schemas.admin import (
     AdminActivityGenerateRequest,
     AdminActivityUpdateRequest,
     AdminEssayThemeActionResponse,
+    AdminEssayThemeCreateRequest,
     AdminEssayThemeGenerateRequest,
     AdminEssayThemeRegenerateSupportingTextsRequest,
     AdminEssayThemeUpdateRequest,
@@ -133,6 +134,22 @@ def content(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> 
 @router.get("/essay-themes", response_model=ApiResponse[list[EssayThemeRead]])
 def essay_themes(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[EssayThemeRead]]:
     return success_response(AdminContentService(db).list_essay_themes())
+
+
+@router.post("/essay-themes", response_model=ApiResponse[EssayThemeRead], status_code=201)
+def create_essay_theme(
+    payload: AdminEssayThemeCreateRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[EssayThemeRead]:
+    return success_response(
+        AdminContentService(db).create_essay_theme(
+            title=payload.title,
+            context=payload.context,
+            supporting_texts=[item.model_dump() for item in payload.supporting_texts],
+        ),
+        "Tema criado — aguardando revisão.",
+    )
 
 
 @router.post(

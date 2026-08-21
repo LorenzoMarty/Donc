@@ -12,6 +12,7 @@ function fakeDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
     completed_lessons: 0,
     correct_exercises_rate: 0,
     essays_written: 0,
+    exercises_answered: false,
     mastery_map: [],
     recurrent_errors: [],
     trend: [],

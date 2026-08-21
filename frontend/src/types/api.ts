@@ -122,6 +122,7 @@ export type Dashboard = {
   completed_lessons: number;
   correct_exercises_rate: number;
   essays_written: number;
+  exercises_answered: boolean;
   mastery_map: { competency: string; label: string; value: number }[];
   recurrent_errors: string[];
   trend: { label: string; score: number }[];
