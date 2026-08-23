@@ -2,6 +2,7 @@
 
 import json
 import logging
+import threading
 import uuid
 from datetime import UTC, datetime
 
@@ -13,6 +14,10 @@ from src.models import AIJob
 
 
 logger = logging.getLogger("src.queues.jobs")
+
+# Compartilhado entre requests (mesmo processo worker) — capa quantas correcoes sincronas de
+# fallback rodam ao mesmo tempo no threadpool do FastAPI. Ver settings.ai_sync_fallback_max_concurrency.
+_sync_fallback_semaphore = threading.BoundedSemaphore(settings.ai_sync_fallback_max_concurrency)
 
 
 class AIJobService:
@@ -149,6 +154,16 @@ def job_payload(job: AIJob) -> dict:
         "result": job.result_payload,
         "error": job.error,
     }
+
+
+def acquire_sync_fallback_slot() -> bool:
+    """Non-blocking: True se havia vaga (chamador DEVE chamar release_sync_fallback_slot() depois),
+    False se o teto de correcoes sincronas simultaneas ja foi atingido."""
+    return _sync_fallback_semaphore.acquire(blocking=False)
+
+
+def release_sync_fallback_slot() -> None:
+    _sync_fallback_semaphore.release()
 
 
 def enqueue_correct_essay(job_id: str) -> bool:

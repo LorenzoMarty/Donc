@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Layers, Play, Quote, Target, type LucideIcon } from "lucide-react";
 
+import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
@@ -51,6 +52,15 @@ export default function LessonsPage() {
         <LoadingCard />
         <LoadingCard />
       </div>
+    );
+  }
+
+  if (modules.length === 0) {
+    return (
+      <MotionShell className="space-y-6">
+        <PageHeader eyebrow="Aulas" title="Escolha o que assistir" description="Aprenda a estruturar a redação nota 1000" />
+        <EmptyState title="Nenhuma aula disponível ainda" description="Novas trilhas e aulas aparecem aqui assim que forem publicadas." />
+      </MotionShell>
     );
   }
 

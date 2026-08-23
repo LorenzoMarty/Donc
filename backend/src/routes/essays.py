@@ -1,10 +1,10 @@
 ﻿from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from src.database.session import get_db
+from src.database.session import SessionLocal, get_db
 from src.dependencies import get_current_user
 from src.models import AIJob, User
-from src.queues.jobs import AIJobService, enqueue_correct_essay, expire_stale_job
+from src.queues.jobs import AIJobService, acquire_sync_fallback_slot, enqueue_correct_essay, expire_stale_job, release_sync_fallback_slot
 from src.queues.tasks import run_correct_essay_job
 from src.schemas.common import ApiResponse, MessageResponse, success_response
 from src.schemas.essays import (
@@ -24,6 +24,31 @@ from src.utils.rate_limit import require_ai_rate_limit
 
 
 router = APIRouter(prefix="/essays", tags=["essays"])
+
+
+def _dispatch_correction(job_id: str) -> None:
+    if enqueue_correct_essay(job_id):
+        return
+    # Redis/Celery indisponiveis: corrige dentro da propria request, mas so se houver vaga no
+    # teto de fallback sincrono simultaneo (settings.ai_sync_fallback_max_concurrency) — sem isso,
+    # uma corrida de submits nesse cenario degradado esgota o threadpool sync do FastAPI e atrasa
+    # outros endpoints (login, dashboard) que tambem dependem dele.
+    if not acquire_sync_fallback_slot():
+        db = SessionLocal()
+        try:
+            job = db.get(AIJob, job_id)
+            if job:
+                AIJobService(db).mark_failed(
+                    job,
+                    "Sistema de correção sobrecarregado no momento. Tente reenviar em alguns instantes.",
+                )
+        finally:
+            db.close()
+        return
+    try:
+        run_correct_essay_job(job_id)
+    finally:
+        release_sync_fallback_slot()
 
 
 @router.get("/themes", response_model=ApiResponse[list[EssayThemeRead]])
@@ -106,9 +131,7 @@ def submit_essay(
     )
     essay.last_ai_job_id = job.id
     db.commit()
-    enqueued = enqueue_correct_essay(job.id)
-    if not enqueued:
-        run_correct_essay_job(job.id)
+    _dispatch_correction(job.id)
     touch_daily_streak(db, current_user)
     return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Correcao iniciada.")
 
@@ -183,9 +206,7 @@ def reprocess_essay(
     )
     essay.last_ai_job_id = job.id
     db.commit()
-    enqueued = enqueue_correct_essay(job.id)
-    if not enqueued:
-        run_correct_essay_job(job.id)
+    _dispatch_correction(job.id)
     return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Reprocessamento iniciado.")
 
 

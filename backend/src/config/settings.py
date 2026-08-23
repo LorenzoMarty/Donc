@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     # vivo mas worker Celery morto — enqueue "funciona" mas ninguem consome) e marcado failed no
     # proximo poll/SSE, em vez de ficar preso pra sempre.
     ai_job_stale_seconds: int = 180
+    # Teto de correcoes de redacao rodando ao mesmo tempo dentro do threadpool sync do FastAPI
+    # (fallback sincrono quando Redis/Celery estao fora) — sem isso, uma corrida de submits
+    # concorrentes nesse cenario degradado pode esgotar o threadpool e atrasar outros endpoints
+    # (login, dashboard) que tambem dependem dele.
+    ai_sync_fallback_max_concurrency: int = 4
     enable_agentos: bool = False
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None

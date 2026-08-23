@@ -13,5 +13,7 @@ try:
     )
     celery_app.conf.task_track_started = True
     celery_app.conf.result_expires = 3600
+    celery_app.conf.task_time_limit = 120
+    celery_app.conf.task_soft_time_limit = 100
 except Exception:
     celery_app = None
