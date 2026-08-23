@@ -5,8 +5,7 @@ export const structureGames: GameDefinition[] = [
     id: "essay-assembly",
     name: "Monte a Redação",
     category: "estrutura",
-    description:
-      "Arraste os blocos para introdução, desenvolvimento e conclusão. No nível difícil há distratores que precisam ficar de fora do texto.",
+    description: "Arraste os blocos para introdução, desenvolvimento e conclusão na ordem correta.",
     difficulty: "Avancado",
     estimatedTime: "7 min",
     thumbnail: "estrutura-monte-redacao",

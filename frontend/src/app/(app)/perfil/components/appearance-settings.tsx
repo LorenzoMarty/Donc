@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { RotateCcw, Type } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -17,16 +16,9 @@ import {
   writeAppearance,
 } from "@/lib/appearance";
 
-const THEME_OPTIONS: { label: string; value: string }[] = [
-  { label: "Claro", value: "light" },
-  { label: "Escuro", value: "dark" },
-  { label: "Sistema", value: "system" },
-];
-
-/** Seção "Aparência": personaliza tamanho da letra, altura de linha e tema em toda a interface. */
+/** Seção "Aparência": personaliza tamanho da letra e altura de linha em toda a interface. */
 export function AppearanceSettings() {
   const [pref, setPref] = useState<Appearance>(() => readAppearance());
-  const { theme, setTheme } = useTheme();
 
   function update(next: Appearance) {
     setPref(next);
@@ -43,18 +35,12 @@ export function AppearanceSettings() {
         <div>
           <h2 className="text-xl font-semibold tracking-normal">Aparência</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Muda tema, tamanho da letra e espaçamento em toda a plataforma.
+            Muda tamanho da letra e espaçamento em toda a plataforma.
           </p>
         </div>
       </div>
 
       <div className="mt-5 space-y-5">
-        <Control
-          label="Tema"
-          options={THEME_OPTIONS}
-          active={theme ?? "system"}
-          onSelect={(value) => setTheme(value)}
-        />
         <Control
           label="Tamanho da letra"
           options={FONT_SCALE_LEVELS}
