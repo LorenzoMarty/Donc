@@ -19,6 +19,17 @@ function tintBackground(color: string): string {
   return color.startsWith("#") ? `${color}1f` : "hsl(var(--primary) / 0.12)";
 }
 
+/** Escurece a cor do módulo pra uso como texto sobre `tintBackground()` — a cor "crua" do módulo
+ * (tom médio, pensada pra ícone/fundo) mede ~2.3-2.4:1 de contraste em texto pequeno/negrito
+ * (abaixo do mínimo 4.5:1 do WCAG AA); escurecer 50% garante >6:1 mantendo o matiz. */
+function tintText(color: string): string {
+  if (!color.startsWith("#") || color.length !== 7) return "hsl(var(--foreground))";
+  const r = Math.round(parseInt(color.slice(1, 3), 16) * 0.5);
+  const g = Math.round(parseInt(color.slice(3, 5), 16) * 0.5);
+  const b = Math.round(parseInt(color.slice(5, 7), 16) * 0.5);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export default function LessonsPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,7 +167,7 @@ function TrackCard({ module, icon: Icon }: { module: Module; icon: LucideIcon })
   return (
     <div className="rounded-card bg-card p-5 shadow-soft">
       <div className="grid h-11 w-11 place-items-center rounded-control" style={{ backgroundColor: tintBackground(tint) }}>
-        <Icon className="h-5 w-5" style={{ color: tint }} aria-hidden="true" />
+        <Icon className="h-5 w-5" style={{ color: tintText(tint) }} aria-hidden="true" />
       </div>
       <p className="mt-3.5 text-[15px] font-semibold leading-tight">{module.title}</p>
       <p className="mt-1 text-[12px] text-muted-foreground">{module.lessons?.length ?? 0} aulas</p>
@@ -191,7 +202,7 @@ function LessonCard({ lesson, moduleTitle, tint }: { lesson: Lesson; moduleTitle
       <div className="p-4">
         <span
           className={cn("inline-block rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.03em]")}
-          style={{ color: tint, backgroundColor: tintBackground(tint) }}
+          style={{ color: tintText(tint), backgroundColor: tintBackground(tint) }}
         >
           {moduleTitle}
         </span>

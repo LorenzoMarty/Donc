@@ -26,7 +26,7 @@ export function PageHeader({
     >
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start lg:gap-4">
         <div className="min-w-0">
-          <div className="game-chip mb-2 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-primary">
+          <div className="game-chip mb-2 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-[hsl(var(--accent-700))]">
             {eyebrow}
           </div>
           <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight sm:text-[32px]">

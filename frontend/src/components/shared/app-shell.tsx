@@ -231,7 +231,7 @@ function DesktopSidebar({
             aria-label={`Perfil de ${userName}`}
             title={collapsed ? `Perfil de ${userName}` : undefined}
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-[14px] font-semibold text-primary-foreground">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[hsl(var(--accent-600))] text-[14px] font-semibold text-primary-foreground">
               {initials(userName)}
             </span>
             {collapsed ? null : (
@@ -296,7 +296,7 @@ function MobileDrawer({
 
             <div className="mt-auto grid gap-3 pt-8">
               <Link href="/perfil" className="flex items-center gap-3 rounded-control bg-muted/60 p-3" onClick={onClose}>
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/12 font-semibold text-primary">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/12 font-semibold text-[hsl(var(--accent-700))]">
                   {initials(userName)}
                 </span>
                 <span className="min-w-0 leading-tight">
@@ -340,7 +340,7 @@ function ShellNavLink({
       className={cn(
         "group/nav relative flex min-h-11 items-center gap-3 rounded-control text-[14px] font-medium text-muted-foreground transition-colors hover:text-foreground",
         collapsed ? "justify-center px-0" : "px-3.5",
-        active ? "font-semibold text-primary" : "hover:bg-primary/8",
+        active ? "font-semibold text-[hsl(var(--accent-700))]" : "hover:bg-primary/8",
       )}
     >
       {active ? (

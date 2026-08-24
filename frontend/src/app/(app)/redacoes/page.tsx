@@ -154,7 +154,7 @@ export default function EssayHistoryPage() {
               <span
                 className={cn(
                   "rounded-full px-1.5 py-px text-[11px] font-bold",
-                  active ? "bg-primary/14 text-primary" : "bg-muted-foreground/15 text-muted-foreground",
+                  active ? "bg-primary/14 text-[hsl(var(--accent-700))]" : "bg-muted-foreground/15 text-[hsl(var(--neutral-600))]",
                 )}
               >
                 {counts[item.id]}

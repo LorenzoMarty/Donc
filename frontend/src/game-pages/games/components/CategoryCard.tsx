@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Layers3 } from "lucide-react";
 
 import type { GameCategory } from "@/features/gamification/types";
+import { darkenForText } from "@/utils";
 
 export function CategoryCard({ category, index }: { category: GameCategory; index: number }) {
   const Icon = category.icon;
@@ -41,7 +42,7 @@ export function CategoryCard({ category, index }: { category: GameCategory; inde
         <div className="mt-6 space-y-2">
           <div className="flex items-center justify-between gap-3 text-xs font-semibold">
             <span className="text-muted-foreground">{category.masteryLevel}</span>
-            <span style={{ color: category.secondaryColor }}>{category.progress}% dominado</span>
+            <span style={{ color: darkenForText(category.secondaryColor) }}>{category.progress}% dominado</span>
           </div>
           <div className="h-2 overflow-hidden rounded-md border border-border bg-muted/70">
             <div

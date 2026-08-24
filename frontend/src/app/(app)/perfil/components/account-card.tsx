@@ -19,17 +19,17 @@ export function AccountCard() {
   const [changingPassword, setChangingPassword] = useState(false);
 
   return (
-    <Surface className="bg-primary text-primary-foreground">
+    <Surface className="bg-[hsl(var(--accent-600))] text-primary-foreground">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
-        <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-foreground/20 bg-foreground/10 text-2xl font-semibold text-foreground">
+        <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-white/25 bg-[hsl(var(--accent-700))] text-2xl font-semibold text-primary-foreground">
           {initials(user?.name ?? "Aluno")}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground/62">Aluno Donc</p>
+          <p className="text-sm font-semibold text-primary-foreground">Aluno Donc</p>
           <h2 className="font-display text-safe text-[28px] font-medium tracking-normal">{user?.name ?? "Aluno"}</h2>
-          <p className="text-safe mt-1 text-sm text-foreground/70">{user?.email}</p>
+          <p className="text-safe mt-1 text-sm text-primary-foreground">{user?.email}</p>
           {user?.created_at ? (
-            <p className="mt-1 text-xs text-foreground/55">Membro desde {formatMemberSince(user.created_at)}</p>
+            <p className="mt-1 text-xs text-primary-foreground">Membro desde {formatMemberSince(user.created_at)}</p>
           ) : null}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
