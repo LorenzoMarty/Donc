@@ -17,7 +17,7 @@ export function TabsTrigger({ className, ...props }: React.ComponentPropsWithout
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "inline-flex min-h-10 min-w-0 items-center justify-center rounded-md px-3 py-1.5 text-center text-sm font-semibold leading-tight text-muted-foreground transition-all hover:text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground md:whitespace-nowrap",
+        "inline-flex min-h-10 min-w-0 items-center justify-center rounded-md px-3 py-1.5 text-center text-sm font-semibold leading-tight text-muted-foreground transition-all hover:text-foreground data-[state=active]:bg-[hsl(var(--accent-600))] data-[state=active]:text-primary-foreground md:whitespace-nowrap",
         className,
       )}
       {...props}

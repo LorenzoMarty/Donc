@@ -137,7 +137,7 @@
   --highlight-foreground: 0 0% 100%;
   --chart-c4: var(--chart-c4-500);
   --chart-c5: var(--chart-c5-500);
-  --destructive: 354 70% 54%;
+  --destructive: 354 70% 47%; /* 47% (não 54%) — 54% media 4.47:1 contra branco, abaixo do 4.5:1 AA pra texto pequeno */
   --destructive-foreground: 0 0% 100%;
   --border: var(--neutral-200);
   --input: var(--neutral-200);
@@ -295,7 +295,7 @@ html:not(.dark) .dark .force-light {
   --highlight-tint: 253 91% 96%;
   --chart-c4: var(--chart-c4-500);
   --chart-c5: var(--chart-c5-500);
-  --destructive: 354 70% 54%;
+  --destructive: 354 70% 47%; /* 47% (não 54%) — 54% media 4.47:1 contra branco, abaixo do 4.5:1 AA pra texto pequeno */
   --destructive-foreground: 0 0% 100%;
   --border: var(--neutral-200);
   --input: var(--neutral-200);
@@ -361,7 +361,7 @@ html.dark .force-brand-green {
   --highlight-tint: 253 91% 96%;
   --chart-c4: var(--chart-c4-500);
   --chart-c5: var(--chart-c5-500);
-  --destructive: 354 70% 54%;
+  --destructive: 354 70% 47%; /* 47% (não 54%) — 54% media 4.47:1 contra branco, abaixo do 4.5:1 AA pra texto pequeno */
   --destructive-foreground: 0 0% 100%;
   --border: var(--neutral-200);
   --input: var(--neutral-200);

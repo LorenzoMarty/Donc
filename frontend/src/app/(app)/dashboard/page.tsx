@@ -170,11 +170,11 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="flex items-center justify-between gap-6 rounded-card bg-primary p-6 text-primary-foreground shadow-control">
+        <div className="flex items-center justify-between gap-6 rounded-card bg-[hsl(var(--accent-600))] p-6 text-primary-foreground shadow-control">
           <div className="min-w-0 max-w-2xl">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/80">{heroCopy.eyebrow}</p>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/95">{heroCopy.eyebrow}</p>
             <p className="font-display mt-1.5 text-[23px] font-medium leading-snug">{heroCopy.title}</p>
-            <p className="mt-1 text-[13px] text-primary-foreground/85">{heroCopy.description}</p>
+            <p className="mt-1 text-[13px] text-primary-foreground/95">{heroCopy.description}</p>
           </div>
           <Link
             href="/redacao"
@@ -188,7 +188,7 @@ export default function DashboardPage() {
         <div className="rounded-card bg-card p-6 shadow-soft">
           <div className="mb-3.5 flex items-center justify-between">
             <h2 className="text-[16px] font-semibold">Temas sugeridos</h2>
-            <Link href="/redacao" className="text-[13px] font-semibold text-primary hover:underline">
+            <Link href="/redacao" className="text-[13px] font-semibold text-[hsl(var(--accent-700))] hover:underline">
               Ver todos
             </Link>
           </div>
@@ -279,7 +279,7 @@ function EvolutionChart({ trend }: { trend: { label: string; score: number }[] }
 
   return (
     <>
-      <p className={cn("mb-3.5 text-[13px] font-semibold", delta >= 0 ? "text-primary" : "text-destructive")}>
+      <p className={cn("mb-3.5 text-[13px] font-semibold", delta >= 0 ? "text-[hsl(var(--accent-700))]" : "text-destructive")}>
         {delta >= 0 ? "↑" : "↓"} {delta >= 0 ? "+" : ""}
         {delta} pontos no período
       </p>
@@ -338,7 +338,7 @@ function StatCard({
         <span className="text-[34px] font-semibold leading-none tracking-tight tabular-nums">{value}</span>
         {suffix ? <span className="text-[14px] text-muted-foreground">{suffix}</span> : null}
       </div>
-      <p className={cn("mt-2.5 text-[12px] font-semibold", up === true ? "text-primary" : up === false ? "text-destructive" : "text-muted-foreground")}>
+      <p className={cn("mt-2.5 text-[12px] font-semibold", up === true ? "text-[hsl(var(--accent-700))]" : up === false ? "text-destructive" : "text-muted-foreground")}>
         {delta}
       </p>
     </div>

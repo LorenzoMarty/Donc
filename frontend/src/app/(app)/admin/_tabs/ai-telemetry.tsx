@@ -53,7 +53,7 @@ export function AITelemetryTab({
               type="button"
               disabled={loading}
               onClick={() => changePeriod(d)}
-              className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-colors ${period === d ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+              className={`rounded-control border px-3 py-1.5 text-xs font-medium transition-colors ${period === d ? "bg-[hsl(var(--accent-600))] text-primary-foreground border-[hsl(var(--accent-600))]" : "bg-background hover:bg-muted"}`}
             >
               {d} dias
             </button>
@@ -212,9 +212,9 @@ export function AITelemetryTab({
 function BigCostCard({ label, brlCents, usdMicros, highlight }: { label: string; brlCents: number; usdMicros?: number; highlight?: boolean }) {
   return (
     <div className={`rounded-card p-4 shadow-soft ${highlight ? "bg-primary/5" : "bg-card"}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[hsl(var(--neutral-600))]">{label}</p>
       <p className="mt-2 text-2xl font-bold">{formatBRLCents(brlCents)}</p>
-      {usdMicros !== undefined ? <p className="text-xs text-muted-foreground">{formatUSDMicros(usdMicros)}</p> : null}
+      {usdMicros !== undefined ? <p className="text-xs text-[hsl(var(--neutral-600))]">{formatUSDMicros(usdMicros)}</p> : null}
     </div>
   );
 }

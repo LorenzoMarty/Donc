@@ -101,7 +101,7 @@ function Control<T extends number | string>({
               className={cn(
                 "rounded-control px-4 py-2 text-sm font-semibold transition-colors",
                 selected
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-[hsl(var(--accent-600))] text-primary-foreground"
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >

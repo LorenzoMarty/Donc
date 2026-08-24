@@ -6,10 +6,10 @@ import { cn } from "@/utils";
 const badgeVariants = cva("inline-flex items-center rounded-full border border-border px-2.5 py-1 text-xs font-semibold", {
   variants: {
     variant: {
-      default: "bg-primary/10 text-primary",
-      secondary: "bg-primary/10 text-primary",
+      default: "bg-primary/10 text-[hsl(var(--accent-700))]",
+      secondary: "bg-primary/10 text-[hsl(var(--accent-700))]",
       outline: "bg-card/72 text-foreground",
-      success: "bg-accent/14 text-accent",
+      success: "bg-accent/14 text-[hsl(var(--accent-700))]",
       destructive: "bg-destructive/12 text-destructive",
     },
   },

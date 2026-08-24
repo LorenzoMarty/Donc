@@ -9,8 +9,10 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-primary bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(101,190,2,0.16)] hover:bg-primary/92 hover:shadow-[0_10px_24px_rgba(101,190,2,0.18)]",
-        secondary: "border-primary/16 bg-primary/10 text-primary hover:border-primary/34 hover:bg-primary/14",
+        // bg-[--accent-600] (não bg-primary/--accent-500): branco sobre 500 mede ~3.5:1, abaixo do
+        // 4.5:1 AA pra texto normal — 600 garante ~4.8:1+ em todas as 6 accent colors.
+        default: "border-[hsl(var(--accent-600))] bg-[hsl(var(--accent-600))] text-primary-foreground shadow-[0_8px_18px_rgba(101,190,2,0.16)] hover:bg-[hsl(var(--accent-600))]/92 hover:shadow-[0_10px_24px_rgba(101,190,2,0.18)]",
+        secondary: "border-primary/16 bg-primary/10 text-[hsl(var(--accent-700))] hover:border-primary/34 hover:bg-primary/14",
         outline: "border-border bg-card text-foreground shadow-none hover:border-primary/38 hover:bg-primary/6 hover:text-foreground",
         ghost: "border-transparent bg-transparent shadow-none hover:border-border hover:bg-muted/70 hover:text-foreground",
         destructive: "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90",

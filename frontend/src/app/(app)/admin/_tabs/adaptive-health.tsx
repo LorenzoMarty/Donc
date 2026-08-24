@@ -46,10 +46,10 @@ function HealthPanel({ title, count, empty, children }: { title: string; count: 
 
 function StudentList({ items }: { items: StudentHealthItem[] }) {
   return (
-    <ul className="space-y-1 text-xs text-muted-foreground">
+    <ul className="space-y-1 text-xs text-[hsl(var(--neutral-600))]">
       {items.slice(0, 12).map((item) => (
         <li key={item.user_id} className="truncate">
-          {item.name} <span className="text-muted-foreground/70">— {item.email}</span>
+          {item.name} <span className="text-[hsl(var(--neutral-600))]">— {item.email}</span>
         </li>
       ))}
       {items.length > 12 ? <li className="italic">+{items.length - 12} outros</li> : null}

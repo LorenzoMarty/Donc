@@ -147,7 +147,7 @@ export default function OnboardingPage() {
                   <h1 className="font-display text-[38px] font-medium leading-[1.15] text-white">
                     Vamos preparar sua jornada rumo ao 1000
                   </h1>
-                  <p className="mx-auto mt-3.5 max-w-[520px] text-[17px] leading-relaxed text-white/72">
+                  <p className="mx-auto mt-3.5 max-w-[520px] text-[17px] leading-relaxed text-white/70">
                     Sou o Donc, seu tutor de redação. Em 3 passos rápidos eu personalizo os treinos, aulas e temas pra você.
                   </p>
                 </>
@@ -256,13 +256,18 @@ function ChoiceStepBody({
             <motion.button
               key={opt.id}
               type="button"
-              initial={{ opacity: 0, y: 12 }}
+              // Sem fade de opacidade aqui — só o slide (y) — porque essa entrada escalonada por
+              // item, empilhada sobre o fade do passo inteiro (slideVariants), deixava o texto
+              // visivelmente apagado por ~0.5s a cada passo (baixo contraste percebido).
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.28 }}
+              transition={{ delay: i * 0.03, duration: 0.16 }}
               onClick={() => onSelect(opt.id)}
               className={cn(
                 "flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4.5 text-left transition-colors",
-                active ? "border-[hsl(var(--accent-300))] bg-[hsl(var(--accent-300)/14%)]" : "border-white/14 bg-white/5",
+                active
+                  ? "border-[hsl(var(--accent-300))] bg-[hsl(var(--accent-300)/14%)]"
+                  : "border-transparent bg-white/5 shadow-[0_14px_32px_-18px_rgba(0,0,0,0.6)]",
               )}
             >
               <div className="min-w-0 flex-1">
@@ -301,7 +306,7 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.25 }}
-          className="mt-6 rounded-2xl border border-white/14 bg-white/5 p-6 text-left"
+          className="mt-6 rounded-2xl bg-white/5 p-6 text-left shadow-[0_20px_44px_-16px_rgba(0,0,0,0.6)]"
         >
           {current.hydraVideoUrl ? (
             <video src={current.hydraVideoUrl} controls className="mb-4 w-full rounded-control object-contain" aria-label="Vídeo da Hydra, a mascote do Donc" />
@@ -313,7 +318,7 @@ function TourStepBody({ slide, onSlide }: { slide: number; onSlide: (n: number) 
             </div>
           )}
           <h3 className="text-[18px] font-semibold text-white">{current.title}</h3>
-          <p className="mt-2 text-[14px] leading-relaxed text-white/78">{current.description}</p>
+          <p className="mt-2 text-[14px] leading-relaxed text-white/75">{current.description}</p>
         </motion.div>
       </AnimatePresence>
 
@@ -349,7 +354,7 @@ function CTAStepBody({ goal, level }: { goal: string | null; level: string | nul
 
       <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">Tudo pronto</p>
       <h2 className="font-display text-[38px] font-medium leading-[1.15] text-white">Sua trilha está montada!</h2>
-      <p className="mx-auto mt-3.5 max-w-[480px] text-[17px] leading-relaxed text-white/72">
+      <p className="mx-auto mt-3.5 max-w-[480px] text-[17px] leading-relaxed text-white/70">
         Assim que você escrever a primeira redação, eu já te aponto exatamente onde focar. Sem enrolação.
       </p>
 
