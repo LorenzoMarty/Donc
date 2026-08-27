@@ -90,6 +90,11 @@ class AdminEssayThemeCreateRequest(BaseModel):
     supporting_texts: list[AdminSupportingTextRequest] = Field(min_length=1, max_length=4)
 
 
+class AdminEssayThemeTitleSuggestionsRequest(BaseModel):
+    context: str | None = Field(default=None, max_length=5000)
+    focus: str | None = Field(default=None, max_length=220)
+
+
 class AdminEssayThemeGenerateRequest(BaseModel):
     focus: str | None = Field(default=None, max_length=160)
     supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=10)

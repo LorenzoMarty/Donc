@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Edit2, FilePlus2, FileText, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { Edit2, FilePlus2, FileText, Plus, Save, Search, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
@@ -293,9 +293,7 @@ function ThemeEditor({
 
   return (
     <div className="grid gap-3">
-      <Field label="Título" counter={{ value: draft.title.length, max: 220 }}>
-        <Input value={draft.title} maxLength={220} onChange={(event) => onChange({ ...draft, title: event.target.value })} disabled={busy} />
-      </Field>
+      <ThemeTitleField draft={draft} busy={busy} onChange={onChange} />
       <Field label="Contexto" counter={{ value: draft.context.length, max: 5000 }}>
         <Textarea value={draft.context} maxLength={5000} onChange={(event) => onChange({ ...draft, context: event.target.value })} disabled={busy} rows={5} />
       </Field>
@@ -360,6 +358,75 @@ function ThemeEditor({
           Cancelar
         </Button>
       </div>
+    </div>
+  );
+}
+
+function ThemeTitleField({
+  draft,
+  busy,
+  onChange,
+}: {
+  draft: ThemeDraft;
+  busy: boolean;
+  onChange: (draft: ThemeDraft) => void;
+}) {
+  const [suggestions, setSuggestions] = useState<string[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function suggestTitles() {
+    setLoading(true);
+    try {
+      const titles = await apiFetch<string[]>("/admin/essay-themes/title-suggestions", {
+        method: "POST",
+        body: JSON.stringify({ context: draft.context || null, focus: draft.title || null }),
+      });
+      setSuggestions(titles);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao sugerir títulos.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function pickSuggestion(title: string) {
+    onChange({ ...draft, title });
+    setSuggestions(null);
+  }
+
+  return (
+    <div className="grid gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs font-semibold text-muted-foreground">Título</span>
+        <Button type="button" size="sm" variant="outline" disabled={busy || loading} onClick={suggestTitles}>
+          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          {loading ? "Gerando..." : "Sugerir com IA"}
+        </Button>
+      </div>
+      <Input value={draft.title} maxLength={220} onChange={(event) => onChange({ ...draft, title: event.target.value })} disabled={busy} />
+      <span className="flex justify-end text-[0.7rem] leading-4 tabular-nums text-muted-foreground">
+        {draft.title.length}/220
+      </span>
+      {suggestions?.length ? (
+        <div className="mt-2 grid gap-1.5 rounded-control bg-background/50 p-2 shadow-soft">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-muted-foreground">Alternativas geradas — escolha uma ou continue editando:</p>
+            <Button type="button" size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSuggestions(null)} aria-label="Fechar sugestões">
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+          </div>
+          {suggestions.map((title) => (
+            <button
+              key={title}
+              type="button"
+              onClick={() => pickSuggestion(title)}
+              className="text-safe rounded-control bg-card px-2.5 py-1.5 text-left text-xs shadow-soft transition hover:bg-muted/60"
+            >
+              {title}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
