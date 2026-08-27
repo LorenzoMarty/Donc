@@ -8,6 +8,7 @@ from src.agents.base import AgnoAgentRunner
 from src.agents.schemas import (
     EssayThemeBatchGenerationResult,
     EssayThemeGenerationResult,
+    EssayThemeTitleSuggestionsResult,
     GeneratedSupportingText,
     SupportingTextType,
 )
@@ -122,6 +123,59 @@ Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro titulo d
             session_id=session_id,
         )
         return self._ensure_unique_batch(result=result, fallback=fallback, existing_titles=known_titles, count=safe_count)
+
+    def generate_title_suggestions(
+        self,
+        *,
+        context: str | None = None,
+        focus: str | None = None,
+        existing_titles: list[str] | None = None,
+        count: int = 4,
+        user_id: int | None = None,
+        session_id: str | None = None,
+    ) -> EssayThemeTitleSuggestionsResult:
+        safe_count = min(max(count, 2), 5)
+        known_titles = existing_titles or []
+        safe_context = context.strip() if context else None
+        safe_focus = focus.strip() if focus else None
+        fallback = self._fallback_title_suggestions(context=safe_context, focus=safe_focus, count=safe_count)
+        existing_block = "\n".join(f"- {title}" for title in known_titles[:80]) or "Nenhum titulo existente informado."
+        prompt = f"""
+Contexto/rascunho do tema (pode estar incompleto): {safe_context or "nao informado"}
+Foco desejado: {safe_focus or "nao informado"}
+Quantidade obrigatoria: {safe_count} titulos alternativos.
+Titulos ja existentes que nao podem ser repetidos:
+{existing_block}
+Regras de unicidade: nenhum dos {safe_count} titulos pode repetir outro do lote, mesmo com pequenas variacoes de maiusculas, acentos ou pontuacao.
+"""
+        result = self.runner.run_structured(
+            agent_name="ThemeGeneratorAgent",
+            description="Sugere titulos alternativos para um tema de redacao ENEM.",
+            instructions=THEME_GENERATOR_INSTRUCTIONS,
+            prompt=prompt,
+            output_schema=EssayThemeTitleSuggestionsResult,
+            fallback=fallback,
+            user_id=user_id,
+            session_id=session_id,
+        )
+        cleaned = []
+        seen = {self._normalize_title(title) for title in known_titles}
+        for title in [*result.titles, *fallback.titles]:
+            title = self._clean_title(title)
+            normalized = self._normalize_title(title)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            cleaned.append(title)
+            if len(cleaned) == safe_count:
+                break
+        return EssayThemeTitleSuggestionsResult(titles=cleaned or fallback.titles[:safe_count])
+
+    def _fallback_title_suggestions(
+        self, *, context: str | None, focus: str | None, count: int = 4
+    ) -> EssayThemeTitleSuggestionsResult:
+        batch = self._fallback_batch(focus=focus or context or "tema atual de impacto social no Brasil", existing_titles=[], count=count)
+        return EssayThemeTitleSuggestionsResult(titles=[theme.title for theme in batch.themes])
 
     def _fallback(self, *, focus: str) -> EssayThemeGenerationResult:
         return self._fallback_batch(focus=focus, existing_titles=[]).themes[0]

@@ -125,6 +125,35 @@ class AdminContentService:
         self.db.refresh(theme)
         return theme
 
+    def suggest_essay_theme_titles(
+        self,
+        *,
+        context: str | None,
+        focus: str | None,
+        admin_user_id: int,
+    ) -> list[str]:
+        """Alternativas de titulo pra criacao/edicao manual — nao gera contexto nem textos de apoio."""
+        existing_titles = [theme.title for theme in self.db.scalars(select(EssayTheme))]
+        agent = ThemeGeneratorAgent()
+        result = agent.generate_title_suggestions(
+            context=context,
+            focus=focus,
+            existing_titles=existing_titles,
+            count=4,
+            user_id=admin_user_id,
+            session_id=f"admin:{admin_user_id}:theme-title-suggestions",
+        )
+        record_ai_interaction(
+            self.db,
+            workflow="admin_theme_title_suggestions",
+            agent="ThemeGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"focus": focus, "has_context": bool(context)},
+        )
+        self.db.commit()
+        return result.titles
+
     def create_essay_theme(
         self,
         *,

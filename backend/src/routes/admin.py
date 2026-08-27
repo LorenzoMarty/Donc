@@ -24,6 +24,7 @@ from src.schemas.admin import (
     AdminEssayThemeCreateRequest,
     AdminEssayThemeGenerateRequest,
     AdminEssayThemeRegenerateSupportingTextsRequest,
+    AdminEssayThemeTitleSuggestionsRequest,
     AdminEssayThemeUpdateRequest,
     AdminGeneratedSupportingTextRead,
     AdminLessonCreateRequest,
@@ -150,6 +151,26 @@ def create_essay_theme(
         ),
         "Tema criado — aguardando revisão.",
     )
+
+
+@router.post(
+    "/essay-themes/title-suggestions",
+    response_model=ApiResponse[list[str]],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_theme_title_suggestions"))],
+)
+def suggest_essay_theme_titles(
+    payload: AdminEssayThemeTitleSuggestionsRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[list[str]]:
+    context = sanitize_ai_text(payload.context or "", max_chars=5000) or None
+    focus = sanitize_ai_text(payload.focus or "", max_chars=220) or None
+    if (context and contains_prompt_injection(context)) or (focus and contains_prompt_injection(focus)):
+        from src.middlewares.errors import AppError
+
+        raise AppError("Entrada contém instruções indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+    titles = AdminContentService(db).suggest_essay_theme_titles(context=context, focus=focus, admin_user_id=current_admin.id)
+    return success_response(titles, "Sugestões de título geradas.")
 
 
 @router.post(

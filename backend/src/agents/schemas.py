@@ -96,6 +96,10 @@ class EssayThemeBatchGenerationResult(BaseModel):
     themes: list[EssayThemeGenerationResult] = Field(min_length=1, max_length=4)
 
 
+class EssayThemeTitleSuggestionsResult(BaseModel):
+    titles: list[str] = Field(min_length=1, max_length=5)
+
+
 class GameQuestion(BaseModel):
     prompt: str = Field(min_length=15, max_length=600, description="Enunciado da questao, pode incluir lacuna _ ou contexto.")
     options: list[str] = Field(min_length=4, max_length=4, description="Exatamente 4 opcoes de resposta, sem prefixo de letra.")
