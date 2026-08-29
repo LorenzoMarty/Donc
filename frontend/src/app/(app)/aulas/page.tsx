@@ -125,7 +125,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
   const remainingMinutes = Math.max(1, Math.round(lesson.duration_minutes * (1 - lesson.progress.progress_percent / 100)));
 
   return (
-    <div className="flex items-center gap-8 rounded-[20px] bg-[hsl(var(--accent-900))] p-7 text-white">
+    <div className="flex items-center gap-8 rounded-[20px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg">
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Continue assistindo</p>
         <p className="font-display mt-1.5 text-[27px] font-medium leading-tight">{lesson.title}</p>

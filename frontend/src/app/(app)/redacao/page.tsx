@@ -176,7 +176,7 @@ function ThemePicker({
   return (
     <div>
       {weekly ? (
-        <div className="mb-5 flex items-center gap-6 rounded-card bg-[hsl(var(--accent-900))] p-6 text-white">
+        <div className="mb-5 flex items-center gap-6 rounded-card bg-[hsl(var(--accent-900))] p-6 text-white shadow-accent-lg">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Tema da semana</p>
             <p className="font-display mt-1.5 text-2xl font-medium leading-tight">{weekly.title}</p>
@@ -194,14 +194,14 @@ function ThemePicker({
       ) : null}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="inline-flex gap-1 rounded-control bg-muted/60 p-1">
+        <div className="inline-flex gap-1 rounded-full bg-muted/60 p-1">
           {THEME_FILTERS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setFilter(option.value)}
               className={cn(
-                "rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
                 filter === option.value ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
               )}
             >

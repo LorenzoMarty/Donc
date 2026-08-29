@@ -48,7 +48,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
         Voltar
       </Link>
 
-      <div className="rounded-[28px] bg-[hsl(var(--accent-900))] p-7 text-white">
+      <div className="rounded-[28px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg">
         <div className="flex items-start gap-3.5">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-control border border-white/15 bg-white/10 text-white">
             <Icon className="h-5 w-5" aria-hidden="true" />

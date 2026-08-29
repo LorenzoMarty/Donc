@@ -82,6 +82,7 @@ const config: Config = {
           800: "hsl(var(--green-800))",
           900: "hsl(var(--green-900))",
         },
+        paper: "var(--surface-paper)",
       },
       fontFamily: {
         display: ["var(--font-newsreader)", "Georgia", "serif"],
@@ -100,13 +101,19 @@ const config: Config = {
         soft: "var(--shadow-soft)",
         elevated: "var(--shadow-elevated)",
         control: "var(--shadow-control)",
+        accent: "var(--shadow-accent)",
+        "accent-sm": "var(--shadow-accent-sm)",
+        "accent-lg": "var(--shadow-accent-lg)",
+        dock: "var(--shadow-dock)",
       },
       transitionDuration: {
         micro: "180ms",
         standard: "260ms",
+        ipados: "280ms",
       },
       transitionTimingFunction: {
         "out-standard": "cubic-bezier(0.22, 1, 0.36, 1)",
+        ipados: "cubic-bezier(0.16, 0.84, 0.24, 1)",
       },
     },
   },

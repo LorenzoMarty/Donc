@@ -31,33 +31,21 @@ import { AIGamesTab } from "./_tabs/ai-games";
 import { ModulesTab } from "./_tabs/modules";
 import { ThemesTab } from "./_tabs/themes";
 
-// REQ-1 (admin-reorganizacao-ux): navegação por função em vez de 10 abas soltas no mesmo nível.
-const NAV_GROUPS: { label: string; tabs: { value: string; label: string }[] }[] = [
-  { label: "Painel", tabs: [{ value: "overview", label: "Dashboard" }] },
-  {
-    label: "Conteúdo",
-    tabs: [
-      { value: "games", label: "Jogos" },
-      { value: "modules", label: "Módulos" },
-      { value: "exercises", label: "Exercícios" },
-      { value: "themes", label: "Temas" },
-    ],
-  },
-  {
-    label: "Operação",
-    tabs: [
-      { value: "review-queue", label: "Revisões" },
-      { value: "content-quality", label: "Qualidade" },
-      { value: "users", label: "Alunos" },
-    ],
-  },
-  {
-    label: "Sistema",
-    tabs: [
-      { value: "ai", label: "IA" },
-      { value: "adaptive-health", label: "Saúde adaptativa" },
-    ],
-  },
+// REQ-18 (apple-writing-interface-redesign): volta pra uma fileira única de abas planas, sem
+// grupos por função — padrão visual do Admin.dc.html do pacote de mockups. Mantém as 10 abas reais
+// (o mockup só previa 6 áreas, um admin mais simples/antigo; decisão explícita do usuário foi só
+// achatar a navegação, não remover Exercícios/Revisões/Qualidade/Saúde adaptativa).
+const NAV_TABS: { value: string; label: string }[] = [
+  { value: "overview", label: "Dashboard" },
+  { value: "ai", label: "IA" },
+  { value: "users", label: "Alunos" },
+  { value: "themes", label: "Temas" },
+  { value: "modules", label: "Módulos" },
+  { value: "exercises", label: "Exercícios" },
+  { value: "games", label: "Jogos" },
+  { value: "review-queue", label: "Revisões" },
+  { value: "content-quality", label: "Qualidade" },
+  { value: "adaptive-health", label: "Saúde adaptativa" },
 ];
 
 const EMPTY_TELEMETRY: AITelemetry = {
@@ -153,18 +141,11 @@ export default function AdminPage() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="h-auto w-full flex-wrap items-start justify-start gap-x-5 gap-y-3 border-none bg-transparent p-0">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label} className="flex flex-col gap-1.5">
-              <span className="px-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</span>
-              <div className="flex flex-wrap gap-1 rounded-md border border-border bg-muted/70 p-1">
-                {group.tabs.map((item) => (
-                  <TabsTrigger key={item.value} value={item.value}>
-                    {item.label}
-                  </TabsTrigger>
-                ))}
-              </div>
-            </div>
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
+          {NAV_TABS.map((item) => (
+            <TabsTrigger key={item.value} value={item.value}>
+              {item.label}
+            </TabsTrigger>
           ))}
         </TabsList>
 

@@ -171,18 +171,34 @@ export function EssayEditor({
    * `setSelectionRange` síncrono no mesmo `pointerup` pode ser sobrescrito pela finalização da
    * seleção nativa do navegador.
    */
-  const handleSelectionRelease = useCallback(
-    (event: React.PointerEvent<HTMLTextAreaElement>) => {
+  const applyMarkAndCollapse = useCallback(
+    (textarea: HTMLTextAreaElement) => {
       const hadActiveTool = Boolean(activeTool);
       handleMarkOnSelection();
       if (!hadActiveTool) return;
-      const textarea = event.currentTarget;
       const collapseAt = textarea.selectionEnd;
       requestAnimationFrame(() => {
         textarea.setSelectionRange(collapseAt, collapseAt);
       });
     },
     [activeTool, handleMarkOnSelection],
+  );
+
+  const handleSelectionRelease = useCallback(
+    (event: React.PointerEvent<HTMLTextAreaElement>) => applyMarkAndCollapse(event.currentTarget),
+    [applyMarkAndCollapse],
+  );
+
+  /**
+   * Alternativa por teclado ao arraste do mouse/toque (REQ-10/acessibilidade): seleção via
+   * Shift+setas não dispara `pointerup`, então sem isso marca-texto/borracha ficavam inacessíveis
+   * por teclado. Soltar Shift é o sinal natural de "seleção finalizada" numa seleção por teclado.
+   */
+  const handleSelectionKeyUp = useCallback(
+    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === "Shift") applyMarkAndCollapse(event.currentTarget);
+    },
+    [applyMarkAndCollapse],
   );
 
   function syncOverlayScroll() {
@@ -229,6 +245,12 @@ export function EssayEditor({
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-[11px] border border-border bg-card px-[13px] py-2 text-xs font-semibold text-foreground [font-variant-numeric:tabular-nums]"
+              title="Palavras nesta redação"
+            >
+              {wordCount} palavras
+            </span>
             {!locked ? <EssayTimer className="rounded-[11px] px-[13px] py-2" /> : null}
             <Button onClick={onSubmit} disabled={!canSubmit} className="h-auto rounded-[11px] px-[18px] py-2.5 text-[14px] font-semibold">
               <Send className="h-4 w-4" aria-hidden="true" />
@@ -259,7 +281,7 @@ export function EssayEditor({
                 className="mobile-scroll absolute inset-0 overflow-y-auto bg-background px-5 pb-24 pt-14 md:px-9 md:pt-16"
               >
                 <div
-                  className="relative mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-[#fffdf8] px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8"
+                  className="relative mx-auto grid max-w-[940px] grid-cols-[2rem_minmax(0,1fr)] gap-3 rounded-card bg-paper px-5 py-6 shadow-elevated md:grid-cols-[2.4rem_minmax(0,1fr)] md:px-6 lg:px-8"
                 >
                   <div
                     aria-hidden="true"
@@ -299,6 +321,7 @@ export function EssayEditor({
                       onChange={(event) => onContentChange(event.target.value)}
                       onScroll={syncOverlayScroll}
                       onPointerUp={handleSelectionRelease}
+                      onKeyUp={handleSelectionKeyUp}
                       spellCheck
                       placeholder="Comece sua redação aqui..."
                       className={cn(
@@ -450,7 +473,7 @@ function Dock({
     <div
       ref={dockRef}
       className={cn(
-        "pointer-events-auto absolute flex items-end gap-1 rounded-card border border-white/60 bg-card/80 px-2.5 py-2 shadow-elevated backdrop-blur-xl",
+        "pointer-events-auto absolute flex items-end gap-1 rounded-card border border-white/60 bg-card/[0.86] px-2.5 py-2 shadow-dock backdrop-blur-[var(--glass-floating-blur)] backdrop-saturate-[1.8]",
         !livePosition && "inset-x-0 bottom-6 mx-auto w-fit",
       )}
       style={livePosition ? { left: `${livePosition.x * 100}%`, top: `${livePosition.y * 100}%` } : undefined}
@@ -552,7 +575,7 @@ function MotivatorsBooklet({
   if (!theme) return null;
 
   return (
-    <div className="mx-auto max-w-[940px] rounded-card bg-[#fffdf8] px-5 py-6 shadow-elevated md:px-6 lg:px-8">
+    <div className="mx-auto max-w-[940px] rounded-card bg-paper px-5 py-6 shadow-elevated md:px-6 lg:px-8">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
       <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal text-[#26241f] md:text-2xl">{theme.title}</h2>
       <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3c3c43]/72">{theme.context}</p>
