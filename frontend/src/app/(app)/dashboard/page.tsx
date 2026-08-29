@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Clock3, FileText, Gamepad2, PenLine, Sparkles, Video } from "lucide-react";
+import { Clock3, FileText, Flame, Gamepad2, PenLine, Sparkles, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -89,11 +89,11 @@ export default function DashboardPage() {
       <section className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-[14px] capitalize text-muted-foreground">{today}</p>
-          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {studentName} 👋</h1>
+          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {studentName}</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2 text-[14px] font-semibold shadow-soft">
-            <span aria-hidden="true">🔥</span>
+            <Flame className="h-4 w-4 text-streak" aria-hidden="true" />
             {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="flex items-center justify-between gap-6 rounded-card bg-[hsl(var(--accent-600))] p-6 text-primary-foreground shadow-control">
+        <div className="flex items-center justify-between gap-6 rounded-card bg-[hsl(var(--accent-600))] p-6 text-primary-foreground shadow-accent-lg">
           <div className="min-w-0 max-w-2xl">
             <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/95">{heroCopy.eyebrow}</p>
             <p className="font-display mt-1.5 text-[23px] font-medium leading-snug">{heroCopy.title}</p>
@@ -229,7 +229,7 @@ function OnboardingChecklist({ name }: { name: string }) {
   return (
     <div className="text-foreground">
       <section className="pb-1">
-        <h1 className="font-display text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {name} 👋</h1>
+        <h1 className="font-display text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {name}</h1>
         <p className="mt-1.5 text-[15px] text-muted-foreground">
           Bem-vindo ao Donc! Complete os 4 primeiros passos pra desbloquear seu painel completo de evolução.
         </p>

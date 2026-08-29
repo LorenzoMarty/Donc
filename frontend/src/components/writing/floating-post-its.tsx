@@ -8,8 +8,8 @@ import { useHighlightsStore, type MotivadorHighlight } from "@/stores/highlights
 import { useFreePostItsStore, type FreePostIt } from "@/stores/free-post-its-store";
 import { cn } from "@/utils";
 
-/** Paleta de tints do mock (WritingSheet) — ciclada de forma estável por hash do id, não por índice de render. */
-const POST_IT_TINTS = ["#fff3b0", "#ffd6a5", "#caffbf", "#bde0fe"];
+/** Paleta pastel fixa do DESIGN_SYSTEM.md (amarelo/rosa/azul/verde) — ciclada de forma estável por hash do id, não por índice de render. */
+const POST_IT_TINTS = ["#fdf0a8", "#f9d0d5", "#cfe4fb", "#d4efd6"];
 
 function tintForId(id: string): string {
   let hash = 0;
@@ -164,6 +164,23 @@ function PostItCard({
     });
   }
 
+  /** Alternativa por teclado ao arraste (REQ-9/acessibilidade): setas movem o post-it em passos de 2%. */
+  function handleHandleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    const step = 0.02;
+    const deltas: Record<string, [number, number]> = {
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step],
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+    };
+    const delta = deltas[event.key];
+    if (!delta) return;
+    event.preventDefault();
+    const nextX = Math.min(0.94, Math.max(0, position.x + delta[0]));
+    const nextY = Math.min(0.95, Math.max(0, position.y + delta[1]));
+    onDragEnd({ x: nextX, y: nextY });
+  }
+
   const livePosition = dragPosition ?? position;
 
   return (
@@ -188,8 +205,19 @@ function PostItCard({
       title={quote}
     >
       {/* A própria faixa superior (vazia) é o manípulo de arraste — textarea/botão fazem
-          stopPropagation no pointerdown (senão digitar ou remover já dispararia o drag). */}
-      <div className="flex h-5 items-center justify-end px-0.5">
+          stopPropagation no pointerdown (senão digitar ou remover já dispararia o drag). Focável
+          e com setas do teclado como alternativa ao arraste por ponteiro. */}
+      <div
+        tabIndex={0}
+        role="slider"
+        aria-label="Mover post-it (use as setas do teclado)"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(livePosition.x * 100)}
+        aria-valuetext={`${Math.round(livePosition.x * 100)}%, ${Math.round(livePosition.y * 100)}%`}
+        onKeyDown={handleHandleKeyDown}
+        className="flex h-5 items-center justify-end px-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+      >
         <button
           type="button"
           onPointerDown={(event) => event.stopPropagation()}

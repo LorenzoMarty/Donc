@@ -126,9 +126,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div
         ref={scrollAreaRef}
-        className={cn("h-full overflow-y-auto overscroll-contain", sidebarCollapsed ? "md:pl-[88px]" : "md:pl-[262px]")}
+        className={cn("h-full overflow-y-auto overscroll-contain", sidebarCollapsed ? "md:pl-[98px]" : "md:pl-[262px]")}
       >
-        <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-6 md:py-5 xl:px-8">
+        <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-[34px] md:pb-[34px] md:pt-5">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
@@ -179,8 +179,8 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-3 left-3 z-40 hidden flex-col rounded-[18px] bg-card/90 py-5 shadow-elevated backdrop-blur-2xl transition-[width] duration-200 md:flex",
-        collapsed ? "w-[64px] px-2" : "w-[236px] px-4",
+        "fixed inset-y-3 left-3 z-40 hidden flex-col rounded-[18px] border border-white/60 bg-card/70 py-5 shadow-elevated backdrop-blur-[var(--glass-sidebar-blur)] transition-[width,padding] duration-ipados ease-ipados dark:border-white/10 md:flex",
+        collapsed ? "w-[74px] px-3" : "w-[236px] px-4",
       )}
       onWheel={onWheel}
     >
@@ -201,7 +201,7 @@ function DesktopSidebar({
         <Button
           asChild
           className={cn(
-            "h-11 rounded-control bg-primary text-[14px] font-semibold shadow-control",
+            "h-11 rounded-control bg-primary text-[14px] font-semibold shadow-accent",
             collapsed ? "w-11 justify-center px-0" : "w-full justify-start gap-2.5",
           )}
         >

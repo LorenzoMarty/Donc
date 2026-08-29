@@ -123,7 +123,7 @@ export default function GamesHub() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-7 rounded-[18px] bg-[hsl(var(--accent-900))] p-7 text-white"
+          className="flex items-center gap-7 rounded-[18px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg"
         >
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2.5">

@@ -79,18 +79,26 @@ function scatterNodes(nodes: PhaseNode[]): LaidOutNode[] {
   return points;
 }
 
-function categoryLinks(points: LaidOutNode[]): { key: string; x1: number; y1: number; x2: number; y2: number }[] {
+function categoryLinks(points: LaidOutNode[]): { key: string; x1: number; y1: number; x2: number; y2: number; blocked: boolean }[] {
   const groups = new Map<string, LaidOutNode[]>();
   for (const point of points) {
     const group = groups.get(point.node.category) ?? [];
     group.push(point);
     groups.set(point.node.category, group);
   }
-  const links: { key: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+  const links: { key: string; x1: number; y1: number; x2: number; y2: number; blocked: boolean }[] = [];
   for (const group of groups.values()) {
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
-        links.push({ key: `${group[i].node.gameId}-${group[j].node.gameId}`, x1: group[i].x, y1: group[i].y, x2: group[j].x, y2: group[j].y });
+        links.push({
+          key: `${group[i].node.gameId}-${group[j].node.gameId}`,
+          x1: group[i].x,
+          y1: group[i].y,
+          x2: group[j].x,
+          y2: group[j].y,
+          // DESIGN_SYSTEM.md § Mapa de fases: caminho pontilhado pra trechos bloqueados.
+          blocked: group[i].node.state === "bloqueado" || group[j].node.state === "bloqueado",
+        });
       }
     }
   }
@@ -131,7 +139,16 @@ export function PhaseMapCard({ progress }: { progress: Record<string, GameProgre
         <>
           <svg viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} className="w-full" role="img" aria-label="Mapa de fases: todos os jogos por nível de domínio">
             {links.map((link) => (
-              <line key={link.key} x1={link.x1} y1={link.y1} x2={link.x2} y2={link.y2} stroke="hsl(var(--border))" strokeWidth={1} />
+              <line
+                key={link.key}
+                x1={link.x1}
+                y1={link.y1}
+                x2={link.x2}
+                y2={link.y2}
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                strokeDasharray={link.blocked ? "3 4" : undefined}
+              />
             ))}
             {points.map((p) => (
               <circle

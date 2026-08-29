@@ -79,7 +79,7 @@ export function EssayResultado({ essay, onViewAnalysis, onRewrite }: { essay: Es
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[52px] font-bold leading-none tracking-tight tabular-nums">{correction.total_score}</span>
+              <span className="font-display text-[52px] font-medium leading-none tracking-tight tabular-nums">{correction.total_score}</span>
               <span className="mt-0.5 text-[14px] text-muted-foreground">de 1000</span>
             </div>
           </div>
