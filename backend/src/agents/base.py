@@ -41,6 +41,8 @@ class AgnoAgentRunner:
         self.last_used_fallback: bool = False
         self.last_model: str | None = None
         self.last_prompt_hash: str | None = None
+        self.last_retry_count: int = 0
+        self.last_model_switched: bool = False
 
     def run_structured(
         self,
@@ -131,6 +133,7 @@ class AgnoAgentRunner:
                         return self._finish_run(result, start=start, span=span, used_fallback=result is fallback)
                     except Exception as exc:
                         last_exc = exc
+                        self.last_retry_count += 1
                         transient = _is_transient(exc)
                         logger.warning(
                             "Chamada OpenAI falhou (agent=%s model=%s tentativa=%s/%s transiente=%s): %s",
@@ -142,6 +145,7 @@ class AgnoAgentRunner:
                             time.sleep(_RETRY_BACKOFF_SECONDS * (attempt + 1))
                 # esgotou tentativas neste modelo — tenta o proximo (fallback), se houver
                 if model_index < len(models_to_try) - 1:
+                    self.last_model_switched = True
                     logger.warning("Trocando para modelo de fallback apos falha em %s (agent=%s)", model_id, agent_name)
 
             self._mark_span_error(span, str(last_exc))
@@ -157,6 +161,8 @@ class AgnoAgentRunner:
         self.last_used_fallback = False
         self.last_model = settings.openai_model
         self.last_prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        self.last_retry_count = 0
+        self.last_model_switched = False
 
     def _start_observation(
         self,

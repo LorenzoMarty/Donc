@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -18,7 +19,19 @@ from src.agents.intervention import InterventionAnalyzerAgent
 from src.agents.output_mapper import OutputMapper
 from src.agents.preprocessor import PreProcessor
 from src.agents.repertoire_v2 import RepertoireAnalyzerV2Agent
-from src.agents.schemas import EliminationGateOutput, EssayCorrectionResult, PipelineAnalyses, PreProcessorOutput
+from src.agents.schemas import (
+    ArgumentationAnalysisV2,
+    EliminationGateOutput,
+    EssayCorrectionResult,
+    GrammarAnalysisV2,
+    InterventionAnalysisV2,
+    InterventionElements,
+    PipelineAnalyses,
+    PreProcessorOutput,
+    RepertoireAnalysisV2,
+    ThemeAnalysisV2,
+    ThesisAnalysisV2,
+)
 from src.agents.score_auditor import ScoreAuditor
 from src.agents.theme_analyzer import ThemeAnalyzerAgent
 from src.agents.thesis_v2 import ThesisAnalyzerAgent
@@ -29,6 +42,19 @@ from src.utils.ai_security import guarded_student_text, sanitize_ai_text
 
 
 T = TypeVar("T")
+logger = logging.getLogger("src.workflows.correction")
+
+# Usado quando um analisador quebra por bug de codigo (nao falha de API — essa ja tem fallback
+# heuristico interno em AgnoAgentRunner e nunca propaga). Degrada só a competencia afetada pra
+# nota zero em vez de abortar a correcao inteira e desperdicar as chamadas que ja tiveram sucesso.
+_DEGRADED_DEFAULTS: dict[str, Callable[[], object]] = {
+    "ThemeAnalyzerAgent": lambda: ThemeAnalysisV2(theme_alignment=0, tangenciamento=True, severity="high"),
+    "ThesisAnalyzerAgent": lambda: ThesisAnalysisV2(thesis_present=False, clarity="absent", score=0),
+    "RepertoireAnalyzerV2Agent": lambda: RepertoireAnalysisV2(quality="INVALIDO", score=0),
+    "ArgumentationAnalyzerAgent": lambda: ArgumentationAnalysisV2(overall_score=0),
+    "InterventionAnalyzerAgent": lambda: InterventionAnalysisV2(elements=InterventionElements(), completeness_score=0, absent=True),
+    "GrammarAnalyzerV2Agent": lambda: GrammarAnalysisV2(orthography_score=0, cohesion_score=0, formality_score=0),
+}
 
 
 class CorrectionOrchestratorWorkflow:
@@ -104,7 +130,7 @@ class CorrectionOrchestratorWorkflow:
             job_id=job_id,
             prompt=safe_content,
         )
-        if gate.status == "ZERO":
+        if gate.status in ("ZERO", "DESVIO_GRAVE"):
             return self.mapper.map(self._zero_analyses(pre, gate), {"c1": 0, "c2": 0, "c3": 0, "c4": 0, "c5": 0})
 
         # Stage 3: 6 analyzers in parallel (all independent — theme + content only)
@@ -117,33 +143,41 @@ class CorrectionOrchestratorWorkflow:
             gr_fut = pool.submit(self._timed_call, self._bind_ctx(parent_ctx, lambda: self.grammar_agent.analyze(safe_content, user_id=user_id, session_id=session_id)))
             wait([th_fut, ts_fut, rp_fut, ar_fut, iv_fut, gr_fut])
 
-        theme_a, th_ms, th_st, th_err = th_fut.result()
-        thesis_a, ts_ms, ts_st, ts_err = ts_fut.result()
-        rep_a, rp_ms, rp_st, rp_err = rp_fut.result()
-        arg_a, ar_ms, ar_st, ar_err = ar_fut.result()
-        iv_a, iv_ms, iv_st, iv_err = iv_fut.result()
-        grammar_a, gr_ms, gr_st, gr_err = gr_fut.result()
-
-        # Log telemetry from main thread (SQLAlchemy Session not thread-safe)
-        for name, ms, status, err, runner in [
-            ("ThemeAnalyzerAgent", th_ms, th_st, th_err, self.theme_agent.runner),
-            ("ThesisAnalyzerAgent", ts_ms, ts_st, ts_err, self.thesis_agent.runner),
-            ("RepertoireAnalyzerV2Agent", rp_ms, rp_st, rp_err, self.repertoire_agent.runner),
-            ("ArgumentationAnalyzerAgent", ar_ms, ar_st, ar_err, self.arg_agent.runner),
-            ("InterventionAnalyzerAgent", iv_ms, iv_st, iv_err, self.intervention_agent.runner),
-            ("GrammarAnalyzerV2Agent", gr_ms, gr_st, gr_err, self.grammar_agent.runner),
-        ]:
+        # Unpack + log telemetry from main thread (SQLAlchemy Session not thread-safe).
+        # Each future is logged individually as soon as its result is unpacked, so a failure in
+        # one analyzer doesn't discard the (already-billed) telemetry of analyzers that succeeded.
+        futures: list[tuple[str, object, AgnoAgentRunner | None]] = [
+            ("ThemeAnalyzerAgent", th_fut, self.theme_agent.runner),
+            ("ThesisAnalyzerAgent", ts_fut, self.thesis_agent.runner),
+            ("RepertoireAnalyzerV2Agent", rp_fut, self.repertoire_agent.runner),
+            ("ArgumentationAnalyzerAgent", ar_fut, self.arg_agent.runner),
+            ("InterventionAnalyzerAgent", iv_fut, self.intervention_agent.runner),
+            ("GrammarAnalyzerV2Agent", gr_fut, self.grammar_agent.runner),
+        ]
+        results: dict[str, object] = {}
+        for name, fut, runner in futures:
+            try:
+                result, ms, status, err = fut.result()
+            except Exception as exc:
+                # Bug de codigo no proprio agente (nao falha de API — essa nunca chega aqui, ver
+                # AgnoAgentRunner.run_structured). Degrada so essa competencia em vez de abortar a
+                # correcao inteira e jogar fora as chamadas que ja tiveram sucesso.
+                logger.warning("Analisador %s quebrou com excecao nao tratada — degradando para nota zero nessa competencia: %s", name, exc)
+                self._log(agent=name, status="error", latency_ms=0, user_id=user_id, job_id=job_id, prompt=safe_content, error=str(exc), runner=runner)
+                results[name] = _DEGRADED_DEFAULTS[name]()
+                continue
             self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, runner=runner)
+            results[name] = result
 
         analyses = PipelineAnalyses(
             preprocessor=pre,
             gate=gate,
-            theme=theme_a,
-            thesis=thesis_a,
-            repertoire=rep_a,
-            argumentation=arg_a,
-            intervention=iv_a,
-            grammar=grammar_a,
+            theme=results["ThemeAnalyzerAgent"],
+            thesis=results["ThesisAnalyzerAgent"],
+            repertoire=results["RepertoireAnalyzerV2Agent"],
+            argumentation=results["ArgumentationAnalyzerAgent"],
+            intervention=results["InterventionAnalyzerAgent"],
+            grammar=results["GrammarAnalyzerV2Agent"],
         )
 
         # Stage 4: CompetencyScorer (Python)
@@ -235,24 +269,15 @@ class CorrectionOrchestratorWorkflow:
 
     @staticmethod
     def _zero_analyses(pre: PreProcessorOutput, gate: EliminationGateOutput) -> PipelineAnalyses:
-        from src.agents.schemas import (
-            ArgumentationAnalysisV2,
-            GrammarAnalysisV2,
-            InterventionAnalysisV2,
-            InterventionElements,
-            RepertoireAnalysisV2,
-            ThemeAnalysisV2,
-            ThesisAnalysisV2,
-        )
         return PipelineAnalyses(
             preprocessor=pre,
             gate=gate,
-            theme=ThemeAnalysisV2(theme_alignment=0, tangenciamento=True, severity="high"),
-            thesis=ThesisAnalysisV2(thesis_present=False, clarity="absent", score=0),
-            repertoire=RepertoireAnalysisV2(quality="INVALIDO", score=0),
-            argumentation=ArgumentationAnalysisV2(overall_score=0),
-            intervention=InterventionAnalysisV2(elements=InterventionElements(), completeness_score=0, absent=True),
-            grammar=GrammarAnalysisV2(orthography_score=0, cohesion_score=0, formality_score=0),
+            theme=_DEGRADED_DEFAULTS["ThemeAnalyzerAgent"](),
+            thesis=_DEGRADED_DEFAULTS["ThesisAnalyzerAgent"](),
+            repertoire=_DEGRADED_DEFAULTS["RepertoireAnalyzerV2Agent"](),
+            argumentation=_DEGRADED_DEFAULTS["ArgumentationAnalyzerAgent"](),
+            intervention=_DEGRADED_DEFAULTS["InterventionAnalyzerAgent"](),
+            grammar=_DEGRADED_DEFAULTS["GrammarAnalyzerV2Agent"](),
         )
 
     def _log(

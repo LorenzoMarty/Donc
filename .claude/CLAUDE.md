@@ -177,7 +177,7 @@ Detalhe completo (engines, payloads, contrato de missão, como criar missão nov
 | `OPENAI_FALLBACK_MODEL` | Modelo usado se `OPENAI_MODEL` falhar (padrão `gpt-4o-mini`) |
 | `OPENAI_IMAGE_MODEL` | Modelo de geração de imagem (padrão `gpt-image-1`) |
 | `OPENAI_EMBEDDING_MODEL` / `OPENAI_EMBEDDING_DIMENSIONS` | Modelo/dimensões de embedding para a base pgvector (padrão `text-embedding-3-small` / `1536`) |
-| `AI_SYNC_TIMEOUT_SECONDS` | Timeout do fallback síncrono de correção quando Redis/worker não respondem (padrão `45`) |
+| `AI_SYNC_TIMEOUT_SECONDS` | Nome legado: timeout de toda chamada OpenAI (não só do fallback síncrono), padrão `45` |
 | `ENABLE_AGENTOS` | Liga a integração AgentOS do framework `agno` (padrão `false`) |
 | `AI_COST_CENTS_PER_1K_TOKENS` | Legado: fallback de custo pra linhas antigas sem `cost_micro_usd` (padrão `0.5`) |
 | `AI_RATE_LIMIT_PER_MINUTE` | Limite de chamadas de IA por usuário por minuto (padrão `20`) |
