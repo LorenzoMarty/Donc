@@ -107,7 +107,12 @@ def build_interaction_log(
         meta={
             **(meta or {}),
             **(
-                {"model": runner.last_model, "used_fallback": runner.last_used_fallback}
+                {
+                    "model": runner.last_model,
+                    "used_fallback": runner.last_used_fallback,
+                    "retry_count": runner.last_retry_count,
+                    "model_switched": runner.last_model_switched,
+                }
                 if runner is not None
                 else {}
             ),

@@ -129,6 +129,30 @@ def test_workflow_early_stop_on_zero():
     wf.grammar_agent.analyze.assert_not_called()
 
 
+def test_workflow_early_stop_on_desvio_grave():
+    wf = make_workflow()
+    wf.gate_agent.evaluate.return_value = EliminationGateOutput(
+        status="DESVIO_GRAVE",
+        reason="Texto sem estrutura mínima dissertativo-argumentativa.",
+    )
+    result = wf.correct(theme=THEME, context="", content=CONTENT)
+    assert result.total_score == 0
+    wf.theme_agent.analyze.assert_not_called()
+    wf.grammar_agent.analyze.assert_not_called()
+
+
+def test_workflow_degrades_single_analyzer_failure_instead_of_aborting():
+    wf = make_workflow()
+    wf.repertoire_agent.analyze.side_effect = RuntimeError("bug simulado no analisador")
+    result = wf.correct(theme=THEME, context="", content=CONTENT)
+    assert isinstance(result, EssayCorrectionResult)
+    # Os outros 5 analisadores continuam contribuindo normalmente para a nota.
+    wf.theme_agent.analyze.assert_called_once()
+    wf.grammar_agent.analyze.assert_called_once()
+    # Competência de repertório (c2) é penalizada pela degradação, mas a correção não é abortada.
+    assert result.competency_2 <= 80
+
+
 def test_score_auditor_caps_c3_when_no_thesis():
     wf = make_workflow()
     wf.thesis_agent.analyze.return_value = ThesisAnalysisV2(

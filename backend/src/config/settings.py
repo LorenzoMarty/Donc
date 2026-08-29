@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     openai_embedding_dimensions: int = 1536
     enable_pgvector: bool = False
     redis_url: str = "redis://localhost:6379/0"
+    # Nome legado: apesar do nome, e o timeout de TODA chamada OpenAI (base.py), nao so do
+    # fallback sincrono — nao renomeado pra nao quebrar env var ja configurada em producao.
     ai_sync_timeout_seconds: int = 45
     # Job async (queued/running) parado por mais tempo que isso e considerado travado (ex.: Redis
     # vivo mas worker Celery morto — enqueue "funciona" mas ninguem consome) e marcado failed no

@@ -347,10 +347,11 @@ class EssayService:
         self.db.commit()
 
     def _require_edit_before_new_correction(self, essay: Essay) -> None:
-        latest = self._latest_corrected_version(essay)
-        if not latest:
+        corrected_versions = [version for version in essay.versions if version.correction]
+        if not corrected_versions:
             return
-        if self._normalize_content(latest.content) == self._normalize_content(essay.content):
+        current = self._normalize_content(essay.content)
+        if any(self._normalize_content(version.content) == current for version in corrected_versions):
             raise AppError(
                 "Faça uma edição no texto antes de corrigir novamente.",
                 status_code=422,

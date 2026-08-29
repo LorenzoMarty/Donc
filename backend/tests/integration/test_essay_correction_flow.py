@@ -139,3 +139,36 @@ def test_reprocess_uses_same_async_flow_and_creates_new_job(client: TestClient, 
     assert poll_body["job_id"] == second_job_id
     assert poll_body["status"] == "completed"
     assert poll_body["essay"]["content"] == EDITED_ESSAY_CONTENT
+
+
+def test_reprocess_blocked_when_content_matches_any_past_corrected_version(
+    client: TestClient, _force_synchronous_celery: None
+) -> None:
+    """Regressão: o guard de "edite antes de corrigir de novo" deve comparar contra TODO o
+    histórico de versões já corrigidas, não só a mais recente — senão desfazer uma edição de
+    volta pra um estado já corrigido antes escapa do dedupe e desperdiça uma correção de IA."""
+    _, essay_id = _create_theme_and_essay()
+
+    # v1 corrigida com ESSAY_CONTENT.
+    submit_res = client.post(f"/api/v1/essays/{essay_id}/submit")
+    assert submit_res.status_code == 200
+
+    # Abre v2, edita, corrige — agora a "última corrigida" é EDITED_ESSAY_CONTENT.
+    client.post(f"/api/v1/essays/{essay_id}/new-version")
+    client.put(
+        f"/api/v1/essays/{essay_id}/autosave",
+        json={"title": "Redacao sobre saneamento", "content": EDITED_ESSAY_CONTENT},
+    )
+    reprocess_res = client.post(f"/api/v1/essays/{essay_id}/reprocess")
+    assert reprocess_res.status_code == 200
+
+    # Abre v3 e desfaz a edição, voltando ao conteúdo de v1 (já corrigido antes, mas não é a
+    # versão corrigida mais recente).
+    client.post(f"/api/v1/essays/{essay_id}/new-version")
+    client.put(
+        f"/api/v1/essays/{essay_id}/autosave",
+        json={"title": "Redacao sobre saneamento", "content": ESSAY_CONTENT},
+    )
+    blocked_res = client.post(f"/api/v1/essays/{essay_id}/reprocess")
+    assert blocked_res.status_code == 422
+    assert blocked_res.json()["error"] == "edit_required"
