@@ -2,7 +2,7 @@
 o backend poder validar game_id de jogo estático (antes só jogos ai-* eram validados).
 
 Revision ID: 0033_static_games
-Revises: 0032_recommendation_log_typed_target
+Revises: 0032_reclog_typed_target
 Create Date: 2026-08-21
 """
 
@@ -13,7 +13,7 @@ from alembic import op
 
 
 revision: str = "0033_static_games"
-down_revision: str | None = "0032_recommendation_log_typed_target"
+down_revision: str | None = "0032_reclog_typed_target"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
