@@ -1,9 +1,16 @@
 """Replace learning_outcomes.source_id (generic int, no FK) with 3 nullable typed FK columns —
 exactly one populated per row, matching `source`. Backfills from source_id before dropping it.
 
-Revision ID: 0031_learning_outcome_typed_source
+Revision ID: 0031_lo_typed_source
 Revises: 0030_cognitive_issues_table
 Create Date: 2026-08-21
+
+NOTA (2026-08-29): id encurtado de "0031_learning_outcome_typed_source" (34 chars) pra
+"0031_lo_typed_source" (20 chars) — o original estourava `alembic_version.version_num`
+(VARCHAR(32) padrão do Alembic), derrubando toda migration em produção com
+`StringDataRightTruncation`. Nunca chegou a ser gravado com sucesso em nenhum ambiente (a
+migration sempre falhou no UPDATE do próprio id), então renomear é seguro — não é um id que já
+esteja carimbado em algum `alembic_version` existente.
 """
 
 from collections.abc import Sequence
@@ -12,7 +19,7 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0031_learning_outcome_typed_source"
+revision: str = "0031_lo_typed_source"
 down_revision: str | None = "0030_cognitive_issues_table"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

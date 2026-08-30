@@ -2,9 +2,13 @@
 (real FK) + target_hub (string, GAME case has no persisted hub entity). Backfills from target
 before dropping it.
 
-Revision ID: 0032_recommendation_log_typed_target
-Revises: 0031_learning_outcome_typed_source
+Revision ID: 0032_reclog_typed_target
+Revises: 0031_lo_typed_source
 Create Date: 2026-08-21
+
+NOTA (2026-08-29): id encurtado de "0032_recommendation_log_typed_target" (36 chars) pra
+"0032_reclog_typed_target" (24 chars) — mesmo motivo do 0031 (estourava
+`alembic_version.version_num`, VARCHAR(32)). Nunca gravado com sucesso em nenhum ambiente.
 """
 
 from collections.abc import Sequence
@@ -13,8 +17,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0032_recommendation_log_typed_target"
-down_revision: str | None = "0031_learning_outcome_typed_source"
+revision: str = "0032_reclog_typed_target"
+down_revision: str | None = "0031_lo_typed_source"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
