@@ -41,6 +41,20 @@ async function forward(request: NextRequest, context: RouteContext) {
   responseHeaders.delete("transfer-encoding");
   responseHeaders.delete("content-length");
 
+  // `new Headers(response.headers)` acima colapsa múltiplos `Set-Cookie` (login/register mandam 2:
+  // access_token + refresh_token) num só, ou perde os dois — gotcha conhecido do Fetch API/undici.
+  // `getSetCookie()` preserva cada um; reconstrói explicitamente.
+  responseHeaders.delete("set-cookie");
+  for (const cookie of response.headers.getSetCookie()) {
+    responseHeaders.append("set-cookie", cookie);
+  }
+
+  // Sem isso, a Vercel injeta `Cache-Control: public, max-age=0, must-revalidate` por padrão em
+  // respostas de Serverless Function sem cache-control próprio — e a rede de edge da Vercel some
+  // com o `Set-Cookie` em respostas marcadas como cacheáveis (`public`), mesmo com max-age=0. Esse
+  // proxy carrega toda a API (autenticada, por usuário) — nunca deve ser cacheado.
+  responseHeaders.set("cache-control", "private, no-store, must-revalidate");
+
   return new NextResponse(response.body, {
     status: response.status,
     headers: responseHeaders,
