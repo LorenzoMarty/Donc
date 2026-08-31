@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Clock3, FileText, Flame, Gamepad2, PenLine, Sparkles, Video } from "lucide-react";
+import { Bell, FileText, Flame, Gamepad2, PenLine, Sparkles, Target, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
+import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import { LoadingCard } from "@/components/shared/loading-card";
-import { NextActionCard } from "@/components/shared/next-action-card";
 import { apiFetch, type Dashboard, type EssayTheme } from "@/services/api";
 import { useAuth } from "@/providers/app-providers";
 import { useGameStore } from "@/stores/game-store";
@@ -84,61 +84,66 @@ export default function DashboardPage() {
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
   const trend = data.trend ?? [];
 
+  const weakest = findWeakestCompetency(competencies);
+  const draftEssay = data.recent_essays?.find((essay) => essay.status === "draft") ?? null;
+  const recentCorrected = (data.recent_essays ?? []).filter((essay) => essay.score != null).slice(0, 4);
+
   return (
     <div className="text-foreground">
       <section className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[14px] capitalize text-muted-foreground">{today}</p>
-          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {studentName}</h1>
+        <div className="flex items-center gap-1.5">
+          <FolhinhaMascot mood="happy" size={84} message="Bom te ver de novo! Vamos terminar aquele rascunho?" side="right" />
+          <div className="ml-1.5">
+            <p className="text-[14px] capitalize text-muted-foreground">{today}</p>
+            <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {studentName}</h1>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2 text-[14px] font-semibold shadow-soft">
             <Flame className="h-4 w-4 text-streak" aria-hidden="true" />
             {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
           </div>
+          <button
+            type="button"
+            aria-label="Notificações"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-control border border-border bg-card text-muted-foreground shadow-soft transition-colors hover:text-foreground"
+          >
+            <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
+          </button>
         </div>
       </section>
 
-      <section className="mt-4">
-        <NextActionCard action={data.next_action} />
+      <section className="mt-4 flex flex-wrap gap-4">
+        {draftEssay ? (
+          <ContinueWritingCard essay={draftEssay} />
+        ) : (
+          <div className="flex min-w-0 flex-1 basis-[340px] flex-wrap items-center justify-between gap-4 rounded-card bg-primary p-6 text-primary-foreground shadow-accent">
+            <div className="min-w-0 flex-1 basis-[220px]">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground/85">{heroCopy.eyebrow}</p>
+              <p className="font-display mt-2 text-[22px] font-medium leading-tight">{heroCopy.title}</p>
+              <p className="mt-1 text-[13px] text-primary-foreground/85">{heroCopy.description}</p>
+            </div>
+            <Link
+              href="/redacao"
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-primary"
+            >
+              Escrever agora
+              <PenLine className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+        )}
+
+        <WeakPointCard weakest={weakest} />
       </section>
 
-      <section className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          tone="g"
-          icon={Sparkles}
-          label="Nota média"
-          value={average ? String(average) : "--"}
-          suffix="/1000"
-          delta={bestScore ? `melhor nota ${bestScore}` : "envie uma redação"}
-          up={average > 0}
-        />
-        <StatCard
-          tone="b"
-          icon={FileText}
-          label="Redações"
-          value={String(essaysWritten)}
-          suffix="enviadas"
-          delta={`${essaysWritten} no total`}
-          up={null}
-        />
-        <StatCard
-          tone="a"
-          icon={Clock3}
-          label="Sequência"
-          value={String(streak)}
-          suffix="dias"
-          delta={streak > 0 ? "sequência ativa" : "comece hoje"}
-          up={streak > 0}
-        />
-        <StatCard
-          tone="v"
-          icon={Video}
-          label="Aulas"
-          value={String(completedLessons)}
-          suffix="assistidas"
-          delta={`${data.progress_general ?? 0}% do percurso`}
-          up={completedLessons > 0}
+      <section className="mt-4">
+        <MetricStrip
+          items={[
+            { icon: Sparkles, tone: "g", label: "Nota média", value: average ? String(average) : "--", unit: "/1000", delta: bestScore ? `melhor nota ${bestScore}` : "envie uma redação", up: average > 0 },
+            { icon: FileText, tone: "b", label: "Redações", value: String(essaysWritten), unit: "enviadas", delta: `${essaysWritten} no total`, up: null },
+            { icon: Flame, tone: "a", label: "Sequência", value: String(streak), unit: "dias", delta: streak > 0 ? "sequência ativa" : "comece hoje", up: streak > 0 },
+            { icon: Video, tone: "v", label: "Aulas", value: String(completedLessons), unit: "assistidas", delta: `${data.progress_general ?? 0}% do percurso`, up: completedLessons > 0 },
+          ]}
         />
       </section>
 
@@ -170,21 +175,6 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="flex items-center justify-between gap-6 rounded-card bg-[hsl(var(--accent-600))] p-6 text-primary-foreground shadow-accent-lg">
-          <div className="min-w-0 max-w-2xl">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/95">{heroCopy.eyebrow}</p>
-            <p className="font-display mt-1.5 text-[23px] font-medium leading-snug">{heroCopy.title}</p>
-            <p className="mt-1 text-[13px] text-primary-foreground/95">{heroCopy.description}</p>
-          </div>
-          <Link
-            href="/redacao"
-            className="flex h-11 shrink-0 items-center gap-2 rounded-control bg-white px-5 text-[14px] font-bold text-primary transition-colors hover:bg-white/90"
-          >
-            <PenLine className="h-4 w-4" aria-hidden="true" />
-            Continuar
-          </Link>
-        </div>
-
         <div className="rounded-card bg-card p-6 shadow-soft">
           <div className="mb-3.5 flex items-center justify-between">
             <h2 className="text-[16px] font-semibold">Temas sugeridos</h2>
@@ -212,6 +202,41 @@ export default function DashboardPage() {
               );
             })}
           </div>
+        </div>
+
+        <div className="rounded-card bg-card p-6 shadow-soft">
+          <div className="mb-3.5 flex items-center justify-between">
+            <h2 className="text-[16px] font-semibold">Últimas correções</h2>
+            <Link href="/redacoes" className="text-[13px] font-semibold text-[hsl(var(--accent-700))] hover:underline">
+              Ver todas
+            </Link>
+          </div>
+          {recentCorrected.length ? (
+            <div>
+              {recentCorrected.map((essay) => (
+                <Link
+                  key={essay.id}
+                  href={`/redacoes/${essay.id}`}
+                  className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-b-0 hover:opacity-80"
+                >
+                  <div
+                    className={cn(
+                      "grid h-10 w-[46px] shrink-0 place-items-center rounded-control text-[15px] font-bold tabular-nums",
+                      (essay.score ?? 0) >= 900 ? "bg-primary/12 text-primary" : "bg-muted text-foreground/70",
+                    )}
+                  >
+                    {essay.score}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-safe truncate text-[13px] font-semibold leading-tight">{essay.title || essay.theme_title}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{formatShortDate(essay.updated_at)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-muted-foreground">Suas redações corrigidas aparecem aqui.</p>
+          )}
         </div>
       </section>
     </div>
@@ -302,47 +327,109 @@ function EvolutionChart({ trend }: { trend: { label: string; score: number }[] }
   );
 }
 
-const STAT_TONE = {
-  g: "bg-primary/12 text-primary",
-  b: "bg-info-tint text-info",
-  a: "bg-streak-tint text-streak",
-  v: "bg-highlight-tint text-highlight",
+const METRIC_TONE = {
+  g: "text-primary",
+  b: "text-info",
+  a: "text-streak",
+  v: "text-highlight",
 } as const;
 
-function StatCard({
-  tone,
-  icon: Icon,
-  label,
-  value,
-  suffix,
-  delta,
-  up,
-}: {
-  tone: keyof typeof STAT_TONE;
+type MetricItem = {
   icon: LucideIcon;
+  tone: keyof typeof METRIC_TONE;
   label: string;
   value: string;
-  suffix?: string;
+  unit: string;
   delta: string;
   up: boolean | null;
-}) {
+};
+
+/** "Métrica em faixa" — DESIGN_SYSTEM.md §7: células irmãs num card único, divididas por
+ * border-right (não cards separados). Fiel ao bloco de stats do Painel.dc.html. */
+function MetricStrip({ items }: { items: MetricItem[] }) {
   return (
-    <div className="rounded-card bg-card p-5 shadow-soft">
-      <div className="flex items-center gap-2 text-[13px] font-semibold text-muted-foreground">
-        <span className={cn("grid h-6 w-6 place-items-center rounded-md", STAT_TONE[tone])}>
-          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-        </span>
-        {label}
-      </div>
-      <div className="mt-3 flex items-baseline gap-1.5">
-        <span className="text-[34px] font-semibold leading-none tracking-tight tabular-nums">{value}</span>
-        {suffix ? <span className="text-[14px] text-muted-foreground">{suffix}</span> : null}
-      </div>
-      <p className={cn("mt-2.5 text-[12px] font-semibold", up === true ? "text-[hsl(var(--accent-700))]" : up === false ? "text-destructive" : "text-muted-foreground")}>
-        {delta}
-      </p>
+    <div className="flex flex-wrap rounded-card bg-card p-1 shadow-soft">
+      {items.map((item, index) => (
+        <div
+          key={item.label}
+          className={cn("min-w-0 flex-1 basis-[150px] p-4", index < items.length - 1 && "border-r border-border/70")}
+        >
+          <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
+            <item.icon className={cn("h-3.5 w-3.5", METRIC_TONE[item.tone])} aria-hidden="true" />
+            {item.label}
+          </div>
+          <div className="mt-2 flex items-baseline gap-1.5">
+            <span className="text-[28px] font-semibold leading-none tracking-tight tabular-nums">{item.value}</span>
+            <span className="text-[13px] text-muted-foreground">{item.unit}</span>
+          </div>
+          <p className={cn("mt-2 text-[12px] font-semibold", item.up === true ? "text-[hsl(var(--accent-700))]" : item.up === false ? "text-destructive" : "text-muted-foreground")}>
+            {item.delta}
+          </p>
+        </div>
+      ))}
     </div>
   );
+}
+
+/** Card "Continue de onde parou" — redação em rascunho mais recente (Painel.dc.html). Progresso é
+ * uma estimativa por contagem de palavras (não há "linhas" na API) contra ~300 palavras, tamanho
+ * típico de uma redação ENEM completa — só pra dar noção de avanço, não uma métrica exata. */
+function ContinueWritingCard({ essay }: { essay: NonNullable<Dashboard["recent_essays"]>[number] }) {
+  const progressPercent = Math.min(100, Math.round((essay.word_count / 300) * 100));
+  return (
+    <div className="flex min-w-0 flex-1 basis-[340px] flex-wrap items-center justify-between gap-4 rounded-card bg-primary p-6 text-primary-foreground shadow-accent">
+      <div className="min-w-0 flex-1 basis-[220px]">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground/85">Continue de onde parou</p>
+        <p className="font-display mt-2 text-[22px] font-medium leading-tight">{essay.title || essay.theme_title}</p>
+        <div className="mt-2.5 h-1.5 max-w-[240px] overflow-hidden rounded-full bg-white/28">
+          <div className="h-full rounded-full bg-white" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <p className="mt-1.5 text-[12px] text-primary-foreground/85">Rascunho · {essay.word_count} palavras escritas</p>
+      </div>
+      <Link
+        href={`/redacao?essay=${essay.id}`}
+        className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-primary"
+      >
+        Continuar escrevendo
+        <PenLine className="h-4 w-4" aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
+/** Card "Seu ponto fraco agora" — competência mais fraca do mastery_map (Painel.dc.html). */
+function WeakPointCard({ weakest }: { weakest: CompetencyRow | null }) {
+  if (!weakest) return null;
+  return (
+    <Link
+      href="/games"
+      className="flex min-w-0 flex-1 basis-[260px] flex-col justify-center rounded-card border border-primary/20 bg-card p-6 shadow-soft"
+    >
+      <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.05em] text-primary">
+        <Target className="h-[14px] w-[14px]" aria-hidden="true" />
+        Seu ponto fraco agora
+      </div>
+      <p className="mt-2.5 text-[19px] font-semibold leading-tight">
+        {weakest.competency} · {weakest.label}
+      </p>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+        Média {weakest.value}/200 — a menor entre as competências.
+      </p>
+      <p className="mt-3.5 flex items-center gap-1.5 text-[13px] font-bold text-primary">
+        Treinar
+        <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+      </p>
+    </Link>
+  );
+}
+
+function findWeakestCompetency(competencies: CompetencyRow[]): CompetencyRow | null {
+  if (!competencies.length) return null;
+  return competencies.reduce((weakest, item) => (item.value < weakest.value ? item : weakest));
+}
+
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(value));
 }
 
 function buildCompetencyRows(data: Dashboard | null): CompetencyRow[] {

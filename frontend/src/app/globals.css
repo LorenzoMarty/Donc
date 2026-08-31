@@ -707,6 +707,17 @@ li {
   }
 }
 
+@keyframes folhinhaBlink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.12);
+  }
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
