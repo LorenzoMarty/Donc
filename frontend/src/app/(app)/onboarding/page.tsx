@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Check, ChevronRight, Map, PenLine, Target, type LucideIcon } from "lucide-react";
 
+import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import { apiFetch } from "@/lib/http-client";
 import { cn } from "@/utils";
 
@@ -139,7 +140,11 @@ export default function OnboardingPage() {
               exit="exit"
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             >
-              {step === 0 ? <FolhinhaMascot showBubble /> : null}
+              {step === 0 ? (
+                <div className="mb-7 flex justify-center">
+                  <FolhinhaMascot mood="happy" size={150} message="Oi, eu sou a Folhinha!" onDark className="[&_svg]:overflow-visible" />
+                </div>
+              ) : null}
 
               {step === 0 ? (
                 <>
@@ -198,36 +203,6 @@ export default function OnboardingPage() {
           <ChevronRight className="h-[17px] w-[17px]" aria-hidden="true" />
         </button>
       </div>
-    </div>
-  );
-}
-
-/** Mascote "Folhinha" — desenho SVG fiel ao Onboarding.dc.html (bloco de notas com rosto). */
-function FolhinhaMascot({ showBubble }: { showBubble?: boolean }) {
-  return (
-    <div className="relative mx-auto mb-7 h-[150px] w-[150px] animate-[bob_3.4s_ease-in-out_infinite]">
-      {showBubble ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 6 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5, ease: [0.16, 0.84, 0.24, 1] }}
-          className="font-display absolute left-[calc(100%-6px)] top-6 whitespace-nowrap rounded-2xl bg-[#fffdf8] px-[18px] py-3 text-[17px] font-medium text-[hsl(var(--accent-900))] shadow-[0_12px_28px_-12px_rgba(0,0,0,.5)]"
-        >
-          Oi, eu sou a Folhinha!
-          <span className="absolute right-full top-[22px] border-8 border-transparent border-r-[#fffdf8]" />
-        </motion.div>
-      ) : null}
-      <svg width="150" height="150" viewBox="0 0 150 150">
-        <rect x="34" y="28" width="82" height="104" rx="20" fill="#fffdf8" />
-        <rect x="34" y="28" width="82" height="104" rx="20" fill="none" stroke="#dfe8d8" strokeWidth="2" />
-        <rect x="46" y="26" width="58" height="12" rx="6" fill="hsl(var(--accent-500))" />
-        <line x1="48" y1="76" x2="102" y2="76" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
-        <line x1="48" y1="90" x2="102" y2="90" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
-        <line x1="48" y1="104" x2="86" y2="104" stroke="#e2e8dc" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="65" cy="58" r="5.5" fill="hsl(var(--accent-900))" />
-        <circle cx="89" cy="58" r="5.5" fill="hsl(var(--accent-900))" />
-        <path d="M67 66 q10 7 20 0" fill="none" stroke="hsl(var(--accent-500))" strokeWidth="3" strokeLinecap="round" />
-      </svg>
     </div>
   );
 }
