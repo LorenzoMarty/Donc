@@ -12,7 +12,7 @@ export function PageHeader({
   description,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -22,19 +22,15 @@ export function PageHeader({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, ease: "easeOut" }}
-      className="min-w-0 border-b border-border/80 bg-transparent pb-5"
+      className="min-w-0"
     >
-      <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-start lg:gap-4">
+      <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end lg:gap-4">
         <div className="min-w-0">
-          <div className="game-chip mb-2 inline-flex items-center border-primary/15 bg-primary/10 px-2.5 py-0.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-[hsl(var(--accent-700))]">
-            {eyebrow}
-          </div>
-          <h1 className="font-display text-[28px] font-medium leading-tight tracking-tight sm:text-[32px]">
+          {eyebrow && <p className="text-[13px] text-muted-foreground">{eyebrow}</p>}
+          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight tracking-tight sm:text-[32px]">
             {title}
           </h1>
-          {description && (
-            <p className="mt-2 max-w-[82ch] text-[14px] font-medium leading-6 text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="mt-1 text-[14px] text-muted-foreground">{description}</p>}
         </div>
         {action && <div className="w-full min-w-0 shrink-0 lg:w-auto">{action}</div>}
       </div>

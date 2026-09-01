@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Bell, FileText, Flame, Gamepad2, PenLine, Sparkles, Target, Video } from "lucide-react";
+import { Bell, Check, FileText, Flame, Gamepad2, PenLine, Sparkles, Target, User, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
@@ -76,7 +76,15 @@ export default function DashboardPage() {
   const isNewUser = essaysWritten === 0 && completedLessons === 0 && !data.exercises_answered && gameAttempts.length === 0;
 
   if (isNewUser) {
-    return <OnboardingChecklist name={studentName} />;
+    return (
+      <NewUserPanel
+        name={studentName}
+        essaysWritten={essaysWritten}
+        completedLessons={completedLessons}
+        gamesPlayed={gameAttempts.length}
+        themes={themes}
+      />
+    );
   }
   const streak = data.streak_days ?? 0;
   const bestScore = data.best_essay_score || 0;
@@ -243,40 +251,166 @@ export default function DashboardPage() {
   );
 }
 
-const ONBOARDING_STEPS = [
-  { icon: PenLine, title: "Escreva sua primeira redação", description: "Escolha um tema e receba nota real por competência.", href: "/redacao" },
-  { icon: Video, title: "Assista sua primeira aula", description: "Aprenda os fundamentos direto no percurso de aulas.", href: "/aulas" },
-  { icon: FileText, title: "Responda seu primeiro exercício", description: "Pratique o que aprendeu nas aulas.", href: "/aulas" },
-  { icon: Gamepad2, title: "Jogue seu primeiro treino", description: "Treinos curtos pra destravar competências específicas.", href: "/games" },
-] as const;
+type NewUserStep = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  href: string;
+  done: boolean;
+};
 
-function OnboardingChecklist({ name }: { name: string }) {
+/** Painel do usuário novo (`Painel Novo.dc.html`) — substitui o checklist genérico anterior por
+ * um estado vazio real: hero de boas-vindas com CTA pra primeira redação, checklist com estado
+ * derivado de dados reais (não presume conclusão), e cards vazios de evolução/competências. */
+function NewUserPanel({
+  name,
+  essaysWritten,
+  completedLessons,
+  gamesPlayed,
+  themes,
+}: {
+  name: string;
+  essaysWritten: number;
+  completedLessons: number;
+  gamesPlayed: number;
+  themes: EssayTheme[];
+}) {
+  const [profileDone, setProfileDone] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+    apiFetch<{ completed: boolean }>("/auth/onboarding")
+      .then((profile) => {
+        if (!ignore) setProfileDone(Boolean(profile.completed));
+      })
+      .catch(() => undefined);
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const steps: NewUserStep[] = [
+    { icon: User, title: "Complete seu perfil", description: "Conte sua meta e nível pra personalizarmos seu percurso.", href: "/perfil", done: profileDone },
+    { icon: PenLine, title: "Escreva sua primeira redação", description: "Escolha um tema e receba nota real por competência.", href: "/redacao", done: essaysWritten > 0 },
+    { icon: Video, title: "Assista sua primeira aula", description: "Aprenda os fundamentos direto no percurso de aulas.", href: "/aulas", done: completedLessons > 0 },
+    { icon: Gamepad2, title: "Jogue seu primeiro treino", description: "Treinos curtos pra destravar competências específicas.", href: "/games", done: gamesPlayed > 0 },
+  ];
+  const doneCount = steps.filter((step) => step.done).length;
+
   return (
     <div className="text-foreground">
       <section className="pb-1">
-        <h1 className="font-display text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {name}</h1>
-        <p className="mt-1.5 text-[15px] text-muted-foreground">
-          Bem-vindo ao Donc! Complete os 4 primeiros passos pra desbloquear seu painel completo de evolução.
-        </p>
+        <h1 className="font-display text-[28px] font-medium leading-tight sm:text-[34px]">Boas-vindas ao Donc, {name}</h1>
+        <p className="mt-1.5 text-[15px] text-muted-foreground">Seu percurso de redação começa aqui. Vamos pelos primeiros passos.</p>
       </section>
 
-      <section className="mt-4 grid gap-3 sm:grid-cols-2">
-        {ONBOARDING_STEPS.map((step) => (
-          <Link
-            key={step.title}
-            href={step.href}
-            className="flex items-start gap-4 rounded-card bg-card p-5 shadow-soft transition-colors hover:bg-card/80"
-          >
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-primary/12 text-primary">
-              <step.icon className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[15px] font-semibold leading-tight">{step.title}</p>
-              <p className="mt-1 text-[13px] text-muted-foreground">{step.description}</p>
-            </div>
-          </Link>
-        ))}
+      <section className="mt-4 flex flex-col gap-6 rounded-card bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg sm:flex-row sm:items-center">
+        <FolhinhaMascot mood="write" size={124} message="Escrevo junto com você!" side="left" onDark />
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[22px] font-medium leading-tight">Comece pela sua primeira redação</p>
+          <p className="mt-1.5 text-[13px] text-white/75">Escolha um tema, escreva e receba nota por competência ENEM.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link href="/redacao" className="flex items-center gap-2 whitespace-nowrap rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-[hsl(var(--accent-900))]">
+              Escolher tema
+              <PenLine className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <span className="text-[12px] text-white/60">~30 min · sua 1ª correção é grátis</span>
+          </div>
+        </div>
       </section>
+
+      <section className="mt-4 rounded-card bg-card p-6 shadow-soft">
+        <div className="mb-1.5 flex items-center justify-between">
+          <h2 className="text-[16px] font-semibold">Primeiros passos</h2>
+          <span className="text-[13px] font-semibold text-muted-foreground">{doneCount}/{steps.length}</span>
+        </div>
+        <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {steps.map((step) => (
+            <Link
+              key={step.title}
+              href={step.href}
+              className={cn(
+                "flex items-start gap-4 rounded-control border p-4 transition-colors",
+                step.done ? "border-primary/20 bg-primary/5" : "border-border/70 hover:bg-card/80",
+              )}
+            >
+              <div
+                className={cn(
+                  "grid h-11 w-11 shrink-0 place-items-center rounded-control",
+                  step.done ? "bg-primary text-primary-foreground" : "bg-primary/12 text-primary",
+                )}
+              >
+                {step.done ? <Check className="h-5 w-5" aria-hidden="true" /> : <step.icon className="h-5 w-5" aria-hidden="true" />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold leading-tight">{step.title}</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">{step.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="rounded-card bg-card p-6 shadow-soft">
+          <h2 className="mb-3.5 text-[16px] font-semibold">Sua evolução</h2>
+          <svg viewBox="0 0 560 160" className="w-full" style={{ height: 160 }} aria-hidden="true">
+            <path
+              d="M28 120 L150 90 L280 105 L410 60 L532 40"
+              fill="none"
+              stroke="hsl(var(--muted-foreground) / 0.35)"
+              strokeWidth={2}
+              strokeDasharray="6 8"
+              strokeLinecap="round"
+            />
+          </svg>
+          <p className="text-[13px] text-muted-foreground">Sua primeira redação corrigida desenha o gráfico aqui.</p>
+        </div>
+
+        <div className="flex flex-col rounded-card bg-card p-6 shadow-soft">
+          <h2 className="mb-4 text-[16px] font-semibold">Competências (ENEM)</h2>
+          <div className="flex-1 space-y-3.5">
+            {["C1 · Norma culta", "C2 · Compreensão", "C3 · Argumentação", "C4 · Coesão", "C5 · Intervenção"].map((label) => (
+              <div key={label}>
+                <div className="mb-1.5 flex justify-between text-[13px]">
+                  <span className="font-medium text-foreground/80">{label}</span>
+                  <span className="font-semibold tabular-nums text-muted-foreground">—</span>
+                </div>
+                <div className="h-[7px] overflow-hidden rounded-full bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {themes.length ? (
+        <section className="mt-4 rounded-card bg-card p-6 shadow-soft">
+          <h2 className="mb-3.5 text-[16px] font-semibold">Temas para sua primeira redação</h2>
+          <div className="space-y-1">
+            {themes.map((theme, index) => {
+              const Icon = THEME_ICONS[index % THEME_ICONS.length];
+              return (
+                <Link
+                  key={theme.id}
+                  href="/redacao"
+                  className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-b-0 hover:opacity-80"
+                >
+                  <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-control bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-safe truncate text-[14px] font-semibold leading-tight">{theme.title}</p>
+                    <p className="truncate text-[12px] text-muted-foreground">{theme.source}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

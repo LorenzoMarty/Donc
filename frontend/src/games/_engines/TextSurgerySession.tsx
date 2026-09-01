@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2, Scissors, Sparkles } from "lucide-react";
+import { Check, Flame, Loader2, Scissors, SkipForward, Sparkles } from "lucide-react";
 
 import type { Grade, GameCategory, GameCompletion, GameDefinition, SurgeryCase, SurgerySegment } from "@/features/gamification/types";
 import { EngineResult } from "@/games/_engines/EngineResult";
 import { GRADE_LABEL, GRADE_TONE, pointsToGrade, gradeToPoints, summariseGrades } from "@/games/_engines/grade";
 import { shuffle } from "@/games/_engines/shuffleOptions";
-import { GameSessionShell } from "@/game-pages/games/components/GameSessionShell";
+import { GameSessionShell, Chip } from "@/game-pages/games/components/GameSessionShell";
 import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,6 +119,14 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
   }
 
   const doneSlots = grades.length;
+  const correctCount = grades.filter((g) => g === "S" || g === "A").length;
+  let streak = 0;
+  for (let i = grades.length - 1; i >= 0 && (grades[i] === "S" || grades[i] === "A"); i -= 1) streak += 1;
+
+  function skip() {
+    if (phase !== "answering") return;
+    applyGrade("Fraco", "(pulado)", "Trecho pulado — sem restauração registrada.", slot.tags);
+  }
 
   return (
     <GameSessionShell
@@ -127,13 +135,37 @@ export function TextSurgerySession({ game, category }: { game: GameDefinition; c
       title={game.name}
       step={doneSlots}
       total={totalSlots}
+      extraChips={
+        <>
+          <Chip>
+            <Check className="h-3 w-3 text-primary" aria-hidden="true" /> {correctCount} certas
+          </Chip>
+          {streak > 1 ? (
+            <Chip className="border-streak/40 bg-streak-tint text-streak">
+              <Flame className="h-3 w-3" aria-hidden="true" /> {streak}
+            </Chip>
+          ) : null}
+        </>
+      }
     >
       <div className="force-light space-y-5 md:space-y-6">
       {current && (
         <section className="game-surface bg-card p-4 md:p-6">
-          <Badge className="mb-3 border-primary/20 bg-primary/10 text-primary">
-            <Scissors className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Caso {caseIndex + 1}/{cases.length}
-          </Badge>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <Badge className="border-primary/20 bg-primary/10 text-primary">
+              <Scissors className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Caso {caseIndex + 1}/{cases.length}
+            </Badge>
+            {phase === "answering" ? (
+              <button
+                type="button"
+                onClick={skip}
+                className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <SkipForward className="h-3.5 w-3.5" aria-hidden="true" />
+                Pular
+              </button>
+            ) : null}
+          </div>
           <p className="text-sm leading-6 text-foreground/80">{current.brief}</p>
 
           {/* Texto com slots inline */}

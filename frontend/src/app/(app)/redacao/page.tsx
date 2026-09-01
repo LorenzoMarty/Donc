@@ -7,8 +7,9 @@ import { AlertCircle, Brain, ChevronRight, Cpu, Leaf, Sparkles, Users, type Luci
 import { EssayEditor } from "@/components/writing/essay-editor";
 import { EssayAnalysisWorkspace } from "@/components/writing/essay-analysis";
 import { EssayResultado } from "@/components/writing/essay-resultado";
+import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import { LoadingCard } from "@/components/shared/loading-card";
-import { PageHeader, Surface } from "@/components/shared/premium-ui";
+import { Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useCorrectionStatus } from "@/hooks/useCorrectionStatus";
@@ -124,11 +125,13 @@ export default function EssayPage() {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Laboratório de redação"
-        title="Escolha um tema, escreva e envie para correção."
-        description="Acompanhe linhas, parágrafos e estrutura enquanto escreve. Depois, veja a nota por competência ENEM."
-      />
+      <div className="flex items-center gap-1.5">
+        <FolhinhaMascot mood="think" size={80} message="Escolhe um tema que te dê vontade de argumentar." side="right" />
+        <div className="ml-1.5">
+          <p className="text-[14px] text-muted-foreground">Nova redação</p>
+          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[32px]">Escolha um tema para começar</h1>
+        </div>
+      </div>
 
       <div className="grid gap-3 pt-3">
         {!essay ? <ThemePicker themes={themes} onPick={(theme) => createDraft(theme)} /> : null}

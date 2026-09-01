@@ -102,7 +102,7 @@ export default function GamesHub() {
 
   return (
     <div className="space-y-5 md:space-y-6">
-      <PageHeader eyebrow="Treino" title="Micro-desafios para lapidar cada competência da escrita" />
+      <PageHeader title="Treino" description="Micro-desafios para lapidar cada competência da escrita" />
 
       <div className="grid grid-cols-2 gap-3.5">
         {metrics.map((metric) => (

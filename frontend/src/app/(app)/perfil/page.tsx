@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight, Flame, GraduationCap, Medal, Zap } from "lucide-react";
+import { ArrowRight, Clock, FileText, GraduationCap, Sparkles } from "lucide-react";
 
 import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
@@ -13,16 +13,12 @@ import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
 import { WriterXraySection } from "@/app/(app)/perfil/components/writer-xray";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { NextActionCard } from "@/components/shared/next-action-card";
 import { buildWriterXray, type WriterXray } from "@/features/profile/writer-xray";
-import { useAuth } from "@/providers/app-providers";
 import { apiFetch, type Dashboard, type EssayHistory, type LearningProfile } from "@/services/api";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
   const gameProgress = useGameStore((state) => state.progress);
 
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
@@ -75,25 +71,12 @@ export default function ProfilePage() {
         <AccountCard />
 
         <div className="fluid-grid gap-4 [--grid-min:13rem]">
-          <Metric tone="g" icon={GraduationCap} label="Redações corrigidas" value={String(dashboard?.essays_written ?? 0)} />
-          <Metric tone="v" icon={Medal} label="Média das redações" value={String(dashboard?.essay_average ?? 0)} />
-          <Metric tone="a" icon={Flame} label="Sequência" value={`${user?.streak_days ?? 0} dias`} />
+          <Metric tone="g" icon={Sparkles} label="Nota média" value={String(dashboard?.essay_average ?? 0)} />
+          <Metric tone="v" icon={FileText} label="Redações enviadas" value={String(dashboard?.essays_written ?? 0)} />
+          <Metric tone="a" icon={Clock} label="Tempo de estudo" value="—" />
+          <Metric tone="g" icon={GraduationCap} label="Aulas assistidas" value={String(dashboard?.completed_lessons ?? 0)} />
         </div>
       </section>
-
-      <Surface>
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Progresso geral</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal">Seu avanço no curso</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{dashboard?.progress_general ?? 0}% concluído</p>
-          </div>
-          <Zap className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-        </div>
-        <Progress value={dashboard?.progress_general ?? 0} className="h-3" />
-      </Surface>
-
-      {dashboard?.next_action ? <NextActionCard action={dashboard.next_action} /> : null}
 
       <CognitiveIssuesSection issues={learningProfile?.cognitive_issues} />
 

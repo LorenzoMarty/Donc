@@ -7,6 +7,7 @@ import { RotateCcw, Trophy } from "lucide-react";
 
 import type { GameCompletion, Grade } from "@/features/gamification/types";
 import { GRADE_LABEL, GRADE_TONE } from "@/games/_engines/grade";
+import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/stores/game-store";
 import { cn } from "@/utils";
@@ -89,6 +90,11 @@ export function EngineResult({
     >
       {decoration}
       <div className="relative">
+        {variant === "modal" && (
+          <div className="mb-2 flex justify-center">
+            <FolhinhaMascot mood="cheer" size={64} message="Mandou bem!" />
+          </div>
+        )}
         {grade ? (
           <div className={cn("mx-auto grid h-16 w-16 place-items-center rounded-md border text-2xl font-bold", GRADE_TONE[grade])}>
             {grade}

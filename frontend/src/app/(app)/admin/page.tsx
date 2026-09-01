@@ -125,7 +125,7 @@ export default function AdminPage() {
   }
 
   if (!isAdmin || error) {
-    return <PageHeader eyebrow="Admin" title="Painel indisponível" description={!isAdmin ? "Acesso restrito a administradores." : error} />;
+    return <PageHeader eyebrow="Administração" title="Painel indisponível" description={!isAdmin ? "Acesso restrito a administradores." : error} />;
   }
 
   if (!metrics || !telemetry || !activity) {
@@ -135,7 +135,7 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Painel administrativo"
+        eyebrow="Administração"
         title="Operação e dados"
         description="Acompanhe uso da plataforma, custos de IA, alunos e conteúdo pedagógico em um só lugar."
       />
