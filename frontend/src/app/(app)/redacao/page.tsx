@@ -128,8 +128,8 @@ export default function EssayPage() {
       <div className="flex items-center gap-1.5">
         <FolhinhaMascot mood="think" size={80} message="Escolhe um tema que te dê vontade de argumentar." side="right" />
         <div className="ml-1.5">
-          <p className="text-[14px] text-muted-foreground">Nova redação</p>
-          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[32px]">Escolha um tema para começar</h1>
+          <p className="text-sm text-muted-foreground">Nova redação</p>
+          <h1 className="page-title font-display mt-0.5 font-medium">Escolha um tema para começar</h1>
         </div>
       </div>
 
@@ -179,16 +179,16 @@ function ThemePicker({
   return (
     <div>
       {weekly ? (
-        <div className="mb-5 flex items-center gap-6 rounded-card bg-[hsl(var(--accent-900))] p-6 text-white shadow-accent-lg">
+        <div className="comfortable-card mb-5 flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg sm:flex-row sm:items-center sm:gap-6">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Tema da semana</p>
-            <p className="font-display mt-1.5 text-2xl font-medium leading-tight">{weekly.title}</p>
+            <p className="font-display mt-1.5 text-[1.35rem] font-medium leading-tight sm:text-2xl">{weekly.title}</p>
             <p className="mt-1 text-sm text-white/70">{weekly.source}</p>
           </div>
           <button
             type="button"
             onClick={() => onPick(weekly)}
-            className="flex shrink-0 items-center gap-2 rounded-control bg-white px-5 py-3 text-sm font-bold text-[hsl(var(--accent-900))] transition-colors hover:bg-white/90"
+            className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-control bg-white px-5 py-3 text-sm font-bold text-[hsl(var(--accent-900))] transition-colors hover:bg-white/90 sm:w-auto"
           >
             Escrever agora
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -197,14 +197,14 @@ function ThemePicker({
       ) : null}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="inline-flex gap-1 rounded-full bg-muted/60 p-1">
+        <div className="mobile-scroll flex max-w-full gap-1 overflow-x-auto rounded-control bg-muted/60 p-1">
           {THEME_FILTERS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setFilter(option.value)}
               className={cn(
-                "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                "whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors",
                 filter === option.value ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
               )}
             >
@@ -214,7 +214,7 @@ function ThemePicker({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="fluid-grid gap-4 [--grid-min:18rem]">
         {shown.map((theme) => {
           const category = classifyTheme(theme);
           const meta = THEME_CATEGORY_META[category];

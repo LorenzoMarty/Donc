@@ -104,7 +104,7 @@ export default function GamesHub() {
     <div className="space-y-5 md:space-y-6">
       <PageHeader title="Treino" description="Micro-desafios para lapidar cada competência da escrita" />
 
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid gap-3.5 sm:grid-cols-2">
         {metrics.map((metric) => (
           <div key={metric.label} className="flex items-center gap-3.5 rounded-card bg-card p-5 shadow-soft">
             <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-control" style={{ backgroundColor: `${metric.tint}1a` }}>
@@ -123,19 +123,19 @@ export default function GamesHub() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-7 rounded-[18px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg"
+          className="comfortable-card flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg lg:flex-row lg:items-center lg:gap-7"
         >
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2.5">
               <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Recomendado pra você</span>
               <span className="rounded-md bg-white/15 px-2.5 py-0.5 text-[11px] font-bold">Desafio de hoje</span>
             </div>
-            <p className="font-display text-[25px] font-medium leading-tight">{primaryGame.name}</p>
-            <p className="mt-1.5 max-w-[460px] text-[14px] text-white/70">{reason}</p>
-            <div className="mt-4.5 flex items-center gap-4">
+            <p className="font-display text-[1.45rem] font-medium leading-tight sm:text-[25px]">{primaryGame.name}</p>
+            <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-white/70">{reason}</p>
+            <div className="mt-4.5 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <Link
                 href={`/games/${primaryGame.category}/${primaryGame.id}`}
-                className="flex items-center gap-2 rounded-control bg-white px-6 py-3 text-[14px] font-bold text-[hsl(var(--accent-900))]"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-control bg-white px-6 py-3 text-sm font-bold text-[hsl(var(--accent-900))]"
               >
                 <Play className="h-4 w-4 fill-current" aria-hidden="true" />
                 Jogar agora
@@ -143,7 +143,7 @@ export default function GamesHub() {
               <span className="text-[13px] text-white/60">~4 min</span>
             </div>
           </div>
-          <div className="grid h-[150px] w-[150px] shrink-0 place-items-center rounded-full border-[3px] border-dashed border-[hsl(var(--accent-300)/40%)]">
+          <div className="grid h-[132px] w-[132px] shrink-0 place-items-center self-center rounded-full border-[3px] border-dashed border-[hsl(var(--accent-300)/40%)] sm:h-[150px] sm:w-[150px]">
             <div className="text-center">
               <p className="text-[38px] font-bold leading-none">{recommendedMastery}%</p>
               <p className="text-[12px] text-white/60">de domínio</p>
@@ -154,12 +154,12 @@ export default function GamesHub() {
 
       <section id="categorias">
         <div className="mb-3.5 flex items-center justify-between">
-          <h2 className="text-[17px] font-semibold">Categorias</h2>
+            <h2 className="section-title font-semibold">Categorias</h2>
           <span className="text-[13px] text-muted-foreground">
             Maestria geral <strong className="text-foreground">{overallProgress}%</strong>
           </span>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3.5">
+        <div className="fluid-grid gap-3.5 [--grid-min:18rem]">
           {categories.map((category, index) => (
             <CategoryCard key={category.id} category={category} index={index} />
           ))}

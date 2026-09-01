@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ref={scrollAreaRef}
         className={cn("h-full overflow-y-auto overscroll-contain", sidebarCollapsed ? "md:pl-[98px]" : "md:pl-[262px]")}
       >
-        <main className="min-h-dvh w-full bg-background px-4 pb-4 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground md:px-[34px] md:pb-[34px] md:pt-5">
+        <main className="min-h-dvh w-full bg-background px-4 pb-5 pt-[calc(4.75rem+env(safe-area-inset-top))] text-foreground sm:px-5 md:px-7 md:pb-7 md:pt-5 xl:px-8">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}

@@ -74,7 +74,10 @@ describe("buildWriterXray", () => {
     const xray = buildWriterXray({
       dashboard: fakeDashboard({
         mastery_map: [{ competency: "C3", label: "Argumentação", value: 160 }],
-        trend: [{ label: "01/06", score: 820 }],
+        trend: [
+          { label: "01/06", score: 700 },
+          { label: "08/06", score: 820 },
+        ],
       }),
       learningProfile: null,
     });
@@ -82,6 +85,14 @@ describe("buildWriterXray", () => {
     expect(xray.hasScores).toBe(true);
     expect(xray.hasTrend).toBe(true);
     expect(xray.isEmpty).toBe(false);
+  });
+
+  it("não marca hasTrend com um único ponto de nota", () => {
+    const xray = buildWriterXray({
+      dashboard: fakeDashboard({ trend: [{ label: "01/06", score: 0 }] }),
+      learningProfile: null,
+    });
+    expect(xray.hasTrend).toBe(false);
   });
 
   it("deriva competencyTrend a partir do evolution do essayHistory", () => {
