@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from src.config.settings import settings
+from src.utils import auth_rate_limit
+
 
 def api_data(response):
     payload = response.json()
@@ -14,8 +17,11 @@ def test_register_creates_user_and_returns_token(client):
     )
     assert response.status_code == 201
     data = api_data(response)
-    assert data["access_token"]
+    assert "access_token" not in data
     assert data["user"]["email"] == "novo@test.com"
+    assert response.cookies.get("access_token")
+    assert response.cookies.get("refresh_token")
+    assert response.cookies.get("csrf_token")
 
 
 def test_register_rejects_duplicate_email(client):
@@ -32,8 +38,11 @@ def test_login_returns_token_for_valid_credentials(client):
     response = client.post("/api/v1/auth/login", json={"email": "login@test.com", "password": "senha1234"})
     assert response.status_code == 200
     data = api_data(response)
-    assert data["access_token"]
+    assert "access_token" not in data
     assert data["user"]["email"] == "login@test.com"
+    assert response.cookies.get("access_token")
+    assert response.cookies.get("refresh_token")
+    assert response.cookies.get("csrf_token")
 
 
 def test_login_rejects_wrong_password(client):
@@ -47,6 +56,44 @@ def test_login_rejects_unknown_email(client):
     response = client.post("/api/v1/auth/login", json={"email": "ghost@test.com", "password": "qualquer"})
     assert response.status_code == 401
     assert response.json()["success"] is False
+
+
+def test_login_rate_limit_blocks_repeated_attempts(client, monkeypatch):
+    original_limit = settings.auth_rate_limit_per_minute
+    auth_rate_limit._memory_counters.clear()
+    monkeypatch.setattr(auth_rate_limit, "_increment_redis", lambda key: None)
+    settings.auth_rate_limit_per_minute = 1
+    try:
+        payload = {"email": "rate-limit@test.com", "password": "qualquer"}
+        assert client.post("/api/v1/auth/login", json=payload).status_code == 401
+        response = client.post("/api/v1/auth/login", json=payload)
+        assert response.status_code == 429
+        assert response.json()["error"] == "rate_limit_exceeded"
+    finally:
+        settings.auth_rate_limit_per_minute = original_limit
+        auth_rate_limit._memory_counters.clear()
+
+
+def test_cookie_authenticated_mutation_requires_csrf_header(client):
+    client.post("/api/v1/auth/login", json={"email": "aluno@demo.com", "password": "12345678"})
+
+    response = client.patch("/api/v1/auth/me", json={"name": "Sem CSRF"})
+
+    assert response.status_code == 403
+    assert response.json()["error"] == "csrf_invalid"
+
+
+def test_cookie_authenticated_mutation_accepts_csrf_header(client):
+    login = client.post("/api/v1/auth/login", json={"email": "aluno@demo.com", "password": "12345678"})
+    csrf_token = login.cookies.get("csrf_token")
+
+    try:
+        response = client.patch("/api/v1/auth/me", headers={"X-CSRF-Token": csrf_token}, json={"name": "Com CSRF"})
+
+        assert response.status_code == 200
+        assert api_data(response)["name"] == "Com CSRF"
+    finally:
+        client.patch("/api/v1/auth/me", headers={"X-CSRF-Token": csrf_token}, json={"name": "Aluno Demo"})
 
 
 def test_me_returns_user_shape(client):

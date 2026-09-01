@@ -4,20 +4,14 @@ const DEMO = { email: "aluno@demo.com", password: "12345678" };
 const API = "http://localhost:8001/api/v1";
 
 /**
- * Autentica via API (imune a CORS do browser) e injeta o token onde a app espera:
- * cookie `access_token` (lido pelo middleware no SSR) + localStorage (hidratado pelo AuthContext).
+ * Autentica via API (imune a CORS do browser). O backend seta cookies HttpOnly no contexto do
+ * browser; o AuthContext hidrata o usuário via /auth/me.
  */
-async function login(page: Page): Promise<string> {
+async function login(page: Page): Promise<void> {
   const res = await page.request.post(`${API}/auth/login`, { data: DEMO });
   expect(res.ok(), "login API deve responder 200").toBeTruthy();
-  const token = (await res.json()).data.access_token as string;
-  await page.context().addCookies([
-    { name: "access_token", value: token, domain: "localhost", path: "/" },
-  ]);
-  await page.addInitScript((t) => {
-    window.localStorage.setItem("access_token", t);
-  }, token);
-  return token;
+  const payload = await res.json();
+  expect(payload.data.user.email).toBe(DEMO.email);
 }
 
 test("smoke: hub-first → missão → feedback qualitativo → recomendação → estado preservado", async ({ page }) => {

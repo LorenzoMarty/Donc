@@ -38,6 +38,7 @@ class AuthService:
         if verify_password(new_password, user.hashed_password):
             raise AppError("A nova senha deve ser diferente da atual.", status_code=400, code="password_unchanged")
         user.hashed_password = get_password_hash(new_password)
+        user.session_version += 1
         self.users.save(user)
         # Sessões existentes (outros dispositivos/navegadores) não devem sobreviver a uma troca
         # de senha — antes disso o JWT de acesso continuava válido até expirar (7 dias).
@@ -61,7 +62,7 @@ class AuthService:
 
     def token_for(self, user: User) -> str:
         expires = timedelta(minutes=settings.access_token_expire_minutes)
-        return create_access_token(str(user.id), expires_delta=expires, extra={"role": user.role.value})
+        return create_access_token(str(user.id), expires_delta=expires, extra={"role": user.role.value, "sv": user.session_version})
 
     def issue_refresh_token(self, user: User) -> str:
         """Emite um refresh token novo (opaco, guardado como hash) — não commita, caller decide

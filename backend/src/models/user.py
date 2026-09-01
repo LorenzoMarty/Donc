@@ -23,6 +23,7 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), default=UserRole.STUDENT, nullable=False)
     streak_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
+    session_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Separado de `last_seen_at` (presenca, tocado em toda request autenticada) — so avanca em
     # atividade pedagogica real (jogo concluido, exercicio, aula concluida, redacao enviada).

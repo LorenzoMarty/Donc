@@ -75,6 +75,18 @@ def test_get_current_user_retorna_usuario_valido_via_header_bearer(client, db): 
     assert result.id == user.id
 
 
+def test_get_current_user_rejeita_token_de_versao_antiga(client, db):  # noqa: ARG001 - client boots tables
+    user = _make_user(db, email="dep-old-session@example.com")
+    user.session_version = 2
+    db.commit()
+    token = create_access_token(subject=str(user.id), extra={"sv": 1})
+
+    with pytest.raises(AppError) as exc_info:
+        get_current_user(_FakeRequest(cookies={"access_token": token}), token=None, db=db)
+
+    assert exc_info.value.code == "invalid_token"
+
+
 def test_require_admin_com_usuario_comum_lanca_admin_required(client, db):  # noqa: ARG001 - client boots tables
     student = _make_user(db, role=UserRole.STUDENT, email="dep-student@example.com")
 

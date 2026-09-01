@@ -31,12 +31,16 @@ def get_current_user(
     try:
         payload = decode_access_token(raw_token)
         user_id = int(payload.get("sub"))
+        session_version = int(payload.get("sv", 1))
     except Exception as exc:
         raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token") from exc
 
     user = UserRepository(db).get_by_id(user_id)
     if not user or user.deleted_at is not None:
         raise AppError("Usuário não encontrado.", status_code=401, code="user_not_found")
+
+    if session_version != user.session_version:
+        raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token")
 
     try:
         user = touch_last_seen(db, user)

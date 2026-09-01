@@ -1,5 +1,6 @@
 ﻿from datetime import UTC, datetime, timedelta
 import hashlib
+import hmac
 import secrets
 from typing import Any
 
@@ -48,3 +49,18 @@ def hash_refresh_token(token: str) -> str:
     # (token_urlsafe(32)), não uma senha — não precisa de salt/custo computacional, só
     # impedir que o valor em claro fique legível se o banco vazar.
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def sign_csrf_token(csrf_token: str, access_token: str) -> str:
+    token_binding = hashlib.sha256(access_token.encode("utf-8")).hexdigest()
+    message = f"{csrf_token}.{token_binding}".encode("utf-8")
+    return hmac.new(settings.jwt_secret_key.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+def verify_csrf_signature(csrf_token: str, access_token: str, signature: str) -> bool:
+    expected = sign_csrf_token(csrf_token, access_token)
+    return hmac.compare_digest(expected, signature)

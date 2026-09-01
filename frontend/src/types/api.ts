@@ -100,9 +100,7 @@ export type LearningProfile = {
   has_data: boolean;
 };
 
-export type TokenResponse = {
-  access_token: string;
-  token_type: string;
+export type AuthResponse = {
   user: User;
 };
 

@@ -3,18 +3,21 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.config.settings import settings
 from src.database.session import Base, SessionLocal, engine
 from src.middlewares.errors import register_error_handlers
+from src.middlewares.errors import AppError
 from src.models import *  # noqa: F403 - garante registro das tabelas no metadata.
 from src.routes import admin, ai, auth, dashboard, essays, exercises, games, lessons
 from src.schemas.common import ApiResponse, HealthData, success_response
 from src.services.seed import seed_database
 from src.telemetry import configure_ai_telemetry, flush_ai_telemetry
 from src.vectorstore import seed_knowledge_base
+from src.utils.csrf import require_csrf_for_cookie_session
 
 
 logger = logging.getLogger("src.startup")
@@ -61,6 +64,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 register_error_handlers(app)
+
+
+@app.middleware("http")
+async def csrf_cookie_session_middleware(request, call_next):
+    unsafe_method = request.method.upper() not in {"GET", "HEAD", "OPTIONS"}
+    public_auth_paths = {
+        f"{settings.api_v1_prefix}/auth/login",
+        f"{settings.api_v1_prefix}/auth/register",
+        f"{settings.api_v1_prefix}/auth/password-recovery",
+    }
+    if unsafe_method and request.url.path.startswith(settings.api_v1_prefix) and request.url.path not in public_auth_paths:
+        try:
+            require_csrf_for_cookie_session(request)
+        except AppError as exc:
+            return JSONResponse(
+                status_code=exc.status_code,
+                content={"success": False, "message": exc.message, "error": exc.code},
+            )
+    return await call_next(request)
 
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(dashboard.router, prefix=settings.api_v1_prefix)

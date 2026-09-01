@@ -70,8 +70,9 @@ def test_admin_can_delete_student(client):
         )
         assert create_response.status_code == 201
         user_id = api_data(create_response)["user"]["id"]
+        csrf_token = create_response.cookies.get("csrf_token")
 
-        response = client.delete(f"/api/v1/admin/users/{user_id}")
+        response = client.delete(f"/api/v1/admin/users/{user_id}", headers={"X-CSRF-Token": csrf_token})
 
         assert response.status_code == 200
         assert api_data(response) == {"action": "deleted", "user_id": user_id}

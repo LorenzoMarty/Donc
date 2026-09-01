@@ -564,7 +564,19 @@ function Dock({
   );
 }
 
-/** Caderno de textos motivadores em página cheia — simula folhear o caderno físico da prova. */
+const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+
+/** Instruções fixas do modelo ENEM — texto padrão, o mesmo em toda prova, não varia por tema. */
+const ENEM_INSTRUCTIONS = [
+  "O rascunho da redação pode ser feito na parte inferior desta folha, mas deverá ser transcrito para a folha de redação.",
+  "A redação que apresentar cópia dos textos motivadores ou do caderno de questões terá o número de linhas copiadas desconsiderado para efeito de correção.",
+  "Receberá nota zero a redação que: fugir ao tema ou não atender ao tipo dissertativo-argumentativo; apresentar até 7 linhas escritas; contiver parte deliberadamente desconectada do tema.",
+  "A redação deve ter no mínimo 8 e no máximo 30 linhas escritas.",
+];
+
+/** Caderno de textos motivadores em página cheia — simula folhear o caderno físico da prova, fiel
+ * à folha oficial do ENEM (fiel a WritingSheet.dc.html: proposta formal, TEXTO I/II/III/IV,
+ * bloco INSTRUÇÕES) em vez do resumo solto que havia antes. */
 function MotivatorsBooklet({
   theme,
   activeTool,
@@ -576,19 +588,48 @@ function MotivatorsBooklet({
 
   return (
     <div className="mx-auto max-w-[940px] rounded-card bg-paper px-5 py-6 shadow-elevated md:px-6 lg:px-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Textos motivadores</p>
-      <h2 className="font-display mt-1 text-xl font-medium leading-snug tracking-normal text-[#26241f] md:text-2xl">{theme.title}</h2>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3c3c43]/72">{theme.context}</p>
+      <div className="mb-6 flex items-center gap-3">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#3c3c43]/50">Proposta de redação</p>
+        <div className="h-px flex-1 bg-[#3c3c43]/20" />
+      </div>
 
-      {theme.supporting_texts?.map((text, index) => (
-        <div key={index} className="mt-6 border-t border-[#3c3c43]/12 pt-5">
-          <div className="mb-3 flex items-center gap-2">
-            <SupportingTextIcon type={text.type} />
-            <h3 className="text-sm font-semibold leading-snug text-[#26241f]">{text.title}</h3>
-          </div>
-          <SupportingTextBody text={text} themeId={theme.id} textIndex={index} activeTool={activeTool} />
+      <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/88" style={{ textAlign: "justify", hyphens: "auto" }}>
+        A partir da leitura dos textos motivadores seguintes e com base nos conhecimentos construídos ao longo de sua formação, redija
+        texto <strong className="font-semibold">dissertativo-argumentativo</strong> em modalidade escrita formal da língua portuguesa
+        sobre o tema <strong className="font-semibold">&ldquo;{theme.title}&rdquo;</strong>, apresentando proposta de intervenção que
+        respeite os direitos humanos. Selecione, organize e relacione, de forma coerente e coesa, argumentos e fatos para defesa de seu
+        ponto de vista.
+      </p>
+      {theme.context ? <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#3c3c43]/72">{theme.context}</p> : null}
+
+      {theme.supporting_texts?.length ? (
+        <div className="mt-8 columns-1 gap-6 lg:columns-2">
+          {theme.supporting_texts.map((text, index) => (
+            <div key={index} className="mb-8 break-inside-avoid">
+              <div className="mb-3 flex items-center gap-2">
+                <p className="text-[12.5px] font-bold uppercase tracking-[0.1em] text-[#3c3c43]/62">
+                  TEXTO {ROMAN_NUMERALS[index] ?? index + 1}
+                </p>
+                <SupportingTextIcon type={text.type} />
+                <h3 className="text-sm font-semibold leading-snug text-[#26241f]">{text.title}</h3>
+              </div>
+              <SupportingTextBody text={text} themeId={theme.id} textIndex={index} activeTool={activeTool} />
+            </div>
+          ))}
         </div>
-      ))}
+      ) : null}
+
+      <div className="mt-8 border-t border-[#3c3c43]/20 pt-5">
+        <p className="mb-3 text-[12.5px] font-bold uppercase tracking-[0.1em] text-[#3c3c43]/62">Instruções</p>
+        <ul className="space-y-2.5">
+          {ENEM_INSTRUCTIONS.map((instruction) => (
+            <li key={instruction} className="flex gap-2.5 text-[14.5px] leading-[1.6] text-[#1c1c1e]/82">
+              <span className="shrink-0 text-[#3c3c43]/50">•</span>
+              <span className="text-safe">{instruction}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
