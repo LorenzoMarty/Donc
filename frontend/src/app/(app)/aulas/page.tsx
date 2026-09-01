@@ -69,7 +69,7 @@ export default function LessonsPage() {
   if (modules.length === 0) {
     return (
       <MotionShell className="space-y-6">
-        <PageHeader eyebrow="Aulas" title="Escolha o que assistir" description="Aprenda a estruturar a redação nota 1000" />
+        <PageHeader title="Aulas" description="Aprenda a estruturar a redação nota 1000" />
         <EmptyState title="Nenhuma aula disponível ainda" description="Novas trilhas e aulas aparecem aqui assim que forem publicadas." />
       </MotionShell>
     );
@@ -82,11 +82,7 @@ export default function LessonsPage() {
 
   return (
     <MotionShell className="space-y-6">
-      <PageHeader
-        eyebrow="Aulas"
-        title="Escolha o que assistir"
-        description="Aprenda a estruturar a redação nota 1000"
-      />
+      <PageHeader title="Aulas" description="Aprenda a estruturar a redação nota 1000" />
 
       {continuing && continuingModule ? <ContinueBanner lesson={continuing} module={continuingModule} /> : null}
 

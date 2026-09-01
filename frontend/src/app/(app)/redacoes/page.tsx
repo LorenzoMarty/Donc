@@ -101,7 +101,6 @@ export default function EssayHistoryPage() {
   return (
     <div className="text-foreground">
       <PageHeader
-        eyebrow="Histórico"
         title="Minhas redações"
         description={`${essays.length} ${essays.length === 1 ? "redação" : "redações"}${averageScore ? ` · nota média ${averageScore}` : ""}`}
         action={

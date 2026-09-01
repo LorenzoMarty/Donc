@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, PenLine, TrendingUp, TriangleAlert } from "lucide-react";
 
+import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import type { Essay } from "@/services/api";
 import { cn } from "@/utils";
 
@@ -63,7 +64,8 @@ export function EssayResultado({ essay, onViewAnalysis, onRewrite }: { essay: Es
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
         <div className="flex flex-col items-center justify-center rounded-card bg-card p-7 shadow-soft">
-          <div className="relative h-[200px] w-[200px]">
+          <FolhinhaMascot mood="cheer" size={72} message="Sua melhor nota até agora!" />
+          <div className="relative mt-2 h-[200px] w-[200px]">
             <svg width="200" height="200" viewBox="0 0 200 200" className="-rotate-90">
               <circle cx="100" cy="100" r="88" fill="none" stroke="hsl(var(--muted-foreground) / 0.14)" strokeWidth="16" />
               <circle

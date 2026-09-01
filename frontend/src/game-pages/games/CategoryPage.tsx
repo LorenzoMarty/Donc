@@ -25,6 +25,8 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
     return getGamesByCategory(category.id, remoteGames);
   }, [category, remoteGames]);
 
+  const mastery = games.length ? Math.round(games.reduce((sum, game) => sum + game.progress, 0) / games.length) : 0;
+
   if (!category) {
     return (
       <Surface className="text-center">
@@ -48,21 +50,27 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
         Voltar
       </Link>
 
-      <div className="rounded-[28px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg">
-        <div className="flex items-start gap-3.5">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-control border border-white/15 bg-white/10 text-white">
-            <Icon className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Categoria</span>
-            <p className="font-display text-[25px] font-medium leading-tight">{category.name}</p>
-            <p className="mt-1.5 max-w-[460px] text-[14px] text-white/70">{category.description}</p>
+      <div className="flex items-center gap-7 rounded-[28px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg">
+        <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-control border border-white/15 bg-white/10 text-white">
+          <Icon className="h-[30px] w-[30px]" aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Hub de treino</span>
+          <p className="font-display mt-1 text-[25px] font-medium leading-tight">{category.name}</p>
+          <p className="mt-1.5 max-w-[460px] text-[14px] text-white/70">{category.description}</p>
+        </div>
+        <div className="w-[130px] shrink-0 text-center">
+          <p className="text-[32px] font-bold leading-none">{mastery}%</p>
+          <p className="mb-2.5 text-[12px] text-white/60">maestria</p>
+          <div className="h-[7px] overflow-hidden rounded-full bg-white/20">
+            <div className="h-full rounded-full bg-[hsl(var(--accent-300))]" style={{ width: `${mastery}%` }} />
           </div>
         </div>
+      </div>
 
-        <p className="mt-6 border-t border-white/12 pt-5 text-[13px] text-white/60">
-          {games.length} jogos disponíveis · escolha qualquer um desta categoria
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-[17px] font-semibold">Jogos deste hub</h2>
+        <span className="text-[13px] text-muted-foreground">{games.length} jogos</span>
       </div>
 
       <GameCardGrid games={games} progress={progress} />

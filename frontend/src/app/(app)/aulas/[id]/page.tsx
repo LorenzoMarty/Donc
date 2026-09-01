@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, ClipboardList, FileText, Lock, NotebookPen, Trophy } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, ClipboardList, FileText, Lock, NotebookPen, Play, Trophy } from "lucide-react";
 
 import { ApiClientError } from "@/lib/http-client";
 import { LessonPlayer } from "@/components/shared/lesson-player";
-import { LessonPosterCard } from "@/components/shared/lesson-poster-card";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { Surface } from "@/components/shared/premium-ui";
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { apiFetch, type Lesson, type Module } from "@/services/api";
+import { cn } from "@/utils";
 
 export default function LessonPage() {
   const params = useParams<{ id: string }>() ?? { id: "" };
@@ -24,6 +24,7 @@ export default function LessonPage() {
   const [completion, setCompletion] = useState<Lesson["progress"] | null>(null);
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
   const [lockedMessage, setLockedMessage] = useState<string | null>(null);
+  const [trail, setTrail] = useState<{ moduleTitle: string; lessons: Lesson[] } | null>(null);
 
   useEffect(() => {
     apiFetch<Lesson>(`/lessons/${params.id}`)
@@ -46,6 +47,18 @@ export default function LessonPage() {
         .map((item) => item.lesson as Lesson);
       const idx = flatLessons.findIndex((item) => String(item.id) === String(params.id));
       setNextLesson(idx >= 0 ? (flatLessons[idx + 1] ?? null) : null);
+
+      const ownerModule = modules.find((module) =>
+        (module.items ?? []).some((item) => item.kind === "lesson" && String(item.lesson?.id) === String(params.id)),
+      );
+      if (ownerModule) {
+        const lessons = (ownerModule.items ?? [])
+          .filter((item) => item.kind === "lesson" && item.lesson)
+          .map((item) => item.lesson as Lesson);
+        setTrail({ moduleTitle: ownerModule.title, lessons });
+      } else {
+        setTrail(null);
+      }
     });
   }, [params.id]);
 
@@ -81,6 +94,13 @@ export default function LessonPage() {
 
   return (
     <MotionShell className="space-y-5">
+      {trail ? (
+        <Link href="/aulas" className="inline-flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Trilha {trail.moduleTitle}
+        </Link>
+      ) : null}
+
       <LessonPlayer lesson={lesson} onComplete={complete} />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,21.25rem)]">
@@ -114,6 +134,21 @@ export default function LessonPage() {
         </main>
 
         <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
+          {trail && trail.lessons.length > 1 ? (
+            <Surface>
+              <TrailCard trail={trail} currentLessonId={lesson.id} />
+              {nextLesson ? (
+                <Link
+                  href={`/aulas/${nextLesson.id}`}
+                  className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-control bg-primary px-3 py-2.5 text-[14px] font-bold text-primary-foreground"
+                >
+                  <Play className="h-[15px] w-[15px] fill-current" aria-hidden="true" />
+                  Próxima aula
+                </Link>
+              ) : null}
+            </Surface>
+          ) : null}
+
           {completion?.completed ? (
             <Surface>
               <div className="mb-1 flex items-center gap-2">
@@ -161,25 +196,60 @@ export default function LessonPage() {
           </Surface>
         </aside>
       </div>
-
-      {nextLesson ? (
-        <Surface>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">A seguir</p>
-          <LessonPosterCard
-            lesson={{
-              id: nextLesson.id,
-              title: nextLesson.title,
-              href: `/aulas/${nextLesson.id}`,
-              thumbnailUrl: nextLesson.thumbnail_url,
-              durationMinutes: nextLesson.duration_minutes,
-              progressPercent: nextLesson.progress?.progress_percent ?? 0,
-              completed: nextLesson.progress?.completed ?? false,
-              fallbackSeed: nextLesson.title,
-            }}
-          />
-        </Surface>
-      ) : null}
     </MotionShell>
+  );
+}
+
+/** "Nesta trilha" — navegador de aulas do módulo, fiel ao AulaPlayer.dc.html (não existia antes,
+ * a sidebar só mostrava progresso/exercícios). */
+function TrailCard({ trail, currentLessonId }: { trail: { moduleTitle: string; lessons: Lesson[] }; currentLessonId: number }) {
+  const currentIndex = trail.lessons.findIndex((item) => item.id === currentLessonId);
+  const doneCount = trail.lessons.filter((item) => item.progress.completed).length;
+
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between">
+        <p className="text-[14px] font-semibold">Nesta trilha</p>
+        <p className="text-[12px] font-semibold text-primary">
+          {Math.max(currentIndex + 1, doneCount)}/{trail.lessons.length}
+        </p>
+      </div>
+      <div className="mb-3.5 h-[5px] overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-primary" style={{ width: `${(doneCount / trail.lessons.length) * 100}%` }} />
+      </div>
+      <div className="flex flex-col">
+        {trail.lessons.map((item) => {
+          const isCurrent = item.id === currentLessonId;
+          const isDone = item.progress.completed;
+          const isLocked = item.locked;
+          return (
+            <Link
+              key={item.id}
+              href={isLocked ? "#" : `/aulas/${item.id}`}
+              aria-disabled={isLocked}
+              className={cn(
+                "flex items-center gap-2.5 rounded-[9px] px-2.5 py-2",
+                isCurrent && "bg-primary/10",
+                isLocked && "pointer-events-none",
+              )}
+            >
+              <span
+                className={cn(
+                  "grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full",
+                  isDone ? "bg-primary text-primary-foreground" : isCurrent ? "bg-primary/14 text-primary" : "bg-muted text-muted-foreground",
+                )}
+              >
+                {isDone ? <Check className="h-3 w-3" aria-hidden="true" /> : isCurrent ? <Play className="h-2.5 w-2.5 fill-current" aria-hidden="true" /> : null}
+              </span>
+              <span className={cn("min-w-0 flex-1 truncate text-[13px] leading-tight", isCurrent ? "font-semibold text-foreground" : isDone ? "text-foreground/70" : "text-muted-foreground")}>
+                {item.title}
+              </span>
+              <span className="shrink-0 text-[12px] text-muted-foreground/70">{item.duration_minutes} min</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
