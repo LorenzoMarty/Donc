@@ -136,7 +136,7 @@ export default function EssayHistoryPage() {
         </button>
       </section>
 
-      <div className="mt-5 inline-flex gap-1 rounded-control bg-muted/60 p-1">
+      <div className="mobile-scroll mt-5 flex max-w-full gap-1 overflow-x-auto rounded-control bg-muted/60 p-1 sm:inline-flex">
         {FILTERS.map((item) => {
           const active = filter === item.id;
           return (
@@ -145,7 +145,7 @@ export default function EssayHistoryPage() {
               type="button"
               onClick={() => setFilter(item.id)}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
+                "flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors",
                 active ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
               )}
             >
@@ -226,7 +226,7 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
     : [];
 
   return (
-    <article className="flex items-center gap-5 rounded-card bg-card px-5 py-4.5 shadow-soft">
+    <article className="comfortable-card flex flex-col gap-4 rounded-card bg-card shadow-soft md:flex-row md:items-center md:gap-5">
       <div
         className={cn(
           "grid h-[72px] w-[72px] shrink-0 place-items-center rounded-control",
@@ -239,7 +239,7 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
         </span>
       </div>
 
-      <Link href={href} className="min-w-0 flex-1">
+      <Link href={href} className="min-w-0 flex-1 self-stretch md:self-auto">
         <h2 className="font-display text-[18px] font-medium leading-tight">{essay.title}</h2>
         <div className="mt-1.5 flex flex-wrap items-center gap-3.5 text-[13px] text-muted-foreground">
           <span>{formatDate(essay.updated_at)}</span>
@@ -260,25 +260,27 @@ function EssayRow({ essay, busy, onDelete }: { essay: Essay; busy: boolean; onDe
         </div>
       </Link>
 
-      <div className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold", status.tint)}>
-        <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
-        {status.label}
+      <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
+        <div className={cn("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold", status.tint)}>
+          <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
+          {status.label}
+        </div>
+
+        <Link
+          href={href}
+          className={cn(
+            "flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-control px-3.5 py-2 text-[13px] font-semibold sm:flex-none",
+            essay.status === "corrected" ? "bg-primary/10 text-primary" : "bg-muted text-foreground/70",
+          )}
+        >
+          {actionLabel}
+          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+        </Link>
+
+        <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redação" className="h-10 w-10 shrink-0">
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </Button>
       </div>
-
-      <Link
-        href={href}
-        className={cn(
-          "flex shrink-0 items-center gap-1.5 rounded-control px-3.5 py-2 text-[13px] font-semibold",
-          essay.status === "corrected" ? "bg-primary/10 text-primary" : "bg-muted text-foreground/70",
-        )}
-      >
-        {actionLabel}
-        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </Link>
-
-      <Button type="button" size="icon" variant="ghost" onClick={onDelete} disabled={busy} aria-label="Excluir redação" className="h-9 w-9 shrink-0">
-        <Trash2 className="h-4 w-4" aria-hidden="true" />
-      </Button>
     </article>
   );
 }

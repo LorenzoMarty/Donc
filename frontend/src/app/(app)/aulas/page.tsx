@@ -87,8 +87,8 @@ export default function LessonsPage() {
       {continuing && continuingModule ? <ContinueBanner lesson={continuing} module={continuingModule} /> : null}
 
       <div>
-        <h2 className="mb-3.5 text-[17px] font-semibold">Trilhas de aprendizado</h2>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5">
+        <h2 className="section-title mb-3.5 font-semibold">Trilhas de aprendizado</h2>
+        <div className="fluid-grid gap-3.5 [--grid-min:16rem]">
           {modules.map((module, index) => (
             <TrackCard key={module.id} module={module} icon={TRACK_ICONS[index % TRACK_ICONS.length]} />
           ))}
@@ -97,9 +97,9 @@ export default function LessonsPage() {
 
       <div>
         <div className="mb-3.5 flex items-center justify-between">
-          <h2 className="text-[17px] font-semibold">Aulas recentes</h2>
+          <h2 className="section-title font-semibold">Aulas recentes</h2>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+        <div className="fluid-grid gap-4 [--grid-min:18rem]">
           {recentLessons.map((lesson) => {
             const lessonModule = modules.find((item) => item.lessons?.some((l) => l.id === lesson.id));
             return (
@@ -121,17 +121,17 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
   const remainingMinutes = Math.max(1, Math.round(lesson.duration_minutes * (1 - lesson.progress.progress_percent / 100)));
 
   return (
-    <div className="flex items-center gap-8 rounded-[20px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg">
+    <div className="comfortable-card flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg lg:flex-row lg:items-center lg:gap-8">
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Continue assistindo</p>
-        <p className="font-display mt-1.5 text-[27px] font-medium leading-tight">{lesson.title}</p>
+        <p className="font-display mt-1.5 text-[1.45rem] font-medium leading-tight sm:text-[27px]">{lesson.title}</p>
         <p className="text-[14px] text-white/70">
           {module.title} · Aula {lesson.order} de {module.lessons.length}
         </p>
-        <div className="mt-4.5 flex items-center gap-3.5">
+        <div className="mt-4.5 flex flex-col gap-3.5 sm:flex-row sm:items-center">
           <Link
             href={`/aulas/${lesson.id}`}
-            className="flex items-center gap-2 rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-[hsl(var(--accent-900))]"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-control bg-white px-[22px] py-3 text-sm font-bold text-[hsl(var(--accent-900))]"
           >
             <Play className="h-4 w-4 fill-current" aria-hidden="true" />
             Retomar aula
@@ -148,7 +148,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
       </div>
       <Link
         href={`/aulas/${lesson.id}`}
-        className="grid h-[132px] w-[220px] shrink-0 place-items-center rounded-[14px] bg-primary shadow-elevated"
+        className="hidden h-[132px] w-[220px] shrink-0 place-items-center rounded-control bg-primary shadow-elevated lg:grid"
       >
         <span className="grid h-[52px] w-[52px] place-items-center rounded-full bg-white/90">
           <Play className="h-5 w-5 fill-[hsl(var(--accent-900))] text-[hsl(var(--accent-900))]" aria-hidden="true" />

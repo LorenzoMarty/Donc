@@ -98,16 +98,16 @@ export default function DashboardPage() {
 
   return (
     <div className="text-foreground">
-      <section className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-end sm:justify-between">
+      <section className="flex flex-col gap-4 pb-1 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex items-center gap-1.5">
           <FolhinhaMascot mood="happy" size={84} message="Bom te ver de novo! Vamos terminar aquele rascunho?" side="right" />
           <div className="ml-1.5">
-            <p className="text-[14px] capitalize text-muted-foreground">{today}</p>
-            <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight sm:text-[34px]">Olá, {studentName}</h1>
+            <p className="text-sm capitalize text-muted-foreground">{today}</p>
+            <h1 className="page-title font-display mt-0.5 font-medium">Olá, {studentName}</h1>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2 text-[14px] font-semibold shadow-soft">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-h-11 items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2 text-sm font-semibold shadow-soft">
             <Flame className="h-4 w-4 text-streak" aria-hidden="true" />
             {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
           </div>
@@ -125,7 +125,7 @@ export default function DashboardPage() {
         {draftEssay ? (
           <ContinueWritingCard essay={draftEssay} />
         ) : (
-          <div className="flex min-w-0 flex-1 basis-[340px] flex-wrap items-center justify-between gap-4 rounded-card bg-primary p-6 text-primary-foreground shadow-accent">
+          <div className="comfortable-card flex min-w-0 flex-1 basis-[340px] flex-col justify-between gap-4 rounded-card bg-primary text-primary-foreground shadow-accent sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1 basis-[220px]">
               <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground/85">{heroCopy.eyebrow}</p>
               <p className="font-display mt-2 text-[22px] font-medium leading-tight">{heroCopy.title}</p>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/redacao"
-              className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-primary"
+              className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-control bg-white px-[22px] py-3 text-sm font-bold text-primary sm:w-auto"
             >
               Escrever agora
               <PenLine className="h-4 w-4" aria-hidden="true" />
@@ -156,16 +156,16 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="rounded-card bg-card p-6 shadow-soft">
-          <div className="mb-1.5 flex items-center justify-between">
-            <h2 className="text-[16px] font-semibold">Evolução das notas</h2>
+        <div className="comfortable-card rounded-card bg-card shadow-soft">
+          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="section-title font-semibold">Evolução das notas</h2>
             <span className="text-[13px] text-muted-foreground">últimas {trend.length} redações</span>
           </div>
           <EvolutionChart trend={trend} />
         </div>
 
-        <div className="flex flex-col rounded-card bg-card p-6 shadow-soft">
-          <h2 className="mb-4 text-[16px] font-semibold">Competências (ENEM)</h2>
+        <div className="comfortable-card flex flex-col rounded-card bg-card shadow-soft">
+          <h2 className="section-title mb-4 font-semibold">Competências (ENEM)</h2>
           <div className="flex-1 space-y-3.5">
             {competencies.map((item) => (
               <div key={item.competency}>
@@ -183,9 +183,9 @@ export default function DashboardPage() {
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="rounded-card bg-card p-6 shadow-soft">
-          <div className="mb-3.5 flex items-center justify-between">
-            <h2 className="text-[16px] font-semibold">Temas sugeridos</h2>
+        <div className="comfortable-card rounded-card bg-card shadow-soft">
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="section-title font-semibold">Temas sugeridos</h2>
             <Link href="/redacao" className="text-[13px] font-semibold text-[hsl(var(--accent-700))] hover:underline">
               Ver todos
             </Link>
@@ -212,9 +212,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-card bg-card p-6 shadow-soft">
-          <div className="mb-3.5 flex items-center justify-between">
-            <h2 className="text-[16px] font-semibold">Últimas correções</h2>
+        <div className="comfortable-card rounded-card bg-card shadow-soft">
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="section-title font-semibold">Últimas correções</h2>
             <Link href="/redacoes" className="text-[13px] font-semibold text-[hsl(var(--accent-700))] hover:underline">
               Ver todas
             </Link>
@@ -300,17 +300,17 @@ function NewUserPanel({
   return (
     <div className="text-foreground">
       <section className="pb-1">
-        <h1 className="font-display text-[28px] font-medium leading-tight sm:text-[34px]">Boas-vindas ao Donc, {name}</h1>
-        <p className="mt-1.5 text-[15px] text-muted-foreground">Seu percurso de redação começa aqui. Vamos pelos primeiros passos.</p>
+        <h1 className="page-title font-display font-medium">Boas-vindas ao Donc, {name}</h1>
+        <p className="page-description mt-1.5 text-muted-foreground">Seu percurso de redação começa aqui. Vamos pelos primeiros passos.</p>
       </section>
 
-      <section className="mt-4 flex flex-col gap-6 rounded-card bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg sm:flex-row sm:items-center">
+      <section className="comfortable-card mt-4 flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg sm:flex-row sm:items-center">
         <FolhinhaMascot mood="write" size={124} message="Escrevo junto com você!" side="left" onDark />
         <div className="min-w-0 flex-1">
           <p className="font-display text-[22px] font-medium leading-tight">Comece pela sua primeira redação</p>
           <p className="mt-1.5 text-[13px] text-white/75">Escolha um tema, escreva e receba nota por competência ENEM.</p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link href="/redacao" className="flex items-center gap-2 whitespace-nowrap rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-[hsl(var(--accent-900))]">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <Link href="/redacao" className="flex min-h-11 items-center justify-center gap-2 rounded-control bg-white px-[22px] py-3 text-sm font-bold text-[hsl(var(--accent-900))]">
               Escolher tema
               <PenLine className="h-4 w-4" aria-hidden="true" />
             </Link>
@@ -319,9 +319,9 @@ function NewUserPanel({
         </div>
       </section>
 
-      <section className="mt-4 rounded-card bg-card p-6 shadow-soft">
+      <section className="comfortable-card mt-4 rounded-card bg-card shadow-soft">
         <div className="mb-1.5 flex items-center justify-between">
-          <h2 className="text-[16px] font-semibold">Primeiros passos</h2>
+          <h2 className="section-title font-semibold">Primeiros passos</h2>
           <span className="text-[13px] font-semibold text-muted-foreground">{doneCount}/{steps.length}</span>
         </div>
         <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -355,8 +355,8 @@ function NewUserPanel({
       </section>
 
       <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        <div className="rounded-card bg-card p-6 shadow-soft">
-          <h2 className="mb-3.5 text-[16px] font-semibold">Sua evolução</h2>
+        <div className="comfortable-card rounded-card bg-card shadow-soft">
+          <h2 className="section-title mb-3.5 font-semibold">Sua evolução</h2>
           <svg viewBox="0 0 560 160" className="w-full" style={{ height: 160 }} aria-hidden="true">
             <path
               d="M28 120 L150 90 L280 105 L410 60 L532 40"
@@ -370,8 +370,8 @@ function NewUserPanel({
           <p className="text-[13px] text-muted-foreground">Sua primeira redação corrigida desenha o gráfico aqui.</p>
         </div>
 
-        <div className="flex flex-col rounded-card bg-card p-6 shadow-soft">
-          <h2 className="mb-4 text-[16px] font-semibold">Competências (ENEM)</h2>
+        <div className="comfortable-card flex flex-col rounded-card bg-card shadow-soft">
+          <h2 className="section-title mb-4 font-semibold">Competências (ENEM)</h2>
           <div className="flex-1 space-y-3.5">
             {["C1 · Norma culta", "C2 · Compreensão", "C3 · Argumentação", "C4 · Coesão", "C5 · Intervenção"].map((label) => (
               <div key={label}>
@@ -387,8 +387,8 @@ function NewUserPanel({
       </section>
 
       {themes.length ? (
-        <section className="mt-4 rounded-card bg-card p-6 shadow-soft">
-          <h2 className="mb-3.5 text-[16px] font-semibold">Temas para sua primeira redação</h2>
+        <section className="comfortable-card mt-4 rounded-card bg-card shadow-soft">
+          <h2 className="section-title mb-3.5 font-semibold">Temas para sua primeira redação</h2>
           <div className="space-y-1">
             {themes.map((theme, index) => {
               const Icon = THEME_ICONS[index % THEME_ICONS.length];
@@ -482,11 +482,11 @@ type MetricItem = {
  * border-right (não cards separados). Fiel ao bloco de stats do Painel.dc.html. */
 function MetricStrip({ items }: { items: MetricItem[] }) {
   return (
-    <div className="flex flex-wrap rounded-card bg-card p-1 shadow-soft">
+    <div className="grid rounded-card bg-card p-1 shadow-soft sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item, index) => (
         <div
           key={item.label}
-          className={cn("min-w-0 flex-1 basis-[150px] p-4", index < items.length - 1 && "border-r border-border/70")}
+          className={cn("min-w-0 p-4", index < items.length - 1 && "border-border/70 xl:border-r", index < 2 && "sm:border-b xl:border-b-0")}
         >
           <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
             <item.icon className={cn("h-3.5 w-3.5", METRIC_TONE[item.tone])} aria-hidden="true" />
@@ -511,7 +511,7 @@ function MetricStrip({ items }: { items: MetricItem[] }) {
 function ContinueWritingCard({ essay }: { essay: NonNullable<Dashboard["recent_essays"]>[number] }) {
   const progressPercent = Math.min(100, Math.round((essay.word_count / 300) * 100));
   return (
-    <div className="flex min-w-0 flex-1 basis-[340px] flex-wrap items-center justify-between gap-4 rounded-card bg-primary p-6 text-primary-foreground shadow-accent">
+    <div className="comfortable-card flex min-w-0 flex-1 basis-[340px] flex-col justify-between gap-4 rounded-card bg-primary text-primary-foreground shadow-accent sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1 basis-[220px]">
         <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground/85">Continue de onde parou</p>
         <p className="font-display mt-2 text-[22px] font-medium leading-tight">{essay.title || essay.theme_title}</p>
@@ -522,7 +522,7 @@ function ContinueWritingCard({ essay }: { essay: NonNullable<Dashboard["recent_e
       </div>
       <Link
         href={`/redacao?essay=${essay.id}`}
-        className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-control bg-white px-[22px] py-3 text-[14px] font-bold text-primary"
+        className="flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-control bg-white px-[22px] py-3 text-sm font-bold text-primary sm:w-auto"
       >
         Continuar escrevendo
         <PenLine className="h-4 w-4" aria-hidden="true" />
@@ -537,7 +537,7 @@ function WeakPointCard({ weakest }: { weakest: CompetencyRow | null }) {
   return (
     <Link
       href="/games"
-      className="flex min-w-0 flex-1 basis-[260px] flex-col justify-center rounded-card border border-primary/20 bg-card p-6 shadow-soft"
+      className="comfortable-card flex min-w-0 flex-1 basis-[260px] flex-col justify-center rounded-card border border-primary/20 bg-card shadow-soft"
     >
       <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.05em] text-primary">
         <Target className="h-[14px] w-[14px]" aria-hidden="true" />

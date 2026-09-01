@@ -66,7 +66,8 @@ export function buildWriterXray({
   const repertories = learningProfile?.repertories_used ?? [];
 
   const hasScores = competencyBars.some((bar) => bar.value > 0);
-  const hasTrend = trend.length > 0;
+  // Exige 2+ pontos — um único ponto não desenha "evolução" nenhuma, só um marcador solto no eixo.
+  const hasTrend = trend.length > 1;
   const hasCompetencyTrend = competencyTrend.length > 0;
   const hasProfileData = Boolean(
     learningProfile?.has_data || weakCompetencies.length || recommendations.length || repertories.length,

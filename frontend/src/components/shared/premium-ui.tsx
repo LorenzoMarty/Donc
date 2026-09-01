@@ -26,11 +26,11 @@ export function PageHeader({
     >
       <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-end lg:gap-4">
         <div className="min-w-0">
-          {eyebrow && <p className="text-[13px] text-muted-foreground">{eyebrow}</p>}
-          <h1 className="font-display mt-0.5 text-[28px] font-medium leading-tight tracking-tight sm:text-[32px]">
+          {eyebrow && <p className="text-sm font-medium text-muted-foreground">{eyebrow}</p>}
+          <h1 className="page-title font-display mt-0.5 font-medium tracking-normal">
             {title}
           </h1>
-          {description && <p className="mt-1 text-[14px] text-muted-foreground">{description}</p>}
+          {description && <p className="page-description mt-1.5 text-muted-foreground">{description}</p>}
         </div>
         {action && <div className="w-full min-w-0 shrink-0 lg:w-auto">{action}</div>}
       </div>
