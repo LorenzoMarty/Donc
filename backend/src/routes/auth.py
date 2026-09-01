@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
+from src.config.security import generate_csrf_token, sign_csrf_token
 from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
@@ -13,12 +14,14 @@ from src.schemas.auth import (
     OnboardingUpdateRequest,
     PasswordRecoveryRequest,
     RegisterRequest,
-    TokenResponse,
+    AuthResponse,
     UpdateMeRequest,
     UserRead,
 )
 from src.schemas.common import ApiResponse, MessageResponse, success_response
 from src.services.auth_service import AuthService
+from src.utils.auth_rate_limit import check_auth_rate_limit
+from src.utils.csrf import require_csrf_for_cookie_session
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -47,45 +50,71 @@ def _set_session_cookies(response: Response, *, access_token: str, refresh_token
         secure=secure,
         samesite="lax",
     )
+    csrf_token = generate_csrf_token()
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+        httponly=False,
+        secure=secure,
+        samesite="lax",
+    )
+    response.set_cookie(
+        key="csrf_signature",
+        value=sign_csrf_token(csrf_token, access_token),
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+    )
 
 
-@router.post("/register", response_model=ApiResponse[TokenResponse], status_code=201)
-def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
+def _delete_session_cookies(response: Response) -> None:
+    for key in ("access_token", "refresh_token", "csrf_token", "csrf_signature"):
+        response.delete_cookie(key=key, path="/")
+
+
+@router.post("/register", response_model=ApiResponse[AuthResponse], status_code=201)
+def register(payload: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[AuthResponse]:
+    check_auth_rate_limit(request, bucket="register", identifier=str(payload.email))
     service = AuthService(db)
     user = service.register(name=payload.name, email=str(payload.email), password=payload.password)
     token = service.token_for(user)
     refresh_token = service.issue_refresh_token(user)
     db.commit()
     _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
-    return success_response(TokenResponse(access_token=token, user=user), "Conta criada com sucesso.")
+    return success_response(AuthResponse(user=user), "Conta criada com sucesso.")
 
 
-@router.post("/login", response_model=ApiResponse[TokenResponse])
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
+@router.post("/login", response_model=ApiResponse[AuthResponse])
+def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[AuthResponse]:
+    check_auth_rate_limit(request, bucket="login", identifier=str(payload.email))
     service = AuthService(db)
     user = service.authenticate(email=str(payload.email), password=payload.password)
     token = service.token_for(user)
     refresh_token = service.issue_refresh_token(user)
     db.commit()
     _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
-    return success_response(TokenResponse(access_token=token, user=user), "Login realizado com sucesso.")
+    return success_response(AuthResponse(user=user), "Login realizado com sucesso.")
 
 
-@router.post("/refresh", response_model=ApiResponse[TokenResponse])
-def refresh(request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[TokenResponse]:
+@router.post("/refresh", response_model=ApiResponse[AuthResponse])
+def refresh(request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[AuthResponse]:
+    check_auth_rate_limit(request, bucket="refresh")
     raw_refresh_token = request.cookies.get("refresh_token")
     if not raw_refresh_token:
         raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token")
     service = AuthService(db)
     result = service.rotate_refresh_token(raw_refresh_token)
     if not result:
-        response.delete_cookie(key="access_token", path="/")
-        response.delete_cookie(key="refresh_token", path="/")
+        _delete_session_cookies(response)
         raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token")
     user, new_refresh_token = result
     token = service.token_for(user)
     _set_session_cookies(response, access_token=token, refresh_token=new_refresh_token)
-    return success_response(TokenResponse(access_token=token, user=user), "Sessão renovada.")
+    return success_response(AuthResponse(user=user), "Sessão renovada.")
 
 
 @router.get("/me", response_model=ApiResponse[UserRead])
@@ -96,9 +125,11 @@ def me(current_user: User = Depends(get_current_user)) -> ApiResponse[UserRead]:
 @router.patch("/me", response_model=ApiResponse[UserRead])
 def update_me(
     payload: UpdateMeRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[UserRead]:
+    require_csrf_for_cookie_session(request)
     user = AuthService(db).update_profile(current_user, name=payload.name)
     return success_response(UserRead.model_validate(user), "Perfil atualizado com sucesso.")
 
@@ -106,9 +137,12 @@ def update_me(
 @router.post("/change-password", response_model=ApiResponse[MessageResponse])
 def change_password(
     payload: ChangePasswordRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[MessageResponse]:
+    require_csrf_for_cookie_session(request)
+    check_auth_rate_limit(request, bucket="change-password", identifier=current_user.email)
     AuthService(db).change_password(
         current_user,
         current_password=payload.current_password,
@@ -128,20 +162,23 @@ def get_onboarding(current_user: User = Depends(get_current_user), db: Session =
 @router.put("/onboarding", response_model=ApiResponse[OnboardingRead])
 def update_onboarding(
     payload: OnboardingUpdateRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[OnboardingRead]:
+    require_csrf_for_cookie_session(request)
     profile = AuthService(db).update_onboarding(current_user.id, goal=payload.goal, level=payload.level)
     return success_response(OnboardingRead.model_validate(profile, from_attributes=True), "Onboarding salvo.")
 
 
 @router.post("/logout", response_model=ApiResponse[MessageResponse])
 def logout(request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[MessageResponse]:
+    require_csrf_for_cookie_session(request)
+    check_auth_rate_limit(request, bucket="logout")
     raw_refresh_token = request.cookies.get("refresh_token")
     if raw_refresh_token:
         AuthService(db).revoke_refresh_token(raw_refresh_token)
-    response.delete_cookie(key="access_token", path="/")
-    response.delete_cookie(key="refresh_token", path="/")
+    _delete_session_cookies(response)
     return success_response(MessageResponse(message="Sessao encerrada."), "Sessao encerrada.")
 
 

@@ -35,8 +35,20 @@ function buildHeaders(options: RequestInit) {
   if (options.body && !hasFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  const method = (options.method ?? "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method) && !headers.has("X-CSRF-Token")) {
+    const csrfToken = readCookie("csrf_token");
+    if (csrfToken) headers.set("X-CSRF-Token", csrfToken);
+  }
 
   return headers;
+}
+
+function readCookie(name: string) {
+  if (typeof document === "undefined") return null;
+  const prefix = `${name}=`;
+  const cookie = document.cookie.split("; ").find((entry) => entry.startsWith(prefix));
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
 }
 
 const ERROR_CODE_MESSAGES: Record<string, string> = {

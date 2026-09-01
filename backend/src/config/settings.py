@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # revogação server-side.
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
+    auth_rate_limit_per_minute: int = 10
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     openai_fallback_model: str = "gpt-4o-mini"

@@ -234,11 +234,11 @@ export function SupportingTextBody({
     case "grafico":
       return text.chart_points?.length ? (
         <div className="space-y-2">
-          <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+          <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.content}</p>
           <MiniBarChart points={text.chart_points} />
         </div>
       ) : (
-        <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+        <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.content}</p>
       );
 
     case "infografico":
@@ -252,7 +252,7 @@ export function SupportingTextBody({
           ))}
         </div>
       ) : (
-        <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+        <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.content}</p>
       );
 
     case "postagem":
@@ -267,7 +267,7 @@ export function SupportingTextBody({
               {text.post_handle ? <p className="truncate text-[11px] text-muted-foreground">@{text.post_handle}</p> : null}
             </div>
           </div>
-          <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>
+          <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.content}</p>
         </div>
       );
 
@@ -275,9 +275,9 @@ export function SupportingTextBody({
       return (
         <div className="border-l-2 border-primary pl-2.5">
           {text.headline_subtitle ? (
-            <p className="text-xs leading-5 text-muted-foreground">{text.headline_subtitle}</p>
+            <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.headline_subtitle}</p>
           ) : null}
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{text.content}</p>
+          <p className="mt-1 text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.content}</p>
           {text.headline_source ? (
             <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-primary">{text.headline_source}</p>
           ) : null}
@@ -289,8 +289,10 @@ export function SupportingTextBody({
       return (
         <div className="space-y-2">
           {text.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={text.image_url} alt={text.title} className="w-full rounded-md border border-border/55" />
+            <div className="flex max-h-[340px] items-center justify-center overflow-hidden rounded-md border border-border/55 bg-muted/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={text.image_url} alt={text.title} className="max-h-[340px] w-full object-contain" />
+            </div>
           ) : (
             <div className="rounded-md border border-dashed border-border/60 bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
               Ilustração indisponível — descrição: {text.image_prompt ?? text.content}
@@ -318,7 +320,7 @@ export function SupportingTextBody({
           />
         );
       }
-      return <p className="text-xs leading-5 text-muted-foreground">{text.content}</p>;
+      return <p className="text-[15.5px] leading-[1.72] text-[#1c1c1e]/86">{text.content}</p>;
   }
 }
 
@@ -399,7 +401,11 @@ function HighlightableText({
     <p
       ref={containerRef}
       onPointerUp={handleSelectionRelease}
-      className={cn("text-xs leading-5 text-muted-foreground", activeTool && "[-webkit-touch-callout:none]")}
+      className={cn(
+        "text-[15.5px] leading-[1.72] text-[#1c1c1e]/86",
+        activeTool && "[-webkit-touch-callout:none]",
+      )}
+      style={{ textAlign: "justify", hyphens: "auto" }}
     >
       {segments.map((segment, index) =>
         segment.highlightId ? (

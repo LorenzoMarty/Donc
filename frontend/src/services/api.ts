@@ -17,6 +17,6 @@ export type {
   Lesson,
   Module,
   NextRecommendedAction,
-  TokenResponse,
+  AuthResponse,
   User,
 } from "@/types/api";

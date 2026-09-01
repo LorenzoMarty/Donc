@@ -41,8 +41,8 @@ async function forward(request: NextRequest, context: RouteContext) {
   responseHeaders.delete("transfer-encoding");
   responseHeaders.delete("content-length");
 
-  // `new Headers(response.headers)` acima colapsa múltiplos `Set-Cookie` (login/register mandam 2:
-  // access_token + refresh_token) num só, ou perde os dois — gotcha conhecido do Fetch API/undici.
+  // `new Headers(response.headers)` acima colapsa múltiplos `Set-Cookie` (login/register mandam
+  // cookies de sessão + CSRF) num só, ou perde todos — gotcha conhecido do Fetch API/undici.
   // `getSetCookie()` preserva cada um; reconstrói explicitamente.
   responseHeaders.delete("set-cookie");
   for (const cookie of response.headers.getSetCookie()) {
