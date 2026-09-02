@@ -23,7 +23,7 @@ export function Reveal({ children, className, delay = 0 }: { children: React.Rea
 
 export function AceternityGrid({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <section className={cn("game-surface relative overflow-hidden bg-card", className)}>
+    <section className={cn("marketing-surface relative overflow-hidden rounded-[22px]", className)}>
       <div className="relative">{children}</div>
     </section>
   );
@@ -39,7 +39,7 @@ export function HoverGlowCard({ children, className, delay = 0 }: { children: Re
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.42, delay, ease: "easeOut" }}
       whileHover={reduceMotion ? undefined : { y: -6 }}
-      className={cn("game-tile group relative overflow-hidden bg-card p-5 transition-colors hover:bg-primary/10", className)}
+      className={cn("marketing-card group relative overflow-hidden rounded-[14px] p-5", className)}
     >
       {children}
     </motion.div>
@@ -48,7 +48,7 @@ export function HoverGlowCard({ children, className, delay = 0 }: { children: Re
 
 export function MovingBorderPanel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("game-surface bg-card", className)}>
+    <div className={cn("marketing-surface rounded-[18px]", className)}>
       <div>{children}</div>
     </div>
   );
@@ -58,7 +58,7 @@ export function MetricRail({ items }: { items: { value: string; label: string }[
   return (
     <div className="fluid-grid gap-3 [--grid-min:12rem]">
       {items.map((item, index) => (
-        <Reveal key={item.label} delay={index * 0.05} className="game-tile bg-card p-4 text-center md:text-left">
+        <Reveal key={item.label} delay={index * 0.05} className="marketing-card rounded-[14px] p-4 text-center md:text-left">
           <p className="font-display text-4xl font-semibold tabular-nums tracking-normal text-foreground">{item.value}</p>
           <p className="mt-2 text-sm font-medium text-muted-foreground">{item.label}</p>
         </Reveal>
@@ -103,7 +103,7 @@ export function ScoreCounter({ className }: { className?: string }) {
   }, [springScore, reduceMotion]);
 
   return (
-    <div ref={ref} className={cn("game-surface bg-card p-5 text-foreground md:p-6", className)}>
+    <div ref={ref} className={cn("marketing-surface rounded-[18px] p-5 text-foreground md:p-6", className)}>
       <div className="mb-5 flex items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Nota estimada</p>

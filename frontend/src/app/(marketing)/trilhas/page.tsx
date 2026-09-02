@@ -15,14 +15,14 @@ const tracks = [
 export default function TracksPage() {
   return (
     <MarketingShell>
-      <main className="mx-auto max-w-7xl px-4 py-10 md:px-6">
-        <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+      <main className="marketing-container py-10">
+        <section className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <Reveal>
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-primary">Trilhas</p>
+            <p className="marketing-kicker mb-4">Trilhas</p>
             <h1 className="font-display text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
               Uma etapa por vez, sem pular conteúdo.
             </h1>
-            <p className="mt-5 text-lg leading-8 text-muted-foreground">
+            <p className="marketing-copy mt-5 text-lg">
               Cada trilha de Português avança em sequência: você só destrava a próxima etapa depois de mostrar domínio na atual — sem
               lacuna escondida no meio do caminho.
             </p>
@@ -34,7 +34,7 @@ export default function TracksPage() {
             </Button>
           </Reveal>
           <Reveal delay={0.08}>
-            <div className="relative rounded-card bg-card p-4 shadow-elevated xs:p-6">
+            <div className="marketing-surface relative rounded-[22px] p-5 xs:p-6 md:p-8">
               <div className="absolute bottom-10 left-10 top-10 w-1 rounded-full bg-border">
                 <div className="h-2/3 rounded-full bg-primary shadow-soft" />
               </div>
@@ -52,7 +52,7 @@ export default function TracksPage() {
                     </div>
                     <div>
                       <p className="font-semibold">Etapa {index + 1}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm font-medium text-[hsl(var(--neutral-600))]">
                         {state === "locked" ? "Bloqueada até você concluir a anterior" : state === "available" ? "Liberada agora" : "Concluída"}
                       </p>
                     </div>
@@ -63,20 +63,20 @@ export default function TracksPage() {
           </Reveal>
         </section>
 
-        <section className="fluid-grid gap-4 py-12 [--grid-min:15rem]">
+        <section className="fluid-grid marketing-section gap-4 [--grid-min:15rem]">
           {tracks.map((track, index) => (
             <HoverGlowCard key={track.title} delay={index * 0.05}>
               <Trophy className="mb-5 h-6 w-6 text-primary" aria-hidden="true" />
               <h2 className="text-xl font-semibold tracking-normal">{track.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{track.text}</p>
+              <p className="marketing-copy mt-3 text-sm">{track.text}</p>
             </HoverGlowCard>
           ))}
         </section>
 
         <section className="pb-8">
-          <div className="game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8">
+          <div className="marketing-cta grid gap-6 rounded-[22px] p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">Primeira etapa liberada na hora</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/74">Primeira etapa liberada na hora</p>
               <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
                 Crie a conta e comece sua primeira trilha agora.
               </h2>

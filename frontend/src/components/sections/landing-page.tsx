@@ -63,21 +63,21 @@ export function LandingPage() {
   return (
     <MarketingShell>
       <main>
-        <section className="relative mx-auto max-w-6xl px-4 pb-4 pt-10 md:px-6 md:pt-16">
+        <section className="marketing-container relative pb-6 pt-10 md:pt-16 lg:pb-10">
           <div className="pointer-events-none absolute -right-16 -top-10 -z-10 hidden w-[30rem] opacity-80 sm:block lg:w-[38rem]" aria-hidden="true">
             <Image src="/marketing/hero-manuscript-texture.png" alt="" width={1536} height={1024} priority sizes="38rem" className="h-auto w-full" />
           </div>
-          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <FadeIn>
               <HeroBadge icon={PenLine}>Redação para o ENEM, do rascunho ao 1000</HeroBadge>
-              <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              <h1 className="font-display mt-5 max-w-3xl text-4xl font-semibold leading-[1.04] tracking-normal text-foreground sm:text-5xl lg:text-6xl">
                 A gente lê sua redação como a banca lê.
               </h1>
-              <p className="mt-5 max-w-lg text-lg leading-8 text-muted-foreground">
+              <p className="marketing-copy mt-5 max-w-xl text-lg">
                 Cada texto que você manda volta com o diagnóstico exato: onde a nota está travando, competência a competência — não um
                 número solto.
               </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild size="lg">
                   <Link href="/cadastro">
                     Corrigir minha primeira redação
@@ -106,19 +106,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 pb-16 pt-4 md:px-6">
+        <section className="marketing-container pb-14 pt-2 lg:pb-16">
           <FadeIn>
             <LogoMarquee names={PARTNER_UNIVERSITIES} caption="Aprovados nas maiores universidades do país" />
           </FadeIn>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+        <section className="marketing-container marketing-section">
           <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sete jeitos de travar</p>
+            <p className="marketing-kicker">Sete jeitos de travar</p>
             <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               A gente aponta qual é o seu.
             </h2>
-            <p className="mt-3 text-base leading-7 text-muted-foreground">
+            <p className="marketing-copy mt-3 text-base">
               Cada hub treina um bloqueio real de redação — não uma lista de &ldquo;habilidades&rdquo; genérica.
             </p>
           </FadeIn>
@@ -138,9 +138,9 @@ export function LandingPage() {
         </section>
 
         <div className="bg-card">
-          <section id="como" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <section id="como" className="marketing-container marketing-section">
             <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Como funciona</p>
+              <p className="marketing-kicker">Como funciona</p>
               <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                 Um ciclo simples que faz sua nota subir.
               </h2>
@@ -155,9 +155,9 @@ export function LandingPage() {
           </section>
         </div>
 
-        <section id="recursos" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+        <section id="recursos" className="marketing-container marketing-section">
           <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Recursos</p>
+            <p className="marketing-kicker">Recursos</p>
             <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Tudo para escrever a redação nota 1000.
             </h2>
@@ -172,13 +172,13 @@ export function LandingPage() {
         </section>
 
         <div className="bg-card">
-          <section id="planos" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+          <section id="planos" className="marketing-container marketing-section">
             <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planos</p>
+              <p className="marketing-kicker">Planos</p>
               <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                 Escolha como quer evoluir.
               </h2>
-              <p className="mt-3 text-base leading-7 text-muted-foreground">
+              <p className="marketing-copy mt-3 text-base">
                 Comece grátis. Faça upgrade quando quiser correção ilimitada.{" "}
                 <Link href="/pricing" className="font-semibold text-primary">
                   Ver planos completos
@@ -196,9 +196,9 @@ export function LandingPage() {
           </section>
         </div>
 
-        <section className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+        <section className="marketing-container marketing-section">
           <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Como seria usar o Donc</p>
+            <p className="marketing-kicker">Como seria usar o Donc</p>
             <h2 className="font-display mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               Cenários ilustrativos de quem treina toda semana.
             </h2>
@@ -212,8 +212,8 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-4 pb-20 pt-8 md:px-6">
-          <FadeIn className="flex flex-col items-center gap-6 rounded-[26px] bg-primary px-6 py-16 text-center text-primary-foreground">
+        <section className="marketing-container pb-20 pt-6">
+          <FadeIn className="marketing-cta flex flex-col items-center gap-6 rounded-[22px] px-6 py-14 text-center sm:py-16">
             <h2 className="font-display max-w-xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
               Manda a próxima redação e descubra onde ela está travando.
             </h2>

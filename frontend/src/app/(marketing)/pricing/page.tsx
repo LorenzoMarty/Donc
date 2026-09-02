@@ -32,30 +32,30 @@ const faq = [
 export default function PricingPage() {
   return (
     <MarketingShell>
-      <main className="mx-auto max-w-7xl px-4 py-10 md:px-6">
+      <main className="marketing-container py-10">
         <Reveal className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Planos</p>
+          <p className="marketing-kicker">Planos</p>
           <h1 className="font-display mt-3 text-4xl font-semibold leading-tight tracking-normal md:text-5xl lg:text-6xl">
             Escolha o ritmo, não abra mão da correção certa.
           </h1>
-          <p className="mt-5 text-lg leading-8 text-muted-foreground">
+          <p className="marketing-copy mt-5 text-lg">
             Todos os planos incluem rotina guiada de Português. A diferença é o quanto de redação com IA e acompanhamento você leva junto.
           </p>
         </Reveal>
 
-        <section className="fluid-grid gap-4 py-12 [--grid-min:17rem]">
+        <section className="fluid-grid marketing-section gap-4 [--grid-min:17rem]">
           {plans.map((plan, index) => (
-            <HoverGlowCard key={plan.name} delay={index * 0.06} className={plan.featured ? "border-primary/50 bg-primary/10" : undefined}>
+            <HoverGlowCard key={plan.name} delay={index * 0.06} className={plan.featured ? "border-primary/50 bg-primary/10 ring-1 ring-primary/20" : undefined}>
               {plan.featured ? (
                 <span className="game-chip mb-4 inline-flex bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
                   Mais escolhido
                 </span>
               ) : null}
               <h2 className="text-2xl font-semibold tracking-normal">{plan.name}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.description}</p>
+              <p className="marketing-copy mt-2 text-sm">{plan.description}</p>
               <p className="font-display mt-6 text-5xl font-semibold tabular-nums tracking-normal">
                 {plan.price}
-                <span className="font-sans text-base font-medium text-muted-foreground">/mês</span>
+                <span className="font-sans text-base font-semibold text-[hsl(var(--neutral-600))]">/mês</span>
               </p>
               <div className="mt-7 space-y-3">
                 {plan.features.map((feature) => (
@@ -77,23 +77,23 @@ export default function PricingPage() {
 
         <section className="mx-auto max-w-3xl py-8">
           <Reveal className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Perguntas frequentes</p>
+            <p className="marketing-kicker">Perguntas frequentes</p>
             <h2 className="font-display mt-2 text-3xl font-semibold tracking-normal">Antes de escolher, tire as dúvidas.</h2>
           </Reveal>
           <div className="space-y-3">
             {faq.map((item, index) => (
-              <Reveal key={item.question} delay={index * 0.04} className="game-tile bg-card p-5">
+              <Reveal key={item.question} delay={index * 0.04} className="marketing-card rounded-[14px] p-5">
                 <p className="font-semibold">{item.question}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.answer}</p>
+                <p className="marketing-copy mt-2 text-sm">{item.answer}</p>
               </Reveal>
             ))}
           </div>
         </section>
 
         <section className="py-8">
-          <div className={cn("game-surface grid gap-6 bg-primary p-5 text-primary-foreground md:grid-cols-[1fr_auto] md:items-center md:p-8")}>
+          <div className={cn("marketing-cta grid gap-6 rounded-[22px] p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8")}>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/62">Sem cartão pra começar a treinar</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/74">Sem cartão pra começar a treinar</p>
               <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
                 Crie a conta e veja qual plano faz sentido pra você.
               </h2>

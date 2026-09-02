@@ -61,8 +61,14 @@ export function AnnotatedManuscript({
   }, []);
 
   return (
-    <div ref={ref} className={cn("manuscript-paper relative rounded-[4px] bg-card p-6 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:p-8", className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Trecho corrigido pela IA</p>
+    <div
+      ref={ref}
+      className={cn(
+        "manuscript-paper marketing-surface relative rounded-[18px] p-5 sm:p-7 lg:p-8",
+        className,
+      )}
+    >
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[hsl(var(--neutral-600))]">Trecho corrigido pela IA</p>
       <p className="font-essay mt-4 text-lg leading-9 text-foreground sm:text-xl">
         {intro}{" "}
         {segments.map((segment, index) => {
@@ -116,7 +122,10 @@ export function HubTag({
 }) {
   return (
     <div
-      className={cn("group relative w-full max-w-[15rem] rounded-[3px] bg-card p-4 shadow-[0_3px_10px_rgba(20,20,20,0.09)] transition-transform duration-200 hover:-translate-y-1 hover:rotate-0", className)}
+      className={cn(
+        "marketing-card group relative w-full max-w-[15rem] rounded-[10px] p-4 transition-transform duration-200 hover:-translate-y-1 hover:rotate-0",
+        className,
+      )}
       style={{ transform: `rotate(${rotation}deg)` }}
     >
       <span
@@ -126,7 +135,7 @@ export function HubTag({
       />
       <Icon className="h-5 w-5" style={{ color }} aria-hidden="true" />
       <p className="mt-3 text-sm font-semibold leading-snug text-foreground">{title}</p>
-      <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{description}</p>
+      <p className="marketing-copy mt-1.5 text-xs leading-5">{description}</p>
     </div>
   );
 }
@@ -136,7 +145,7 @@ export function HubTag({
  */
 export function HeroBadge({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5 text-[13px] font-semibold text-primary">
+    <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3.5 py-1.5 text-[13px] font-bold text-[hsl(var(--green-700))]">
       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {children}
     </span>
@@ -156,7 +165,7 @@ export function FactRow({ facts }: { facts: { value: string; label: string }[] }
           {index > 0 && <span className="hidden h-8 w-px bg-border sm:block" aria-hidden="true" />}
           <div>
             <p className="font-display text-xl font-semibold text-foreground">{fact.value}</p>
-            <p className="text-xs text-muted-foreground">{fact.label}</p>
+      <p className="text-xs font-medium text-[hsl(var(--neutral-600))]">{fact.label}</p>
           </div>
         </div>
       ))}
@@ -181,14 +190,14 @@ export function ProcessStep({
 }) {
   return (
     <div className="text-center">
-      <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+      <div className="marketing-icon relative mx-auto mb-4 h-16 w-16">
         <Icon className="h-7 w-7 text-primary" aria-hidden="true" />
         <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
           {number}
         </span>
       </div>
       <p className="text-base font-semibold text-foreground">{title}</p>
-      <p className="mx-auto mt-1.5 max-w-[15rem] text-sm leading-6 text-muted-foreground">{description}</p>
+      <p className="marketing-copy mx-auto mt-1.5 max-w-[15rem] text-sm">{description}</p>
     </div>
   );
 }
@@ -209,17 +218,12 @@ export function FeatureCard({
   featured?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-[10px] border bg-card p-6 shadow-[0_3px_10px_rgba(20,20,20,0.06)]",
-        featured ? "border-primary/30 ring-1 ring-primary/15" : "border-border"
-      )}
-    >
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
+    <div className={cn("marketing-card rounded-[14px] p-6", featured && "border-primary/30 ring-1 ring-primary/15")}>
+      <div className="marketing-icon">
         <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
       </div>
       <p className="mt-4 text-base font-semibold text-foreground">{title}</p>
-      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>
+      <p className="marketing-copy mt-1.5 text-sm">{description}</p>
     </div>
   );
 }
@@ -230,7 +234,7 @@ export function FeatureCard({
  */
 export function TestimonialCard({ quote, name, role }: { quote: string; name: string; role: string }) {
   return (
-    <div className="rounded-[10px] border border-border bg-card p-6 shadow-[0_3px_10px_rgba(20,20,20,0.06)]">
+    <div className="marketing-card rounded-[14px] p-6">
       <p className="text-sm leading-7 text-foreground">&ldquo;{quote}&rdquo;</p>
       <footer className="mt-5 flex items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary" aria-hidden="true">
@@ -242,7 +246,7 @@ export function TestimonialCard({ quote, name, role }: { quote: string; name: st
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">{name}</p>
-          <p className="text-xs text-muted-foreground">{role} · cenário ilustrativo</p>
+          <p className="text-xs font-medium text-[hsl(var(--neutral-600))]">{role} · cenário ilustrativo</p>
         </div>
       </footer>
     </div>
@@ -276,7 +280,7 @@ export function PullQuote({
         <div className="h-10 w-10 shrink-0 rounded-full bg-primary/15" aria-hidden="true" />
         <div>
           <p className="text-sm font-semibold text-foreground">{name}</p>
-          <p className="text-xs text-muted-foreground">{role} · cenário ilustrativo</p>
+          <p className="text-xs font-medium text-[hsl(var(--neutral-600))]">{role} · cenário ilustrativo</p>
         </div>
       </footer>
     </div>
@@ -292,7 +296,7 @@ export function LogoMarquee({ names, caption }: { names: string[]; caption: stri
   const track = [...names, ...names];
   return (
     <div>
-      <p className="mb-5 text-center text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{caption}</p>
+      <p className="mb-5 text-center text-xs font-bold uppercase tracking-[0.16em] text-[hsl(var(--neutral-600))]">{caption}</p>
       <div className="group relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
         <div className="flex w-max animate-[marquee_32s_linear_infinite] items-center gap-14 group-hover:[animation-play-state:paused]">
           {track.map((name, index) => (
@@ -326,12 +330,7 @@ export function PlanCard({
 }) {
   return (
     <div
-      className={cn(
-        "relative rounded-[14px] border bg-card p-7",
-        featured
-          ? "border-primary/40 shadow-[0_16px_36px_-18px_hsl(var(--primary)/0.45)] ring-1 ring-primary/20"
-          : "border-border shadow-[0_3px_10px_rgba(20,20,20,0.06)]"
-      )}
+      className={cn("marketing-card relative rounded-[16px] p-6 sm:p-7", featured && "border-primary/40 ring-1 ring-primary/20")}
     >
       {featured && (
         <span className="absolute right-6 top-6 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-primary-foreground">
@@ -339,10 +338,10 @@ export function PlanCard({
         </span>
       )}
       <p className="text-base font-semibold text-foreground">{name}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <p className="marketing-copy mt-1 text-sm">{description}</p>
       <p className="font-display mt-5 text-4xl font-semibold tracking-tight text-foreground">
         {price}
-        <span className="ml-1 text-sm font-medium text-muted-foreground">/mês</span>
+        <span className="ml-1 text-sm font-semibold text-[hsl(var(--neutral-600))]">/mês</span>
       </p>
       <Button asChild className="mt-6 w-full" variant={featured ? "default" : "outline"}>
         <Link href="/cadastro">Escolher {name}</Link>
