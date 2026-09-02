@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Bell, Check, FileText, Flame, Gamepad2, PenLine, Sparkles, Target, User, Video } from "lucide-react";
+import { Check, FileText, Flame, Gamepad2, PenLine, Sparkles, Target, User, Video } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/error-state";
 import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
@@ -98,26 +98,11 @@ export default function DashboardPage() {
 
   return (
     <div className="text-foreground">
-      <section className="flex flex-col gap-4 pb-1 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex items-center gap-1.5">
-          <FolhinhaMascot mood="happy" size={84} message="Bom te ver de novo! Vamos terminar aquele rascunho?" side="right" />
-          <div className="ml-1.5">
-            <p className="text-sm capitalize text-muted-foreground">{today}</p>
-            <h1 className="page-title font-display mt-0.5 font-medium">Olá, {studentName}</h1>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex min-h-11 items-center gap-2 rounded-control border border-border bg-card px-3.5 py-2 text-sm font-semibold shadow-soft">
-            <Flame className="h-4 w-4 text-streak" aria-hidden="true" />
-            {streak > 0 ? `${streak} dias seguidos` : "Comece hoje sua sequência"}
-          </div>
-          <button
-            type="button"
-            aria-label="Notificações"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-control border border-border bg-card text-muted-foreground shadow-soft transition-colors hover:text-foreground"
-          >
-            <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
-          </button>
+      <section className="flex items-center gap-1.5 pb-1">
+        <FolhinhaMascot mood="happy" size={84} message="Bom te ver de novo! Vamos terminar aquele rascunho?" side="right" />
+        <div className="ml-1.5">
+          <p className="text-sm capitalize text-muted-foreground">{today}</p>
+          <h1 className="page-title font-display mt-0.5 font-medium">Olá, {studentName}</h1>
         </div>
       </section>
 
@@ -308,7 +293,7 @@ function NewUserPanel({
         <p className="page-description mt-1.5 text-muted-foreground">Seu percurso de redação começa aqui. Vamos pelos primeiros passos.</p>
       </section>
 
-      <section className="comfortable-card mt-4 flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg sm:flex-row sm:items-center">
+      <section className="comfortable-card mt-4 flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-soft sm:flex-row sm:items-center">
         <FolhinhaMascot mood="write" size={124} message="Escrevo junto com você!" side="left" onDark />
         <div className="min-w-0 flex-1">
           <p className="font-display text-[22px] font-medium leading-tight">Comece pela sua primeira redação</p>

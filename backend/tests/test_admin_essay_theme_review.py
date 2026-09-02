@@ -2,7 +2,7 @@
 igual jogo e exercicio ja tinham."""
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.database.session import SessionLocal, get_db
@@ -104,3 +104,35 @@ def test_admin_can_update_pending_theme_before_approval(client):
         assert api_data(response)["context"].startswith("Analise causas")
     finally:
         app.dependency_overrides.pop(require_admin, None)
+
+
+def test_admin_can_generate_theme_draft_supporting_texts_without_persisting_theme(client):
+    app.dependency_overrides[require_admin] = override_admin
+    db = SessionLocal()
+    try:
+        before_count = db.scalar(select(func.count(EssayTheme.id)))
+    finally:
+        db.close()
+
+    try:
+        response = client.post(
+            "/api/v1/admin/essay-themes/supporting-texts/generate",
+            json={
+                "title": "Desafios para ampliar o acesso a saneamento básico no Brasil",
+                "supporting_text_requirements": [{"type": "motivador", "count": 1}],
+            },
+        )
+        assert response.status_code == 200
+        draft = api_data(response)
+        assert len(draft["context"]) >= 20
+        assert 1 <= len(draft["supporting_texts"]) <= 4
+        assert all(len(text["content"]) >= 40 for text in draft["supporting_texts"])
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    db = SessionLocal()
+    try:
+        after_count = db.scalar(select(func.count(EssayTheme.id)))
+    finally:
+        db.close()
+    assert after_count == before_count

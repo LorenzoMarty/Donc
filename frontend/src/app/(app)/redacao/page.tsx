@@ -179,7 +179,7 @@ function ThemePicker({
   return (
     <div>
       {weekly ? (
-        <div className="comfortable-card mb-5 flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg sm:flex-row sm:items-center sm:gap-6">
+        <div className="comfortable-card mb-5 flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-soft sm:flex-row sm:items-center sm:gap-6">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Tema da semana</p>
             <p className="font-display mt-1.5 text-[1.35rem] font-medium leading-tight sm:text-2xl">{weekly.title}</p>

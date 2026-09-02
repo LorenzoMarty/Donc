@@ -108,6 +108,19 @@ class AdminEssayThemeGenerateRequest(BaseModel):
         return self
 
 
+class AdminEssayThemeDraftGenerateRequest(BaseModel):
+    title: str | None = Field(default=None, max_length=220)
+    context: str | None = Field(default=None, max_length=5000)
+    supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=10)
+
+    @model_validator(mode="after")
+    def ensure_requested_texts(self):
+        total = sum(item.count for item in self.supporting_text_requirements)
+        if total > 4:
+            raise ValueError("A proposta pode ter no maximo 4 textos de apoio.")
+        return self
+
+
 class AdminEssayThemeRegenerateSupportingTextsRequest(BaseModel):
     supporting_text_requirements: list[AdminSupportingTextRequirement] = Field(default_factory=list, max_length=10)
 
@@ -132,6 +145,11 @@ class AdminGeneratedSupportingTextRead(BaseModel):
     headline_source: str | None = None
     image_prompt: str | None = None
     image_url: str | None = None
+
+
+class AdminEssayThemeDraftRead(BaseModel):
+    context: str
+    supporting_texts: list[AdminGeneratedSupportingTextRead]
 
 
 class AdminEssayThemeActionResponse(BaseModel):
