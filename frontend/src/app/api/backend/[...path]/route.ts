@@ -24,10 +24,15 @@ async function forward(request: NextRequest, context: RouteContext) {
   const contentType = request.headers.get("content-type");
   const authorization = request.headers.get("authorization");
   const cookie = request.headers.get("cookie");
+  const csrfToken = request.headers.get("x-csrf-token");
 
   if (contentType) headers.set("content-type", contentType);
   if (authorization) headers.set("authorization", authorization);
   if (cookie) headers.set("cookie", cookie);
+  // Sem isso, toda requisição de mutação (logout, troca de senha, geração de temas etc.) perde o
+  // header de CSRF nesse hop e volta 403 do backend mesmo com cookie/token válidos — o cliente
+  // (http-client.ts) já manda esse header em toda chamada não-GET, o proxy só precisa repassar.
+  if (csrfToken) headers.set("x-csrf-token", csrfToken);
 
   const response = await fetch(targetUrl, {
     method: request.method,
