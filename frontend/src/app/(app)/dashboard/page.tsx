@@ -190,26 +190,30 @@ export default function DashboardPage() {
               Ver todos
             </Link>
           </div>
-          <div className="space-y-1">
-            {themes.map((theme, index) => {
-              const Icon = THEME_ICONS[index % THEME_ICONS.length];
-              return (
-                <Link
-                  key={theme.id}
-                  href="/redacao"
-                  className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-b-0 hover:opacity-80"
-                >
-                  <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-control bg-primary/10 text-primary">
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-safe truncate text-[14px] font-semibold leading-tight">{theme.title}</p>
-                    <p className="truncate text-[12px] text-muted-foreground">{theme.source}</p>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          {themes.length ? (
+            <div className="space-y-1">
+              {themes.map((theme, index) => {
+                const Icon = THEME_ICONS[index % THEME_ICONS.length];
+                return (
+                  <Link
+                    key={theme.id}
+                    href="/redacao"
+                    className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-b-0 hover:opacity-80"
+                  >
+                    <div className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-control bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-safe truncate text-[14px] font-semibold leading-tight">{theme.title}</p>
+                      <p className="truncate text-[12px] text-muted-foreground">{theme.source}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-[13px] text-muted-foreground">Nenhum tema sugerido no momento.</p>
+          )}
         </div>
 
         <div className="comfortable-card rounded-card bg-card shadow-soft">
@@ -417,7 +421,25 @@ function NewUserPanel({
 
 function EvolutionChart({ trend }: { trend: { label: string; score: number }[] }) {
   if (trend.length < 2) {
-    return <p className="text-sm text-muted-foreground">Envie mais redações para ver sua evolução aqui.</p>;
+    return (
+      <div>
+        <svg viewBox="0 0 560 160" className="w-full" style={{ height: 160 }} aria-hidden="true">
+          <path
+            d="M28 120 L150 90 L280 105 L410 60 L532 40"
+            fill="none"
+            stroke="hsl(var(--muted-foreground) / 0.35)"
+            strokeWidth={2}
+            strokeDasharray="6 8"
+            strokeLinecap="round"
+          />
+        </svg>
+        <p className="text-sm text-muted-foreground">
+          {trend.length === 0
+            ? "Sua primeira redação corrigida desenha o gráfico aqui."
+            : "Envie mais uma redação para ver sua evolução aqui."}
+        </p>
+      </div>
+    );
   }
 
   const width = 560;
