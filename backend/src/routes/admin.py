@@ -22,6 +22,8 @@ from src.schemas.admin import (
     AdminActivityUpdateRequest,
     AdminEssayThemeActionResponse,
     AdminEssayThemeCreateRequest,
+    AdminEssayThemeDraftGenerateRequest,
+    AdminEssayThemeDraftRead,
     AdminEssayThemeGenerateRequest,
     AdminEssayThemeRegenerateSupportingTextsRequest,
     AdminEssayThemeTitleSuggestionsRequest,
@@ -199,6 +201,32 @@ def generate_essay_theme(
         ),
         "Tema gerado.",
     )
+
+
+@router.post(
+    "/essay-themes/supporting-texts/generate",
+    response_model=ApiResponse[AdminEssayThemeDraftRead],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("admin_theme_generation"))],
+)
+def generate_essay_theme_draft_supporting_texts(
+    payload: AdminEssayThemeDraftGenerateRequest,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminEssayThemeDraftRead]:
+    title = sanitize_ai_text(payload.title or "", max_chars=220) or None
+    context = sanitize_ai_text(payload.context or "", max_chars=5000) or None
+    if (title and contains_prompt_injection(title)) or (context and contains_prompt_injection(context)):
+        from src.middlewares.errors import AppError
+
+        raise AppError("Entrada contÃ©m instruÃ§Ãµes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+    requirements = {item.type: item.count for item in payload.supporting_text_requirements if item.count > 0}
+    draft = AdminContentService(db).generate_essay_theme_draft(
+        title=title,
+        context=context,
+        admin_user_id=current_admin.id,
+        supporting_text_requirements=requirements or None,
+    )
+    return success_response(draft, "Textos motivadores gerados.")
 
 
 @router.post(

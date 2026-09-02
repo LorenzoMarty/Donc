@@ -154,6 +154,52 @@ class AdminContentService:
         self.db.commit()
         return result.titles
 
+    def generate_essay_theme_draft(
+        self,
+        *,
+        title: str | None,
+        context: str | None,
+        admin_user_id: int,
+        supporting_text_requirements: dict[str, int] | None = None,
+    ) -> dict:
+        focus_parts = [part.strip() for part in [title, context] if part and part.strip()]
+        focus = ". ".join(focus_parts) or "tema atual de impacto social no Brasil"
+        last_error: AppError | None = None
+        for _attempt in range(MAX_THEME_GENERATION_ATTEMPTS):
+            agent = ThemeGeneratorAgent()
+            generated = agent.generate(
+                focus=focus,
+                supporting_text_requirements=supporting_text_requirements,
+                user_id=admin_user_id,
+                session_id=f"admin:{admin_user_id}:theme-draft-generator",
+            )
+            self._generate_supporting_images(generated.supporting_texts, admin_user_id=admin_user_id)
+            effective_requirements = supporting_text_requirements
+            if effective_requirements is None and not agent.runner.last_used_fallback:
+                effective_requirements = agent.last_effective_requirements
+            try:
+                normalized_texts = self._normalize_supporting_texts(
+                    [supporting_text.model_dump() for supporting_text in generated.supporting_texts],
+                    requirements=effective_requirements,
+                )
+            except AppError as exc:
+                last_error = exc
+                continue
+            break
+        else:
+            raise last_error  # type: ignore[misc]
+
+        record_ai_interaction(
+            self.db,
+            workflow="admin_theme_draft_generation",
+            agent="ThemeGeneratorAgent",
+            user_id=admin_user_id,
+            runner=agent.runner,
+            meta={"has_title": bool(title), "has_context": bool(context), "supporting_text_requirements": effective_requirements},
+        )
+        self.db.commit()
+        return {"context": generated.context, "supporting_texts": normalized_texts}
+
     def create_essay_theme(
         self,
         *,

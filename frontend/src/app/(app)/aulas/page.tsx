@@ -121,7 +121,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
   const remainingMinutes = Math.max(1, Math.round(lesson.duration_minutes * (1 - lesson.progress.progress_percent / 100)));
 
   return (
-    <div className="comfortable-card flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-accent-lg lg:flex-row lg:items-center lg:gap-8">
+    <div className="comfortable-card flex flex-col gap-5 rounded-card bg-[hsl(var(--accent-900))] text-white shadow-soft lg:flex-row lg:items-center lg:gap-8">
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[hsl(var(--accent-300))]">Continue assistindo</p>
         <p className="font-display mt-1.5 text-[1.45rem] font-medium leading-tight sm:text-[27px]">{lesson.title}</p>

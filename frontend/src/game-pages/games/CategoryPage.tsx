@@ -50,7 +50,7 @@ export default function CategoryPage({ categorySlug }: { categorySlug: string })
         Voltar
       </Link>
 
-      <div className="flex items-center gap-7 rounded-[28px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-accent-lg">
+      <div className="flex items-center gap-7 rounded-[28px] bg-[hsl(var(--accent-900))] p-7 text-white shadow-soft">
         <div className="grid h-[66px] w-[66px] shrink-0 place-items-center rounded-control border border-white/15 bg-white/10 text-white">
           <Icon className="h-[30px] w-[30px]" aria-hidden="true" />
         </div>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Edit2, FilePlus2, FileText, Plus, Save, Search, Sparkles, Trash2, X } from "lucide-react";
+import { Edit2, FilePlus2, FileText, Loader2, Plus, Save, Search, Sparkles, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
 import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
 import {
   MAX_SUPPORTING_TEXTS_PER_THEME,
@@ -12,7 +11,6 @@ import {
   requirementsToPayload,
   type SupportingTextType,
 } from "@/app/(app)/admin/_tabs/components/supporting-text-type-picker";
-import { ThemeGeneratorForm } from "@/app/(app)/admin/_tabs/create-with-ai";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -171,20 +169,6 @@ export function ThemesTab({
           </div>
           <Badge variant="outline">{themes.length} temas</Badge>
           <CreateThemeButton onCreated={onGenerated} />
-          <GenerateWithAiButton
-            label="Gerar tema com IA"
-            title="Gerar tema com IA"
-            description="Gera um tema com textos motivadores — nasce pendente de revisão."
-          >
-            {(close) => (
-              <ThemeGeneratorForm
-                onGenerated={(theme) => {
-                  onGenerated(theme);
-                  close();
-                }}
-              />
-            )}
-          </GenerateWithAiButton>
         </div>
       </div>
       <div className="grid gap-3 p-4 md:grid-cols-2">
@@ -250,7 +234,7 @@ export function ThemesTab({
         })}
         {!filteredThemes.length ? (
           <p className="text-sm text-muted-foreground">
-            {themes.length ? "Nenhum tema encontrado com essa busca." : 'Nenhum tema cadastrado ainda. Use "Gerar tema com IA" para criar um.'}
+            {themes.length ? "Nenhum tema encontrado com essa busca." : 'Nenhum tema cadastrado ainda. Use "Criar tema" para criar um.'}
           </p>
         ) : null}
       </div>
@@ -436,16 +420,47 @@ function CreateThemeButton({ onCreated }: { onCreated: (theme: EssayTheme) => vo
   const [draft, setDraft] = useState<ThemeDraft>({
     title: "",
     context: "",
-    supporting_texts: [{ title: "", content: "", type: "motivador" }],
+    supporting_texts: [],
   });
+  const [quantities, setQuantities] = useState<Partial<Record<SupportingTextType, number>>>({});
+  const [generatingTexts, setGeneratingTexts] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function close() {
     setOpen(false);
-    setDraft({ title: "", context: "", supporting_texts: [{ title: "", content: "", type: "motivador" }] });
+    setDraft({ title: "", context: "", supporting_texts: [] });
+    setQuantities({});
+  }
+
+  async function generateSupportingTexts() {
+    setGeneratingTexts(true);
+    try {
+      const generated = await apiFetch<{ context: string; supporting_texts: SupportingText[] }>("/admin/essay-themes/supporting-texts/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          title: draft.title.trim() || null,
+          context: draft.context.trim() || null,
+          supporting_text_requirements: requirementsToPayload(quantities),
+        }),
+      });
+      setDraft({
+        ...draft,
+        context: draft.context.trim() ? draft.context : generated.context,
+        supporting_texts: generated.supporting_texts,
+      });
+      toast.success("Textos motivadores gerados.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar textos motivadores.");
+    } finally {
+      setGeneratingTexts(false);
+    }
   }
 
   async function create() {
+    if (!draft.supporting_texts.length) {
+      toast.error("Gere os textos motivadores com IA antes de criar o tema.");
+      return;
+    }
     const validation = validateDraft(draft);
     if (validation) {
       toast.error(validation);
@@ -474,7 +489,51 @@ function CreateThemeButton({ onCreated }: { onCreated: (theme: EssayTheme) => vo
         Criar tema
       </Button>
       <Modal open={open} onClose={close} title="Criar tema" description="Tema nasce pendente de revisão — aprove depois na lista.">
-        <ThemeEditor themeId={null} draft={draft} busy={saving} onChange={setDraft} onCancel={close} onSave={create} />
+        <div className="grid gap-3">
+          <ThemeTitleField draft={draft} busy={saving || generatingTexts} onChange={setDraft} />
+          <Field label="Contexto" counter={{ value: draft.context.length, max: 5000 }}>
+            <Textarea
+              value={draft.context}
+              maxLength={5000}
+              onChange={(event) => setDraft({ ...draft, context: event.target.value })}
+              disabled={saving || generatingTexts}
+              rows={5}
+            />
+          </Field>
+          <div className="grid gap-2">
+            <p className="text-xs font-semibold text-muted-foreground">Textos motivadores</p>
+            <SupportingTextTypePicker quantities={quantities} onChange={setQuantities} disabled={saving || generatingTexts} />
+            <Button type="button" variant="outline" onClick={generateSupportingTexts} disabled={saving || generatingTexts}>
+              {generatingTexts ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Sparkles className="h-4 w-4" aria-hidden="true" />}
+              {generatingTexts ? "Gerando..." : "Gerar textos motivadores com IA"}
+            </Button>
+            {draft.supporting_texts.length ? (
+              <div className="grid gap-2">
+                {draft.supporting_texts.map((text, index) => (
+                  <div key={`${text.title}-${index}`} className="rounded-control bg-background/50 p-3 shadow-soft">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="text-[11px]">{labelForType(text.type)}</Badge>
+                      <p className="text-safe text-xs font-semibold">{text.title}</p>
+                    </div>
+                    <p className="text-safe whitespace-pre-wrap text-xs leading-5 text-muted-foreground">{text.content}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Gere os textos motivadores com IA antes de criar o tema.</p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" onClick={create} disabled={saving || generatingTexts}>
+              <Save className="h-4 w-4" aria-hidden="true" />
+              Criar tema
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={close} disabled={saving || generatingTexts}>
+              <X className="h-4 w-4" aria-hidden="true" />
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </>
   );
