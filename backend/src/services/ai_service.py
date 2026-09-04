@@ -48,5 +48,7 @@ class EssayAIService:
                     status="error",
                     error=str(exc),
                     meta={"essay_id": essay_id, "used_fallback": True},
+                    content_id=essay_id,
+                    content_type="essay" if essay_id is not None else None,
                 )
             return result

@@ -39,6 +39,7 @@ export function QuizSession({
 }) {
   const returnTo = readReturnTo();
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const adaptive = useGameStore((state) => state.adaptive);
   const trackEvent = useTrackEvent();
   const [step, setStep] = useState(0);
@@ -76,6 +77,7 @@ export function QuizSession({
     if (!question || selected !== null || result) return;
     const isCorrect = index === question.answerIndex;
     setSelected(index);
+    if (!preview) recordCognitiveOutcome(game, { correct: isCorrect });
     const nextAnswers = [...answers, isCorrect];
     window.setTimeout(() => {
       if (step < questions.length - 1) {

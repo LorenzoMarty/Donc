@@ -10,7 +10,7 @@ from src.agents.schemas import (
 class OutputMapper:
     """Converts pipeline analyses + audited c1-c5 scores into EssayCorrectionResult."""
 
-    def map(self, analyses: PipelineAnalyses, audited: dict[str, int]) -> EssayCorrectionResult:
+    def map(self, analyses: PipelineAnalyses, audited: dict[str, int], *, used_fallback: bool = False) -> EssayCorrectionResult:
         c1, c2, c3, c4, c5 = audited["c1"], audited["c2"], audited["c3"], audited["c4"], audited["c5"]
         total = c1 + c2 + c3 + c4 + c5
         errors = self._build_errors(analyses, audited)
@@ -32,6 +32,7 @@ class OutputMapper:
             feedback=feedback,
             recurrent_patterns=patterns,
             inline_annotations=inline,
+            used_fallback=used_fallback,
         )
 
     def _build_errors(self, a: PipelineAnalyses, scores: dict[str, int]) -> list[str]:

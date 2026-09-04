@@ -1,9 +1,10 @@
 import { BadgeCheck, CalendarCheck, FileStack, Library, Link2, MessageSquareQuote, SpellCheck } from "lucide-react";
 
 import type { GameCategory, GameCategoryId, GameDefinition, GameDifficulty, GameProgress } from "@/features/gamification/types";
+import type { SymptomHubId } from "@/features/gamification/types";
 import { deriveHubsFromTags, possibleEventsForHubs } from "@/features/gamification/adaptive";
 import { tagPositionalDifficulty } from "@/features/gamification/item-difficulty";
-import { gameTags } from "@/features/gamification/symptoms";
+import { gameTags, HUBS } from "@/features/gamification/symptoms";
 import type { PublishedGame } from "@/types/api";
 
 /**
@@ -83,6 +84,10 @@ export function mapPublishedGame(game: PublishedGame): GameDefinition {
     unlocked: true,
     engine,
     skill: game.skill || "Treino",
+    // Hubs vem prontos do backend (AIGeneratedGame.targets, exigido na aprovacao — ver
+    // admin_game_review_service.py) em vez de derivados de `tags`, que jogos do banco nunca tem.
+    // Sem isso, recordCognitiveOutcome() nao tinha hub pra atribuir o sinal cognitivo do jogo.
+    hubs: game.hubs.filter((hub): hub is SymptomHubId => hub in HUBS),
   };
   if (QUESTION_BASED_ENGINES.has(engine)) {
     base.questions = game.questions.map((q, index) => ({

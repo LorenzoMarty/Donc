@@ -77,6 +77,10 @@ class EssayThemeRead(BaseModel):
     status: str = "approved"
     created_at: datetime
     supporting_texts: list[SupportingTextRead] = Field(default_factory=list)
+    # So preenchido pela listagem de admin (AdminContentService.list_essay_themes), que anexa a
+    # contagem real no objeto antes de serializar — 0 aqui pra quem le esse schema sem passar por
+    # ela (rota do aluno, testes que constroem o schema direto).
+    essays_count: int = 0
 
     @field_validator("supporting_texts", mode="before")
     @classmethod
@@ -119,6 +123,7 @@ class EssayCorrectionRead(BaseModel):
     feedback: str
     recurrent_patterns: list[str]
     inline_annotations: list[InlineAnnotationRead] = Field(default_factory=list)
+    used_fallback: bool = False
     created_at: datetime
 
     @field_validator("inline_annotations", mode="before")
@@ -143,6 +148,7 @@ class EssayVersionCorrectionRead(BaseModel):
     feedback: str
     recurrent_patterns: list[str]
     inline_annotations: list[InlineAnnotationRead] = Field(default_factory=list)
+    used_fallback: bool = False
     created_at: datetime
 
     @field_validator("inline_annotations", mode="before")

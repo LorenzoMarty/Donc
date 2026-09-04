@@ -5,7 +5,7 @@ import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
 
 import { workflowLabel } from "@/app/(app)/admin/_tabs/ai-labels";
 import { apiFetch } from "@/services/api";
-import type { AdminUser, AIGenerationTrace, ContentVersion } from "@/types/api";
+import type { AdminReviewer, AIGenerationTrace, ContentVersion } from "@/types/api";
 
 // Fraseado de evento (linha do tempo), diferente do rótulo de categoria de `ai-labels.ts` — cai
 // pro rótulo genérico (REQ-7) quando o workflow não tem essa versão narrada especificamente.
@@ -33,7 +33,7 @@ export function HistoryPanel({
 }: {
   contentType: string;
   contentId: number;
-  users: AdminUser[];
+  users: AdminReviewer[];
 }) {
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<HistoryEvent[] | null>(null);
@@ -92,7 +92,7 @@ export function HistoryPanel({
   );
 }
 
-function nameFor(users: AdminUser[], userId: number | null): string {
+function nameFor(users: AdminReviewer[], userId: number | null): string {
   if (userId === null) return "sistema";
   return users.find((u) => u.id === userId)?.name ?? "administrador";
 }

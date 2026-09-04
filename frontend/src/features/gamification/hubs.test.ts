@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 
 import { HUBS, HUB_IDS, symptomHubs, gamesForHub } from "@/features/gamification/symptoms";
-import { getAllGames, getEnrichedCategories, enrichGame } from "@/features/gamification/catalog";
+import { getAllGames, getEnrichedCategories, enrichGame, mapPublishedGame } from "@/features/gamification/catalog";
 import { enrichedTestCatalog } from "@/features/gamification/catalog.test-fixtures";
 import { missionForHub } from "@/features/gamification/adaptive";
 import type { SymptomHubId } from "@/features/gamification/types";
+import type { PublishedGame } from "@/types/api";
 
 const EXPECTED_HUBS: SymptomHubId[] = [
   "texto-robotico",
@@ -74,6 +75,44 @@ describe("contrato cognitivo das missões (enrichGame)", () => {
       expect(game, `missão ${id} não encontrada`).toBeDefined();
       expect((game?.hubs ?? []).length).toBeGreaterThan(0);
     }
+  });
+
+  it("mapPublishedGame usa game.hubs do backend em vez de derivar de tags (jogos do banco não têm tags)", () => {
+    const published: PublishedGame = {
+      id: 42,
+      name: "Jogo do banco",
+      category: "argumentacao",
+      skill: "nao-aprofunda",
+      difficulty: "medium",
+      engine: "quiz",
+      questions: [{ prompt: "P?", options: ["a", "b"], answer_index: 0, explanation: "E" }],
+      payload: null,
+      description: null,
+      thumbnail: null,
+      estimated_time: null,
+      hubs: ["nao-aprofunda"],
+    };
+    const game = mapPublishedGame(published);
+    expect(game.hubs).toEqual(["nao-aprofunda"]);
+  });
+
+  it("mapPublishedGame ignora hub desconhecido vindo do backend (defensivo contra drift)", () => {
+    const published: PublishedGame = {
+      id: 43,
+      name: "Jogo com hub invalido",
+      category: "argumentacao",
+      skill: "nao-aprofunda",
+      difficulty: "medium",
+      engine: "quiz",
+      questions: [],
+      payload: null,
+      description: null,
+      thumbnail: null,
+      estimated_time: null,
+      hubs: ["hub-que-nao-existe"],
+    };
+    const game = mapPublishedGame(published);
+    expect(game.hubs).toEqual([]);
   });
 
   it("enrichGame preenche hubs/skills/possibleEvents a partir das tags", () => {

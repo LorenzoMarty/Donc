@@ -45,6 +45,8 @@ from src.schemas.admin import (
     AdminMetricsResponse,
     AdminModuleCreateRequest,
     AdminModuleRead,
+    AdminReviewerRead,
+    AdminUserListResponse,
     AdminUserRead,
     AdminUserUpdateRequest,
     AIGameActionResponse,
@@ -82,9 +84,20 @@ def metrics(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> 
     return success_response(AdminMetricsService(db).metrics())
 
 
-@router.get("/users", response_model=ApiResponse[list[AdminUserRead]])
-def users(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[AdminUserRead]]:
-    return success_response(AdminUserService(db).users_list())
+@router.get("/users", response_model=ApiResponse[AdminUserListResponse])
+def users(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    search: str | None = Query(default=None, max_length=160),
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminUserListResponse]:
+    return success_response(AdminUserService(db).users_list(limit=limit, offset=offset, search=search))
+
+
+@router.get("/reviewers", response_model=ApiResponse[list[AdminReviewerRead]])
+def reviewers(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[AdminReviewerRead]]:
+    return success_response(AdminUserService(db).reviewers_list())
 
 
 @router.get("/content-quality", response_model=ApiResponse[AdminContentQualityResponse])
@@ -218,7 +231,7 @@ def generate_essay_theme_draft_supporting_texts(
     if (title and contains_prompt_injection(title)) or (context and contains_prompt_injection(context)):
         from src.middlewares.errors import AppError
 
-        raise AppError("Entrada contÃ©m instruÃ§Ãµes indevidas para o agente.", status_code=422, code="prompt_injection_detected")
+        raise AppError("Entrada contém instruções indevidas para o agente.", status_code=422, code="prompt_injection_detected")
     requirements = {item.type: item.count for item in payload.supporting_text_requirements if item.count > 0}
     draft = AdminContentService(db).generate_essay_theme_draft(
         title=title,

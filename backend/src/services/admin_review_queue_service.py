@@ -70,6 +70,9 @@ class AdminReviewQueueService:
                         targets=exercise.targets or [],
                         status=exercise.status,
                         created_at=exercise.created_at,
+                        options=exercise.options or [],
+                        correct_answer=exercise.correct_answer,
+                        explanation=exercise.explanation,
                     )
                 )
 
@@ -89,6 +92,8 @@ class AdminReviewQueueService:
                         targets=[],
                         status=theme.status,
                         created_at=theme.created_at,
+                        context=theme.context,
+                        supporting_texts=theme.supporting_texts or [],
                     )
                 )
 

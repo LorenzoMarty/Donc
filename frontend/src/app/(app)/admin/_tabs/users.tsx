@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { BarChart3, Edit2, Eye, Loader2, Save, Search, Trash2, X } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, Edit2, Eye, Loader2, Save, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDangerModal } from "@/app/(app)/admin/_tabs/components/confirm-danger-modal";
 import { CompetencyBarChart } from "@/components/shared/charts";
 import { apiFetch } from "@/services/api";
 import { formatBRLCents, formatTokens } from "@/lib/format";
-import type { AdminUser, AdminUserDetail } from "@/types/api";
+import type { AdminUser, AdminUserDetail, AdminUserListResponse } from "@/types/api";
 
 const ONLINE_WINDOW_MS = 300_000;
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 350;
 
 function formatDate(iso: string | null, now: number | null) {
   if (!iso) return "-";
@@ -41,15 +44,11 @@ function draftFromUser(user: AdminUser): UserDraft {
   };
 }
 
-export function UsersTab({
-  users,
-  onUserUpdated,
-  onUserDeleted,
-}: {
-  users: AdminUser[];
-  onUserUpdated: (user: AdminUser) => void;
-  onUserDeleted: (userId: number) => void;
-}) {
+export function UsersTab() {
+  const [items, setItems] = useState<AdminUser[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [now, setNow] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -58,6 +57,40 @@ export function UsersTab({
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+
+  // Busca com debounce — evita 1 request por tecla; volta pra pagina 0 a cada nova busca, senao
+  // "pagina 3" de uma busca antiga fica fora do total novo e a tabela aparenta vazia.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setQuery(queryInput);
+      setPage(0);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [queryInput]);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Sem "zerar items" no inicio do efeito de proposito — trocar de pagina/busca so atualiza a
+    // tabela quando a resposta chega, sem piscar pra vazio/spinner no meio do caminho. O spinner
+    // (items === null) so aparece na carga inicial.
+    const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) });
+    if (query) params.set("search", query);
+    apiFetch<AdminUserListResponse>(`/admin/users?${params.toString()}`)
+      .then((data) => {
+        if (cancelled) return;
+        setItems(data.items);
+        setTotal(data.total);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        toast.error(err instanceof Error ? err.message : "Não foi possível carregar os alunos.");
+        setItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, query]);
 
   async function openDetail(user: AdminUser) {
     setDetailOpen(true);
@@ -81,15 +114,6 @@ export function UsersTab({
     return () => window.clearInterval(interval);
   }, []);
 
-  const filtered = query
-    ? users.filter((u) => u.name.toLowerCase().includes(query.toLowerCase()) || u.email.toLowerCase().includes(query.toLowerCase()))
-    : users;
-
-  const online = users.filter((u) => {
-    if (!u.last_seen_at) return false;
-    return now !== null && now - new Date(u.last_seen_at).getTime() < ONLINE_WINDOW_MS;
-  }).length;
-
   function startEditing(user: AdminUser) {
     setEditingId(user.id);
     setDraft(draftFromUser(user));
@@ -107,7 +131,7 @@ export function UsersTab({
           daily_goal_minutes: Number(draft.daily_goal_minutes),
         }),
       });
-      onUserUpdated(updated);
+      setItems((prev) => prev?.map((item) => (item.id === updated.id ? updated : item)) ?? prev);
       setEditingId(null);
       setDraft(null);
       toast.success("Aluno atualizado.");
@@ -120,11 +144,11 @@ export function UsersTab({
 
   async function deleteUser(user: AdminUser) {
     if (busyId) return;
-    if (!window.confirm(`Excluir o aluno ${user.name}? Esta acao remove a conta e seus dados vinculados.`)) return;
     setBusyId(user.id);
     try {
       await apiFetch<{ action: "deleted"; user_id: number }>(`/admin/users/${user.id}`, { method: "DELETE" });
-      onUserDeleted(user.id);
+      setItems((prev) => prev?.filter((item) => item.id !== user.id) ?? prev);
+      setTotal((prev) => Math.max(0, prev - 1));
       if (editingId === user.id) {
         setEditingId(null);
         setDraft(null);
@@ -134,8 +158,12 @@ export function UsersTab({
       toast.error(err instanceof Error ? err.message : "Não foi possível excluir o aluno.");
     } finally {
       setBusyId(null);
+      setDeleteTarget(null);
     }
   }
+
+  const filtered = items ?? [];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-4">
@@ -143,14 +171,13 @@ export function UsersTab({
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={queryInput}
+            onChange={(e) => setQueryInput(e.target.value)}
             placeholder="Buscar por nome ou e-mail..."
             className="pl-9"
           />
         </div>
-        <Badge variant="secondary">{online} ativo{online === 1 ? "" : "s"} agora</Badge>
-        <Badge variant="outline">{users.length} usuários</Badge>
+        <Badge variant="outline">{total.toLocaleString("pt-BR")} aluno{total === 1 ? "" : "s"}</Badge>
       </div>
 
       <div className="rounded-card bg-card shadow-soft">
@@ -223,7 +250,7 @@ export function UsersTab({
                             variant="ghost"
                             className="h-9 w-9 text-destructive hover:text-destructive"
                             disabled={!isStudent || busyId === user.id}
-                            onClick={() => deleteUser(user)}
+                            onClick={() => setDeleteTarget(user)}
                             aria-label="Excluir aluno"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -250,16 +277,44 @@ export function UsersTab({
                   </Fragment>
                 );
               })}
-              {filtered.length === 0 && (
+              {items === null && (
                 <tr>
                   <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
-                    Nenhum usuário encontrado com esse filtro.
+                    <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+                  </td>
+                </tr>
+              )}
+              {items !== null && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                    Nenhum aluno encontrado com esse filtro.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        {total > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-3 border-t px-4 py-3">
+            <p className="text-xs text-muted-foreground">Página {page + 1} de {totalPages}</p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                Anterior
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              >
+                Próxima
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal
@@ -279,6 +334,24 @@ export function UsersTab({
           <UserDetailView detail={detail} />
         )}
       </Modal>
+
+      <ConfirmDangerModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteUser(deleteTarget)}
+        title="Excluir aluno"
+        description={`Excluir "${deleteTarget?.name}"? A conta e os dados vinculados abaixo somem — essa ação não pode ser desfeita.`}
+        busy={deleteTarget !== null && busyId === deleteTarget.id}
+        impact={
+          deleteTarget
+            ? [
+                { label: "Redações escritas", value: deleteTarget.essays },
+                { label: "Tokens de IA consumidos", value: formatTokens(deleteTarget.total_tokens) },
+                { label: "Sequência atual", value: `${deleteTarget.streak_days} dias` },
+              ]
+            : []
+        }
+      />
     </div>
   );
 }

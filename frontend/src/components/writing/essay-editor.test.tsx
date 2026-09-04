@@ -16,6 +16,7 @@ const THEME: EssayTheme = {
   supporting_texts: [
     { title: "Texto motivador 1", content: "Conteúdo do texto motivador de teste.", type: "motivador" },
   ],
+  essays_count: 0,
 };
 
 function renderEditor() {

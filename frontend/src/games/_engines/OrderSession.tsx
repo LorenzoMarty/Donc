@@ -45,6 +45,7 @@ function shuffleCells(cells: OrderCell[]): OrderCell[] {
  */
 export function OrderSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const adaptive = useGameStore((state) => state.adaptive);
   const rounds = useMemo<OrderRound[]>(
     () => selectAdaptivePool(game, game.order?.rounds ?? [], adaptive, shuffle),
@@ -99,6 +100,7 @@ export function OrderSession({ game, category }: { game: GameDefinition; categor
     if (verdict) return;
     const ok = cells.every((cell, index) => cell.correctIndex === index);
     setVerdict(ok ? "correct" : "wrong");
+    recordCognitiveOutcome(game, { correct: ok });
     if (ok) setScore((v) => v + 1);
   }
 

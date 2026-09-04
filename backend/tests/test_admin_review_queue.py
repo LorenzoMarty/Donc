@@ -135,6 +135,29 @@ def test_review_queue_filters_by_created_from(client):
     assert ("theme", ids["theme_id"]) in matching_ids
 
 
+def test_review_queue_items_carry_full_content_for_theme_and_exercise(client):
+    """Auditoria de UX #1.1/#4: o admin nao pode aprovar tema/exercicio sem ver contexto/opcoes
+    completos direto na fila — sem isso ele decidia "as cegas" a partir so do titulo/enunciado."""
+    ids = _seed_all_types()
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        items = api_data(client.get("/api/v1/admin/review-queue"))
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    theme_item = next(item for item in items if item["content_type"] == "theme" and item["content_id"] == ids["theme_id"])
+    assert theme_item["context"] == "Contexto suficientemente longo para validar o tema gerado por teste automatizado."
+
+    exercise_item = next(item for item in items if item["content_type"] == "exercise" and item["content_id"] == ids["exercise_id"])
+    assert exercise_item["options"] == ["A", "B"]
+    assert exercise_item["correct_answer"] == "A"
+    assert exercise_item["explanation"] == "exp"
+
+    game_item = next(item for item in items if item["content_type"] == "game" and item["content_id"] == ids["game_id"])
+    assert game_item["options"] == []
+    assert game_item["context"] is None
+
+
 def test_review_queue_requires_admin(client):
     response = client.get("/api/v1/admin/review-queue")
     assert response.status_code in (401, 403)

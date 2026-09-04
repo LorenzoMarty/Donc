@@ -11,9 +11,11 @@ from src.models import AIInteractionLog, Essay, User
 from src.models.events import UserEvent
 from src.repositories.users import UserRepository
 from src.schemas.admin import (
+    AdminReviewerRead,
     AdminUserAIUsage,
     AdminUserDetailResponse,
     AdminUserLearningProfile,
+    AdminUserListResponse,
     AdminUserProgress,
     AdminUserRead,
     AgentStats,
@@ -30,15 +32,16 @@ class AdminUserService:
         self.db = db
         self.users = UserRepository(db)
 
-    def users_list(self) -> list[AdminUserRead]:
-        users = self.users.list_users()
+    def users_list(self, *, limit: int = 50, offset: int = 0, search: str | None = None) -> AdminUserListResponse:
+        total = self.users.count_users(search=search)
+        users = self.users.list_users(limit=limit, offset=offset, search=search)
         if not users:
-            return []
+            return AdminUserListResponse(items=[], total=total)
         user_ids = [user.id for user in users]
         essays_by_user = self._essays_count_by_user(user_ids)
         token_by_user = self._tokens_by_user(user_ids)
         events_by_user = self._events_by_user(user_ids)
-        return [
+        items = [
             self._to_admin_user_read(
                 user,
                 essays=essays_by_user.get(user.id, 0),
@@ -47,6 +50,10 @@ class AdminUserService:
             )
             for user in users
         ]
+        return AdminUserListResponse(items=items, total=total)
+
+    def reviewers_list(self) -> list[AdminReviewerRead]:
+        return [AdminReviewerRead(id=user.id, name=user.name) for user in self.users.list_reviewers()]
 
     def update_student(
         self,

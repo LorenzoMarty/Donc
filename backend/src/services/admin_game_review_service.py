@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.agents.game_generator import GameGeneratorAgent, GamePayloadItemAgent, SUPPORTED_PAYLOAD_ENGINES
 from src.middlewares.errors import AppError
 from src.models.events import AIGeneratedGame
+from src.models.gamification import GameAttempt
 from src.schemas.admin import AIGeneratedGameRead, GameQuestionRead
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.content_versioning import record_version
@@ -24,7 +25,20 @@ class AdminGameReviewService:
         if status:
             query = query.where(AIGeneratedGame.status == status)
         games = self.db.scalars(query).all()
-        return [self._game_to_read(g) for g in games]
+        reads = [self._game_to_read(g) for g in games]
+        # Contagem em lote (nao por jogo) pra nao virar N+1 numa listagem que pode ter muitos
+        # jogos — so usada aqui pra dar contexto de impacto antes de excluir (achado #9.2).
+        if reads:
+            counts = dict(
+                self.db.execute(
+                    select(GameAttempt.game_id, func.count(GameAttempt.id))
+                    .where(GameAttempt.game_id.in_([f"ai-{g.id}" for g in reads]))
+                    .group_by(GameAttempt.game_id)
+                ).all()
+            )
+            for read in reads:
+                read.attempts_count = counts.get(f"ai-{read.id}", 0)
+        return reads
 
     def review_game(
         self,
@@ -41,6 +55,13 @@ class AdminGameReviewService:
         game = self.db.get(AIGeneratedGame, game_id)
         if not game:
             raise AppError("Jogo não encontrado.", status_code=404, code="game_not_found")
+        if game.status != "pending":
+            # Edicao de jogo ja aprovado/rejeitado tem rota propria (PATCH /ai-games/{id},
+            # update_game) — este endpoint (POST /review) e so a transicao pending -> approved/
+            # rejected, exercida uma unica vez pela fila de revisao.
+            raise AppError(
+                "Este item já foi revisado por outro admin.", status_code=409, code="already_reviewed",
+            )
         if targets is not None:
             game.targets = targets
         if action == "approve" and not game.targets:

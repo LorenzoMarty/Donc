@@ -10,6 +10,7 @@ const THEME: EssayTheme = {
   source: "Donc",
   status: "approved",
   created_at: "2026-08-01T00:00:00Z",
+  essays_count: 0,
 };
 
 describe("computeEssayTitle", () => {

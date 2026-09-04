@@ -129,9 +129,14 @@ class CorrectionOrchestratorWorkflow:
             user_id=user_id,
             job_id=job_id,
             prompt=safe_content,
+            essay_id=essay_id,
         )
         if gate.status in ("ZERO", "DESVIO_GRAVE"):
-            return self.mapper.map(self._zero_analyses(pre, gate), {"c1": 0, "c2": 0, "c3": 0, "c4": 0, "c5": 0})
+            return self.mapper.map(
+                self._zero_analyses(pre, gate),
+                {"c1": 0, "c2": 0, "c3": 0, "c4": 0, "c5": 0},
+                used_fallback=self.gate_agent.runner.last_used_fallback,
+            )
 
         # Stage 3: 6 analyzers in parallel (all independent — theme + content only)
         with ThreadPoolExecutor(max_workers=6) as pool:
@@ -155,6 +160,10 @@ class CorrectionOrchestratorWorkflow:
             ("GrammarAnalyzerV2Agent", gr_fut, self.grammar_agent.runner),
         ]
         results: dict[str, object] = {}
+        # True se o gate ou qualquer analisador caiu em heuristica (sem API key, falha apos todas
+        # as tentativas, JSON invalido) ou quebrou com bug de codigo (degradado pra nota zero) —
+        # nos dois casos a competencia nao reflete analise real da IA (ver EssayCorrectionResult.used_fallback).
+        any_fallback = self.gate_agent.runner.last_used_fallback
         for name, fut, runner in futures:
             try:
                 result, ms, status, err = fut.result()
@@ -163,10 +172,13 @@ class CorrectionOrchestratorWorkflow:
                 # AgnoAgentRunner.run_structured). Degrada so essa competencia em vez de abortar a
                 # correcao inteira e jogar fora as chamadas que ja tiveram sucesso.
                 logger.warning("Analisador %s quebrou com excecao nao tratada — degradando para nota zero nessa competencia: %s", name, exc)
-                self._log(agent=name, status="error", latency_ms=0, user_id=user_id, job_id=job_id, prompt=safe_content, error=str(exc), runner=runner)
+                self._log(agent=name, status="error", latency_ms=0, user_id=user_id, job_id=job_id, prompt=safe_content, error=str(exc), runner=runner, essay_id=essay_id)
                 results[name] = _DEGRADED_DEFAULTS[name]()
+                any_fallback = True
                 continue
-            self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, runner=runner)
+            self._log(agent=name, status=status, latency_ms=ms, user_id=user_id, job_id=job_id, prompt=safe_content, error=err, runner=runner, essay_id=essay_id)
+            if runner is not None and runner.last_used_fallback:
+                any_fallback = True
             results[name] = result
 
         analyses = PipelineAnalyses(
@@ -187,7 +199,7 @@ class CorrectionOrchestratorWorkflow:
         audited = self.auditor.audit(raw_scores, analyses)
 
         # Stage 6: OutputMapper (Python → EssayCorrectionResult)
-        correction = self.mapper.map(analyses, audited)
+        correction = self.mapper.map(analyses, audited, used_fallback=any_fallback)
 
         if self.db is not None and user_id is not None:
             update_learning_profile(self.db, user_id=user_id, correction=correction, essay_id=essay_id)
@@ -253,6 +265,7 @@ class CorrectionOrchestratorWorkflow:
         job_id: str | None,
         prompt: str,
         runner: AgnoAgentRunner | None = None,
+        essay_id: int | None = None,
     ) -> T:
         start = time.perf_counter()
         status = "success"
@@ -265,7 +278,10 @@ class CorrectionOrchestratorWorkflow:
             raise
         finally:
             latency_ms = int((time.perf_counter() - start) * 1000)
-            self._log(agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id, prompt=prompt, error=error, runner=runner)
+            self._log(
+                agent=agent, status=status, latency_ms=latency_ms, user_id=user_id, job_id=job_id,
+                prompt=prompt, error=error, runner=runner, essay_id=essay_id,
+            )
 
     @staticmethod
     def _zero_analyses(pre: PreProcessorOutput, gate: EliminationGateOutput) -> PipelineAnalyses:
@@ -291,6 +307,7 @@ class CorrectionOrchestratorWorkflow:
         prompt: str,
         error: str | None,
         runner: AgnoAgentRunner | None = None,
+        essay_id: int | None = None,
     ) -> None:
         if self.db is None:
             return
@@ -305,7 +322,10 @@ class CorrectionOrchestratorWorkflow:
                 status=status,
                 latency_ms=latency_ms,
                 error=error,
+                content_id=essay_id,
+                content_type="essay" if essay_id is not None else None,
             )
         except Exception:
+            logger.warning("Falha ao montar log de telemetria de IA (agent=%s) — sem rastro registrado.", agent, exc_info=True)
             return
         safe_persist_interaction(self.db, log)

@@ -40,6 +40,16 @@ class AdminUserRead(BaseModel):
     event_count: int = 0
 
 
+class AdminUserListResponse(BaseModel):
+    items: list[AdminUserRead]
+    total: int
+
+
+class AdminReviewerRead(BaseModel):
+    id: int
+    name: str
+
+
 class AdminUserUpdateRequest(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=120)
     streak_days: int | None = Field(default=None, ge=0, le=3650)
@@ -170,6 +180,13 @@ class ReviewQueueItem(BaseModel):
     targets: list[str] = Field(default_factory=list)
     status: str
     created_at: datetime
+    # Conteudo completo pra decisao de aprovar/rejeitar nao depender de sair da fila (achado de UX
+    # #1.1/#4 da auditoria — "admin aprova as cegas"). Preenchido so pro tipo correspondente.
+    context: str | None = None  # theme
+    supporting_texts: list[AdminGeneratedSupportingTextRead] = Field(default_factory=list)  # theme
+    options: list[str] = Field(default_factory=list)  # exercise
+    correct_answer: str | None = None  # exercise
+    explanation: str | None = None  # exercise
 
 
 class AdminLessonRead(BaseModel):
@@ -572,6 +589,10 @@ class AIGeneratedGameRead(BaseModel):
     edited_after_generation: bool = False
     created_at: datetime
     reviewed_at: datetime | None = None
+    # So preenchido pela listagem (AdminGameReviewService.list_ai_games) — 0 aqui pra quem le esse
+    # schema fora dela (criacao/revisao de um unico jogo, onde 0 tentativas e sempre correto mesmo
+    # sem consultar). Existe pra dar contexto de impacto antes de excluir (auditoria de UX, #9.2).
+    attempts_count: int = 0
 
 
 class ReviewGameRequest(BaseModel):

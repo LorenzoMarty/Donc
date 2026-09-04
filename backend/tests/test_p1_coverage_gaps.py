@@ -129,6 +129,11 @@ def test_pending_ai_game_does_not_appear_in_published_list(client):
     assert pending_id not in published_ids
     assert rejected_id not in published_ids
     assert approved_id in published_ids
+    # B1 (auditoria arquitetural): targets do admin (ISSUE_CODES) precisam chegar ao cliente
+    # convertidos pro hub cognitivo (vocabulario do frontend) — sem isso, recordCognitiveOutcome()
+    # nunca tem hub pra atribuir o sinal de um jogo vindo do banco.
+    approved_read = next(g for g in published if g["id"] == approved_id)
+    assert approved_read["hubs"] == ["perde-na-c3"]
 
     app.dependency_overrides[require_admin] = override_admin
     try:

@@ -12,7 +12,7 @@ from src.agents.image_generator import generate_supporting_image
 from src.agents.theme_generator import ThemeGeneratorAgent
 from src.config.ai_pricing import image_generation_cost_micro_usd
 from src.middlewares.errors import AppError
-from src.models import AIGeneratedExercise, AIInteractionLog, Difficulty, EssayTheme, Exercise, Lesson, Module, ModuleItem
+from src.models import AIGeneratedExercise, AIInteractionLog, Difficulty, Essay, EssayTheme, Exercise, Lesson, Module, ModuleItem
 from src.schemas.admin import (
     AdminActivityRead,
     AdminLessonRead,
@@ -37,13 +37,27 @@ class AdminContentService:
     def list_essay_themes(self) -> list[EssayTheme]:
         # P3b REQ-4/5: inclui pending pra aparecer na fila de revisao/aba Temas; rejeitado
         # continua fora (so acessivel via review-queue historico, nao "conteudo gerenciavel").
-        return list(
+        themes = list(
             self.db.scalars(
                 select(EssayTheme)
                 .where(or_(EssayTheme.is_active.is_(True), EssayTheme.status == "pending"))
                 .order_by(EssayTheme.created_at.desc())
             )
         )
+        # Anexado no objeto (nao e coluna mapeada) so pra a resposta de admin mostrar quantas
+        # redacoes dependem do tema antes de excluir — sem isso o admin decide "às cegas" (auditoria
+        # de UX, achado #6.1). EssayThemeRead.essays_count le esse atributo via from_attributes.
+        if themes:
+            counts = dict(
+                self.db.execute(
+                    select(Essay.theme_id, func.count(Essay.id))
+                    .where(Essay.theme_id.in_([theme.id for theme in themes]))
+                    .group_by(Essay.theme_id)
+                ).all()
+            )
+            for theme in themes:
+                theme.essays_count = counts.get(theme.id, 0)
+        return themes
 
     def generate_essay_theme(
         self,
@@ -416,15 +430,21 @@ class AdminContentService:
     def delete_essay_theme(self, *, theme_id: int) -> None:
         theme = self._get_manageable_essay_theme(theme_id)
         theme.is_active = False
-        if theme.status == "pending":
-            # Sem isso, excluir um tema ainda pending nao tira ele da listagem/fila de revisao —
-            # is_active=False sozinho nao basta pra distinguir "excluido" de "aguardando revisao".
-            theme.status = "rejected"
+        # Sempre um status terminal explicito — nunca deixar "approved"/outro status nao-terminal
+        # sobrevivendo com is_active=False, ou o tema fica com rotulo enganoso (parece aprovado)
+        # e nenhuma rota de admin consegue mais achá-lo (list_essay_themes só mostra
+        # is_active=True ou pending). "rejected" pra quem ainda estava em revisão (fluxo normal
+        # de reprovação), "archived" pra quem já era conteúdo publicado e foi removido depois.
+        theme.status = "rejected" if theme.status == "pending" else "archived"
         self.db.commit()
 
     def review_essay_theme(self, *, theme_id: int, action: str, reviewer_id: int | None) -> EssayTheme:
         """P3b REQ-2: aprovar publica (is_active=True); rejeitar mantem despublicado."""
         theme = self._get_manageable_essay_theme(theme_id)
+        if theme.status != "pending":
+            raise AppError(
+                "Este item já foi revisado por outro admin.", status_code=409, code="already_reviewed",
+            )
         if action == "approve" and len(theme.supporting_texts or []) < 2:
             raise AppError(
                 "Tema precisa de pelo menos 2 textos motivadores para ser aprovado.",
@@ -676,6 +696,13 @@ class AdminContentService:
         row = self.db.get(AIGeneratedExercise, ai_exercise_id)
         if not row:
             raise AppError("Exercício gerado não encontrado.", status_code=404, code="ai_exercise_not_found")
+        if row.status != "pending":
+            # Sem essa checagem, revisar o mesmo item pendente duas vezes (dois admins, ou
+            # duplo-clique que escapou do disabled do botao) reaprova e cria um segundo Exercise
+            # publicado a partir do mesmo AIGeneratedExercise (ver bloco de aprovacao abaixo).
+            raise AppError(
+                "Este item já foi revisado por outro admin.", status_code=409, code="already_reviewed",
+            )
 
         edited = False
         if statement is not None and statement != row.statement:

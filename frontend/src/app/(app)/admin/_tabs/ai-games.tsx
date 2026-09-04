@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Eye, Loader2, Plus, Save, Search, Sparkles, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,13 +9,14 @@ import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
 import { engineLabel } from "@/app/(app)/admin/_tabs/ai-labels";
 import { GamePayloadEditor } from "@/app/(app)/admin/_tabs/game-payload-editors";
 import { GamePreviewModal } from "@/app/(app)/admin/_tabs/game-preview";
+import { ConfirmDangerModal } from "@/app/(app)/admin/_tabs/components/confirm-danger-modal";
 import { HistoryPanel } from "@/app/(app)/admin/_tabs/components/history-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/http-client";
-import type { AdminUser, AIGeneratedGame, GameQuestion } from "@/types/api";
+import type { AdminReviewer, AIGeneratedGame, GameQuestion } from "@/types/api";
 import { cn } from "@/utils";
 
 // Engines cujo conteudo mora em `questions` — os outros usam `payload`, editor dedicado por tipo
@@ -40,7 +41,7 @@ export function GameEditorPanel({
   onDeleted,
 }: {
   game: AIGeneratedGame;
-  users: AdminUser[];
+  users: AdminReviewer[];
   allGames: AIGeneratedGame[];
   onReviewed: (updated: AIGeneratedGame) => void;
   onDeleted: (gameId: number) => void;
@@ -50,12 +51,17 @@ export function GameEditorPanel({
   const [targets, setTargets] = useState<string[]>(game.targets);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [structuralBusy, setStructuralBusy] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generateCount, setGenerateCount] = useState(3);
   const [generatingMore, setGeneratingMore] = useState(false);
   const [payloadGenerateCount, setPayloadGenerateCount] = useState(2);
   const [generatingPayload, setGeneratingPayload] = useState(false);
+  // Ver comentário equivalente em create-with-ai.tsx — chave estável por tentativa, evita gerar
+  // (e cobrar) IA de novo se um retry acontecer depois do backend já ter processado.
+  const generateMoreKeyRef = useRef(crypto.randomUUID());
+  const generatePayloadKeyRef = useRef(crypto.randomUUID());
 
   const isQuestionEngine = QUESTION_BASED_ENGINES.has(game.engine);
   const questions = editingQ ?? game.questions;
@@ -141,10 +147,11 @@ export function GameEditorPanel({
     try {
       const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/questions/generate`, {
         method: "POST",
-        body: JSON.stringify({ count: generateCount }),
+        body: JSON.stringify({ count: generateCount, idempotency_key: generateMoreKeyRef.current }),
       });
       onReviewed(result);
       toast.success("Perguntas geradas — revise antes de aprovar.");
+      generateMoreKeyRef.current = crypto.randomUUID();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar perguntas.");
     } finally {
@@ -161,10 +168,11 @@ export function GameEditorPanel({
     try {
       const result = await apiFetch<AIGeneratedGame>(`/admin/ai-games/${game.id}/payload-items/generate`, {
         method: "POST",
-        body: JSON.stringify({ count: payloadGenerateCount }),
+        body: JSON.stringify({ count: payloadGenerateCount, idempotency_key: generatePayloadKeyRef.current }),
       });
       onReviewed(result);
       toast.success("Conteúdo gerado — revise antes de publicar.");
+      generatePayloadKeyRef.current = crypto.randomUUID();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar conteúdo.");
     } finally {
@@ -209,7 +217,6 @@ export function GameEditorPanel({
   }
 
   async function remove() {
-    if (!window.confirm(`Excluir o jogo "${game.name}"? Esta acao nao pode ser desfeita.`)) return;
     setDeleting(true);
     try {
       await apiFetch(`/admin/ai-games/${game.id}`, { method: "DELETE" });
@@ -218,6 +225,8 @@ export function GameEditorPanel({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao excluir.");
       setDeleting(false);
+    } finally {
+      setConfirmingDelete(false);
     }
   }
 
@@ -438,7 +447,7 @@ export function GameEditorPanel({
                 Salvar alterações
               </Button>
             )}
-            <Button size="sm" variant="destructive" onClick={remove} disabled={deleting} className="ml-auto">
+            <Button size="sm" variant="destructive" onClick={() => setConfirmingDelete(true)} disabled={deleting} className="ml-auto">
               <Trash2 className="h-3.5 w-3.5" />
               Excluir
             </Button>
@@ -450,6 +459,16 @@ export function GameEditorPanel({
 
           <HistoryPanel contentType="AIGeneratedGame" contentId={game.id} users={users} />
       </div>
+
+      <ConfirmDangerModal
+        open={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        onConfirm={remove}
+        title="Excluir jogo"
+        description={`Excluir "${game.name}"? Essa ação não pode ser desfeita.`}
+        busy={deleting}
+        impact={[{ label: "Tentativas de alunos registradas", value: game.attempts_count }]}
+      />
     </div>
   );
 }

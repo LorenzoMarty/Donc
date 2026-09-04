@@ -1,7 +1,7 @@
 ﻿from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -99,6 +99,7 @@ class EssayVersionCorrection(Base):
     feedback: Mapped[str] = mapped_column(Text, nullable=False)
     recurrent_patterns: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     inline_annotations: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, default=None)
+    used_fallback: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     version = relationship("EssayVersion", back_populates="correction")
@@ -121,6 +122,7 @@ class EssayCorrection(Base):
     feedback: Mapped[str] = mapped_column(Text, nullable=False)
     recurrent_patterns: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     inline_annotations: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, default=None)
+    used_fallback: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     essay = relationship("Essay", back_populates="correction")

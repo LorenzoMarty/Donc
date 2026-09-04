@@ -132,6 +132,50 @@ def test_approve_creates_real_exercise_and_marks_approved(client):
         db.close()
 
 
+def test_reviewing_twice_does_not_duplicate_exercise(client):
+    """Dois admins (ou duplo-clique) revisando o mesmo AIGeneratedExercise pendente — sem a
+    checagem de status em review_ai_exercise, o segundo approve criaria um segundo Exercise
+    publicado a partir do mesmo item."""
+    module_id, lesson_id = _seed_lesson()
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        generated = api_data(
+            client.post(
+                f"/api/v1/admin/modules/{module_id}/activities/generate",
+                json={"lesson_ids": [lesson_id], "difficulty": "medium", "count": 1},
+            )
+        )
+        ai_exercise_id = generated[0]["id"]
+
+        db = SessionLocal()
+        try:
+            exercise_count_before = len(list(db.scalars(select(Exercise))))
+        finally:
+            db.close()
+
+        first = client.post(
+            f"/api/v1/admin/ai-exercises/{ai_exercise_id}/review",
+            json={"action": "approve", "targets": ["C3_LOW"]},
+        )
+        assert first.status_code == 200
+
+        second = client.post(
+            f"/api/v1/admin/ai-exercises/{ai_exercise_id}/review",
+            json={"action": "approve", "targets": ["C3_LOW"]},
+        )
+        assert second.status_code == 409
+        assert second.json()["error"] == "already_reviewed"
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    db = SessionLocal()
+    try:
+        exercise_count_after = len(list(db.scalars(select(Exercise))))
+        assert exercise_count_after == exercise_count_before + 1
+    finally:
+        db.close()
+
+
 def test_reject_does_not_create_exercise(client):
     module_id, lesson_id = _seed_lesson()
     app.dependency_overrides[require_admin] = override_admin

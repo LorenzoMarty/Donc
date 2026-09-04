@@ -16,10 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmDangerModal } from "@/app/(app)/admin/_tabs/components/confirm-danger-modal";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/services/api";
-import type { AdminUser, EssayTheme, SupportingText } from "@/types/api";
+import type { AdminReviewer, EssayTheme, SupportingText } from "@/types/api";
 
 type TextType = SupportingText["type"];
 
@@ -78,7 +79,7 @@ export function ThemesTab({
   onGenerated,
 }: {
   themes: EssayTheme[];
-  users: AdminUser[];
+  users: AdminReviewer[];
   onUpdated: (theme: EssayTheme) => void;
   onDeleted: (themeId: number) => void;
   onGenerated: (theme: EssayTheme) => void;
@@ -87,6 +88,7 @@ export function ThemesTab({
   const [draft, setDraft] = useState<ThemeDraft | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<EssayTheme | null>(null);
   const filteredThemes = query ? themes.filter((t) => t.title.toLowerCase().includes(query.toLowerCase())) : themes;
 
   async function reviewTheme(theme: EssayTheme, action: "approve" | "reject") {
@@ -145,7 +147,6 @@ export function ThemesTab({
 
   async function deleteTheme(theme: EssayTheme) {
     if (busyId) return;
-    if (!window.confirm(`Excluir o tema "${theme.title}"? Ele deixará de aparecer para os alunos.`)) return;
     setBusyId(theme.id);
     try {
       await apiFetch<{ action: "deleted"; theme_id: number }>(`/admin/essay-themes/${theme.id}`, { method: "DELETE" });
@@ -156,6 +157,7 @@ export function ThemesTab({
       toast.error(err instanceof Error ? err.message : "Não foi possível excluir o tema.");
     } finally {
       setBusyId(null);
+      setDeleteTarget(null);
     }
   }
 
@@ -201,7 +203,7 @@ export function ThemesTab({
                       <Button type="button" size="icon" variant="ghost" className="h-8 w-8" disabled={Boolean(busyId)} onClick={() => startEditing(theme)} aria-label="Editar tema">
                         <Edit2 className="h-4 w-4" aria-hidden="true" />
                       </Button>
-                      <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" disabled={Boolean(busyId)} onClick={() => deleteTheme(theme)} aria-label="Excluir tema">
+                      <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" disabled={Boolean(busyId)} onClick={() => setDeleteTarget(theme)} aria-label="Excluir tema">
                         <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </div>
@@ -238,6 +240,20 @@ export function ThemesTab({
           </p>
         ) : null}
       </div>
+
+      <ConfirmDangerModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteTheme(deleteTarget)}
+        title="Excluir tema"
+        description={`Excluir "${deleteTarget?.title}"? Ele deixa de aparecer para os alunos — essa ação não pode ser desfeita.`}
+        busy={deleteTarget !== null && busyId === deleteTarget.id}
+        impact={
+          deleteTarget
+            ? [{ label: "Redações escritas sobre este tema", value: deleteTarget.essays_count }]
+            : []
+        }
+      />
     </div>
   );
 }

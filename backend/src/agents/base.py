@@ -73,12 +73,14 @@ class AgnoAgentRunner:
         )
         with stack:
             if not settings.openai_api_key:
+                logger.warning("Sem OPENAI_API_KEY configurada — agente %s usando fallback heuristico", agent_name)
                 return self._finish_run(fallback, start=start, span=span, used_fallback=True, error="openai_api_key_missing")
 
             try:
                 from agno.agent import Agent
                 from agno.models.openai import OpenAIResponses
             except Exception as exc:
+                logger.warning("Import do agno falhou — agente %s usando fallback heuristico: %s", agent_name, exc)
                 return self._finish_run(fallback, start=start, span=span, used_fallback=True, error=f"agno_import_failed: {exc}")
 
             db = self._build_agno_db()
@@ -129,7 +131,7 @@ class AgnoAgentRunner:
                             self.last_output_tokens = self._metric_value(metrics, {"output_tokens", "completion_tokens"})
                             self.last_token_count = self._extract_token_count(metrics)
                         self.last_model = model_id
-                        result = self._coerce_output(raw_content, output_schema, fallback)
+                        result = self._coerce_output(raw_content, output_schema, fallback, agent_name=agent_name)
                         return self._finish_run(result, start=start, span=span, used_fallback=result is fallback)
                     except Exception as exc:
                         last_exc = exc
@@ -207,7 +209,7 @@ class AgnoAgentRunner:
         except Exception:
             return None
 
-    def _coerce_output(self, content: Any, output_schema: type[T], fallback: T) -> T:
+    def _coerce_output(self, content: Any, output_schema: type[T], fallback: T, *, agent_name: str = "") -> T:
         try:
             if isinstance(content, output_schema):
                 return content
@@ -217,9 +219,17 @@ class AgnoAgentRunner:
                 return output_schema.model_validate(content)
             if isinstance(content, str):
                 return output_schema.model_validate(json.loads(content))
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "Resposta da IA nao bateu com o schema esperado (agent=%s schema=%s) — usando fallback: %s",
+                agent_name, output_schema.__name__, exc,
+            )
             self.last_used_fallback = True
             return fallback
+        logger.warning(
+            "Resposta da IA em formato inesperado (agent=%s schema=%s type=%s) — usando fallback",
+            agent_name, output_schema.__name__, type(content).__name__,
+        )
         self.last_used_fallback = True
         return fallback
 

@@ -33,18 +33,29 @@ const NEXT_ROUND_DELAY_MS = { correct: 480, wrong: 900 };
 /** Engine `survival`: maratona agregada de vários jogos, timer agressivo e vidas limitadas. */
 export function SurvivalSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const remoteGames = useGameStore((state) => state.remoteGames);
 
   const [attempt, setAttempt] = useState(0);
   // `attempt` força reembaralhar (pool e alternativas) a cada "Repetir" — sem isso o useMemo
   // reaproveitava a mesma seleção/ordem/posição da 1ª tentativa em replays no mesmo componente
   // montado, fazendo a resposta certa parecer sempre no mesmo lugar.
-  const questions = useMemo<GameQuestion[]>(() => {
+  const { questions, sourceGameByQuestionId } = useMemo(() => {
     const pool = game.survival?.poolGameIds?.length
       ? game.survival.poolGameIds.map((id) => getGameById(id, remoteGames)).filter(Boolean as unknown as (g: GameDefinition | undefined) => g is GameDefinition)
       : getAllGames(remoteGames).filter((g) => g.id !== game.id && (g.questions?.length ?? 0) > 0);
-    const all = pool.flatMap((g) => g.questions ?? []);
-    return shuffle(all).slice(0, RUN_LENGTH).map(shuffleQuestionOptions);
+    // A maratona junta perguntas de varios jogos-fonte — sem esse mapa, o sinal cognitivo de cada
+    // pergunta seria atribuido ao hub do jogo survival (que nao tem hub proprio, so agrega),
+    // nunca ao hub real do jogo de onde a pergunta veio.
+    const sourceById: Record<string, GameDefinition> = {};
+    const all = pool.flatMap((g) =>
+      (g.questions ?? []).map((q) => {
+        sourceById[q.id] = g;
+        return q;
+      }),
+    );
+    const picked = shuffle(all).slice(0, RUN_LENGTH).map(shuffleQuestionOptions);
+    return { questions: picked as GameQuestion[], sourceGameByQuestionId: sourceById };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game, attempt, remoteGames]);
 
@@ -73,6 +84,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
       if (selected !== null || result || !question) return;
       const correct = !timedOut && choice === question.answerIndex;
       setSelected(choice);
+      recordCognitiveOutcome(sourceGameByQuestionId[question.id] ?? game, { correct });
       const nextStrikes = correct ? strikes : strikes + 1;
       const nextScore = correct ? score + 1 : score;
       const nextCombo = correct ? combo + 1 : 0;
@@ -95,7 +107,7 @@ export function SurvivalSession({ game, category }: { game: GameDefinition; cate
         setTimeLeft(roundDuration(answered));
       }, correct ? NEXT_ROUND_DELAY_MS.correct : NEXT_ROUND_DELAY_MS.wrong);
     },
-    [combo, finish, index, question, questions.length, result, score, selected, strikes],
+    [combo, finish, game, index, question, questions.length, recordCognitiveOutcome, result, score, selected, sourceGameByQuestionId, strikes],
   );
 
   useEffect(() => {

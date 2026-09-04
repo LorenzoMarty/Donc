@@ -56,6 +56,7 @@ const sectionDefs: SectionDef[] = [
 
 export function EssayAssemblySession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const level = essayLevel;
   const [board, setBoard] = useState<BoardState>(() => createInitialBoard());
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -196,6 +197,7 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
     const nextValidation = evaluateBoard(board, level);
     setCheckedValidation(nextValidation);
     setTriesCount((value) => value + 1);
+    recordCognitiveOutcome(game, { correct: nextValidation.isPerfect });
     if (nextValidation.isPerfect) {
       window.setTimeout(() => finish(nextValidation), 420);
     }

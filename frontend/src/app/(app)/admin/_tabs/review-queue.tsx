@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Gamepad2, GraduationCap, Loader2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, FileText, Gamepad2, GraduationCap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,15 @@ const TYPE_META: Record<ReviewQueueItem["content_type"], { label: string; icon: 
   exercise: { label: "Exercício", icon: GraduationCap, tab: "exercises" },
   theme: { label: "Tema de redação", icon: FileText, tab: "themes" },
 };
+
+function relativeAge(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const hours = Math.floor(diffMs / 3_600_000);
+  if (hours < 1) return "há menos de 1h";
+  if (hours < 24) return `há ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `há ${days} dia${days === 1 ? "" : "s"}`;
+}
 
 function queueUrl(contentType: string, target: string, difficulty: string): string {
   const params = new URLSearchParams();
@@ -62,6 +71,7 @@ export function ReviewQueueTab({
   const [target, setTarget] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   async function load() {
     const data = await apiFetch<ReviewQueueItem[]>(queueUrl(contentType, target, difficulty));
@@ -131,6 +141,11 @@ export function ReviewQueueTab({
             </Select>
           </Field>
         </div>
+        {(target || difficulty) && contentType !== "game" && contentType !== "exercise" && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Temas de redação não têm problema cognitivo nem dificuldade cadastrados — com esse filtro ativo, temas pendentes ficam fora da lista abaixo mesmo que existam.
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -145,6 +160,8 @@ export function ReviewQueueTab({
           const meta = TYPE_META[item.content_type];
           const Icon = meta.icon;
           const busy = busyKey === key;
+          const expanded = expandedKey === key;
+          const hasFullContent = item.content_type !== "game" && (item.context || item.options.length > 0);
           return (
             <div key={key} className="rounded-card bg-card p-4 shadow-soft">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -153,6 +170,7 @@ export function ReviewQueueTab({
                     <Icon className="h-4 w-4 text-primary" />
                     <Badge variant="outline" className="text-xs">{meta.label}</Badge>
                     {item.difficulty && <Badge variant="outline" className="text-xs">{DIFFICULTY_LABELS[item.difficulty] ?? item.difficulty}</Badge>}
+                    <span className="text-[11px] text-muted-foreground">{relativeAge(item.created_at)}</span>
                   </div>
                   <p className="mt-1.5 text-safe text-sm font-semibold leading-5">{item.title}</p>
                   {item.skill && <p className="mt-0.5 text-xs text-muted-foreground">{item.skill}</p>}
@@ -164,6 +182,16 @@ export function ReviewQueueTab({
                         </Badge>
                       ))}
                     </div>
+                  )}
+                  {hasFullContent && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedKey(expanded ? null : key)}
+                      className="mt-2 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    >
+                      {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                      {expanded ? "Recolher" : "Ver conteúdo completo"}
+                    </button>
                   )}
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
@@ -183,6 +211,43 @@ export function ReviewQueueTab({
                   </Button>
                 </div>
               </div>
+
+              {expanded && item.content_type === "theme" && (
+                <div className="mt-3 space-y-2 rounded-control bg-background/70 p-3 text-xs leading-6">
+                  <p className="whitespace-pre-wrap text-foreground">{item.context}</p>
+                  {item.supporting_texts.length > 0 && (
+                    <div className="space-y-2 border-t pt-2">
+                      {item.supporting_texts.map((text, index) => (
+                        <div key={`${text.title}-${index}`}>
+                          <p className="font-semibold text-foreground">{text.title}</p>
+                          <p className="text-muted-foreground">{text.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {expanded && item.content_type === "exercise" && (
+                <div className="mt-3 space-y-2 rounded-control bg-background/70 p-3 text-xs leading-6">
+                  <ul className="grid gap-1.5">
+                    {item.options.map((option, index) => {
+                      const letter = String.fromCharCode(65 + index);
+                      const isCorrect = item.correct_answer === letter;
+                      return (
+                        <li
+                          key={index}
+                          className={`flex items-center gap-2 rounded-control px-2 py-1 ${isCorrect ? "bg-success/10 font-medium text-success" : "text-foreground"}`}
+                        >
+                          {isCorrect ? <Check className="h-3.5 w-3.5 shrink-0" /> : <span className="w-3.5 shrink-0" />}
+                          {letter}) {option}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {item.explanation && <p className="border-t pt-2 text-muted-foreground">{item.explanation}</p>}
+                </div>
+              )}
             </div>
           );
         })}

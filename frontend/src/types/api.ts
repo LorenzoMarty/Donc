@@ -24,6 +24,7 @@ export type PublishedGame = {
   description: string | null;
   thumbnail: string | null;
   estimated_time: string | null;
+  hubs: string[];
 };
 
 export type ChartPoint = {
@@ -201,9 +202,10 @@ export type EssayTheme = {
   title: string;
   context: string;
   source: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "archived";
   created_at: string;
   supporting_texts?: SupportingText[];
+  essays_count: number;
 };
 
 export type EssayCorrection = {
@@ -220,6 +222,7 @@ export type EssayCorrection = {
   feedback: string;
   recurrent_patterns: string[];
   inline_annotations?: InlineAnnotation[];
+  used_fallback: boolean;
   created_at: string;
 };
 
@@ -299,6 +302,16 @@ export type AdminUser = {
   event_count: number;
 };
 
+export type AdminUserListResponse = {
+  items: AdminUser[];
+  total: number;
+};
+
+export type AdminReviewer = {
+  id: number;
+  name: string;
+};
+
 export type AdminLesson = {
   id: number;
   title: string;
@@ -354,6 +367,11 @@ export type ReviewQueueItem = {
   targets: string[];
   status: "pending" | "approved" | "rejected";
   created_at: string;
+  context: string | null;
+  supporting_texts: SupportingText[];
+  options: string[];
+  correct_answer: string | null;
+  explanation: string | null;
 };
 
 export type ContentVersion = {
@@ -537,6 +555,23 @@ export type AdminAdaptiveHealth = {
   issues_without_progress: IssueWithoutProgressItem[];
 };
 
+export type BeforeAfterIssueRow = {
+  issue: string;
+  cycles: number;
+  improved: number;
+  unchanged_or_worse: number;
+};
+
+export type AdminPedagogicalMetrics = {
+  shown: number;
+  started: number;
+  completed: number;
+  start_rate: number | null;
+  completion_rate: number | null;
+  avg_completion_seconds_by_type: Record<string, number>;
+  before_after_by_issue: BeforeAfterIssueRow[];
+};
+
 export type AdminUserAIUsage = {
   total_tokens: number;
   total_calls: number;
@@ -584,4 +619,5 @@ export type AIGeneratedGame = {
   edited_after_generation: boolean;
   created_at: string;
   reviewed_at: string | null;
+  attempts_count: number;
 };

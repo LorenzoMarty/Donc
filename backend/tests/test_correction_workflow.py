@@ -62,31 +62,31 @@ def make_workflow() -> CorrectionOrchestratorWorkflow:
     wf.preprocessor.process.return_value = MOCK_PRE
 
     wf.gate_agent = MagicMock()
-    wf.gate_agent.runner = MagicMock(last_token_count=80)
+    wf.gate_agent.runner = MagicMock(last_token_count=80, last_used_fallback=False)
     wf.gate_agent.evaluate.return_value = MOCK_GATE
 
     wf.theme_agent = MagicMock()
-    wf.theme_agent.runner = MagicMock(last_token_count=90)
+    wf.theme_agent.runner = MagicMock(last_token_count=90, last_used_fallback=False)
     wf.theme_agent.analyze.return_value = MOCK_THEME
 
     wf.thesis_agent = MagicMock()
-    wf.thesis_agent.runner = MagicMock(last_token_count=120)
+    wf.thesis_agent.runner = MagicMock(last_token_count=120, last_used_fallback=False)
     wf.thesis_agent.analyze.return_value = MOCK_THESIS
 
     wf.repertoire_agent = MagicMock()
-    wf.repertoire_agent.runner = MagicMock(last_token_count=95)
+    wf.repertoire_agent.runner = MagicMock(last_token_count=95, last_used_fallback=False)
     wf.repertoire_agent.analyze.return_value = MOCK_REPERTOIRE
 
     wf.arg_agent = MagicMock()
-    wf.arg_agent.runner = MagicMock(last_token_count=150)
+    wf.arg_agent.runner = MagicMock(last_token_count=150, last_used_fallback=False)
     wf.arg_agent.analyze.return_value = MOCK_ARG
 
     wf.intervention_agent = MagicMock()
-    wf.intervention_agent.runner = MagicMock(last_token_count=110)
+    wf.intervention_agent.runner = MagicMock(last_token_count=110, last_used_fallback=False)
     wf.intervention_agent.analyze.return_value = MOCK_INTERVENTION
 
     wf.grammar_agent = MagicMock()
-    wf.grammar_agent.runner = MagicMock(last_token_count=100)
+    wf.grammar_agent.runner = MagicMock(last_token_count=100, last_used_fallback=False)
     wf.grammar_agent.analyze.return_value = MOCK_GRAMMAR
 
     return wf
@@ -98,6 +98,8 @@ def test_workflow_returns_correction_result():
     assert isinstance(result, EssayCorrectionResult)
     assert result.total_score > 0
     assert result.total_score == result.competency_1 + result.competency_2 + result.competency_3 + result.competency_4 + result.competency_5
+    # Todos os 7 agentes "reais" (runners mockados com last_used_fallback=False) — sem degradação.
+    assert result.used_fallback is False
 
 
 def test_workflow_calls_all_seven_llm_agents():
@@ -129,6 +131,14 @@ def test_workflow_early_stop_on_zero():
     wf.grammar_agent.analyze.assert_not_called()
 
 
+def test_workflow_early_stop_marks_fallback_from_gate_runner():
+    wf = make_workflow()
+    wf.gate_agent.runner.last_used_fallback = True
+    wf.gate_agent.evaluate.return_value = EliminationGateOutput(status="ZERO", reason="Fuga total do tema.", zero_rule="fuga_total")
+    result = wf.correct(theme=THEME, context="", content=CONTENT)
+    assert result.used_fallback is True
+
+
 def test_workflow_early_stop_on_desvio_grave():
     wf = make_workflow()
     wf.gate_agent.evaluate.return_value = EliminationGateOutput(
@@ -151,6 +161,9 @@ def test_workflow_degrades_single_analyzer_failure_instead_of_aborting():
     wf.grammar_agent.analyze.assert_called_once()
     # Competência de repertório (c2) é penalizada pela degradação, mas a correção não é abortada.
     assert result.competency_2 <= 80
+    # Um analisador degradado (bug de codigo, nao so falha de API) ja e o suficiente pra marcar a
+    # correcao inteira como nao-100%-IA — o aluno/admin nao pode ver isso como resultado normal.
+    assert result.used_fallback is True
 
 
 def test_score_auditor_caps_c3_when_no_thesis():
