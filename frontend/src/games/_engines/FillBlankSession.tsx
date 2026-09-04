@@ -33,6 +33,7 @@ function normalize(value: string): string {
  */
 export function FillBlankSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const adaptive = useGameStore((state) => state.adaptive);
   const rounds = useMemo<FillBlankRound[]>(
     () => selectAdaptivePool(game, game.fillBlank?.rounds ?? [], adaptive, shuffle),
@@ -67,6 +68,7 @@ export function FillBlankSession({ game, category }: { game: GameDefinition; cat
     if (verdict || !round) return;
     const ok = acceptedSet.has(normalize(value));
     setVerdict(ok ? "correct" : "wrong");
+    recordCognitiveOutcome(game, { correct: ok });
     if (ok) setScore((v) => v + 1);
   }
 

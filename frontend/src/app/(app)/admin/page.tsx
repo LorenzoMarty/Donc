@@ -12,6 +12,7 @@ import {
   LibraryBig,
   ListChecks,
   Puzzle,
+  TrendingUp,
   Users,
 } from "lucide-react";
 
@@ -26,7 +27,8 @@ import type {
   AdminContentQuality,
   AdminLesson,
   AdminModule,
-  AdminUser,
+  AdminPedagogicalMetrics,
+  AdminReviewer,
   AIGeneratedGame,
   AITelemetry,
   EssayTheme,
@@ -40,6 +42,7 @@ import { AdminOverviewTab } from "./_tabs/overview";
 import { AITelemetryTab } from "./_tabs/ai-telemetry";
 import { ContentQualityTab } from "./_tabs/content-quality";
 import { ExercisesTab } from "./_tabs/exercises";
+import { PedagogicalMetricsTab } from "./_tabs/pedagogical-metrics";
 import { ReviewQueueTab } from "./_tabs/review-queue";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
@@ -65,6 +68,7 @@ const NAV_TABS: AdminTab[] = [
   { value: "ai", label: "Custos de IA", description: "Custos, erros e consumo por fluxo.", section: "Sistema", icon: Bot },
   { value: "content-quality", label: "Qualidade", description: "Lacunas de conteúdo e cobertura adaptativa.", section: "Sistema", icon: BarChart3 },
   { value: "adaptive-health", label: "Saúde adaptativa", description: "Alertas do motor de recomendação.", section: "Sistema", icon: Gauge },
+  { value: "pedagogical-metrics", label: "Eficácia", description: "O motor adaptativo está funcionando? Funil e antes/depois por problema.", section: "Sistema", icon: TrendingUp },
 ];
 
 const EMPTY_TELEMETRY: AITelemetry = {
@@ -88,7 +92,7 @@ const EMPTY_TELEMETRY: AITelemetry = {
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth();
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [reviewers, setReviewers] = useState<AdminReviewer[]>([]);
   const [telemetry, setTelemetry] = useState<AITelemetry | null>(null);
   const [telemetryError, setTelemetryError] = useState("");
   const [activity, setActivity] = useState<UserActivity | null>(null);
@@ -97,6 +101,7 @@ export default function AdminPage() {
   const [themes, setThemes] = useState<EssayTheme[]>([]);
   const [contentQuality, setContentQuality] = useState<AdminContentQuality | null>(null);
   const [adaptiveHealth, setAdaptiveHealth] = useState<AdminAdaptiveHealth | null>(null);
+  const [pedagogicalMetrics, setPedagogicalMetrics] = useState<AdminPedagogicalMetrics | null>(null);
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
   const [error, setError] = useState("");
   const [tab, setTab] = useState(() =>
@@ -110,7 +115,7 @@ export default function AdminPage() {
 
     Promise.allSettled([
       apiFetch<AdminMetrics>("/admin/metrics"),
-      apiFetch<AdminUser[]>("/admin/users"),
+      apiFetch<AdminReviewer[]>("/admin/reviewers"),
       apiFetch<AITelemetry>("/admin/ai-telemetry?days=30"),
       apiFetch<UserActivity>("/admin/user-activity?days=7"),
       apiFetch<AIGeneratedGame[]>("/admin/ai-games"),
@@ -119,11 +124,12 @@ export default function AdminPage() {
       apiFetch<AdminContentQuality>("/admin/content-quality"),
       apiFetch<AdminAdaptiveHealth>("/admin/adaptive-health"),
       apiFetch<ReviewQueueItem[]>("/admin/review-queue"),
-    ]).then(([m, u, t, a, g, c, th, cq, ah, rq]) => {
+      apiFetch<AdminPedagogicalMetrics>("/admin/pedagogical-metrics"),
+    ]).then(([m, u, t, a, g, c, th, cq, ah, rq, pm]) => {
       if (m.status === "fulfilled") setMetrics(m.value);
       else setError(m.reason instanceof Error ? m.reason.message : "Não foi possível carregar o painel administrativo.");
 
-      if (u.status === "fulfilled") setUsers(u.value);
+      if (u.status === "fulfilled") setReviewers(u.value);
       if (t.status === "fulfilled") setTelemetry(t.value);
       else {
         setTelemetry(EMPTY_TELEMETRY);
@@ -136,6 +142,7 @@ export default function AdminPage() {
       if (cq.status === "fulfilled") setContentQuality(cq.value);
       if (ah.status === "fulfilled") setAdaptiveHealth(ah.value);
       if (rq.status === "fulfilled") setReviewQueueCount(rq.value.length);
+      if (pm.status === "fulfilled") setPedagogicalMetrics(pm.value);
     });
   }, [authLoading, isAdmin]);
 
@@ -184,17 +191,13 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="users" className="mt-0">
-            <UsersTab
-              users={users}
-              onUserUpdated={(updated) => setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)))}
-              onUserDeleted={(userId) => setUsers((prev) => prev.filter((user) => user.id !== userId))}
-            />
+            <UsersTab />
           </TabsContent>
 
           <TabsContent value="themes" className="mt-0">
             <ThemesTab
               themes={themes}
-              users={users}
+              users={reviewers}
               onUpdated={(theme) => setThemes((prev) => prev.map((item) => (item.id === theme.id ? theme : item)))}
               onDeleted={(themeId) => setThemes((prev) => prev.filter((item) => item.id !== themeId))}
               onGenerated={(theme) => setThemes((prev) => [theme, ...prev.filter((item) => item.id !== theme.id)])}
@@ -252,6 +255,10 @@ export default function AdminPage() {
             ) : (
               <LoadingCard />
             )}
+          </TabsContent>
+
+          <TabsContent value="pedagogical-metrics" className="mt-0">
+            {pedagogicalMetrics ? <PedagogicalMetricsTab report={pedagogicalMetrics} /> : <LoadingCard />}
           </TabsContent>
         </Tabs>
       </main>

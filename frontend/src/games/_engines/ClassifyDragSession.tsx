@@ -33,6 +33,7 @@ type Placement = Record<string, string>; // itemId -> "bank" | bucketId
  */
 export function ClassifyDragSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const adaptive = useGameStore((state) => state.adaptive);
   const payload = game.classify;
   const items = useMemo(
@@ -76,6 +77,9 @@ export function ClassifyDragSession({ game, category }: { game: GameDefinition; 
   function check() {
     if (!allPlaced || checked) return;
     setChecked(true);
+    for (const item of items) {
+      recordCognitiveOutcome(game, { correct: placement[item.id] === item.bucketId });
+    }
     const completion = completeGame(game, correctCount, items.length, 0);
     setResult(completion);
   }

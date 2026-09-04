@@ -1,6 +1,6 @@
 "use client";
 
-import type { MutableRefObject } from "react";
+import { useRef, type MutableRefObject } from "react";
 
 import { useTrackEvent } from "@/hooks/use-track-event";
 import { apiFetch, type Essay, type EssaySubmitResponse } from "@/services/api";
@@ -39,6 +39,19 @@ export function useEssaySubmission({
   submittingRef,
 }: UseEssaySubmissionParams) {
   const trackEvent = useTrackEvent();
+  // Chave de idempotência estável por tentativa lógica de envio, não por chamada HTTP: se
+  // gerássemos uma UUID nova a cada submit(), um retry após falha de rede (o cenário que o
+  // backend foi feito pra cobrir, essays.py REQ-9/P2b) mandaria uma chave diferente e nunca
+  // reaproveitaria o job já criado do lado do servidor. Só troca quando o essay muda (nova
+  // redação) ou depois de uma correção concluída (próximo envio é uma tentativa genuinamente nova).
+  const idempotencyKeyRef = useRef<{ essayId: number; key: string } | null>(null);
+
+  function idempotencyKeyFor(essayId: number): string {
+    if (idempotencyKeyRef.current?.essayId !== essayId) {
+      idempotencyKeyRef.current = { essayId, key: crypto.randomUUID() };
+    }
+    return idempotencyKeyRef.current.key;
+  }
 
   async function submit() {
     if (!essay || submittingRef.current) return;
@@ -58,11 +71,7 @@ export function useEssaySubmission({
         body: JSON.stringify({ title, content }),
       });
       setEssay(saved);
-      // idempotency_key: se a chamada cair (rede falha depois do backend já ter criado o job) e o
-      // usuário reenviar, o backend devolve o job existente em vez de rodar o pipeline de IA de
-      // novo (backend/src/routes/essays.py, REQ-9 P2b — path já existia, só nunca era exercitado
-      // porque o frontend nunca mandava a chave).
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = idempotencyKeyFor(saved.id);
       await apiFetch<EssaySubmitResponse>(`/essays/${saved.id}/submit?idempotency_key=${idempotencyKey}`, { method: "POST" });
       trackEvent({ event_type: "essay_submitted", entity_id: String(saved.id), entity_type: "essay", meta: { word_count: wordCount } });
       // submitting stays true — CorrectionWaitingScreen polls via useCorrectionStatus
@@ -82,6 +91,7 @@ export function useEssaySubmission({
     setContent(corrected.content);
     setMode("resultado");
     replaceEssayUrl(corrected.id);
+    idempotencyKeyRef.current = null;
     submittingRef.current = false;
     saveRequestRef.current += 1;
     setSubmitting(false);

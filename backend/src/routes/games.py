@@ -21,16 +21,17 @@ from src.services.streak_service import touch_daily_streak
 router = APIRouter(prefix="/games", tags=["games"])
 
 # Hubs cognitivos reais do produto (features/gamification/symptoms.ts::HUBS no frontend) — usado
-# pra rejeitar payload de cognitive_outcomes com hub inventado/arbitrario.
-_KNOWN_HUBS = {
-    "texto-robotico",
-    "repete-ideias",
-    "repertorio-nao-encaixa",
-    "nao-aprofunda",
-    "introducao-sem-tese",
-    "perde-na-c3",
-    "conclusao-formula",
-}
+# pra rejeitar payload de cognitive_outcomes com hub inventado/arbitrario. Derivado de
+# HUB_TO_ISSUE (fonte unica no backend) em vez de copiado de novo, pra nao virar uma 3a lista
+# espelhada manualmente (a copia que resta e so a do frontend, ver teste de paridade).
+_KNOWN_HUBS = set(HUB_TO_ISSUE.keys())
+# Inverso de HUB_TO_ISSUE — usado pra traduzir AIGeneratedGame.targets (ISSUE_CODES, vocabulario
+# do backend) de volta pros hub ids que o frontend conhece, ao expor PublishedGameRead.hubs.
+_ISSUE_TO_HUB = {issue: hub for hub, issue in HUB_TO_ISSUE.items()}
+
+
+def _hubs_for_targets(targets: list[str]) -> list[str]:
+    return [_ISSUE_TO_HUB[issue] for issue in targets if issue in _ISSUE_TO_HUB]
 
 
 class PublishedGameQuestion(BaseModel):
@@ -52,6 +53,7 @@ class PublishedGameRead(BaseModel):
     description: str | None = None
     thumbnail: str | None = None
     estimated_time: str | None = None
+    hubs: list[str] = Field(default_factory=list)
 
 
 class CognitiveOutcomeIn(BaseModel):
@@ -129,6 +131,7 @@ def published_games(
                 description=game.description,
                 thumbnail=game.thumbnail,
                 estimated_time=game.estimated_time,
+                hubs=_hubs_for_targets(game.targets or []),
                 questions=[
                     PublishedGameQuestion(
                         prompt=q.get("prompt", ""),

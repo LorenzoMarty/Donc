@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +35,11 @@ export function ExerciseGeneratorForm({
   const [difficulty, setDifficulty] = useState("medium");
   const [focus, setFocus] = useState("");
   const [generating, setGenerating] = useState(false);
+  // Chave de idempotência estável por tentativa: se o request falhar depois de o backend já ter
+  // gerado e cobrado a chamada de IA (timeout, rede), o próximo clique em "Gerar conteúdo" reaproveita
+  // o resultado (backend/src/utils/ai_idempotency.py) em vez de gerar (e cobrar) de novo. Só troca
+  // depois de um sucesso — o próximo clique aí é uma geração deliberadamente nova.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   const selectedModule = modules.find((m) => m.id === moduleId) ?? null;
 
@@ -51,12 +56,19 @@ export function ExerciseGeneratorForm({
     try {
       const generated = await apiFetch<AIGeneratedExercise[]>(`/admin/modules/${moduleId}/activities/generate`, {
         method: "POST",
-        body: JSON.stringify({ lesson_ids: lessonIds, difficulty, count: 1, focus: focus.trim() || null }),
+        body: JSON.stringify({
+          lesson_ids: lessonIds,
+          difficulty,
+          count: 1,
+          focus: focus.trim() || null,
+          idempotency_key: idempotencyKeyRef.current,
+        }),
       });
       const first = generated[0];
       if (first) {
         onGenerated(first);
         toast.success("Exercício gerado. Revise na aba Revisões.");
+        idempotencyKeyRef.current = crypto.randomUUID();
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar exercício.");
@@ -110,18 +122,25 @@ export function ThemeGeneratorForm({ onGenerated }: { onGenerated: (theme: Essay
   const [focus, setFocus] = useState("");
   const [quantities, setQuantities] = useState<Partial<Record<SupportingTextType, number>>>({});
   const [generating, setGenerating] = useState(false);
+  // Ver comentário equivalente em ExerciseGeneratorForm.generate() acima.
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
 
   async function generate() {
     setGenerating(true);
     try {
       const theme = await apiFetch<EssayTheme>("/admin/essay-themes/generate", {
         method: "POST",
-        body: JSON.stringify({ focus: focus.trim() || null, supporting_text_requirements: requirementsToPayload(quantities) }),
+        body: JSON.stringify({
+          focus: focus.trim() || null,
+          supporting_text_requirements: requirementsToPayload(quantities),
+          idempotency_key: idempotencyKeyRef.current,
+        }),
       });
       onGenerated(theme);
       setFocus("");
       setQuantities({});
       toast.success("Tema gerado. Revise na aba Revisões.");
+      idempotencyKeyRef.current = crypto.randomUUID();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar tema.");
     } finally {

@@ -49,9 +49,10 @@ class AdminTelemetryService:
         by_user: dict[int, int] = {}
         by_workflow: dict[str, int] = {}
         for log in logs:
+            cost = log_cost_micros(log)
             if log.user_id is not None:
-                by_user[log.user_id] = by_user.get(log.user_id, 0) + log.cost_micro_usd
-            by_workflow[log.workflow] = by_workflow.get(log.workflow, 0) + log.cost_micro_usd
+                by_user[log.user_id] = by_user.get(log.user_id, 0) + cost
+            by_workflow[log.workflow] = by_workflow.get(log.workflow, 0) + cost
 
         return AIQuotaStatusRead(
             daily_limit_micro_usd_per_user=settings.ai_daily_cost_limit_micro_usd_per_user,

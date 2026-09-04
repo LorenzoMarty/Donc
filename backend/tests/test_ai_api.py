@@ -91,6 +91,9 @@ def test_fallback_works_without_openai_key():
     assert isinstance(result, EssayCorrectionResult)
     assert result.total_score > 0
     assert result.suggestions
+    # Sem OPENAI_API_KEY (padrao da suite, conftest.py), todo agente cai em heuristica — o
+    # resultado tem que vir marcado como tal, nunca indistinguivel de uma correcao real da IA.
+    assert result.used_fallback is True
 
 
 def test_agent_schema_validates_structured_json():

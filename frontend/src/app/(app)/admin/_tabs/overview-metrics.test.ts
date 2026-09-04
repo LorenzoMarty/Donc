@@ -22,6 +22,7 @@ function game(overrides: Partial<AIGeneratedGame> = {}): AIGeneratedGame {
     edited_after_generation: false,
     created_at: "2026-08-01T00:00:00Z",
     reviewed_at: null,
+    attempts_count: 0,
     ...overrides,
   };
 }
@@ -34,6 +35,7 @@ function theme(overrides: Partial<EssayTheme> = {}): EssayTheme {
     source: "IA Donc",
     status: "pending",
     created_at: "2026-08-01T00:00:00Z",
+    essays_count: 0,
     ...overrides,
   };
 }

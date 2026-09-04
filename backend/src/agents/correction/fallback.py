@@ -86,6 +86,7 @@ class FallbackCorrectionProvider:
             ),
             recurrent_patterns=recurrent_patterns,
             inline_annotations=inline_annotations,
+            used_fallback=True,
         )
 
     def _inline_annotations(

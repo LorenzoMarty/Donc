@@ -223,6 +223,7 @@ class EssayService:
                 feedback=result.feedback,
                 recurrent_patterns=result.recurrent_patterns,
                 inline_annotations=annotations_payload,
+                used_fallback=result.used_fallback,
                 created_at=submitted_at,
             )
         )
@@ -239,6 +240,7 @@ class EssayService:
         correction.feedback = result.feedback
         correction.recurrent_patterns = result.recurrent_patterns
         correction.inline_annotations = annotations_payload
+        correction.used_fallback = result.used_fallback
         correction.created_at = submitted_at
         essay.status = EssayStatus.CORRECTED
         essay.score = result.total_score
@@ -341,6 +343,7 @@ class EssayService:
                     feedback=essay.correction.feedback,
                     recurrent_patterns=essay.correction.recurrent_patterns,
                     inline_annotations=essay.correction.inline_annotations,
+                    used_fallback=essay.correction.used_fallback,
                     created_at=essay.correction.created_at,
                 )
             )

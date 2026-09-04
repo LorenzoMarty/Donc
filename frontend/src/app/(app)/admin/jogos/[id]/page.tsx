@@ -11,7 +11,7 @@ import { LoadingCard } from "@/components/shared/loading-card";
 import { PageHeader } from "@/components/shared/premium-ui";
 import { useAuth } from "@/providers/app-providers";
 import { apiFetch } from "@/services/api";
-import type { AdminUser, AIGeneratedGame } from "@/types/api";
+import type { AdminReviewer, AIGeneratedGame } from "@/types/api";
 
 /**
  * Tela dedicada de um jogo (pedido do usuário: tabela na lista + tela separada pra ver/editar
@@ -24,14 +24,14 @@ export default function AdminGameDetailPage() {
   const gameId = Number(params.id);
 
   const [games, setGames] = useState<AIGeneratedGame[] | null>(null);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [users, setUsers] = useState<AdminReviewer[]>([]);
   const [error, setError] = useState("");
 
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     if (authLoading || !isAdmin) return;
-    Promise.allSettled([apiFetch<AIGeneratedGame[]>("/admin/ai-games"), apiFetch<AdminUser[]>("/admin/users")]).then(
+    Promise.allSettled([apiFetch<AIGeneratedGame[]>("/admin/ai-games"), apiFetch<AdminReviewer[]>("/admin/reviewers")]).then(
       ([g, u]) => {
         if (g.status === "fulfilled") setGames(g.value);
         else setError(g.reason instanceof Error ? g.reason.message : "Não foi possível carregar o jogo.");

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BookOpen, ChevronDown, ChevronRight, ChevronUp, ClipboardList, Folder, FolderPlus, Pencil, Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ConfirmDangerModal } from "@/app/(app)/admin/_tabs/components/confirm-danger-modal";
 import { GenerateWithAiButton } from "@/app/(app)/admin/_tabs/components/generate-with-ai-button";
 import { TargetsField } from "@/app/(app)/admin/_tabs/components/targets-field";
 import { ExerciseGeneratorForm } from "@/app/(app)/admin/_tabs/create-with-ai";
@@ -38,6 +39,8 @@ export function ModulesTab({
 }) {
   const [modal, setModal] = useState<ModalState>(null);
   const [query, setQuery] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<AdminModule | null>(null);
+  const [deletingModule, setDeletingModule] = useState(false);
 
   async function moveModule(moduleId: number, direction: "up" | "down") {
     try {
@@ -59,13 +62,16 @@ export function ModulesTab({
   }
 
   async function deleteModule(module: AdminModule) {
-    if (!window.confirm(`Excluir o módulo "${module.title}" e suas aulas?`)) return;
+    setDeletingModule(true);
     try {
       const updated = await apiFetch<AdminModule[]>(`/admin/modules/${module.id}`, { method: "DELETE" });
       onModulesChanged(updated);
       toast.success("Módulo excluído.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível excluir o módulo.");
+    } finally {
+      setDeletingModule(false);
+      setDeleteTarget(null);
     }
   }
 
@@ -127,7 +133,7 @@ export function ModulesTab({
             isFirst={module.order === sortedModules[0]?.order}
             isLast={module.order === sortedModules[sortedModules.length - 1]?.order}
             onEdit={() => setModal({ kind: "module", mode: "edit", module })}
-            onDelete={() => deleteModule(module)}
+            onDelete={() => setDeleteTarget(module)}
             onMove={(direction) => moveModule(module.id, direction)}
             onAddLesson={() => setModal({ kind: "lesson", mode: "create", moduleId: module.id })}
             onEditLesson={(lesson) => setModal({ kind: "lesson", mode: "edit", moduleId: module.id, lesson })}
@@ -161,6 +167,28 @@ export function ModulesTab({
       {modal?.kind === "activity" ? (
         <ActivityModal state={modal} onClose={() => setModal(null)} onUpdated={(updated) => { onModulesChanged(updated); setModal(null); }} />
       ) : null}
+
+      <ConfirmDangerModal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteModule(deleteTarget)}
+        title="Excluir módulo"
+        description={`Excluir o módulo "${deleteTarget?.title}"? Tudo que está nele some junto — essa ação não pode ser desfeita.`}
+        busy={deletingModule}
+        impact={
+          deleteTarget
+            ? (() => {
+                const items = normalizedItems(deleteTarget);
+                const lessons = items.filter((item) => item.kind === "lesson").length;
+                const activities = items.length - lessons;
+                return [
+                  { label: "Aulas", value: lessons },
+                  { label: "Atividades", value: activities },
+                ];
+              })()
+            : []
+        }
+      />
     </div>
   );
 }

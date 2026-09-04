@@ -38,6 +38,7 @@ type AnswerLog = {
  */
 export function TimedRushSession({ game, category }: { game: GameDefinition; category: GameCategory }) {
   const completeGame = useGameStore((state) => state.completeGame);
+  const recordCognitiveOutcome = useGameStore((state) => state.recordCognitiveOutcome);
   const adaptive = useGameStore((state) => state.adaptive);
   const [round, setRound] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -110,6 +111,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
       setSelected(index);
       setFeedback(isCorrect ? "correct" : "wrong");
       setAnswerLog(nextLog);
+      recordCognitiveOutcome(game, { correct: isCorrect });
 
       if (isCorrect) {
         playCorrect();
@@ -131,7 +133,7 @@ export function TimedRushSession({ game, category }: { game: GameDefinition; cat
         isCorrect ? NEXT_ROUND_DELAY_MS.correct : NEXT_ROUND_DELAY_MS.wrong,
       );
     },
-    [answerLog, combo, feedback, finishRound, goNextRound, playCorrect, playWrong, question, result, selected],
+    [answerLog, combo, feedback, finishRound, goNextRound, game, playCorrect, playWrong, question, recordCognitiveOutcome, result, selected],
   );
 
   useEffect(() => {

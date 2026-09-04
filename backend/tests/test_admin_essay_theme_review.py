@@ -78,6 +78,29 @@ def test_admin_can_reject_pending_theme(client):
     assert theme["id"] not in {t["id"] for t in student_themes}
 
 
+def test_reviewing_already_reviewed_theme_returns_conflict(client):
+    """Dois admins revisando o mesmo item pendente — o segundo review nao pode sobrescrever
+    silenciosamente o resultado do primeiro (ver comentario em AdminContentService.review_essay_theme)."""
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        theme = _generate_theme(client, focus="economia criativa")
+        first = client.post(f"/api/v1/admin/essay-themes/{theme['id']}/review", json={"action": "approve"})
+        assert first.status_code == 200
+
+        second = client.post(f"/api/v1/admin/essay-themes/{theme['id']}/review", json={"action": "reject"})
+        assert second.status_code == 409
+        assert second.json()["error"] == "already_reviewed"
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+    db = SessionLocal()
+    try:
+        db_theme = db.get(EssayTheme, theme["id"])
+    finally:
+        db.close()
+    assert db_theme.status == "approved"
+
+
 def test_review_unknown_theme_is_404(client):
     app.dependency_overrides[require_admin] = override_admin
     try:

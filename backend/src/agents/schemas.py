@@ -29,6 +29,12 @@ class EssayCorrectionResult(BaseModel):
     feedback: str = Field(min_length=20, description="Sintese pedagogica objetiva com proximo foco de melhoria.")
     recurrent_patterns: list[str] = Field(default_factory=list, description="Padroes recorrentes para memoria e plano de estudos.")
     inline_annotations: list[InlineAnnotation] = Field(default_factory=list, description="Anotacoes inline sobre trechos especificos da redacao.")
+    used_fallback: bool = Field(
+        default=False,
+        description="True se algum estagio da correcao (ou a correcao inteira) caiu no fallback heuristico "
+        "em vez de usar a IA — sem chave configurada, falha de API apos todas as tentativas, ou excecao "
+        "nao tratada no pipeline. Nota calculada por regra/heuristica, nao pela analise da IA.",
+    )
 
 
 class GeneratedQuizQuestion(BaseModel):

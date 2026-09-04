@@ -63,7 +63,7 @@ def test_users_list_reports_correct_essay_count_per_user():
     db.commit()
 
     result = AdminUserService(db).users_list()
-    by_id = {row.id: row for row in result}
+    by_id = {row.id: row for row in result.items}
     assert by_id[with_essays.id].essays == 2
     assert by_id[without_essays.id].essays == 0
 
@@ -83,8 +83,9 @@ def test_users_list_query_count_does_not_grow_with_essay_count():
     service = AdminUserService(db)
     _, query_count = _count_queries(db, service.users_list)
 
-    # Lista de usuarios + 3 agregacoes (essays, tokens, events) — nao uma query por usuario.
-    assert query_count <= 5
+    # Contagem total (paginacao) + lista de usuarios + 3 agregacoes (essays, tokens, events) —
+    # nao uma query por usuario.
+    assert query_count <= 6
 
 
 def test_update_student_does_not_recompute_full_user_list():
