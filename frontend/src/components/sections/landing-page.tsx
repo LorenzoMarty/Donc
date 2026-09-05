@@ -179,17 +179,17 @@ export function LandingPage() {
                 Escolha como quer evoluir.
               </h2>
               <p className="marketing-copy mt-3 text-base">
-                Comece grátis. Faça upgrade quando quiser correção ilimitada.{" "}
+                Acesso completo desde o primeiro dia — escolha mensal ou anual.{" "}
                 <Link href="/pricing" className="font-semibold text-primary">
                   Ver planos completos
                 </Link>
                 .
               </p>
             </FadeIn>
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="mx-auto grid max-w-2xl gap-5 sm:grid-cols-2">
               {PRICING_PLANS.map((plan, index) => (
                 <FadeIn key={plan.name} delay={index * 0.06}>
-                  <PlanCard {...plan} />
+                  <PlanCard {...plan} period={plan.name === "Anual" ? "/ano" : "/mês"} />
                 </FadeIn>
               ))}
             </div>
@@ -219,7 +219,7 @@ export function LandingPage() {
             </h2>
             <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
-                Criar conta grátis
+                Criar conta
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>

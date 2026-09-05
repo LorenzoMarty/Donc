@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -10,8 +11,10 @@ from src.database.session import get_db
 from src.config.security import decode_access_token
 from src.middlewares.errors import AppError
 from src.models import User, UserRole
+from src.repositories.subscriptions import SubscriptionRepository
 from src.repositories.users import UserRepository
 from src.services.streak_service import touch_last_seen
+from src.services.subscription_status import has_access
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_v1_prefix}/auth/login", auto_error=False)
@@ -54,4 +57,14 @@ def get_current_user(
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != UserRole.ADMIN:
         raise AppError("Acesso restrito a administradores.", status_code=403, code="admin_required")
+    return current_user
+
+
+def require_active_subscription(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
+    """Gate de acesso pago (REQ-11): ADMIN sempre passa (REQ-6); demais precisam de assinatura
+    ativa ou em periodo de graca (REQ-4). Recalculado a cada request — nunca confia so na claim
+    `sa` do JWT, que e so uma otimizacao de UX no proxy do frontend."""
+    subscription = SubscriptionRepository(db).get_by_user_id(current_user.id)
+    if not has_access(role=current_user.role, subscription=subscription, now=datetime.now(UTC)):
+        raise AppError("Assinatura inativa. Assine para continuar.", status_code=402, code="subscription_required")
     return current_user

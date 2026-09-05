@@ -25,7 +25,7 @@ export default function RegisterPage() {
     setError("");
     try {
       await register(name, email, password);
-      window.location.replace("/onboarding");
+      window.location.replace("/assinatura");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao cadastrar.");
     } finally {

@@ -16,8 +16,12 @@ const faq = [
       "Por IA, competência a competência, seguindo os mesmos 5 critérios do ENEM. Você recebe nota estimada e explicação do porquê de cada ponto perdido.",
   },
   {
-    question: "Preciso terminar um plano específico ou posso trocar depois?",
-    answer: "Pode mudar de plano quando quiser — o histórico de prática e as notas continuam no seu perfil.",
+    question: "Qual a diferença entre o plano mensal e o anual?",
+    answer: "Nenhuma no acesso — os dois liberam a plataforma inteira. O anual só sai mais barato no total do ano.",
+  },
+  {
+    question: "Posso trocar de mensal pra anual (ou o contrário) depois?",
+    answer: "Sim, a qualquer momento pelo seu perfil — o histórico de prática e as notas continuam do mesmo jeito.",
   },
   {
     question: "Funciona no celular?",
@@ -39,7 +43,7 @@ export default function PricingPage() {
             Escolha o ritmo, não abra mão da correção certa.
           </h1>
           <p className="marketing-copy mt-5 text-lg">
-            Todos os planos incluem rotina guiada de Português. A diferença é o quanto de redação com IA e acompanhamento você leva junto.
+            Acesso completo à plataforma nos dois ciclos — a diferença é só a forma de pagar.
           </p>
         </Reveal>
 
@@ -55,7 +59,9 @@ export default function PricingPage() {
               <p className="marketing-copy mt-2 text-sm">{plan.description}</p>
               <p className="font-display mt-6 text-5xl font-semibold tabular-nums tracking-normal">
                 {plan.price}
-                <span className="font-sans text-base font-semibold text-[hsl(var(--neutral-600))]">/mês</span>
+                <span className="font-sans text-base font-semibold text-[hsl(var(--neutral-600))]">
+                  {plan.name === "Anual" ? "/ano" : "/mês"}
+                </span>
               </p>
               <div className="mt-7 space-y-3">
                 {plan.features.map((feature) => (
@@ -93,14 +99,14 @@ export default function PricingPage() {
         <section className="py-8">
           <div className={cn("marketing-cta grid gap-6 rounded-[22px] p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8")}>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/74">Sem cartão pra começar a treinar</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/74">Acesso completo, mensal ou anual</p>
               <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                Crie a conta e veja qual plano faz sentido pra você.
+                Crie a conta e escolha o ciclo de cobrança.
               </h2>
             </div>
             <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
-                Criar conta grátis
+                Criar conta
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>

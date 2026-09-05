@@ -5,6 +5,52 @@ export type ApiEnvelope<T> = {
   error?: string;
 };
 
+export type SubscriptionCycle = "monthly" | "annual";
+export type SubscriptionStatus = "pending" | "active" | "grace" | "suspended" | "canceled";
+
+export type Subscription = {
+  cycle: SubscriptionCycle;
+  status: SubscriptionStatus;
+  price_charged_cents: number;
+  current_period_end: string | null;
+  grace_until: string | null;
+  canceled_at: string | null;
+};
+
+export type CheckoutResponse = {
+  checkout_url: string;
+  status: SubscriptionStatus;
+};
+
+export type Coupon = {
+  id: number;
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  max_uses: number | null;
+  used_count: number;
+  active: boolean;
+};
+
+export type AdminSubscriber = {
+  user_id: number;
+  name: string;
+  email: string;
+  cycle: SubscriptionCycle;
+  status: SubscriptionStatus;
+  price_charged_cents: number;
+  current_period_end: string | null;
+  canceled_at: string | null;
+};
+
+export type AdminSubscribersResponse = {
+  items: AdminSubscriber[];
+  total: number;
+  mrr_cents: number;
+};
+
 export type PublishedGameQuestion = {
   prompt: string;
   options: string[];

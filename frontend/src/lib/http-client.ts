@@ -76,6 +76,20 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   ai_job_not_found: "Correção não encontrada.",
   rate_limit_exceeded: "Muitas requisições. Aguarde um momento.",
   password_recovery_not_configured: "Recuperação por e-mail ainda não está configurada.",
+  subscription_required: "Sua assinatura não está ativa. Assine para continuar.",
+  subscription_already_active: "Você já tem uma assinatura ativa.",
+  subscription_not_found: "Você ainda não tem assinatura.",
+  subscription_already_canceled: "Sua assinatura já está cancelada.",
+  subscription_not_active: "Só é possível trocar de plano com assinatura ativa.",
+  subscription_same_cycle: "Você já está neste plano.",
+  coupon_not_found: "Cupom inválido.",
+  coupon_inactive: "Este cupom não está mais ativo.",
+  coupon_expired: "Este cupom expirou.",
+  coupon_not_yet_valid: "Este cupom ainda não é válido.",
+  coupon_exhausted: "Este cupom atingiu o limite de uso.",
+  coupon_code_in_use: "Já existe um cupom com este código.",
+  mercadopago_unreachable: "Falha ao comunicar com o Mercado Pago. Tente novamente.",
+  mercadopago_request_failed: "O Mercado Pago recusou a requisição. Tente novamente.",
 };
 
 function errorFromPayload(payload: unknown, status: number) {
