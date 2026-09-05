@@ -303,7 +303,7 @@ function NewUserPanel({
               Escolher tema
               <PenLine className="h-4 w-4" aria-hidden="true" />
             </Link>
-            <span className="text-[12px] text-white/60">~30 min · sua 1ª correção é grátis</span>
+            <span className="text-[12px] text-white/60">~30 min · nota por competência ENEM</span>
           </div>
         </div>
       </section>

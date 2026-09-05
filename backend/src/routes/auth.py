@@ -1,4 +1,6 @@
-﻿from fastapi import APIRouter, Depends, Request, Response
+﻿from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -7,6 +9,8 @@ from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
 from src.models import User
+from src.repositories.subscriptions import SubscriptionRepository
+from src.services.subscription_status import has_access
 from src.schemas.auth import (
     ChangePasswordRequest,
     LoginRequest,
@@ -76,12 +80,17 @@ def _delete_session_cookies(response: Response) -> None:
         response.delete_cookie(key=key, path="/")
 
 
+def _subscription_active(db: Session, user: User) -> bool:
+    subscription = SubscriptionRepository(db).get_by_user_id(user.id)
+    return has_access(role=user.role, subscription=subscription, now=datetime.now(UTC))
+
+
 @router.post("/register", response_model=ApiResponse[AuthResponse], status_code=201)
 def register(payload: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[AuthResponse]:
     check_auth_rate_limit(request, bucket="register", identifier=str(payload.email))
     service = AuthService(db)
     user = service.register(name=payload.name, email=str(payload.email), password=payload.password)
-    token = service.token_for(user)
+    token = service.token_for(user, subscription_active=_subscription_active(db, user))
     refresh_token = service.issue_refresh_token(user)
     db.commit()
     _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
@@ -93,7 +102,7 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
     check_auth_rate_limit(request, bucket="login", identifier=str(payload.email))
     service = AuthService(db)
     user = service.authenticate(email=str(payload.email), password=payload.password)
-    token = service.token_for(user)
+    token = service.token_for(user, subscription_active=_subscription_active(db, user))
     refresh_token = service.issue_refresh_token(user)
     db.commit()
     _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
@@ -112,7 +121,7 @@ def refresh(request: Request, response: Response, db: Session = Depends(get_db))
         _delete_session_cookies(response)
         raise AppError("Sessão inválida ou expirada.", status_code=401, code="invalid_token")
     user, new_refresh_token = result
-    token = service.token_for(user)
+    token = service.token_for(user, subscription_active=_subscription_active(db, user))
     _set_session_cookies(response, access_token=token, refresh_token=new_refresh_token)
     return success_response(AuthResponse(user=user), "Sessão renovada.")
 

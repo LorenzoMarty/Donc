@@ -83,7 +83,7 @@ export default function TracksPage() {
             </div>
             <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
-                Criar conta grátis
+                Criar conta
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>

@@ -1,7 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Response
+from fastapi import Depends, FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -9,10 +9,11 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.config.settings import settings
 from src.database.session import Base, SessionLocal, engine
+from src.dependencies import require_active_subscription
 from src.middlewares.errors import register_error_handlers
 from src.middlewares.errors import AppError
 from src.models import *  # noqa: F403 - garante registro das tabelas no metadata.
-from src.routes import admin, ai, auth, dashboard, essays, exercises, games, lessons
+from src.routes import admin, admin_subscriptions, ai, auth, dashboard, essays, exercises, games, lessons, subscriptions
 from src.schemas.common import ApiResponse, HealthData, success_response
 from src.services.seed import seed_database
 from src.telemetry import configure_ai_telemetry, flush_ai_telemetry
@@ -85,13 +86,19 @@ async def csrf_cookie_session_middleware(request, call_next):
     return await call_next(request)
 
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
-app.include_router(dashboard.router, prefix=settings.api_v1_prefix)
-app.include_router(lessons.router, prefix=settings.api_v1_prefix)
-app.include_router(exercises.router, prefix=settings.api_v1_prefix)
-app.include_router(essays.router, prefix=settings.api_v1_prefix)
-app.include_router(games.router, prefix=settings.api_v1_prefix)
-app.include_router(ai.router, prefix=settings.api_v1_prefix)
+app.include_router(subscriptions.router, prefix=settings.api_v1_prefix)
+# REQ-11: sem assinatura ativa (ou em graca), sem acesso as rotas de negocio — ADMIN passa livre
+# (require_active_subscription trata isso). `subscriptions`/`auth`/`admin` ficam de fora de
+# proposito: e por elas que quem esta bloqueado paga/cancela/gerencia.
+_subscription_gate = [Depends(require_active_subscription)]
+app.include_router(dashboard.router, prefix=settings.api_v1_prefix, dependencies=_subscription_gate)
+app.include_router(lessons.router, prefix=settings.api_v1_prefix, dependencies=_subscription_gate)
+app.include_router(exercises.router, prefix=settings.api_v1_prefix, dependencies=_subscription_gate)
+app.include_router(essays.router, prefix=settings.api_v1_prefix, dependencies=_subscription_gate)
+app.include_router(games.router, prefix=settings.api_v1_prefix, dependencies=_subscription_gate)
+app.include_router(ai.router, prefix=settings.api_v1_prefix, dependencies=_subscription_gate)
 app.include_router(admin.router, prefix=settings.api_v1_prefix)
+app.include_router(admin_subscriptions.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health", response_model=ApiResponse[HealthData])

@@ -23,7 +23,7 @@ os.environ["AUTH_RATE_LIMIT_PER_MINUTE"] = "1000"
 os.environ["SEED_DEMO_DATA"] = "true"
 
 from src.database.session import engine, get_db  # noqa: E402
-from src.dependencies import get_current_user  # noqa: E402
+from src.dependencies import get_current_user, require_active_subscription  # noqa: E402
 from src.main import app  # noqa: E402
 from src.models import User  # noqa: E402
 
@@ -35,6 +35,12 @@ def override_current_user(db: Session = Depends(get_db)) -> User:
 
 
 app.dependency_overrides[get_current_user] = override_current_user
+# Gate de assinatura (REQ-11) e uma preocupacao ortogonal a toda a suite existente, que nao
+# semeia Subscription nenhuma para o aluno demo — testado isoladamente em
+# tests/unit/test_subscription_status.py e tests/unit/test_admin_subscription_service.py.
+# Sem este bypass, toda rota protegida (dashboard/aulas/exercicios/redacao/jogos/ai) quebraria
+# por falta de assinatura, do mesmo jeito que get_current_user acima ja e substituido.
+app.dependency_overrides[require_active_subscription] = override_current_user
 
 
 @pytest.fixture(autouse=True)

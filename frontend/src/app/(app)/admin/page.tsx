@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bot,
   ClipboardCheck,
+  CreditCard,
   FileText,
   Gauge,
   GraduationCap,
@@ -47,6 +48,7 @@ import { ReviewQueueTab } from "./_tabs/review-queue";
 import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
 import { ModulesTab } from "./_tabs/modules";
+import { SubscriptionsTab } from "./_tabs/subscriptions";
 import { ThemesTab } from "./_tabs/themes";
 
 type AdminTab = {
@@ -61,6 +63,7 @@ const NAV_TABS: AdminTab[] = [
   { value: "overview", label: "Painel", description: "Prioridades, pendências e uso recente.", section: "Operação", icon: LayoutDashboard },
   { value: "review-queue", label: "Revisões", description: "Conteúdo pendente para aprovar ou rejeitar.", section: "Operação", icon: ClipboardCheck },
   { value: "users", label: "Alunos", description: "Gestão de usuários, progresso e consumo.", section: "Operação", icon: Users },
+  { value: "subscriptions", label: "Assinaturas", description: "Assinantes, receita recorrente e cupons de desconto.", section: "Operação", icon: CreditCard },
   { value: "themes", label: "Temas", description: "Temas de redação e textos motivadores.", section: "Conteúdo", icon: FileText },
   { value: "modules", label: "Módulos", description: "Aulas, módulos e ordem do curso.", section: "Conteúdo", icon: LibraryBig },
   { value: "exercises", label: "Exercícios", description: "Questões e atividades pedagógicas.", section: "Conteúdo", icon: ListChecks },
@@ -192,6 +195,10 @@ export default function AdminPage() {
 
           <TabsContent value="users" className="mt-0">
             <UsersTab />
+          </TabsContent>
+
+          <TabsContent value="subscriptions" className="mt-0">
+            <SubscriptionsTab />
           </TabsContent>
 
           <TabsContent value="themes" className="mt-0">

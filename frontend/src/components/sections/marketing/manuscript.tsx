@@ -318,12 +318,14 @@ export function LogoMarquee({ names, caption }: { names: string[]; caption: stri
 export function PlanCard({
   name,
   price,
+  period = "/mês",
   description,
   features,
   featured,
 }: {
   name: string;
   price: string;
+  period?: string;
   description: string;
   features: readonly string[];
   featured: boolean;
@@ -341,7 +343,7 @@ export function PlanCard({
       <p className="marketing-copy mt-1 text-sm">{description}</p>
       <p className="font-display mt-5 text-4xl font-semibold tracking-tight text-foreground">
         {price}
-        <span className="ml-1 text-sm font-semibold text-[hsl(var(--neutral-600))]">/mês</span>
+        <span className="ml-1 text-sm font-semibold text-[hsl(var(--neutral-600))]">{period}</span>
       </p>
       <Button asChild className="mt-6 w-full" variant={featured ? "default" : "outline"}>
         <Link href="/cadastro">Escolher {name}</Link>

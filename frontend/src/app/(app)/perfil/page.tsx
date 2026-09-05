@@ -10,6 +10,7 @@ import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-set
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
 import { CognitiveIssuesSection } from "@/app/(app)/perfil/components/cognitive-issues-section";
 import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
+import { SubscriptionCard } from "@/app/(app)/perfil/components/subscription-card";
 import { WriterXraySection } from "@/app/(app)/perfil/components/writer-xray";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,8 @@ export default function ProfilePage() {
           <Metric tone="g" icon={GraduationCap} label="Aulas assistidas" value={String(dashboard?.completed_lessons ?? 0)} />
         </div>
       </section>
+
+      <SubscriptionCard />
 
       <CognitiveIssuesSection issues={learningProfile?.cognitive_issues} />
 

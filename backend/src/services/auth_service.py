@@ -60,9 +60,18 @@ class AuthService:
         self.db.refresh(profile)
         return profile
 
-    def token_for(self, user: User) -> str:
+    def token_for(self, user: User, *, subscription_active: bool) -> str:
+        # `sa` (subscription access): claim leve pro proxy.ts decidir redirect pra /assinatura
+        # sem round-trip ao backend — pode ficar defasada ate `access_token_expire_minutes`
+        # depois de um webhook mudar o status real (mesma janela de staleness que `sv` ja tem
+        # pra troca de senha). A fonte da verdade de acesso continua sendo
+        # `require_active_subscription` no backend, recalculada a cada request.
         expires = timedelta(minutes=settings.access_token_expire_minutes)
-        return create_access_token(str(user.id), expires_delta=expires, extra={"role": user.role.value, "sv": user.session_version})
+        return create_access_token(
+            str(user.id),
+            expires_delta=expires,
+            extra={"role": user.role.value, "sv": user.session_version, "sa": subscription_active},
+        )
 
     def issue_refresh_token(self, user: User) -> str:
         """Emite um refresh token novo (opaco, guardado como hash) — não commita, caller decide

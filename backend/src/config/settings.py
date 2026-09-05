@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     seed_admin_password: str = "12345678"  # default só para dev local; sobrescreva via env em qualquer ambiente compartilhado
     frontend_origin: str = "http://localhost:3000"
     environment: str = "development"
+    mercadopago_access_token: str | None = None
+    mercadopago_webhook_secret: str | None = None
+    mercadopago_base_url: str = "https://api.mercadopago.com"
+    # Precos de referencia (centavos) dos dois ciclos de assinatura — unica fonte de verdade pro
+    # checkout; nao ha tier por feature, so ciclo de cobranca (spec sistema-planos-mercadopago).
+    subscription_price_monthly_cents: int = 5_900
+    subscription_price_annual_cents: int = 58_800
+    subscription_grace_period_days: int = 3
 
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), env_file_encoding="utf-8", extra="ignore")
 
@@ -69,7 +77,16 @@ class Settings(BaseSettings):
             return "postgresql+psycopg://" + value.removeprefix("postgresql://")
         return value
 
-    @field_validator("openai_api_key", "openai_fallback_model", "langfuse_public_key", "langfuse_secret_key", "langfuse_host", mode="before")
+    @field_validator(
+        "openai_api_key",
+        "openai_fallback_model",
+        "langfuse_public_key",
+        "langfuse_secret_key",
+        "langfuse_host",
+        "mercadopago_access_token",
+        "mercadopago_webhook_secret",
+        mode="before",
+    )
     @classmethod
     def empty_optional_string_to_none(cls, value: str | None) -> str | None:
         if isinstance(value, str) and not value.strip():
@@ -88,6 +105,11 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL nao pode usar SQLite em producao.")
         if any("localhost" in origin or "127.0.0.1" in origin for origin in self._configured_cors_origins()):
             raise ValueError("FRONTEND_ORIGIN nao pode apontar para localhost em producao.")
+        if self.mercadopago_access_token and not self.mercadopago_webhook_secret:
+            # Sem o secret, handle_webhook() processa qualquer payload sem checar x-signature —
+            # aceitavel em dev sem credencial nenhuma configurada, mas nao com o checkout real
+            # ligado (mercadopago_access_token presente) em producao.
+            raise ValueError("MERCADOPAGO_WEBHOOK_SECRET obrigatorio em producao quando MERCADOPAGO_ACCESS_TOKEN esta configurado.")
         return self
 
     @property

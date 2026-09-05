@@ -1,9 +1,14 @@
 export { ApiClientError, apiFetch } from "@/lib/http-client";
 export { authApi } from "@/services/auth-service";
+export { adminSubscriptionApi, subscriptionApi } from "@/services/subscription-service";
 export type {
   AdminMetrics,
+  AdminSubscriber,
+  AdminSubscribersResponse,
   ApiEnvelope,
   CognitiveIssueRecord,
+  CheckoutResponse,
+  Coupon,
   Dashboard,
   Essay,
   EssayCorrection,
@@ -18,5 +23,8 @@ export type {
   Module,
   NextRecommendedAction,
   AuthResponse,
+  Subscription,
+  SubscriptionCycle,
+  SubscriptionStatus,
   User,
 } from "@/types/api";

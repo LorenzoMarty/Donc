@@ -47,7 +47,7 @@ export default function PlatformPage() {
               </p>
               <Button asChild size="lg" className="mt-7">
                 <Link href="/cadastro">
-                  Criar conta grátis
+                  Criar conta
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </Button>
@@ -94,12 +94,12 @@ export default function PlatformPage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/74">Quer ver por dentro?</p>
               <h2 className="font-display mt-2 text-3xl font-semibold leading-tight tracking-normal md:text-4xl">
-                Crie a conta e explore a plataforma sem compromisso.
+                Crie a conta e comece a treinar hoje mesmo.
               </h2>
             </div>
             <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
               <Link href="/cadastro">
-                Criar conta grátis
+                Criar conta
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
