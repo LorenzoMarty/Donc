@@ -9,6 +9,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AUTH_UNAUTHORIZED_EVENT } from "@/lib/http-client";
 import { authApi, type User } from "@/services/api";
 import { ensureGameStoreOwner } from "@/stores/game-store";
+import { ensureHighlightsStoreOwner } from "@/stores/highlights-store";
+import { ensureFreePostItsStoreOwner } from "@/stores/free-post-its-store";
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -20,6 +22,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const me = await authApi.me();
       ensureGameStoreOwner(me.id);
+      ensureHighlightsStoreOwner(me.id);
+      ensureFreePostItsStoreOwner(me.id);
       setUser(me);
     } catch {
       setUser(null);
@@ -51,11 +55,15 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       login: async (email: string, password: string) => {
         const payload = await authApi.login(email, password);
         ensureGameStoreOwner(payload.user.id);
+        ensureHighlightsStoreOwner(payload.user.id);
+        ensureFreePostItsStoreOwner(payload.user.id);
         setUser(payload.user);
       },
       register: async (name: string, email: string, password: string) => {
         const payload = await authApi.register(name, email, password);
         ensureGameStoreOwner(payload.user.id);
+        ensureHighlightsStoreOwner(payload.user.id);
+        ensureFreePostItsStoreOwner(payload.user.id);
         setUser(payload.user);
       },
       logout: () => {

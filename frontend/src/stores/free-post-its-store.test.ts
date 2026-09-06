@@ -5,7 +5,7 @@ import { useFreePostItsStore } from "@/stores/free-post-its-store";
 const THEME_ID = 1;
 
 beforeEach(() => {
-  useFreePostItsStore.setState({ postItsByTheme: {} });
+  useFreePostItsStore.setState({ ownerUserId: null, postItsByTheme: {} });
 });
 
 describe("useFreePostItsStore", () => {
@@ -53,5 +53,36 @@ describe("useFreePostItsStore", () => {
     useFreePostItsStore.getState().setPostItPosition(THEME_ID, postIt.id, { x: 0.5, y: 0.6 });
 
     expect(useFreePostItsStore.getState().postItsByTheme[THEME_ID][0].position).toEqual({ x: 0.5, y: 0.6 });
+  });
+});
+
+describe("ensureOwner", () => {
+  it("no primeiro login (owner null) não apaga dado pré-existente, só assume o dono", () => {
+    useFreePostItsStore.getState().addPostIt(THEME_ID);
+
+    useFreePostItsStore.getState().ensureOwner(42);
+
+    expect(useFreePostItsStore.getState().ownerUserId).toBe(42);
+    expect(useFreePostItsStore.getState().postItsByTheme[THEME_ID]).toHaveLength(1);
+  });
+
+  it("ao trocar de usuário, zera postItsByTheme e assume o novo dono", () => {
+    useFreePostItsStore.getState().ensureOwner(1);
+    useFreePostItsStore.getState().addPostIt(THEME_ID);
+    expect(useFreePostItsStore.getState().postItsByTheme[THEME_ID]).toHaveLength(1);
+
+    useFreePostItsStore.getState().ensureOwner(2);
+
+    expect(useFreePostItsStore.getState().ownerUserId).toBe(2);
+    expect(useFreePostItsStore.getState().postItsByTheme).toEqual({});
+  });
+
+  it("com o mesmo usuário, não mexe no estado existente", () => {
+    useFreePostItsStore.getState().ensureOwner(1);
+    useFreePostItsStore.getState().addPostIt(THEME_ID);
+
+    useFreePostItsStore.getState().ensureOwner(1);
+
+    expect(useFreePostItsStore.getState().postItsByTheme[THEME_ID]).toHaveLength(1);
   });
 });

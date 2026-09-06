@@ -24,18 +24,35 @@ function nextPostItPosition(existingCount: number): { x: number; y: number } {
 }
 
 type HighlightsStore = {
+  /** Dono atual do estado persistido (id do usuário logado). Usado por `ensureOwner` pra impedir
+   * que grifos/anotações de uma conta vazem pra outra no mesmo navegador via localStorage. */
+  ownerUserId: number | null;
   highlightsByTheme: Record<number, MotivadorHighlight[]>;
   addHighlight: (themeId: number, textIndex: number, textTitle: string, quote: string, tool: EssayMarkTool) => void;
   removeHighlight: (themeId: number, highlightId: string) => void;
   clearHighlights: (themeId: number) => void;
   setHighlightNote: (themeId: number, highlightId: string, note: string) => void;
   setHighlightPosition: (themeId: number, highlightId: string, position: { x: number; y: number }) => void;
+  /** Chamado ao resolver o usuário logado (login/registro/refresh de sessão). Se o estado
+   * persistido pertence a outro usuário (ou não tem dono ainda mas o navegador já tinha dado
+   * salvo), reseta pra evitar vazamento de grifos/anotações entre contas no mesmo navegador. */
+  ensureOwner: (userId: number) => void;
 };
 
 export const useHighlightsStore = create<HighlightsStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      ownerUserId: null,
       highlightsByTheme: {},
+      ensureOwner: (userId) => {
+        const current = get().ownerUserId;
+        if (current === userId) return;
+        if (current !== null) {
+          set({ ownerUserId: userId, highlightsByTheme: {} });
+          return;
+        }
+        set({ ownerUserId: userId });
+      },
       addHighlight: (themeId, textIndex, textTitle, quote, tool) =>
         set((state) => {
           const existing = state.highlightsByTheme[themeId] ?? [];
@@ -95,3 +112,21 @@ export const useHighlightsStore = create<HighlightsStore>()(
     },
   ),
 );
+
+/**
+ * `persist` reidrata do localStorage de forma assíncrona (depois do primeiro render) e, ao
+ * terminar, faz merge do estado persistido por cima do que já estiver na store — inclusive por
+ * cima de um `ensureOwner` chamado antes da reidratação terminar (o que apagaria o reset). Por
+ * isso `ensureOwner` nunca deve ser chamado direto em código de auth: sempre por aqui, que espera
+ * a reidratação terminar antes de comparar o dono salvo com o usuário logando.
+ */
+export function ensureHighlightsStoreOwner(userId: number) {
+  if (useHighlightsStore.persist.hasHydrated()) {
+    useHighlightsStore.getState().ensureOwner(userId);
+    return;
+  }
+  const unsubscribe = useHighlightsStore.persist.onFinishHydration(() => {
+    unsubscribe();
+    useHighlightsStore.getState().ensureOwner(userId);
+  });
+}

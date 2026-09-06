@@ -18,11 +18,18 @@ function nextFreePostItPosition(existingCount: number): { x: number; y: number }
 }
 
 type FreePostItsStore = {
+  /** Dono atual do estado persistido (id do usuário logado). Usado por `ensureOwner` pra impedir
+   * que post-its de uma conta vazem pra outra no mesmo navegador via localStorage. */
+  ownerUserId: number | null;
   postItsByTheme: Record<string, FreePostIt[]>;
   addPostIt: (themeId: number | null | undefined) => void;
   removePostIt: (themeId: number | null | undefined, postItId: string) => void;
   setPostItNote: (themeId: number | null | undefined, postItId: string, note: string) => void;
   setPostItPosition: (themeId: number | null | undefined, postItId: string, position: { x: number; y: number }) => void;
+  /** Chamado ao resolver o usuário logado (login/registro/refresh de sessão). Se o estado
+   * persistido pertence a outro usuário (ou não tem dono ainda mas o navegador já tinha dado
+   * salvo), reseta pra evitar vazamento de post-its entre contas no mesmo navegador. */
+  ensureOwner: (userId: number) => void;
 };
 
 function keyFor(themeId: number | null | undefined): string {
@@ -36,8 +43,18 @@ function keyFor(themeId: number | null | undefined): string {
  */
 export const useFreePostItsStore = create<FreePostItsStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      ownerUserId: null,
       postItsByTheme: {},
+      ensureOwner: (userId) => {
+        const current = get().ownerUserId;
+        if (current === userId) return;
+        if (current !== null) {
+          set({ ownerUserId: userId, postItsByTheme: {} });
+          return;
+        }
+        set({ ownerUserId: userId });
+      },
       addPostIt: (themeId) =>
         set((state) => {
           const key = keyFor(themeId);
@@ -87,3 +104,21 @@ export const useFreePostItsStore = create<FreePostItsStore>()(
     },
   ),
 );
+
+/**
+ * `persist` reidrata do localStorage de forma assíncrona (depois do primeiro render) e, ao
+ * terminar, faz merge do estado persistido por cima do que já estiver na store — inclusive por
+ * cima de um `ensureOwner` chamado antes da reidratação terminar (o que apagaria o reset). Por
+ * isso `ensureOwner` nunca deve ser chamado direto em código de auth: sempre por aqui, que espera
+ * a reidratação terminar antes de comparar o dono salvo com o usuário logando.
+ */
+export function ensureFreePostItsStoreOwner(userId: number) {
+  if (useFreePostItsStore.persist.hasHydrated()) {
+    useFreePostItsStore.getState().ensureOwner(userId);
+    return;
+  }
+  const unsubscribe = useFreePostItsStore.persist.onFinishHydration(() => {
+    unsubscribe();
+    useFreePostItsStore.getState().ensureOwner(userId);
+  });
+}
