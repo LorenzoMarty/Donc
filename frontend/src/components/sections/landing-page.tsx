@@ -63,7 +63,7 @@ export function LandingPage() {
   return (
     <MarketingShell>
       <main>
-        <section className="marketing-container relative pb-6 pt-10 md:pt-16 lg:pb-10">
+        <section className="marketing-container relative bg-white pb-6 pt-10 md:pt-16 lg:pb-10">
           <div className="pointer-events-none absolute -right-16 -top-10 -z-10 hidden w-[30rem] opacity-80 sm:block lg:w-[38rem]" aria-hidden="true">
             <Image src="/marketing/hero-manuscript-texture.png" alt="" width={1536} height={1024} priority sizes="38rem" className="h-auto w-full" />
           </div>

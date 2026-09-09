@@ -14,6 +14,16 @@ import { cn } from "@/utils";
  * jogo em si (`children`) deve usar um card explicitamente claro (`bg-card`/`.force-light`), não
  * herdar os tokens escuros diretamente.
  */
+/** Status de uma rodada pro strip de pips do header (ver prop `pips`). */
+export type SessionPipStatus = "correct" | "wrong" | "current" | "pending";
+
+const PIP_TONE: Record<SessionPipStatus, string> = {
+  correct: "bg-primary",
+  wrong: "bg-destructive",
+  current: "bg-primary/35",
+  pending: "bg-muted-foreground/15",
+};
+
 export function GameSessionShell({
   categoryName,
   categorySlug,
@@ -22,6 +32,7 @@ export function GameSessionShell({
   total,
   extraChips,
   onClose,
+  pips,
   children,
 }: {
   categoryName: string;
@@ -34,6 +45,9 @@ export function GameSessionShell({
   /** Sobrescreve o "Fechar" pra um callback (P3a: preview do admin, dentro de um modal — não deve
    * navegar pra uma rota real de jogo). Sem isso, comportamento padrão (Link) é mantido. */
   onClose?: () => void;
+  /** Substitui a barra de progresso linear por um strip de pips (um por rodada) no próprio header —
+   * opt-in por engine (hoje só `order`). Sem essa prop, comportamento e visual seguem 100% iguais. */
+  pips?: SessionPipStatus[];
   children: React.ReactNode;
 }) {
   const returnTo = readReturnTo();
@@ -67,15 +81,25 @@ export function GameSessionShell({
           </div>
         </div>
 
+        {pips && pips.length > 0 && (
+          <div className="flex min-w-10 flex-1 items-center gap-1 px-1" aria-hidden="true">
+            {pips.map((status, index) => (
+              <span key={index} className={cn("h-1.5 flex-1 rounded-full transition-colors duration-300", PIP_TONE[status])} />
+            ))}
+          </div>
+        )}
+
         <div className="flex shrink-0 items-center gap-2">
           {extraChips}
           <Chip>{Math.min(step, total)}/{total}</Chip>
         </div>
       </div>
 
-      <div className="mt-3 h-1 w-full rounded-full bg-muted/40 md:mt-4">
-        <div className="h-full rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
-      </div>
+      {!pips && (
+        <div className="mt-3 h-1 w-full rounded-full bg-muted/40 md:mt-4">
+          <div className="h-full rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+        </div>
+      )}
 
       <div className="pt-4 md:pt-6">{children}</div>
     </div>
