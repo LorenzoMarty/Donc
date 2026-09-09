@@ -17,7 +17,7 @@ const ISSUE_STATE_ORDER: Record<string, number> = { DETECTED: 0, TRAINING: 1, IM
 /** Feedback pós-treino honesto: só afirma evolução se algum problema realmente mudou de estado
  * pra melhor nesta sessão (dado vindo do backend, `IssueUpdate[]`) — nunca promete progresso que
  * os dados não sustentam. */
-function PostSessionFeedback() {
+export function PostSessionFeedback() {
   const issueUpdates = useGameStore((state) => state.lastIssueUpdates);
   if (!issueUpdates.length) return null;
 
