@@ -54,15 +54,15 @@ export function GameSessionShell({
   const progress = total > 0 ? Math.round((Math.min(step, total) / total) * 100) : 0;
 
   return (
-    <div className="game-shell-panel dark rounded-[28px] border border-border/50 bg-background px-4 py-4 text-foreground shadow-elevated md:px-8 md:py-6">
-      <div className="flex items-center justify-between gap-3">
+    <div className="game-shell-panel">
+      <div className="game-session-header">
         <div className="flex min-w-0 items-center gap-2.5">
           {onClose ? (
             <button
               type="button"
               onClick={onClose}
               aria-label="Fechar"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-control border border-border text-muted-foreground transition-colors hover:text-foreground"
+              className="game-session-close"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -70,7 +70,7 @@ export function GameSessionShell({
             <Link
               href={returnTo ?? `/games/${categorySlug}`}
               aria-label="Fechar"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-control border border-border text-muted-foreground transition-colors hover:text-foreground"
+              className="game-session-close"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </Link>
@@ -82,26 +82,26 @@ export function GameSessionShell({
         </div>
 
         {pips && pips.length > 0 && (
-          <div className="flex min-w-10 flex-1 items-center gap-1 px-1" aria-hidden="true">
+          <div className="game-session-pips" aria-hidden="true">
             {pips.map((status, index) => (
               <span key={index} className={cn("h-1.5 flex-1 rounded-full transition-colors duration-300", PIP_TONE[status])} />
             ))}
           </div>
         )}
 
-        <div className="flex shrink-0 items-center gap-2">
+        {!pips && (
+          <div className="game-session-progress" aria-hidden="true">
+            <div className="h-full rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
+          </div>
+        )}
+
+        <div className="game-session-chips">
           {extraChips}
           <Chip>{Math.min(step, total)}/{total}</Chip>
         </div>
       </div>
 
-      {!pips && (
-        <div className="mt-3 h-1 w-full rounded-full bg-muted/40 md:mt-4">
-          <div className="h-full rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
-        </div>
-      )}
-
-      <div className="pt-4 md:pt-6">{children}</div>
+      <div className="game-session-body force-light">{children}</div>
     </div>
   );
 }
@@ -110,7 +110,7 @@ export function Chip({ className, children }: { className?: string; children: Re
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-control border border-border bg-secondary px-2.5 py-1 text-xs font-semibold text-foreground",
+        "inline-flex items-center gap-1 rounded-full border border-transparent bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground",
         className,
       )}
     >
