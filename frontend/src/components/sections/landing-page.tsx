@@ -37,24 +37,72 @@ const FACTS = [
 const PARTNER_UNIVERSITIES = ["USP", "Unicamp", "UFRJ", "UFMG", "UnB", "UFRGS", "UFSC", "UFPR", "UFBA", "UNESP", "PUC-Rio", "ITA"];
 
 const STEPS = [
-  { number: 1, title: "Escreva", description: "Escolha um tema real do ENEM e escreva na folha digital, com linhas e contador.", icon: PenLine },
-  { number: 2, title: "Receba o diagnóstico", description: "Análise por competência (C1–C5), com pontos fortes e o que travou em cada trecho.", icon: Sparkles },
-  { number: 3, title: "Evolua", description: "Treinos gamificados focados no seu ponto fraco e um painel que mostra sua evolução.", icon: TrendingUp },
+  {
+    number: 1,
+    title: "Escreva",
+    description: "Escolha um tema real do ENEM e escreva na folha digital, com linhas e contador.",
+    icon: PenLine,
+  },
+  {
+    number: 2,
+    title: "Receba o diagnóstico",
+    description: "Análise por competência (C1–C5), com pontos fortes e o que travou em cada trecho.",
+    icon: Sparkles,
+  },
+  {
+    number: 3,
+    title: "Evolua",
+    description: "Treinos gamificados focados no seu ponto fraco e um painel que mostra sua evolução.",
+    icon: TrendingUp,
+  },
 ];
 
 const FEATURES = [
-  { title: "Correção que ensina", description: "Não é só a nota: comentários trecho a trecho mostram por que você perdeu (ou ganhou) pontos.", icon: Sparkles, featured: true },
-  { title: "Aulas em vídeo", description: "Trilhas do básico ao avançado, com professores que decompõem a redação nota 1000.", icon: Video },
+  {
+    title: "Correção que ensina",
+    description: "Não é só a nota: comentários trecho a trecho mostram por que você perdeu (ou ganhou) pontos.",
+    icon: Sparkles,
+    featured: true,
+  },
+  {
+    title: "Aulas em vídeo",
+    description: "Trilhas do básico ao avançado, com professores que decompõem a redação nota 1000.",
+    icon: Video,
+  },
   { title: "Treino gamificado", description: "Mini-jogos de coesão, argumentação e repertório para fixar sem decoreba.", icon: Gamepad2 },
-  { title: "Temas de verdade", description: "Banco de propostas no formato ENEM, com textos motivadores e nível de dificuldade.", icon: Target },
-  { title: "Raio-X do escritor", description: "Veja sua média por competência e acompanhe o mapa de fases da sua evolução.", icon: LineChart },
-  { title: "Foco no seu ponto fraco", description: "O motor adaptativo detecta onde você trava e prioriza treinos e temas ali.", icon: Compass },
+  {
+    title: "Temas de verdade",
+    description: "Banco de propostas no formato ENEM, com textos motivadores e nível de dificuldade.",
+    icon: Target,
+  },
+  {
+    title: "Raio-X do escritor",
+    description: "Veja sua média por competência e acompanhe o mapa de fases da sua evolução.",
+    icon: LineChart,
+  },
+  {
+    title: "Foco no seu ponto fraco",
+    description: "O motor adaptativo detecta onde você trava e prioriza treinos e temas ali.",
+    icon: Compass,
+  },
 ];
 
 const TESTIMONIALS = [
-  { quote: "A correção por competência foi um divisor de águas. Entendi exatamente onde perdia na C4.", name: "Marina Costa", role: "Aluno(a) do 3º ano" },
-  { quote: "Os mini-jogos viciam de um jeito bom. Estudar conectivos virou rotina e minha coesão melhorou.", name: "Lucas Ferreira", role: "Aluno(a) do 3º ano" },
-  { quote: "O painel me mostra a evolução de verdade. Ver o mapa de fases preencher me mantém motivada.", name: "Beatriz Almeida", role: "Aluno(a) do 3º ano" },
+  {
+    quote: "A correção por competência foi um divisor de águas. Entendi exatamente onde perdia na C4.",
+    name: "Marina Costa",
+    role: "Aluno(a) do 3º ano",
+  },
+  {
+    quote: "Os mini-jogos viciam de um jeito bom. Estudar conectivos virou rotina e minha coesão melhorou.",
+    name: "Lucas Ferreira",
+    role: "Aluno(a) do 3º ano",
+  },
+  {
+    quote: "O painel me mostra a evolução de verdade. Ver o mapa de fases preencher me mantém motivada.",
+    name: "Beatriz Almeida",
+    role: "Aluno(a) do 3º ano",
+  },
 ];
 
 export function LandingPage() {
@@ -63,46 +111,71 @@ export function LandingPage() {
   return (
     <MarketingShell>
       <main>
-        <section className="marketing-container relative bg-white pb-6 pt-10 md:pt-16 lg:pb-10">
-          <div className="pointer-events-none absolute -right-16 -top-10 -z-10 hidden w-[30rem] opacity-80 sm:block lg:w-[38rem]" aria-hidden="true">
-            <Image src="/marketing/hero-manuscript-texture.png" alt="" width={1536} height={1024} priority sizes="38rem" className="h-auto w-full" />
-          </div>
-          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <FadeIn>
-              <HeroBadge icon={PenLine}>Redação para o ENEM, do rascunho ao 1000</HeroBadge>
-              <h1 className="font-display mt-5 max-w-3xl text-4xl font-semibold leading-[1.04] tracking-normal text-foreground sm:text-5xl lg:text-6xl">
-                A gente lê sua redação como a banca lê.
-              </h1>
-              <p className="marketing-copy mt-5 max-w-xl text-lg">
-                Cada texto que você manda volta com o diagnóstico exato: onde a nota está travando, competência a competência — não um
-                número solto.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg">
-                  <Link href="/cadastro">
-                    Corrigir minha primeira redação
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link href="/login">Já tenho conta</Link>
-                </Button>
-              </div>
-              <FactRow facts={FACTS} />
-            </FadeIn>
-
-            <FadeIn delay={0.1}>
-              <AnnotatedManuscript
-                intro="A desigualdade no acesso à educação de qualidade"
-                segments={[
-                  { phrase: "configura-se, na contemporaneidade, como um entrave à plena cidadania.", hubLabel: "Texto artificial", color: HUBS["texto-robotico"].accent },
-                  "Sabe-se que a educação é um direito garantido pela Constituição Federal de 1988. Portanto,",
-                  { phrase: "é necessário que o governo faça algo para mudar essa realidade", hubLabel: "Argumentação rasa", color: HUBS["nao-aprofunda"].accent },
-                  "e",
-                  { phrase: "garantir um futuro melhor para todos os brasileiros.", hubLabel: "Conclusão clichê", color: HUBS["conclusao-formula"].accent },
-                ]}
+        <section className="w-full bg-white">
+          <div className="marketing-container relative pb-6 pt-10 md:pt-16 lg:pb-10">
+            <div
+              className="pointer-events-none absolute -right-16 -top-10 -z-10 hidden w-[30rem] opacity-80 sm:block lg:w-[38rem]"
+              aria-hidden="true"
+            >
+              <Image
+                src="/marketing/hero-manuscript-texture.png"
+                alt=""
+                width={1536}
+                height={1024}
+                priority
+                sizes="38rem"
+                className="h-auto w-full"
               />
-            </FadeIn>
+            </div>
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+              <FadeIn>
+                <HeroBadge icon={PenLine}>Redação para o ENEM, do rascunho ao 1000</HeroBadge>
+                <h1 className="font-display mt-5 max-w-3xl text-4xl font-semibold leading-[1.04] tracking-normal text-foreground sm:text-5xl lg:text-6xl">
+                  A gente lê sua redação como a banca lê.
+                </h1>
+                <p className="marketing-copy mt-5 max-w-xl text-lg">
+                  Cada texto que você manda volta com o diagnóstico exato: onde a nota está travando, competência a competência — não um
+                  número solto.
+                </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Button asChild size="lg">
+                    <Link href="/cadastro">
+                      Corrigir minha primeira redação
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline">
+                    <Link href="/login">Já tenho conta</Link>
+                  </Button>
+                </div>
+                <FactRow facts={FACTS} />
+              </FadeIn>
+
+              <FadeIn delay={0.1}>
+                <AnnotatedManuscript
+                  intro="A desigualdade no acesso à educação de qualidade"
+                  segments={[
+                    {
+                      phrase: "configura-se, na contemporaneidade, como um entrave à plena cidadania.",
+                      hubLabel: "Texto artificial",
+                      color: HUBS["texto-robotico"].accent,
+                    },
+                    "Sabe-se que a educação é um direito garantido pela Constituição Federal de 1988. Portanto,",
+                    {
+                      phrase: "é necessário que o governo faça algo para mudar essa realidade",
+                      hubLabel: "Argumentação rasa",
+                      color: HUBS["nao-aprofunda"].accent,
+                    },
+                    "e",
+                    {
+                      phrase: "garantir um futuro melhor para todos os brasileiros.",
+                      hubLabel: "Conclusão clichê",
+                      color: HUBS["conclusao-formula"].accent,
+                    },
+                  ]}
+                />
+              </FadeIn>
+            </div>
           </div>
         </section>
 
