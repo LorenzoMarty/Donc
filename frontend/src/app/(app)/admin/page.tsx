@@ -11,6 +11,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   LibraryBig,
+  LifeBuoy,
   ListChecks,
   Puzzle,
   TrendingUp,
@@ -49,6 +50,7 @@ import { UsersTab } from "./_tabs/users";
 import { AIGamesTab } from "./_tabs/ai-games";
 import { ModulesTab } from "./_tabs/modules";
 import { SubscriptionsTab } from "./_tabs/subscriptions";
+import { SupportTicketsTab } from "./_tabs/support-tickets";
 import { ThemesTab } from "./_tabs/themes";
 
 type AdminTab = {
@@ -64,6 +66,7 @@ const NAV_TABS: AdminTab[] = [
   { value: "review-queue", label: "Revisões", description: "Conteúdo pendente para aprovar ou rejeitar.", section: "Operação", icon: ClipboardCheck },
   { value: "users", label: "Alunos", description: "Gestão de usuários, progresso e consumo.", section: "Operação", icon: Users },
   { value: "subscriptions", label: "Assinaturas", description: "Assinantes, receita recorrente e cupons de desconto.", section: "Operação", icon: CreditCard },
+  { value: "support-tickets", label: "Suporte", description: "Chamados abertos pelos alunos.", section: "Operação", icon: LifeBuoy },
   { value: "themes", label: "Temas", description: "Temas de redação e textos motivadores.", section: "Conteúdo", icon: FileText },
   { value: "modules", label: "Módulos", description: "Aulas, módulos e ordem do curso.", section: "Conteúdo", icon: LibraryBig },
   { value: "exercises", label: "Exercícios", description: "Questões e atividades pedagógicas.", section: "Conteúdo", icon: ListChecks },
@@ -199,6 +202,10 @@ export default function AdminPage() {
 
           <TabsContent value="subscriptions" className="mt-0">
             <SubscriptionsTab />
+          </TabsContent>
+
+          <TabsContent value="support-tickets" className="mt-0">
+            <SupportTicketsTab />
           </TabsContent>
 
           <TabsContent value="themes" className="mt-0">

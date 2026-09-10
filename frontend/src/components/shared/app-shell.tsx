@@ -10,6 +10,7 @@ import {
   Gamepad2,
   History,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -42,6 +43,7 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/games", label: "Atividades", icon: Gamepad2 },
   { href: "/perfil", label: "Perfil", icon: User },
+  { href: "/suporte", label: "Suporte", icon: LifeBuoy },
 ];
 
 
