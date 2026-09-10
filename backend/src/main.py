@@ -13,7 +13,7 @@ from src.dependencies import require_active_subscription
 from src.middlewares.errors import register_error_handlers
 from src.middlewares.errors import AppError
 from src.models import *  # noqa: F403 - garante registro das tabelas no metadata.
-from src.routes import admin, admin_subscriptions, ai, auth, dashboard, essays, exercises, games, lessons, subscriptions
+from src.routes import admin, admin_subscriptions, admin_support, ai, auth, dashboard, essays, exercises, games, lessons, subscriptions, support
 from src.schemas.common import ApiResponse, HealthData, success_response
 from src.services.seed import seed_database
 from src.telemetry import configure_ai_telemetry, flush_ai_telemetry
@@ -87,6 +87,11 @@ async def csrf_cookie_session_middleware(request, call_next):
 
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(subscriptions.router, prefix=settings.api_v1_prefix)
+# Suporte fica de fora do gate de assinatura pelo mesmo motivo de subscriptions/auth/admin: e
+# por ele que quem esta com problema de acesso/cobranca (logo, sem assinatura ativa) consegue
+# pedir ajuda.
+app.include_router(support.router, prefix=settings.api_v1_prefix)
+app.include_router(admin_support.router, prefix=settings.api_v1_prefix)
 # REQ-11: sem assinatura ativa (ou em graca), sem acesso as rotas de negocio — ADMIN passa livre
 # (require_active_subscription trata isso). `subscriptions`/`auth`/`admin` ficam de fora de
 # proposito: e por elas que quem esta bloqueado paga/cancela/gerencia.

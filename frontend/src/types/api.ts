@@ -51,6 +51,27 @@ export type AdminSubscribersResponse = {
   mrr_cents: number;
 };
 
+export type SupportTicketCategory = "billing" | "technical_bug" | "correction_question" | "account_access" | "other";
+export type SupportTicketStatus = "open" | "resolved";
+
+export type AdminSupportTicket = {
+  id: number;
+  category: SupportTicketCategory;
+  subject: string;
+  message: string;
+  status: SupportTicketStatus;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+};
+
+export type AdminSupportTicketListResponse = {
+  items: AdminSupportTicket[];
+  total: number;
+};
+
 export type PublishedGameQuestion = {
   prompt: string;
   options: string[];

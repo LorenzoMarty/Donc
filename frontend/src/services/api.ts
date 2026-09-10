@@ -1,10 +1,13 @@
 export { ApiClientError, apiFetch } from "@/lib/http-client";
 export { authApi } from "@/services/auth-service";
 export { adminSubscriptionApi, subscriptionApi } from "@/services/subscription-service";
+export { adminSupportApi, supportApi } from "@/services/support-service";
 export type {
   AdminMetrics,
   AdminSubscriber,
   AdminSubscribersResponse,
+  AdminSupportTicket,
+  AdminSupportTicketListResponse,
   ApiEnvelope,
   CognitiveIssueRecord,
   CheckoutResponse,
@@ -26,5 +29,7 @@ export type {
   Subscription,
   SubscriptionCycle,
   SubscriptionStatus,
+  SupportTicketCategory,
+  SupportTicketStatus,
   User,
 } from "@/types/api";

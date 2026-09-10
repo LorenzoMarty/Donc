@@ -10,6 +10,7 @@ from src.models.recommendation_log import RecommendationLog
 from src.models.refresh_token import RefreshToken
 from src.models.static_game import StaticGame
 from src.models.subscription import Coupon, DiscountType, PlanCycle, ProcessedWebhookEvent, Subscription, SubscriptionStatus
+from src.models.support import SupportTicket, SupportTicketCategory, SupportTicketStatus
 from src.models.user import StudentProfile, User, UserRole
 
 __all__ = [
@@ -49,6 +50,9 @@ __all__ = [
     "StudentProfile",
     "Subscription",
     "SubscriptionStatus",
+    "SupportTicket",
+    "SupportTicketCategory",
+    "SupportTicketStatus",
     "User",
     "UserEvent",
     "UserRole",
