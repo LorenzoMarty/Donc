@@ -240,7 +240,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-8">
     <GameSessionShell
       categoryName={category.name}
       categorySlug={category.slug}
@@ -253,8 +252,8 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
         </Chip>
       }
     >
-      <div className="force-light contents">
-        <div className="relative -mx-4 -mb-4 overflow-hidden rounded-b-lg bg-background p-[24px] md:-mx-8 md:-mb-6 md:p-[40px]">
+      <div className="mx-auto w-full max-w-[1226px]">
+        <div className="relative overflow-hidden">
           <div className="mb-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{level.title}</p>
             <h2 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-normal text-foreground md:text-4xl">
@@ -329,7 +328,6 @@ export function EssayAssemblySession({ game, category }: { game: GameDefinition;
         />
       </div>
     </GameSessionShell>
-    </div>
   );
 }
 

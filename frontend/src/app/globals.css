@@ -565,13 +565,123 @@ li {
     background: hsl(var(--background));
   }
 
+  .game-shell-panel {
+    --background: 42 26% 93%;
+    --foreground: var(--neutral-800);
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --primary: var(--accent-500);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 131 44% 91%;
+    --secondary-foreground: var(--accent-700);
+    --muted: 220 44% 97%;
+    --muted-foreground: var(--neutral-500);
+    --border: var(--neutral-200);
+    --ring: var(--accent-500);
+
+    display: flex;
+    min-height: calc(100dvh - 2.5rem);
+    width: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid hsl(0 0% 100% / 0.78);
+    border-radius: 28px !important;
+    background: hsl(0 0% 100%);
+    color: hsl(var(--foreground));
+    box-shadow: 0 18px 48px -38px rgba(20, 30, 55, 0.32);
+  }
+
+  .game-session-header {
+    display: grid;
+    min-height: 5.5rem;
+    grid-template-columns: minmax(11rem, 0.82fr) minmax(8rem, 1.7fr) auto;
+    align-items: center;
+    gap: clamp(0.75rem, 1.6vw, 1.35rem);
+    padding: 1.25rem clamp(1rem, 2vw, 2rem);
+    background: hsl(0 0% 100%);
+  }
+
+  .game-session-close {
+    display: grid;
+    height: 3rem;
+    width: 3rem;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 14px !important;
+    background: hsl(var(--muted));
+    color: hsl(var(--neutral-700));
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .game-session-close:hover {
+    background: hsl(var(--neutral-100));
+    color: hsl(var(--foreground));
+  }
+
+  .game-session-pips,
+  .game-session-progress {
+    display: flex;
+    min-width: 0;
+    width: 100%;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .game-session-progress {
+    height: 0.5rem;
+    overflow: hidden;
+    border-radius: 999px !important;
+    background: hsl(var(--neutral-100));
+  }
+
+  .game-session-pips > span,
+  .game-session-progress > div {
+    border-radius: 999px !important;
+  }
+
+  .game-session-chips {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .game-session-body {
+    flex: 1;
+    padding: clamp(2rem, 4vw, 4rem) clamp(1rem, 4vw, 3rem);
+    background: hsl(42 26% 93%) !important;
+    color: hsl(var(--neutral-800)) !important;
+    border-radius: 0 !important;
+  }
+
+  .game-shell-panel .force-light {
+    --background: 42 26% 93%;
+    --foreground: var(--neutral-800);
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --primary: var(--accent-500);
+    --primary-foreground: 0 0% 100%;
+    --secondary: 131 44% 91%;
+    --secondary-foreground: var(--accent-700);
+    --muted: 220 44% 97%;
+    --muted-foreground: var(--neutral-500);
+    --border: var(--neutral-200);
+    --ring: var(--accent-500);
+
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    color-scheme: light;
+  }
+
   .glass-surface,
   .game-surface {
     /* Sem `background` aqui de proposito: todo consumidor ja traz seu proprio bg-*
        (bg-card/bg-primary/etc) ao lado desta classe. Definir aqui forcaria essa cor
        e quebraria qualquer override (ordem de cascata gera empate de especificidade). */
     min-width: 0;
-    border-radius: var(--radius-card);
+    border-radius: 24px !important;
     box-shadow: var(--shadow-soft);
     backdrop-filter: none;
   }
@@ -579,10 +689,10 @@ li {
   .game-tile {
     min-width: 0;
     border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
+    border-radius: 18px !important;
     box-shadow:
       0 1px 0 hsl(0 0% 100% / 0.85) inset,
-      0 1px 2px rgba(20, 30, 55, 0.035);
+      0 14px 32px -28px rgba(20, 30, 55, 0.34);
     transition:
       transform 160ms ease,
       box-shadow 160ms ease,
@@ -610,15 +720,55 @@ li {
   }
 
   .game-chip {
-    border: 1px solid hsl(var(--border));
+    border: 1px solid hsl(var(--border) / 0.72);
     border-radius: 999px;
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.045) inset;
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.72) inset;
   }
 
   .game-focus-card {
     border: 1px solid hsl(var(--primary) / 0.42);
-    border-radius: var(--radius-card);
+    border-radius: 24px !important;
     box-shadow: var(--shadow-control);
+  }
+
+  .game-question-card {
+    border-radius: 28px !important;
+    background: hsl(var(--card));
+    box-shadow: 0 22px 52px -38px rgba(20, 30, 55, 0.38);
+  }
+
+  .game-option-card {
+    min-height: 8.75rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 18px !important;
+    background: hsl(var(--card));
+    box-shadow: 0 14px 34px -30px rgba(20, 30, 55, 0.4);
+  }
+
+  @media (max-width: 767px) {
+    .game-shell-panel {
+      min-height: calc(100dvh - 5.75rem);
+      border-radius: 22px !important;
+    }
+
+    .game-session-header {
+      grid-template-columns: 1fr auto;
+      min-height: auto;
+    }
+
+    .game-session-pips,
+    .game-session-progress {
+      grid-column: 1 / -1;
+      order: 3;
+    }
+
+    .game-session-body {
+      padding: 1.5rem 0.875rem;
+    }
+
+    .game-question-card {
+      border-radius: 22px !important;
+    }
   }
 
   .focus-ring-soft {
@@ -764,6 +914,28 @@ li {
   [class~="shadow-xl"],
   [class~="shadow-2xl"] {
     box-shadow: var(--shadow-soft) !important;
+  }
+
+  .game-shell-panel [class~="rounded-3xl"],
+  .game-shell-panel .game-question-card {
+    border-radius: 28px !important;
+  }
+
+  .game-shell-panel [class~="rounded-2xl"],
+  .game-shell-panel [class~="rounded-xl"],
+  .game-shell-panel .game-tile,
+  .game-shell-panel .game-option-card {
+    border-radius: 18px !important;
+  }
+
+  .game-shell-panel .game-surface,
+  .game-shell-panel .game-focus-card {
+    border-radius: 24px !important;
+  }
+
+  .game-shell-panel [class~="rounded-md"],
+  .game-shell-panel [class~="rounded-control"] {
+    border-radius: 10px !important;
   }
 
   [class*="shadow-glow"] {
