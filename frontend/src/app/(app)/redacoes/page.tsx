@@ -172,14 +172,14 @@ export default function EssayHistoryPage() {
 
       {essays.length === 0 ? (
         <div className="mt-6">
-          <EmptyState title="Seu histórico começa na primeira redação" description="Escreve no editor e ela aparece aqui, com nota e evolução ao longo do tempo." />
+          <EmptyState title="Seu histórico começa na primeira redação" description="Escreva no editor e ela aparece aqui, com nota e evolução ao longo do tempo." />
         </div>
       ) : (
         <section className="mt-4 flex flex-col gap-3">
           {filteredEssays.length === 0 ? (
             <div className="rounded-card bg-card px-5 py-10 text-center shadow-soft">
               <p className="text-base font-semibold">Não achei nenhuma redação com esse filtro.</p>
-              <p className="mt-1 text-sm text-muted-foreground">Tenta outro termo de busca ou limpa o filtro.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Tente outro termo de busca ou limpe o filtro.</p>
             </div>
           ) : (
             filteredEssays.map((essay) => (

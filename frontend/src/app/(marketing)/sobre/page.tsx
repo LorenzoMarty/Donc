@@ -21,7 +21,7 @@ export default function AboutPage() {
             </p>
             <Button asChild size="lg" className="mt-7">
               <Link href="/cadastro">
-                Entrar na jornada
+                Criar conta
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>

@@ -148,12 +148,12 @@ export default function OnboardingPage() {
 
               {step === 0 ? (
                 <>
-                  <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">Bem-vinda ao Donc</p>
+                  <p className="mb-3 text-[14px] font-semibold uppercase tracking-[0.06em] text-[hsl(var(--accent-300))]">Boas-vindas ao Donc</p>
                   <h1 className="font-display text-[38px] font-medium leading-[1.15] text-white">
                     Vamos preparar sua jornada rumo ao 1000
                   </h1>
                   <p className="mx-auto mt-3.5 max-w-[520px] text-[17px] leading-relaxed text-white/70">
-                    Sou o Donc, seu tutor de redação. Em 3 passos rápidos eu personalizo os treinos, aulas e temas pra você.
+                    Sou a Folhinha, sua tutora de redação. Em 3 passos rápidos eu personalizo os treinos, aulas e temas pra você.
                   </p>
                 </>
               ) : step === 1 ? (
