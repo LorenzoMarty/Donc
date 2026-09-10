@@ -357,7 +357,7 @@ function CorrectionWaitingScreen({
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
           <div className="game-tile bg-background/58 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Titulo</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Título</p>
             <p className="text-safe mt-1 text-sm font-semibold">{title}</p>
           </div>
           <div className="game-tile bg-background/58 p-3">
@@ -365,7 +365,7 @@ function CorrectionWaitingScreen({
             <p className="mt-1 text-sm font-semibold">{wordCount} palavras</p>
           </div>
           <div className="game-tile bg-background/58 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Paragrafos</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Parágrafos</p>
             <p className="mt-1 text-sm font-semibold">{paragraphCount}</p>
           </div>
         </div>
