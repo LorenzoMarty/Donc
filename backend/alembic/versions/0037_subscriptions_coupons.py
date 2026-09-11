@@ -3,7 +3,7 @@ Mercado Pago (spec sistema-planos-mercadopago): acesso 100% pago, ciclo mensal/a
 cupom de desconto administrado no painel admin.
 
 Revision ID: 0037_subscriptions_coupons
-Revises: 0036_essay_correction_used_fallback
+Revises: 0036_essay_correction_fallback
 Create Date: 2026-09-04
 """
 
@@ -14,7 +14,7 @@ from alembic import op
 
 
 revision: str = "0037_subscriptions_coupons"
-down_revision: str | None = "0036_essay_correction_used_fallback"
+down_revision: str | None = "0036_essay_correction_fallback"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
