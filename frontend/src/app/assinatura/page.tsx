@@ -141,6 +141,9 @@ export default function AssinaturaPage() {
             {checkoutLoading ? "Redirecionando..." : "Ir para pagamento"}
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">Pagamento processado pelo Mercado Pago.</p>
+          <Button variant="ghost" className="mt-2 w-full" onClick={logout}>
+            Sair / usar outra conta
+          </Button>
         </Card>
       </MotionShell>
     </main>

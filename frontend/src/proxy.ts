@@ -60,6 +60,11 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  // Admin nunca paga: se cair no paywall (bookmark, link antigo), manda pro app.
+  if (isSubscriptionRoute && session.isAdmin) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   const blockedBySubscription = isProtected && !isSubscriptionRoute && !session.isAdmin && !session.subscriptionActive;
   if (blockedBySubscription) {
     return NextResponse.redirect(new URL(SUBSCRIPTION_ROUTE, request.url));
