@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from src.agents.base import AgnoAgentRunner
+from src.agents.elimination_gate.jev import JevGateResult, screen_essay
 from src.agents.schemas import EliminationGateOutput, PreProcessorOutput
 from src.prompts.agent_instructions import ELIMINATION_GATE_INSTRUCTIONS
 
@@ -20,6 +21,13 @@ class EliminationGateAgent:
         session_id: str | None = None,
     ) -> EliminationGateOutput:
         fallback = self._fallback(content=content, preprocessor=preprocessor)
+        # Pre-triagem Jev: so aprova no barato quando heuristicas ja passam e Jev tem baixo risco em
+        # tudo; qualquer outro caso segue pro gate GPT (Jev nunca zera sozinho).
+        if fallback.status == "APPROVED":
+            screened = screen_essay(theme, content)
+            if screened is not None and screened.approved:
+                self._record_jev_run(screened, content)
+                return EliminationGateOutput(status="APPROVED", reason="Texto aprovado na triagem rapida (Jev).")
         prompt = f"""Tema: {theme}
 Metadados: palavras={preprocessor.word_count}, paragrafos={preprocessor.paragraph_count}
 Redacao:
@@ -34,6 +42,15 @@ Redacao:
             user_id=user_id,
             session_id=session_id,
         )
+
+    def _record_jev_run(self, screened: JevGateResult, content: str) -> None:
+        """Reflete a chamada Jev no estado do runner, que alimenta o log de telemetria/custo."""
+        r = self.runner
+        r._reset_run_state(content)
+        r.last_model = screened.model
+        r.last_input_tokens = screened.input_tokens
+        r.last_output_tokens = screened.output_tokens
+        r.last_token_count = screened.input_tokens + screened.output_tokens
 
     def _fallback(self, *, content: str, preprocessor: PreProcessorOutput) -> EliminationGateOutput:
         dh_pattern = r"\b(exterminar|eliminar|matar|torturar|violencia contra|retirar direitos)\b"

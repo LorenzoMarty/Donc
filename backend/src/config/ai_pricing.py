@@ -31,6 +31,7 @@ MODEL_PRICING: dict[str, ModelPrice] = {
     "gpt-4o-mini": ModelPrice(input_per_1m=0.15, output_per_1m=0.60),
     # gpt-5.5: confirmar valor oficial vigente em openai.com/api/pricing antes de produção.
     "gpt-5.5": ModelPrice(input_per_1m=1.25, output_per_1m=10.00),
+    "jev": ModelPrice(input_per_1m=0.042, output_per_1m=0.0),  # TypeSafe Jev: saida gratis
     "text-embedding-3-small": ModelPrice(input_per_1m=0.02, output_per_1m=0.0),
     "text-embedding-3-large": ModelPrice(input_per_1m=0.13, output_per_1m=0.0),
 }
