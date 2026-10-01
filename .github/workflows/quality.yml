@@ -3,10 +3,24 @@ name: Quality gate
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   frontend:
     runs-on: ubuntu-latest
+    # Same LanguageTool image as docker-compose.yml; `npm run quality` runs the grammar check against it.
+    services:
+      languagetool:
+        image: erikvl87/languagetool:latest
+        ports:
+          - 8010:8010
+        options: >-
+          --health-cmd "wget -qO- http://localhost:8010/v2/languages || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: frontend
