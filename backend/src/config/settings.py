@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     openai_fallback_model: str = "gpt-4o-mini"
+    # Jev (TypeSafe System One): pre-triagem barata do EliminationGate. Sem chave = desligado.
+    # Jev so pula a chamada GPT quando TODAS as probabilidades de risco ficam abaixo do teto;
+    # nunca zera redacao sozinho (qualquer duvida cai no gate GPT).
+    jev_api_key: str | None = None
+    jev_base_url: str = "https://api.typesafe.ai/v1/systemone"
+    jev_model: str = "jev-latest"
+    jev_timeout_seconds: int = 10
+    jev_gate_max_risk: float = 0.15
     openai_image_model: str = "gpt-image-1"
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
@@ -79,6 +87,7 @@ class Settings(BaseSettings):
 
     @field_validator(
         "openai_api_key",
+        "jev_api_key",
         "openai_fallback_model",
         "langfuse_public_key",
         "langfuse_secret_key",
