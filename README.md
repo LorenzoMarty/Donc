@@ -8,7 +8,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.13-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
-![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)
+[![Quality gate](https://github.com/LorenzoMarty/Donc/actions/workflows/quality.yml/badge.svg)](https://github.com/LorenzoMarty/Donc/actions/workflows/quality.yml)
+
+![Donc landing page with an essay excerpt annotated by the AI corrector](docs/screenshots/landing.png)
 
 ## What it does
 
@@ -93,3 +95,7 @@ Copy `.env.example` (Docker/local) or the per-service examples in `backend/.env.
 ## Deployment
 
 Frontend and backend are deployed as separate Vercel projects. See [docs/README.pt-BR.md](docs/README.pt-BR.md) for the full deployment notes.
+
+## License
+
+[MIT](LICENSE)

@@ -45,6 +45,13 @@ const IGNORE_STRINGS = new Map([
   ["Gerar conteúdo com IA não é suportado para o engine \\", "idem — artefato de extracao"],
   ["A redação ainda está curta para correção. Desenvolva melhor a tese antes de enviar.", "sugestao estilistica de prolixidade do LanguageTool, nao e erro gramatical"],
   ["Este módulo ainda está bloqueado. Conclua o módulo anterior para liberar esta aula.", "idem — sugestao estilistica, nao erro"],
+  ["sem limite", "placeholder de formulario — minuscula e convencao de hint (campo \"Limite de uso\")"],
+  ["Admin Donc", "nome de marca"],
+  ["Boas-vindas ao Donc", "nome de marca"],
+  ["Hub de treino", "termo de navegacao hub-first do produto (ver \"Voltar ao hub\")"],
+  ["Jogos deste hub", "idem — termo hub-first do produto"],
+  ["Este cupom ainda não é válido.", "sugestao estilistica de negacao do LanguageTool que mudaria o sentido (\"ainda nao e valido\" != \"e invalido\")"],
+  ["Assinatura de webhook inválida.", "\"webhook\" e termo tecnico em ingles, nao e erro de PT-BR"],
 ]);
 
 function walk(dir, exts) {
