@@ -9,6 +9,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.13-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
 [![Quality gate](https://github.com/LorenzoMarty/Donc/actions/workflows/quality.yml/badge.svg)](https://github.com/LorenzoMarty/Donc/actions/workflows/quality.yml)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ![Donc landing page with an essay excerpt annotated by the AI corrector](docs/screenshots/landing.png)
 
@@ -25,7 +26,7 @@ ENEM essays are graded on five competencies, and students rarely get detailed fe
 - **Study planning and analytics.** Dashboards, rewrite evaluation and personalized study plans.
 - **Admin area.** Content, exercises, subscriptions and support management.
 
-## Architecture
+## How it works
 
 ```text
 Next.js 16 (App Router)  ──►  FastAPI  ──►  PostgreSQL 16 + pgvector
@@ -35,6 +36,10 @@ Next.js 16 (App Router)  ──►  FastAPI  ──►  PostgreSQL 16 + pgvector
         └── Zustand, Tailwind          └── Langfuse / OpenLIT tracing + cost telemetry (BRL)
 ```
 
+Backend layout: `routes/` (REST per domain) → `services/` (business rules) → `repositories/` (data access), with `agents/`, `vectorstore/` (RAG), `queues/` (Celery jobs), `schemas/` (Pydantic DTOs) and `alembic/` (migrations).
+
+## Tech stack
+
 | Layer | Technology |
 |---|---|
 | Frontend | Next.js 16, TypeScript, Tailwind CSS, Zustand, Vitest, Playwright |
@@ -42,8 +47,6 @@ Next.js 16 (App Router)  ──►  FastAPI  ──►  PostgreSQL 16 + pgvector
 | Data | PostgreSQL (`pgvector`), Redis |
 | AI | `agno` agents, OpenAI, Langfuse (optional tracing) |
 | Quality | ESLint + `tsc` + Vitest (frontend), pytest + coverage (backend), GitHub Actions quality gate on pull requests |
-
-Backend layout: `routes/` (REST per domain) → `services/` (business rules) → `repositories/` (data access), with `agents/`, `vectorstore/` (RAG), `queues/` (Celery jobs), `schemas/` (Pydantic DTOs) and `alembic/` (migrations).
 
 ## Getting started
 
@@ -100,6 +103,15 @@ Copy `.env.example` (Docker/local) or the per-service examples in `backend/.env.
 
 Frontend and backend are deployed as separate Vercel projects. See [docs/README.pt-BR.md](docs/README.pt-BR.md) for the full deployment notes.
 
+## Status
+
+Live in production and under active development. The walkthrough above uses the demo data seeded by `SEED_DEMO_DATA`, not real students.
+
 ## License
 
 [MIT](LICENSE)
+
+## Author
+
+**Lorenzo Marty** — [GitHub](https://github.com/LorenzoMarty)
+
