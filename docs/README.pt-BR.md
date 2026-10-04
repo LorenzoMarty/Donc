@@ -4,6 +4,10 @@ Plataforma de preparacao para Portugues e Redacao do ENEM. Frontend em Next.js 1
 backend em FastAPI + PostgreSQL/pgvector, fila assincrona via Celery/Redis e pipeline de correcao
 de redacoes com agentes de IA (framework `agno` + OpenAI).
 
+![Passeio pelo app rodando: painel, redacoes corrigidas com nota por competencia, painel de analise da IA e editor de texto](screenshots/demo.gif)
+
+<sub>Passeio pelo app rodando, com dados de demonstracao (acelerado 1,6x). [Video em qualidade total](demo.mp4).</sub>
+
 ## Stack
 
 | Camada | Tecnologia |
