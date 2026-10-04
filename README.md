@@ -12,6 +12,10 @@
 
 ![Donc landing page with an essay excerpt annotated by the AI corrector](docs/screenshots/landing.png)
 
+![Walkthrough of the running app: dashboard, corrected essays with per-competency scores, the AI analysis panel and the writing editor](docs/screenshots/demo.gif)
+
+<sub>Walkthrough of the running app with demo seed data (sped up 1.6x). [Full-quality video](docs/demo.mp4).</sub>
+
 ## What it does
 
 ENEM essays are graded on five competencies, and students rarely get detailed feedback. Donc gives it to them:
