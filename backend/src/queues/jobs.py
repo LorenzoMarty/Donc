@@ -6,11 +6,12 @@ import threading
 import uuid
 from datetime import UTC, datetime
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
 from src.middlewares.errors import AppError
-from src.models import AIJob
+from src.models import AIJob, Essay
 
 
 logger = logging.getLogger("src.queues.jobs")
@@ -48,19 +49,22 @@ class AIJobService:
             raise AppError("Job de IA não encontrado.", status_code=404, code="ai_job_not_found")
         return expire_stale_job(self.db, job)
 
+    @staticmethod
+    def _essay_jobs_filter(*, user_id: int, kind: str, essay_id: int) -> tuple:
+        return (
+            AIJob.user_id == user_id,
+            AIJob.kind == kind,
+            AIJob.request_payload["essay_id"].as_integer() == essay_id,
+        )
+
     def get_active_for_essay(self, *, user_id: int, essay_id: int, kind: str = "essay_correction") -> AIJob | None:
         # Idempotencia: evita criar um job novo (e rodar o pipeline de IA de novo) se ja existe
         # um em andamento para a mesma redacao — ver nota sobre corrida em submits concorrentes.
-        active_statuses = ("queued", "running")
-        jobs = (
+        return (
             self.db.query(AIJob)
-            .filter(AIJob.user_id == user_id, AIJob.kind == kind, AIJob.status.in_(active_statuses))
+            .filter(*self._essay_jobs_filter(user_id=user_id, kind=kind, essay_id=essay_id), AIJob.status.in_(("queued", "running")))
             .order_by(AIJob.created_at.desc())
-            .all()
-        )
-        return next(
-            (job for job in jobs if int((job.request_payload or {}).get("essay_id", -1)) == essay_id),
-            None,
+            .first()
         )
 
     def get_by_idempotency_key(self, *, user_id: int, kind: str, idempotency_key: str | None) -> AIJob | None:
@@ -79,13 +83,30 @@ class AIJobService:
     def next_attempt_number(self, *, user_id: int, kind: str, essay_id: int) -> int:
         """REQ-7 (P2b): quantas vezes essa redacao ja foi submetida/reprocessada — usado como
         `attempt` do proximo AIJob."""
-        prior = (
-            self.db.query(AIJob)
-            .filter(AIJob.user_id == user_id, AIJob.kind == kind)
-            .all()
+        count = self.db.query(func.count(AIJob.id)).filter(*self._essay_jobs_filter(user_id=user_id, kind=kind, essay_id=essay_id)).scalar()
+        return (count or 0) + 1
+
+    def start_essay_correction(self, *, essay: Essay, user_id: int, idempotency_key: str | None) -> tuple[AIJob, bool]:
+        """Caso de uso unico de submit/reprocess: devolve (job, created). `created=False` quando
+        ja ha job ativo da redacao ou a idempotency_key repete um job anterior — o chamador so
+        despacha a correcao quando `created=True`."""
+        kind = "essay_correction"
+        active = self.get_active_for_essay(user_id=user_id, essay_id=essay.id)
+        if active:
+            return active, False
+        cached = self.get_by_idempotency_key(user_id=user_id, kind=kind, idempotency_key=idempotency_key)
+        if cached and int((cached.request_payload or {}).get("essay_id", -1)) == essay.id:
+            return cached, False
+        job = self.create(
+            user_id=user_id,
+            kind=kind,
+            request_payload={"essay_id": essay.id},
+            idempotency_key=idempotency_key,
+            attempt=self.next_attempt_number(user_id=user_id, kind=kind, essay_id=essay.id),
         )
-        count = sum(1 for job in prior if int((job.request_payload or {}).get("essay_id", -1)) == essay_id)
-        return count + 1
+        essay.last_ai_job_id = job.id
+        self.db.commit()
+        return job, True
 
     def mark_running(self, job: AIJob) -> None:
         job.status = "running"
