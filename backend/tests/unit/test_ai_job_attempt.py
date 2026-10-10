@@ -55,3 +55,30 @@ def test_attempt_counting_is_scoped_per_essay():
 
     attempt = jobs.next_attempt_number(user_id=user_id, kind="essay_correction", essay_id=999)
     assert attempt == 1
+
+
+def _make_essay(db, user_id: int):
+    from src.models import Essay, EssayTheme
+
+    theme = EssayTheme(title="t", context="c", source="s", is_active=True)
+    db.add(theme)
+    db.flush()
+    essay = Essay(user_id=user_id, theme_id=theme.id, title="t", content="x", word_count=1, line_count=1, paragraph_count=1)
+    db.add(essay)
+    db.flush()
+    return essay
+
+
+def test_start_essay_correction_reuses_active_job_and_marks_last_job(monkeypatch):
+    monkeypatch.setattr(AIJobService, "publish", lambda self, job: None)
+    db = _session()
+    user_id = _make_user(db)
+    essay = _make_essay(db, user_id)
+    jobs = AIJobService(db)
+
+    first, created_first = jobs.start_essay_correction(essay=essay, user_id=user_id, idempotency_key=None)
+    second, created_second = jobs.start_essay_correction(essay=essay, user_id=user_id, idempotency_key=None)
+
+    assert created_first is True and created_second is False
+    assert second.id == first.id == essay.last_ai_job_id
+    assert first.attempt == 1

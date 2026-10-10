@@ -111,26 +111,11 @@ def submit_essay(
     db: Session = Depends(get_db),
 ) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
-    jobs = AIJobService(db)
-    active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=essay_id)
-    if active_job:
-        # Evita duplo-clique/retry disparando um novo pipeline de IA enquanto o anterior ainda
-        # esta rodando para a mesma redacao — devolve o job ja em andamento em vez de criar outro.
-        return success_response(EssaySubmitResponse(job_id=active_job.id, essay_id=essay.id), "Correcao ja em andamento.")
-    # REQ-9 (P2b): cobre tambem o caso do fallback sincrono, onde o job ja terminou (completed/
-    # failed) antes do retry chegar — get_active_for_essay() sozinho nao pega mais isso.
-    cached_job = jobs.get_by_idempotency_key(user_id=current_user.id, kind="essay_correction", idempotency_key=idempotency_key)
-    if cached_job and int((cached_job.request_payload or {}).get("essay_id", -1)) == essay_id:
-        return success_response(EssaySubmitResponse(job_id=cached_job.id, essay_id=essay.id), "Correcao ja processada.")
-    job = jobs.create(
-        user_id=current_user.id,
-        kind="essay_correction",
-        request_payload={"essay_id": essay_id},
-        idempotency_key=idempotency_key,
-        attempt=jobs.next_attempt_number(user_id=current_user.id, kind="essay_correction", essay_id=essay_id),
-    )
-    essay.last_ai_job_id = job.id
-    db.commit()
+    job, created = AIJobService(db).start_essay_correction(essay=essay, user_id=current_user.id, idempotency_key=idempotency_key)
+    if not created:
+        # Duplo-clique/retry (job ativo) ou mesma idempotency_key (inclusive apos fallback
+        # sincrono ja concluido): devolve o job existente sem rodar outro pipeline de IA.
+        return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Correcao ja em andamento.")
     _dispatch_correction(job.id)
     touch_daily_streak(db, current_user)
     return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Correcao iniciada.")
@@ -190,22 +175,9 @@ def reprocess_essay(
     db: Session = Depends(get_db),
 ) -> ApiResponse[EssaySubmitResponse]:
     essay = EssayService(db).get(essay_id=essay_id, user_id=current_user.id)
-    jobs = AIJobService(db)
-    active_job = jobs.get_active_for_essay(user_id=current_user.id, essay_id=essay_id)
-    if active_job:
-        return success_response(EssaySubmitResponse(job_id=active_job.id, essay_id=essay.id), "Correcao ja em andamento.")
-    cached_job = jobs.get_by_idempotency_key(user_id=current_user.id, kind="essay_correction", idempotency_key=idempotency_key)
-    if cached_job and int((cached_job.request_payload or {}).get("essay_id", -1)) == essay_id:
-        return success_response(EssaySubmitResponse(job_id=cached_job.id, essay_id=essay.id), "Correcao ja processada.")
-    job = jobs.create(
-        user_id=current_user.id,
-        kind="essay_correction",
-        request_payload={"essay_id": essay_id},
-        idempotency_key=idempotency_key,
-        attempt=jobs.next_attempt_number(user_id=current_user.id, kind="essay_correction", essay_id=essay_id),
-    )
-    essay.last_ai_job_id = job.id
-    db.commit()
+    job, created = AIJobService(db).start_essay_correction(essay=essay, user_id=current_user.id, idempotency_key=idempotency_key)
+    if not created:
+        return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Correcao ja em andamento.")
     _dispatch_correction(job.id)
     return success_response(EssaySubmitResponse(job_id=job.id, essay_id=essay.id), "Reprocessamento iniciado.")
 
