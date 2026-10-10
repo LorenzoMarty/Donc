@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, model_validator
@@ -6,16 +6,12 @@ from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.dependencies import get_current_user
-from src.memory.cognitive_issues import EVENT_DIRECTION, HUB_TO_ISSUE, apply_cognitive_signal
-from src.memory.learning_outcomes import SOURCE_WEIGHT, record_learning_outcome
-from src.memory.profile import get_or_create_learning_profile
-from src.memory.recommendation_log import mark_completed
+from src.memory.cognitive_issues import EVENT_DIRECTION, HUB_TO_ISSUE
 from src.middlewares.errors import AppError
 from src.models import GameAttempt, StaticGame, User, UserGameProgress
 from src.models.events import AIGeneratedGame
 from src.schemas.common import ApiResponse, success_response
 from src.services.game_service import GameService
-from src.services.streak_service import touch_daily_streak
 
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -176,93 +172,8 @@ def complete_game(
 ) -> ApiResponse[GameCompleteResponse]:
     _assert_game_playable(db, payload.game_id)
 
-    accuracy = round((payload.score / payload.total) * 100) if payload.total else 0
-    completed_at = datetime.now(UTC)
-    started_at = completed_at - timedelta(seconds=payload.duration_seconds)
-
-    attempt = GameAttempt(
-        user_id=current_user.id,
-        game_id=payload.game_id,
-        score=payload.score,
-        total=payload.total,
-        accuracy=accuracy,
-        duration_seconds=payload.duration_seconds,
-        cognitive_outcomes=[o.model_dump() for o in payload.cognitive_outcomes],
-        started_at=started_at,
-        completed_at=completed_at,
-    )
-    db.add(attempt)
-    db.flush()  # popula attempt.id — usado como source_id do LearningOutcome abaixo.
-
-    row = db.query(UserGameProgress).filter(
-        UserGameProgress.user_id == current_user.id,
-        UserGameProgress.game_id == payload.game_id,
-    ).first()
-    if row:
-        row.plays = row.plays + 1
-        row.best_score = max(row.best_score, payload.score)
-        row.best_accuracy = max(row.best_accuracy, accuracy)
-        row.progress = max(row.progress, accuracy)
-        row.last_played_at = completed_at
-    else:
-        row = UserGameProgress(
-            user_id=current_user.id,
-            game_id=payload.game_id,
-            plays=1,
-            best_score=payload.score,
-            best_accuracy=accuracy,
-            progress=accuracy,
-            last_played_at=completed_at,
-        )
-        db.add(row)
-
-    profile = get_or_create_learning_profile(db, current_user.id)
-    issues_before = dict(profile.cognitive_issues)
-    issues = profile.cognitive_issues
-    touched_codes: list[str] = []
-    first_learning_outcome_id: int | None = None
-    for outcome in payload.cognitive_outcomes:
-        issue_code = HUB_TO_ISSUE.get(outcome.hub)
-        direction = EVENT_DIRECTION.get(outcome.event)
-        if not issue_code or not direction:
-            continue
-        if issue_code not in touched_codes:
-            touched_codes.append(issue_code)
-        issues = apply_cognitive_signal(issues, issue_code, direction, weight=SOURCE_WEIGHT["GAME"])
-        learning_outcome = record_learning_outcome(
-            db,
-            user_id=current_user.id,
-            cognitive_issue_code=issue_code,
-            source="GAME",
-            source_id=attempt.id,
-            direction=direction,
-        )
-        db.flush()
-        if first_learning_outcome_id is None:
-            first_learning_outcome_id = learning_outcome.id
-    profile.cognitive_issues = issues
-
-    if payload.recommendation_log_id is not None:
-        # REQ-17/REQ-18: vinculo frouxo — log inexistente/de outro usuario nao bloqueia o fluxo.
-        mark_completed(
-            db,
-            log_id=payload.recommendation_log_id,
-            user_id=current_user.id,
-            learning_outcome_id=first_learning_outcome_id,
-        )
-
-    db.commit()
-    db.refresh(attempt)
-    touch_daily_streak(db, current_user)
-
-    issue_updates = [
-        IssueUpdate(
-            code=code,
-            previous_state=(issues_before.get(code) or {}).get("state"),
-            new_state=(issues.get(code) or {}).get("state"),
-        )
-        for code in touched_codes
-    ]
+    attempt, issue_updates = GameService(db).complete(user=current_user, payload=payload)
+    issue_updates = [IssueUpdate(**update) for update in issue_updates]
 
     return success_response(
         GameCompleteResponse(
