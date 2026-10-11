@@ -20,7 +20,8 @@ export default defineConfig({
   webServer: [
     {
       // Backend FastAPI FRESCO na 8001 (sqlite isolado + seed demo), para não depender do dev local.
-      command: ".venv\\Scripts\\python.exe -m uvicorn src.main:app --port 8001",
+      // e2e_prepare recria o sqlite do zero e dá assinatura ao aluno demo (acesso é 100% pago).
+      command: ".venv\\Scripts\\python.exe -m scripts.e2e_prepare && .venv\\Scripts\\python.exe -m uvicorn src.main:app --port 8001",
       cwd: "../backend",
       port: 8001,
       reuseExistingServer: false,
@@ -41,6 +42,8 @@ export default defineConfig({
       timeout: 300_000,
       env: {
         NEXT_PUBLIC_API_URL: "http://localhost:8001/api/v1",
+        // Mesmo segredo do backend acima: o proxy.ts valida o JWT do cookie, senão tudo vai pra /login.
+        JWT_SECRET_KEY: "e2e-secret",
         NEXT_DISABLE_STANDALONE: "1",
       },
     },
