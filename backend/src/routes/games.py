@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.orm import Session
 
 from src.database.session import get_db
@@ -104,8 +104,7 @@ class GameProgressRead(BaseModel):
     progress: int
     last_played_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.get("/published", response_model=ApiResponse[list[PublishedGameRead]])
@@ -198,8 +197,7 @@ class GameAttemptRead(BaseModel):
     started_at: datetime
     completed_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @router.get("/attempts/{attempt_id}", response_model=ApiResponse[GameAttemptRead])
