@@ -122,5 +122,8 @@ class GameService:
                 "new_state": (issues.get(code) or {}).get("state"),
             }
             for code in touched_codes
+            # Sinal positivo numa issue ainda nao detectada nao cria registro (apply_cognitive_signal):
+            # nao ha estado a reportar, e IssueUpdate.new_state e obrigatorio.
+            if (issues.get(code) or {}).get("state")
         ]
         return attempt, issue_updates
