@@ -72,3 +72,6 @@ jobs:
         run: |
           python -m alembic upgrade head
           python -m alembic current | grep "(head)"
+          # idempotente e sem drift entre o banco bootstrapado e os models
+          python -m alembic upgrade head
+          python -m alembic check
