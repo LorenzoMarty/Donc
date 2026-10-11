@@ -86,6 +86,39 @@ def test_ai_correct_async_creates_job_and_result(client, monkeypatch):
     assert api_data(status)["status"] == "completed"
 
 
+def test_ai_correct_async_records_last_job_on_essay(client, monkeypatch):
+    from src.routes import ai as ai_router
+
+    monkeypatch.setattr(ai_router, "enqueue_correct_essay", lambda job_id: False)
+    essay_id = create_essay(client, "Correcao IA async last job")
+    job = api_data(client.post("/api/v1/ai/correct", json={"essay_id": essay_id, "async_mode": True}))
+
+    # Antes /ai/correct nao gravava essay.last_ai_job_id, entao GET /essays/{id}/job dava 404.
+    via_essay = api_data(client.get(f"/api/v1/essays/{essay_id}/job"))
+    assert via_essay["job_id"] == job["job_id"]
+
+
+def test_ai_correct_async_unknown_essay_returns_404_without_creating_job(client, monkeypatch):
+    from src.models import AIJob
+    from src.routes import ai as ai_router
+
+    monkeypatch.setattr(ai_router, "enqueue_correct_essay", lambda job_id: False)
+    db = SessionLocal()
+    try:
+        before = db.scalar(select(func.count()).select_from(AIJob))
+    finally:
+        db.close()
+
+    response = client.post("/api/v1/ai/correct", json={"essay_id": 999999, "async_mode": True})
+
+    assert response.status_code == 404
+    db = SessionLocal()
+    try:
+        assert db.scalar(select(func.count()).select_from(AIJob)) == before
+    finally:
+        db.close()
+
+
 def test_fallback_works_without_openai_key():
     result = EssayAIService().correct(theme="Tema", context="", content=ESSAY_CONTENT)
     assert isinstance(result, EssayCorrectionResult)
