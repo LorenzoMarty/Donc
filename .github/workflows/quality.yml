@@ -35,6 +35,37 @@ jobs:
       - run: npm run quality
       - run: npm run build
 
+  e2e:
+    # Smoke Playwright: sobe backend (sqlite + seed) e frontend (next build + start) via playwright.config.ts.
+    # Job separado, roda em paralelo ao gate; `python` do PATH vem do setup-python abaixo.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: backend/requirements*.txt
+      - run: python -m pip install -r requirements.txt
+        working-directory: backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run test:e2e:install
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: frontend/test-results
+          if-no-files-found: ignore
+
   backend:
     runs-on: ubuntu-latest
     # Postgres vazio (mesma imagem do docker-compose.yml) para provar que `alembic upgrade head`
