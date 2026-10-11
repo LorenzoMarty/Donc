@@ -75,3 +75,14 @@ jobs:
           # idempotente e sem drift entre o banco bootstrapado e os models
           python -m alembic upgrade head
           python -m alembic check
+      - name: alembic upgrade head em banco vazio (pgvector ligado)
+        env:
+          DATABASE_URL: postgresql+psycopg://ci:ci@localhost:5432/ci_vector
+          ENABLE_PGVECTOR: "true"
+          PGPASSWORD: ci
+        run: |
+          psql -h localhost -U ci -d ci -c "CREATE DATABASE ci_vector"
+          python -m alembic upgrade head
+          python -m alembic current | grep "(head)"
+          # o ramo de producao/docker-compose: extensao criada e coluna de embedding do tipo vector
+          psql -h localhost -U ci -d ci_vector -tAc "SELECT udt_name FROM information_schema.columns WHERE table_name='ai_knowledge_chunks' AND column_name='embedding'" | grep -x vector
