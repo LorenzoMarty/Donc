@@ -19,13 +19,11 @@ from src.memory import get_learning_profile_payload
 from src.memory.recommendation_log import mark_started, record_shown
 from src.middlewares.errors import AppError
 from src.models import User
-from src.queues import AIJobService, enqueue_correct_essay
+from src.queues import AIJobService
 from src.queues.jobs import job_payload
-from src.queues.tasks import run_correct_essay_job
 from src.schemas.common import ApiResponse, success_response
 from src.schemas.ai import (
     AIAnalyzeRequest,
-    AICorrectRequest,
     AIEvaluateRewriteRequest,
     AIGenerateExerciseRequest,
     AIJobResponse,
@@ -35,7 +33,6 @@ from src.schemas.ai import (
     RecommendedActionRead,
 )
 from src.agents.schemas import AnalyticsResult, ExerciseGenerationResult, RecommendationResult, RewriteEvaluationResult, StudyPlanResult
-from src.schemas.essays import EssayRead
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.essay_service import EssayService
 from src.services.recommendation_service import RecommendationEngine
@@ -47,31 +44,6 @@ from src.utils.rate_limit import require_ai_rate_limit
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 logger = logging.getLogger("src.routes.ai")
-
-
-@router.post(
-    "/correct",
-    response_model=ApiResponse[EssayRead | AIJobResponse],
-    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("essay_correction"))],
-)
-def correct_essay(
-    payload: AICorrectRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    if payload.async_mode:
-        essay = EssayService(db).get(essay_id=payload.essay_id, user_id=current_user.id)
-        jobs = AIJobService(db)
-        job, created = jobs.start_essay_correction(essay=essay, user_id=current_user.id, idempotency_key=None)
-        if not created:
-            return success_response(AIJobResponse(**job_payload(job)), "Correcao ja em andamento.")
-        if not enqueue_correct_essay(job.id):
-            run_correct_essay_job(job.id)
-            db.expire_all()
-            job = jobs.get_for_user(job_id=job.id, user_id=current_user.id)
-        return success_response(AIJobResponse(**job_payload(job)), "Correcao enviada para processamento.")
-    essay = EssayService(db).submit_for_correction(essay_id=payload.essay_id, user=current_user)
-    return success_response(EssayRead.model_validate(essay), "Redacao corrigida.")
 
 
 @router.post(
