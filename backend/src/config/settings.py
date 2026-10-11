@@ -30,7 +30,13 @@ class Settings(BaseSettings):
     jev_base_url: str = "https://api.typesafe.ai/v1/systemone"
     jev_model: str = "jev-latest"
     jev_timeout_seconds: int = 10
-    jev_gate_max_risk: float = 0.15
+    # Laya (open source, roda no processo; precisa `pip install -r requirements-laya.txt`). Tem prioridade sobre o Jev.
+    laya_enabled: bool = False
+    laya_checkpoint: str = "convaiinnovations/laya"
+    laya_subfolder: str = "multilingual"  # redacao em pt-BR
+    laya_max_len: int = 8192  # padrao da lib e 1024 tokens; redacao inteira precisa de mais
+    # Teto de risco (qualquer pergunta Noul acima disso manda a redacao pro gate GPT), vale p/ Laya e Jev.
+    screening_max_risk: float = 0.15
     openai_image_model: str = "gpt-image-1"
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536

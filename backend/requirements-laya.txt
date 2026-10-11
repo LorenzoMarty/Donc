@@ -1,0 +1,2 @@
+# Opcional: triagem local do EliminationGate (LAYA_ENABLED=true). Puxa torch + transformers e baixa ~0.8-2.5 GB de pesos.
+laya
