@@ -53,3 +53,13 @@ def test_negative_signal_reports_detected_issue():
     _, issue_updates = GameService(db).complete(user=user, payload=_payload("VAGUE_THESIS"))
 
     assert [(u["previous_state"], u["new_state"]) for u in issue_updates] == [(None, "DETECTED")]
+
+
+def test_positive_signal_on_tracked_issue_is_reported_as_progress():
+    db, user = _db_and_user()
+    service = GameService(db)
+    service.complete(user=user, payload=_payload("VAGUE_THESIS"))
+
+    _, issue_updates = service.complete(user=user, payload=_payload("SHARP_THESIS"))
+
+    assert [(u["previous_state"], u["new_state"]) for u in issue_updates] == [("DETECTED", "TRAINING")]
