@@ -119,6 +119,52 @@ def test_ai_correct_async_unknown_essay_returns_404_without_creating_job(client,
         db.close()
 
 
+def test_ai_correct_async_other_users_essay_returns_404_without_creating_job(client, monkeypatch):
+    from src.models import AIJob, Essay, User
+    from src.routes import ai as ai_router
+
+    monkeypatch.setattr(ai_router, "enqueue_correct_essay", lambda job_id: False)
+    db = SessionLocal()
+    try:
+        owner = db.scalar(select(User).where(User.email == "admin@demo.com"))
+        theme = db.scalar(select(EssayTheme))
+        assert owner is not None and theme is not None
+        essay = Essay(
+            user_id=owner.id, theme_id=theme.id, title="Redacao de outro usuario", content=ESSAY_CONTENT,
+            word_count=200, line_count=6, paragraph_count=3,
+        )
+        db.add(essay)
+        db.commit()
+        essay_id = essay.id
+        before = db.scalar(select(func.count()).select_from(AIJob))
+    finally:
+        db.close()
+
+    response = client.post("/api/v1/ai/correct", json={"essay_id": essay_id, "async_mode": True})
+
+    assert response.status_code == 404
+    db = SessionLocal()
+    try:
+        assert db.scalar(select(func.count()).select_from(AIJob)) == before
+    finally:
+        db.close()
+
+
+def test_ai_correct_async_second_request_reuses_active_job(client, monkeypatch):
+    from src.routes import ai as ai_router
+
+    # enqueue "funciona" mas ninguem consome a fila: o job fica queued, ou seja, ativo.
+    monkeypatch.setattr(ai_router, "enqueue_correct_essay", lambda job_id: True)
+    essay_id = create_essay(client, "Correcao IA async job ativo")
+
+    first = api_data(client.post("/api/v1/ai/correct", json={"essay_id": essay_id, "async_mode": True}))
+    second = client.post("/api/v1/ai/correct", json={"essay_id": essay_id, "async_mode": True})
+
+    assert first["status"] == "queued"
+    assert api_data(second)["job_id"] == first["job_id"]
+    assert second.json()["message"] == "Correcao ja em andamento."
+
+
 def test_fallback_works_without_openai_key():
     result = EssayAIService().correct(theme="Tema", context="", content=ESSAY_CONTENT)
     assert isinstance(result, EssayCorrectionResult)
