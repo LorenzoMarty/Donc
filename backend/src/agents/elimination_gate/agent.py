@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from src.agents.base import AgnoAgentRunner
-from src.agents.elimination_gate.jev import JevGateResult, screen_essay
+from src.agents.elimination_gate.screening import GateScreening, screen_essay
 from src.agents.schemas import EliminationGateOutput, PreProcessorOutput
 from src.prompts.agent_instructions import ELIMINATION_GATE_INSTRUCTIONS
 
@@ -21,13 +21,13 @@ class EliminationGateAgent:
         session_id: str | None = None,
     ) -> EliminationGateOutput:
         fallback = self._fallback(content=content, preprocessor=preprocessor)
-        # Pre-triagem Jev: so aprova no barato quando heuristicas ja passam e Jev tem baixo risco em
-        # tudo; qualquer outro caso segue pro gate GPT (Jev nunca zera sozinho).
+        # Pre-triagem Laya/Jev: so aprova no barato quando heuristicas ja passam e Jev tem baixo risco em
+        # tudo; qualquer outro caso segue pro gate GPT (a triagem nunca zera sozinha).
         if fallback.status == "APPROVED":
             screened = screen_essay(theme, content)
             if screened is not None and screened.approved:
-                self._record_jev_run(screened, content)
-                return EliminationGateOutput(status="APPROVED", reason="Texto aprovado na triagem rapida (Jev).")
+                self._record_screening_run(screened, content)
+                return EliminationGateOutput(status="APPROVED", reason="Texto aprovado na triagem rapida (Jev/Laya).")
         prompt = f"""Tema: {theme}
 Metadados: palavras={preprocessor.word_count}, paragrafos={preprocessor.paragraph_count}
 Redacao:
@@ -43,8 +43,8 @@ Redacao:
             session_id=session_id,
         )
 
-    def _record_jev_run(self, screened: JevGateResult, content: str) -> None:
-        """Reflete a chamada Jev no estado do runner, que alimenta o log de telemetria/custo."""
+    def _record_screening_run(self, screened: GateScreening, content: str) -> None:
+        """Reflete a chamada Laya/Jev no estado do runner, que alimenta o log de telemetria/custo."""
         r = self.runner
         r._reset_run_state(content)
         r.last_model = screened.model
