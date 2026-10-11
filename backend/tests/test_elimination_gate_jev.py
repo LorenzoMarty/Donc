@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import sys
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
 
-from src.agents.elimination_gate import EliminationGateAgent
-from src.agents.elimination_gate import jev
+from src.agents.elimination_gate import EliminationGateAgent, jev, laya
+from src.agents.elimination_gate.screening import RISK_QUESTIONS
 from src.agents.schemas import EliminationGateOutput, PreProcessorOutput
 from src.config.settings import settings
 
@@ -16,7 +18,7 @@ GPT_ZERO = EliminationGateOutput(status="ZERO", reason="Fuga total.", zero_rule=
 
 
 def _answers(risk: float) -> dict:
-    return {"answers": {k: {"type": "noul", "noul": risk} for k in jev._RISK_QUESTIONS},
+    return {"answers": {k: {"type": "noul", "noul": risk} for k in RISK_QUESTIONS},
             "model": "jev-1.13.0", "usage": {"input_tokens": 400, "output_tokens": 20}}
 
 
@@ -37,9 +39,13 @@ def _agent():
 
 
 @pytest.fixture(autouse=True)
-def _jev_key(monkeypatch):
+def _providers(monkeypatch):
     monkeypatch.setattr(settings, "jev_api_key", "test-key")
+    monkeypatch.setattr(settings, "laya_enabled", False)
+    monkeypatch.setattr(laya, "_agent", None)
 
+
+# --- Jev ---
 
 def test_low_risk_skips_gpt(monkeypatch):
     _mock_post(monkeypatch, _answers(0.02))
@@ -47,7 +53,7 @@ def test_low_risk_skips_gpt(monkeypatch):
     out = agent.evaluate("tema", "texto", PRE_OK)
     assert out.status == "APPROVED"
     runner.run_structured.assert_not_called()
-    assert runner._reset_run_state.called and runner.last_model == "jev-1.13.0"
+    assert runner.last_model == "jev-1.13.0"
 
 
 def test_any_risk_falls_to_gpt(monkeypatch):
@@ -71,8 +77,8 @@ def test_malformed_response_falls_to_gpt(monkeypatch):
     assert agent.evaluate("tema", "texto", PRE_OK) is GPT_ZERO
 
 
-def test_heuristic_reject_never_calls_jev(monkeypatch):
-    _mock_post(monkeypatch, exc=AssertionError("Jev nao deveria ser chamado"))
+def test_heuristic_reject_never_calls_provider(monkeypatch):
+    _mock_post(monkeypatch, exc=AssertionError("provedor nao deveria ser chamado"))
     agent, runner = _agent()
     assert agent.evaluate("tema", "texto", PRE_SHORT) is GPT_ZERO
 
@@ -80,5 +86,45 @@ def test_heuristic_reject_never_calls_jev(monkeypatch):
 def test_disabled_without_key(monkeypatch):
     monkeypatch.setattr(settings, "jev_api_key", None)
     _mock_post(monkeypatch, exc=AssertionError("Jev nao deveria ser chamado"))
+    agent, runner = _agent()
+    assert agent.evaluate("tema", "texto", PRE_OK) is GPT_ZERO
+
+
+# --- Laya ---
+
+def _fake_laya(monkeypatch, risk: float | None = None, load_exc: Exception | None = None):
+    calls = []
+
+    def load(checkpoint, subfolder=None):
+        if load_exc:
+            raise load_exc
+        calls.append((checkpoint, subfolder))
+        return SimpleNamespace(predict=lambda state, q, **kw: {
+            "answers": {k: {"type": "noul", "noul": risk} for k in q}, "usage": {"input_tokens": 500}})
+
+    monkeypatch.setitem(sys.modules, "laya", SimpleNamespace(load=load))
+    monkeypatch.setattr(settings, "laya_enabled", True)
+    return calls
+
+
+def test_laya_low_risk_skips_gpt_and_never_calls_jev(monkeypatch):
+    calls = _fake_laya(monkeypatch, risk=0.01)
+    _mock_post(monkeypatch, exc=AssertionError("Jev nao deveria ser chamado"))
+    agent, runner = _agent()
+    assert agent.evaluate("tema", "texto", PRE_OK).status == "APPROVED"
+    runner.run_structured.assert_not_called()
+    assert runner.last_model == "laya"
+    agent.evaluate("tema", "texto", PRE_OK)
+    assert calls == [("convaiinnovations/laya", "multilingual")]  # carregou uma vez so
+
+
+def test_laya_high_risk_falls_to_gpt(monkeypatch):
+    _fake_laya(monkeypatch, risk=0.5)
+    agent, runner = _agent()
+    assert agent.evaluate("tema", "texto", PRE_OK) is GPT_ZERO
+
+
+def test_laya_load_failure_falls_to_gpt(monkeypatch):
+    _fake_laya(monkeypatch, load_exc=RuntimeError("sem pesos"))
     agent, runner = _agent()
     assert agent.evaluate("tema", "texto", PRE_OK) is GPT_ZERO
