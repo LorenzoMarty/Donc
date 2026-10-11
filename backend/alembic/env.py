@@ -1,4 +1,5 @@
-﻿from logging.config import fileConfig
+﻿import logging
+from logging.config import fileConfig
 
 from alembic import context
 from alembic.script import ScriptDirectory
@@ -9,6 +10,7 @@ from src.database.session import Base
 from src.models import *  # noqa: F401,F403
 
 config = context.config
+logger = logging.getLogger("alembic.env")
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
 if config.config_file_name is not None:
@@ -39,9 +41,10 @@ def _is_upgrade_to_head() -> bool:
 
 
 def _is_empty_database(connection) -> bool:
-    """Sem `alembic_version` e sem nenhuma tabela da aplicacao (nem `users`)."""
-    tables = inspect(connection).get_table_names()
-    return "alembic_version" not in tables and "users" not in tables
+    """Sem nenhuma tabela. Qualquer tabela existente (restore parcial, outra aplicacao no schema,
+    banco legado sem `alembic_version`) segue a cadeia: `create_all` pularia as tabelas que ja
+    existem e o banco seria marcado como head sem ter passado pelas migrations."""
+    return not inspect(connection).get_table_names()
 
 
 def _bootstrap_empty_database(connection) -> None:
@@ -58,6 +61,7 @@ def _bootstrap_empty_database(connection) -> None:
     """
     # So com pgvector ligado: sem ele a coluna de embedding e JSON (models/ai.py) e, em Postgres
     # gerenciado, o usuario da migration pode nem ter permissao de criar extensao.
+    logger.info("Banco vazio: criando o schema dos models e marcando o head (bootstrap).")
     if connection.dialect.name == "postgresql" and settings.enable_pgvector:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     with context.begin_transaction():
