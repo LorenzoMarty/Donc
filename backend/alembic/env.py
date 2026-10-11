@@ -1,7 +1,8 @@
 ﻿from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from alembic.script import ScriptDirectory
+from sqlalchemy import engine_from_config, inspect, pool, text
 
 from src.config.settings import settings
 from src.database.session import Base
@@ -27,6 +28,39 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _is_upgrade_to_head() -> bool:
+    """So `alembic upgrade head` (CLI) dispara o bootstrap: `current`, `check`, `stamp` e
+    `upgrade <rev>` tambem executam este env.py e nao podem criar schema como efeito colateral."""
+    cmd = getattr(config.cmd_opts, "cmd", None)
+    if not cmd or cmd[0].__name__ != "upgrade":
+        return False
+    head = ScriptDirectory.from_config(config).get_current_head()
+    return context.get_revision_argument() == head
+
+
+def _is_empty_database(connection) -> bool:
+    """Sem `alembic_version` e sem nenhuma tabela da aplicacao (nem `users`)."""
+    tables = inspect(connection).get_table_names()
+    return "alembic_version" not in tables and "users" not in tables
+
+
+def _bootstrap_empty_database(connection) -> None:
+    """Ambiente novo: cria o schema atual dos models e marca o head, em vez de rodar a cadeia.
+
+    A cadeia 0000..N so funciona sobre um banco que ja tem as tabelas base: a baseline 0000 faz
+    `create_all()` com os models de HOJE, entao as migrations seguintes (0011+) tentam recriar
+    colunas que ja existem e falham. Bancos que ja tem `alembic_version` ou tabelas nao passam por
+    aqui — seguem a cadeia normal, como sempre.
+    """
+    if connection.dialect.name == "postgresql":
+        connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    with context.begin_transaction():
+        Base.metadata.create_all(connection)
+        head = ScriptDirectory.from_config(config).get_current_head()
+        context.get_context().stamp(ScriptDirectory.from_config(config), head)
+    connection.commit()
+
+
 def run_migrations_online() -> None:
     connect_args = {}
     if settings.database_url.startswith("postgres"):
@@ -45,6 +79,9 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             transaction_per_migration=True,
         )
+        if _is_upgrade_to_head() and _is_empty_database(connection):
+            _bootstrap_empty_database(connection)
+            return
         with context.begin_transaction():
             context.run_migrations()
 
