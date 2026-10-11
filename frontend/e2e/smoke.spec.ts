@@ -14,60 +14,41 @@ async function login(page: Page): Promise<void> {
   expect(payload.data.user.email).toBe(DEMO.email);
 }
 
-test("smoke: hub-first → missão → feedback qualitativo → recomendação → estado preservado", async ({ page }) => {
-  // 1-2. Home hub-first com treinador e os 7 sintomas.
+// O jogo "Quiz E2E" (categoria estrutura, 2 perguntas) é semeado por backend/scripts/e2e_prepare.py.
+test("smoke: categorias → jogo → resultado → tentativa persistida no backend", async ({ page }) => {
   await login(page);
+
+  // Categorias de treino (as 7 do catálogo).
   await page.goto("/games");
-  await expect(page.getByText("O que está travando sua redação?")).toBeVisible();
-  await expect(page.getByText("Continue evoluindo")).toBeVisible();
-  const hubLinks = page.locator('a[href^="/games/treino/"]');
-  await expect(hubLinks).toHaveCount(7);
-
-  // 3. Entrar na missão recomendada pelo treinador (goto direto pelo href = nav robusta p/ auth).
-  const missionHref = await page.getByRole("link", { name: /Treinar agora/ }).getAttribute("href");
-  expect(missionHref, "treinador deve recomendar uma missão").toBeTruthy();
-  await page.goto(missionHref as string);
-  await expect(page).toHaveURL(/\/games\/[^/]+\/[^/]+/);
-
-  // 4-6. Responder rodadas até finalizar e ver o feedback qualitativo (S/A/B/C).
-  for (let i = 0; i < 40; i++) {
-    const finished = await page.getByRole("button", { name: /Jogar novamente/ }).isVisible().catch(() => false);
-    if (finished) break;
-
-    // Escolhe a primeira opção de resposta disponível do engine (duel/escalation/etc.).
-    const answer = page
-      .locator("button", { hasText: /Versão|Autêntico|Artificial|Nível|Diagnosticar|Reconstruir/ })
-      .first();
-    if (await answer.isVisible().catch(() => false)) {
-      await answer.click();
-    }
-    // Avança para a próxima rodada ou finaliza.
-    const next = page.getByRole("button", { name: /Próx|Finalizar|Próximo/ }).first();
-    if (await next.isVisible().catch(() => false)) {
-      await next.click();
-    }
-    await page.waitForTimeout(150);
+  await expect(page.getByRole("heading", { name: "Treino", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Categorias" })).toBeVisible();
+  for (const slug of ["estrutura", "coesao", "argumentacao", "repertorio", "gramatica", "competencias-enem", "desafios-diarios"]) {
+    await expect(page.locator(`main a[href="/games/${slug}"]`)).toBeVisible();
   }
 
-  // Resultado com nota qualitativa (nunca "% de acerto").
-  await expect(page.getByRole("button", { name: /Jogar novamente/ })).toBeVisible({ timeout: 20_000 });
+  // Categoria → jogo semeado.
+  await page.goto("/games/estrutura");
+  const gameCard = page.getByRole("article").filter({ has: page.getByRole("heading", { name: "Quiz E2E" }) });
+  const gameLink = gameCard.getByRole("link", { name: "Jogar" });
+  await expect(gameLink).toBeVisible();
+  await gameLink.click();
+  await expect(page).toHaveURL(/\/games\/estrutura\/ai-\d+/);
 
-  // 7. Sinais cognitivos foram gravados no perfil adaptativo.
-  const signals = await page.evaluate(() => {
-    const raw = localStorage.getItem("donk.games.v1");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.state?.adaptive ?? null;
-  });
-  expect(signals).not.toBeNull();
-  expect(signals.recentEvents.length).toBeGreaterThan(0);
+  // Responde as 2 perguntas (a ordem das opções é embaralhada, então clica pelo texto).
+  const done = page.getByText("Sessão concluída");
+  for (let i = 0; i < 2; i++) {
+    await expect(page.getByText(`Questao ${i + 1} de 2`)).toBeVisible();
+    await page.getByRole("button", { name: "Alternativa correta" }).click();
+  }
+  await expect(done).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("link", { name: "Voltar para categoria" })).toBeVisible();
 
-  // 8-9. Recarregar e confirmar persistência do estado.
-  await page.goto("/games");
-  await expect(page.getByText("Continue evoluindo")).toBeVisible();
-  const persisted = await page.evaluate(() => {
-    const raw = localStorage.getItem("donk.games.v1");
-    return raw ? JSON.parse(raw).state.adaptive.recentEvents.length : 0;
-  });
-  expect(persisted).toBeGreaterThan(0);
+  // A tentativa chegou ao backend (POST /games/complete é fire-and-forget no front).
+  await expect
+    .poll(async () => {
+      const res = await page.request.get(`${API}/games/progress`);
+      const rows: { game_id: string; plays: number }[] = (await res.json()).data ?? [];
+      return rows.find((row) => row.game_id.startsWith("ai-"))?.plays ?? 0;
+    })
+    .toBe(1);
 });
