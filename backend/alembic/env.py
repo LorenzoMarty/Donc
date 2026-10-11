@@ -51,8 +51,14 @@ def _bootstrap_empty_database(connection) -> None:
     `create_all()` com os models de HOJE, entao as migrations seguintes (0011+) tentam recriar
     colunas que ja existem e falham. Bancos que ja tem `alembic_version` ou tabelas nao passam por
     aqui — seguem a cadeia normal, como sempre.
+
+    Limites conhecidos: so o CLI (`alembic upgrade head`) dispara isto — via `command.upgrade` do
+    Python o comportamento antigo continua —, e nao ha lock: duas execucoes simultaneas num banco
+    novo podem colidir (rodar a migracao uma vez por deploy, como ja se faz).
     """
-    if connection.dialect.name == "postgresql":
+    # So com pgvector ligado: sem ele a coluna de embedding e JSON (models/ai.py) e, em Postgres
+    # gerenciado, o usuario da migration pode nem ter permissao de criar extensao.
+    if connection.dialect.name == "postgresql" and settings.enable_pgvector:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     with context.begin_transaction():
         Base.metadata.create_all(connection)
