@@ -1,9 +1,13 @@
+import path from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
  * E2E smoke do treinador cognitivo. Sobe backend (sqlite + seed demo) e frontend automaticamente.
  * Pré-requisito único: `npm run test:e2e:install` (baixa o Chromium) uma vez.
  */
+// Python do venv no Windows; `python` do PATH (CI/Linux) nos demais. E2E_PYTHON sobrescreve.
+const python = process.env.E2E_PYTHON ?? (process.platform === "win32" ? path.join(".venv", "Scripts", "python.exe") : "python");
+
 export default defineConfig({
   testDir: "./e2e",
   testMatch: "**/*.spec.ts",
@@ -21,7 +25,7 @@ export default defineConfig({
     {
       // Backend FastAPI FRESCO na 8001 (sqlite isolado + seed demo), para não depender do dev local.
       // e2e_prepare recria o sqlite do zero e dá assinatura ao aluno demo (acesso é 100% pago).
-      command: ".venv\\Scripts\\python.exe -m scripts.e2e_prepare && .venv\\Scripts\\python.exe -m uvicorn src.main:app --port 8001",
+      command: `${python} -m scripts.e2e_prepare && ${python} -m uvicorn src.main:app --port 8001`,
       cwd: "../backend",
       port: 8001,
       reuseExistingServer: false,
