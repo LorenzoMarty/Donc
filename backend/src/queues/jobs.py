@@ -97,6 +97,10 @@ class AIJobService:
         cached = self.get_by_idempotency_key(user_id=user_id, kind=kind, idempotency_key=idempotency_key)
         if cached and int((cached.request_payload or {}).get("essay_id", -1)) == essay.id:
             return cached, False
+        # Regra de negocio validada antes de criar o job: sem edicao nao ha job `failed` nem rate limit gasto em vao.
+        from src.services.essay_service import EssayService
+
+        EssayService(self.db).require_edit_before_new_correction(essay)
         job = self.create(
             user_id=user_id,
             kind=kind,
