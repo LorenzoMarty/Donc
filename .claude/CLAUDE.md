@@ -87,7 +87,7 @@ No Docker/produção, a rota Next.js `app/api/backend/[...path]/route.ts` faz pr
 - `src/app/(app)/` — rotas protegidas via `AppShell` (`dashboard`, `redacao`, `redacoes`, `aulas`, `games`, `perfil`, `onboarding`, `admin`). `trilhas` existe só como página de marketing pública em `src/app/(marketing)/trilhas/` — não há `simulados`/`conquistas` no app.
 - `src/app/(auth)/` — login/cadastro/recuperação; `src/app/` raiz — marketing
 - `src/features/gamification/` — XP, ranks, streaks (client-side, localStorage via Zustand)
-- `src/games/` — definições estáticas dos jogos; `src/games/_engines/` — engines interativos
+- `src/games/` — componentes de sessão por tipo de jogo; `src/games/_engines/` — engines interativos (as definições dos jogos vêm do banco, não do código)
 - `src/game-pages/` — UI de sessão de jogo (`GameSession` roteia por `game.engine`)
 - `src/components/shared/` — AppShell, EssayEditor, LessonPlayer, charts
 - `src/components/ui/` — primitivos shadcn/radix; formulários usam `Input`/`Textarea`/`Select`/`Field`/`Modal` compartilhados (nunca `<input>` cru)
@@ -161,14 +161,14 @@ Langfuse SDK v4 + OpenLIT (integração nativa do agno), inicializado por `confi
 Cada chamada grava `AIInteractionLog` (`ai_interaction_logs`) com `model`, tokens e `cost_micro_usd` (micro-USD; tabela de preços em `src/config/ai_pricing.py`, fonte única `build_interaction_log()` em `services/ai_telemetry.py`). Conversão R$ via PTAX/BCB (`services/fx_rate.py`). Painel admin agrega por workflow/modelo/dia/top-users. Detalhes: registro `2026-06-10-custos-ia-brl` no Obsidian.
 
 ### Jogos (Client-side)
-XP, streaks e progresso **totalmente client-side** — `useGameStore` (Zustand, localStorage `donk.games.v1`). Definições estáticas em `src/games/`; campo `engine` roteia no `GameSession` (13 engines: quiz, timed-rush, classify, order, fill-blank, sequence, text-surgery, essay-collapse, artificiality, argument-escalation, duel, corrector, survival).
+XP, streaks e progresso **totalmente client-side** — `useGameStore` (Zustand, localStorage `donk.games.v1`). Definições vêm do banco (`GET /games/published` → `useGameStore.remoteGames`, `catalog.ts`); só as 7 categorias são estáticas (`baseCategories`). Campo `engine` roteia no `GameSession` (13 engines: quiz, timed-rush, classify, order, fill-blank, sequence, text-surgery, essay-collapse, artificiality, argument-escalation, duel, corrector, survival).
 
 > XP/nível de **conta** (`User.xp`/`User.level` no backend) foi removido temporariamente (rollback de
 > gamificação, não substituição) — ver seção seguinte. O XP client-side do `useGameStore` **não foi
 > afetado** por essa remoção; são sistemas independentes. `POST /games/complete` continua existindo
 > (o front chama fire-and-forget) mas não persiste mais XP de conta, só confirma o recebimento.
 
-Fonte cognitiva principal: `useGameStore.adaptive` (EWMA por **7 hubs**; registro `HUBS` em `features/gamification/symptoms.ts`, núcleo puro em `adaptive.ts`). Engines emitem via `recordCognitiveOutcome`; nota qualitativa S/A/B/C (nunca "% de acerto"). Navegação hub-first: "Atividades" → `GamesHub` (7 hubs) → `games/treino/[symptomId]`. `useGameStore.skills` é legado (só compat). IA de reescrita: `POST /ai/evaluate-rewrite` (fallback heurístico).
+Fonte cognitiva principal: `useGameStore.adaptive` (EWMA por **7 hubs**; registro `HUBS` em `features/gamification/symptoms.ts`, núcleo puro em `adaptive.ts`). Engines emitem via `recordCognitiveOutcome`; nota qualitativa S/A/B/C (nunca "% de acerto"). Navegação: "Atividades" → `GamesHub` (7 categorias: estrutura, coesao, argumentacao, repertorio, gramatica, competencias-enem, desafios-diarios) → `games/[categorySlug]` → `games/[categorySlug]/[gameId]`. O fluxo hub-first (`games/treino/[symptomId]`) não existe mais; `HUBS` segue vivo, usado só como rótulo/mapeamento em admin, perfil e landing. `skills` existe apenas como campo opcional de `GameDefinition` (tags da missão). IA de reescrita: `POST /ai/evaluate-rewrite` (fallback heurístico).
 
 Detalhe completo (engines, payloads, contrato de missão, como criar missão nova): registro `2026-06-11-enxugamento-claude-md` + `Arquitetura.md` no Obsidian.
 
