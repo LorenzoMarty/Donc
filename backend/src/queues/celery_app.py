@@ -1,5 +1,7 @@
 ﻿from __future__ import annotations
 
+import logging
+
 from src.config.settings import settings
 
 try:
@@ -28,4 +30,5 @@ try:
     celery_app.conf.task_time_limit = 420
     celery_app.conf.task_soft_time_limit = 400
 except Exception:
+    logging.getLogger("src.queues.celery_app").warning("Celery indisponivel — correcoes rodam pelo fallback sincrono.", exc_info=True)
     celery_app = None

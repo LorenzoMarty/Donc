@@ -1,6 +1,10 @@
 ﻿from __future__ import annotations
 
+import logging
+
 from src.config.settings import settings
+
+logger = logging.getLogger("src.vectorstore.knowledge")
 
 
 def build_agno_knowledge():
@@ -18,4 +22,5 @@ def build_agno_knowledge():
         )
         return Knowledge(vector_db=vector_db)
     except Exception:
+        logger.warning("Base de conhecimento pgvector indisponivel — agentes seguem sem RAG.", exc_info=True)
         return None
