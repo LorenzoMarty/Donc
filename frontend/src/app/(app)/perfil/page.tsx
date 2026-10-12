@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Clock, FileText, GraduationCap, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
@@ -36,6 +37,9 @@ export default function ProfilePage() {
       apiFetch<EssayHistory>("/essays/history").catch(() => null),
     ]).then(([dash, profile, history]) => {
       if (ignore) return;
+      if (!dash || !profile || !history) {
+        toast.error("Não foi possível carregar todo o seu perfil. Atualize a página para tentar de novo.");
+      }
       setDashboard(dash);
       setLearningProfile(profile);
       setEssayHistory(history);

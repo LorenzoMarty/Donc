@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { BarChart3, Check, ChevronRight, Map, PenLine, Target, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import { apiFetch } from "@/lib/http-client";
@@ -103,7 +104,7 @@ export default function OnboardingPage() {
     apiFetch("/auth/onboarding", {
       method: "PUT",
       body: JSON.stringify({ goal, level }),
-    }).catch(() => undefined);
+    }).catch(() => toast.error("Não foi possível salvar suas escolhas. Tente novamente mais tarde."));
     router.push("/dashboard");
   }
 
