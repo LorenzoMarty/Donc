@@ -128,7 +128,7 @@ export function QuizSession({
                 transition={{ duration: 0.24, ease: "easeOut" }}
                 className="w-full"
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <p data-testid={`quiz-step-${step + 1}`} className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   Questao {step + 1} de {questions.length}
                 </p>
                 <div className="mt-4 rounded-3xl bg-card px-8 py-6 shadow-elevated md:px-12 md:py-10">
@@ -196,7 +196,7 @@ export function QuizSession({
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-md border border-primary/30 bg-primary text-primary-foreground">
                   <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
                 </div>
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessão concluída</p>
+                <p data-testid="quiz-done" className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sessão concluída</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-normal">{result?.attempt.accuracy ?? 0}% de precisão</h2>
                 <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
                   <Button onClick={restart} variant="outline">

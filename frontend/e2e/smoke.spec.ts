@@ -35,9 +35,9 @@ test("smoke: categorias → jogo → resultado → tentativa persistida no backe
   await expect(page).toHaveURL(/\/games\/estrutura\/ai-\d+/);
 
   // Responde as 2 perguntas (a ordem das opções é embaralhada, então clica pelo texto).
-  const done = page.getByText("Sessão concluída");
+  const done = page.getByTestId("quiz-done");
   for (let i = 0; i < 2; i++) {
-    await expect(page.getByText(`Questao ${i + 1} de 2`)).toBeVisible();
+    await expect(page.getByTestId(`quiz-step-${i + 1}`)).toBeVisible();
     await page.getByRole("button", { name: "Alternativa correta" }).click();
   }
   await expect(done).toBeVisible({ timeout: 15_000 });
