@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+import time
+from types import SimpleNamespace
+
 import pytest
 from sqlalchemy import select
 
@@ -51,6 +54,9 @@ def _low_rate_limit(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(rate_limit.settings, "ai_rate_limit_per_minute", 1)
     monkeypatch.setattr(rate_limit, "_increment_redis", lambda key: None)
     rate_limit._memory_counters.clear()
+    # Contador e por minuto: congela o relogio para a virada de minuto nao zerar a cota no meio do teste.
+    frozen = time.time()
+    monkeypatch.setattr(rate_limit, "time", SimpleNamespace(time=lambda: frozen))  # so dentro de rate_limit
     yield
     rate_limit._memory_counters.clear()
 
