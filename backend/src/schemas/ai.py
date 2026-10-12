@@ -7,11 +7,6 @@ from pydantic import BaseModel, Field
 from src.agents.schemas import DifficultyLevel
 
 
-class AICorrectRequest(BaseModel):
-    essay_id: int = Field(gt=0)
-    async_mode: bool = False
-
-
 class AIJobResponse(BaseModel):
     job_id: str
     status: str

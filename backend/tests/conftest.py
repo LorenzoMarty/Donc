@@ -49,10 +49,8 @@ def _no_real_broker(monkeypatch: pytest.MonkeyPatch) -> None:
     # maquina de quem roda a suite: com Redis local ativo, enqueue_correct_essay
     # enfileira de verdade (sem worker pra consumir) e o job fica preso em
     # "queued" em vez de cair no fallback sincrono que os testes esperam.
-    from src.routes import ai as ai_router
     from src.routes import essays as essays_router
 
-    monkeypatch.setattr(ai_router, "enqueue_correct_essay", lambda job_id: False)
     monkeypatch.setattr(essays_router, "enqueue_correct_essay", lambda job_id: False)
 
 
