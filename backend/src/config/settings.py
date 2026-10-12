@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     laya_enabled: bool = False
     laya_checkpoint: str = "convaiinnovations/laya"
     laya_subfolder: str = "multilingual"  # redacao em pt-BR
+    laya_retry_seconds: int = 300  # apos falha de carga, nao tenta carregar/baixar de novo por esse tempo
     laya_max_len: int = 8192  # padrao da lib e 1024 tokens; redacao inteira precisa de mais
     # Teto de risco (qualquer pergunta Noul acima disso manda a redacao pro gate GPT), vale p/ Laya e Jev.
     screening_max_risk: float = 0.15

@@ -43,6 +43,7 @@ def _providers(monkeypatch):
     monkeypatch.setattr(settings, "jev_api_key", "test-key")
     monkeypatch.setattr(settings, "laya_enabled", False)
     monkeypatch.setattr(laya, "_agent", None)
+    monkeypatch.setattr(laya, "_failed_at", None)
 
 
 # --- Jev ---
@@ -128,3 +129,22 @@ def test_laya_load_failure_falls_to_gpt(monkeypatch):
     _fake_laya(monkeypatch, load_exc=RuntimeError("sem pesos"))
     agent, runner = _agent()
     assert agent.evaluate("tema", "texto", PRE_OK) is GPT_ZERO
+
+
+def test_laya_load_failure_is_cached_within_retry_window(monkeypatch):
+    attempts = []
+
+    def load(checkpoint, subfolder=None):
+        attempts.append(1)
+        raise RuntimeError("sem pesos")
+
+    monkeypatch.setitem(sys.modules, "laya", SimpleNamespace(load=load))
+    monkeypatch.setattr(settings, "laya_enabled", True)
+    monkeypatch.setattr(settings, "laya_retry_seconds", 300)
+    agent, _ = _agent()
+    agent.evaluate("tema", "texto", PRE_OK)
+    agent.evaluate("tema", "texto", PRE_OK)
+    assert len(attempts) == 1  # segunda redacao nao tenta carregar de novo
+    monkeypatch.setattr(laya, "_failed_at", laya._failed_at - 301)
+    agent.evaluate("tema", "texto", PRE_OK)
+    assert len(attempts) == 2  # passou o intervalo: tenta de novo
