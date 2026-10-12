@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from src.database.session import SessionLocal
-from src.models import Essay, EssayTheme, User
+from src.models import AIJob, Essay, EssayTheme, User
 
 pytestmark = pytest.mark.integration
 
@@ -24,6 +24,14 @@ ESSAY_CONTENT = (
 )
 
 EDITED_ESSAY_CONTENT = ESSAY_CONTENT + "\n\nEdicao adicional para permitir reprocessamento apos a correcao inicial."
+
+
+def _count_jobs() -> int:
+    db = SessionLocal()
+    try:
+        return len(db.scalars(select(AIJob)).all())
+    finally:
+        db.close()
 
 
 def _create_theme_and_essay() -> tuple[int, int]:
@@ -169,6 +177,8 @@ def test_reprocess_blocked_when_content_matches_any_past_corrected_version(
         f"/api/v1/essays/{essay_id}/autosave",
         json={"title": "Redacao sobre saneamento", "content": ESSAY_CONTENT},
     )
+    jobs_before = _count_jobs()
     blocked_res = client.post(f"/api/v1/essays/{essay_id}/reprocess")
     assert blocked_res.status_code == 422
     assert blocked_res.json()["error"] == "edit_required"
+    assert _count_jobs() == jobs_before  # 422 sincrono: nenhum AIJob novo

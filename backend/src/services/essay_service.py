@@ -124,7 +124,7 @@ class EssayService:
             raise AppError("A redação ainda está curta para correção. Desenvolva melhor a tese antes de enviar.", status_code=422, code="essay_too_short")
         self._ensure_initial_version(essay)
         essay = self.repo.lock_essay_for_correction(essay_id, user.id) or essay
-        self._require_edit_before_new_correction(essay)
+        self.require_edit_before_new_correction(essay)
 
         return self._apply_correction(essay=essay, user=user, job_id=job_id)
 
@@ -349,7 +349,7 @@ class EssayService:
             )
         self.db.commit()
 
-    def _require_edit_before_new_correction(self, essay: Essay) -> None:
+    def require_edit_before_new_correction(self, essay: Essay) -> None:
         corrected_versions = [version for version in essay.versions if version.correction]
         if not corrected_versions:
             return
