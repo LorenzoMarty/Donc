@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 from pathlib import Path
 
 from sqlalchemy import select
@@ -11,6 +12,7 @@ from src.config.settings import settings
 from src.models import AIKnowledgeChunk, AIKnowledgeDocument
 
 
+logger = logging.getLogger("src.vectorstore.seed")
 SEED_PATH = Path(__file__).resolve().parents[1] / "prompts" / "knowledge_seed" / "enem_curated.json"
 
 
@@ -20,6 +22,7 @@ def seed_knowledge_base(db: Session) -> None:
     try:
         items = json.loads(SEED_PATH.read_text(encoding="utf-8"))
     except Exception:
+        logger.warning("Seed da base de conhecimento ilegivel (%s) — ignorado.", SEED_PATH, exc_info=True)
         return
 
     client = _embedding_client()
@@ -80,6 +83,7 @@ def _embedding_client():
 
         return OpenAI(api_key=settings.openai_api_key)
     except Exception:
+        logger.warning("Cliente de embeddings indisponivel — chunks do seed ficam sem vetor.", exc_info=True)
         return None
 
 
@@ -90,5 +94,6 @@ def _embed(client, content: str) -> list[float] | None:
         response = client.embeddings.create(model=settings.openai_embedding_model, input=content)
         return list(response.data[0].embedding)
     except Exception:
+        logger.warning("Falha ao gerar embedding — chunk fica sem vetor.", exc_info=True)
         return None
 
