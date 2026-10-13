@@ -6,6 +6,7 @@ from src.models.events import AIGeneratedExercise, AIGeneratedGame, UserEvent
 from src.models.gamification import GameAttempt, Goal, UserGameProgress
 from src.models.learning import Difficulty, Exercise, ExerciseAnswer, Lesson, LessonProgress, Module, ModuleItem
 from src.models.learning_outcome import LearningOutcome
+from src.models.password_reset_token import PasswordResetToken
 from src.models.recommendation_log import RecommendationLog
 from src.models.refresh_token import RefreshToken
 from src.models.static_game import StaticGame
@@ -42,6 +43,7 @@ __all__ = [
     "Module",
     "ModuleItem",
     "PlanCycle",
+    "PasswordResetToken",
     "ProcessedWebhookEvent",
     "RecommendationLog",
     "RefreshToken",

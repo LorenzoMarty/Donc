@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.config.settings import settings
 from src.config.security import create_access_token, generate_refresh_token, get_password_hash, hash_refresh_token, verify_password
 from src.middlewares.errors import AppError
-from src.models import RefreshToken, StudentProfile, User
+from src.models import PasswordResetToken, RefreshToken, StudentProfile, User
 from src.repositories.users import UserRepository
 from src.services.streak_service import touch_last_seen
 
@@ -115,3 +115,46 @@ class AuthService:
             .values(revoked_at=datetime.now(UTC))
         )
         self.db.commit()
+
+    def request_password_reset(self, email: str) -> tuple[User, str] | None:
+        """Gera token de reset (uso único, guardado como hash). Retorna None se não houver conta —
+        caller responde igual nos dois casos pra não revelar se o e-mail existe."""
+        user = self.users.get_by_email(email)
+        if not user:
+            return None
+        raw = generate_refresh_token()
+        self.db.add(
+            PasswordResetToken(
+                user_id=user.id,
+                token_hash=hash_refresh_token(raw),
+                expires_at=datetime.now(UTC) + timedelta(minutes=settings.password_reset_token_minutes),
+            )
+        )
+        self.db.commit()
+        return user, raw
+
+    def reset_password(self, *, token: str, new_password: str) -> None:
+        row = self.db.scalar(select(PasswordResetToken).where(PasswordResetToken.token_hash == hash_refresh_token(token)))
+        now = datetime.now(UTC)
+        invalid = AppError("Link inválido ou expirado. Peça uma nova recuperação.", status_code=400, code="invalid_reset_token")
+        if not row or row.used_at is not None or _aware(row.expires_at) < now:
+            raise invalid
+        user = self.db.get(User, row.user_id)
+        if not user or user.deleted_at is not None:
+            raise invalid
+        row.used_at = now
+        # Invalida os demais pedidos pendentes do usuário (só o último link vale).
+        self.db.execute(
+            update(PasswordResetToken)
+            .where(PasswordResetToken.user_id == user.id, PasswordResetToken.used_at.is_(None))
+            .values(used_at=now)
+        )
+        user.hashed_password = get_password_hash(new_password)
+        user.session_version += 1
+        self.users.save(user)
+        self.revoke_all_refresh_tokens(user.id)
+
+
+def _aware(value: datetime) -> datetime:
+    # SQLite (testes) devolve datetime naive; Postgres devolve aware.
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
