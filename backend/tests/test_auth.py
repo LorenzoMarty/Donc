@@ -13,7 +13,7 @@ def api_data(response):
 def test_register_creates_user_and_returns_token(client):
     response = client.post(
         "/api/v1/auth/register",
-        json={"name": "Novo Aluno", "email": "novo@test.com", "password": "senha1234"},
+        json={"name": "Novo Aluno", "email": "novo@test.com", "accept_terms": True, "password": "senha1234"},
     )
     assert response.status_code == 201
     data = api_data(response)
@@ -25,7 +25,7 @@ def test_register_creates_user_and_returns_token(client):
 
 
 def test_register_rejects_duplicate_email(client):
-    payload = {"name": "Aluno A", "email": "dup@test.com", "password": "senha1234"}
+    payload = {"name": "Aluno A", "email": "dup@test.com", "accept_terms": True, "password": "senha1234"}
     r1 = client.post("/api/v1/auth/register", json=payload)
     assert r1.status_code == 201
     r2 = client.post("/api/v1/auth/register", json=payload)
@@ -34,7 +34,7 @@ def test_register_rejects_duplicate_email(client):
 
 
 def test_login_returns_token_for_valid_credentials(client):
-    client.post("/api/v1/auth/register", json={"name": "Login Test", "email": "login@test.com", "password": "senha1234"})
+    client.post("/api/v1/auth/register", json={"name": "Login Test", "email": "login@test.com", "accept_terms": True, "password": "senha1234"})
     response = client.post("/api/v1/auth/login", json={"email": "login@test.com", "password": "senha1234"})
     assert response.status_code == 200
     data = api_data(response)
@@ -46,7 +46,7 @@ def test_login_returns_token_for_valid_credentials(client):
 
 
 def test_login_rejects_wrong_password(client):
-    client.post("/api/v1/auth/register", json={"name": "Wrong Pass", "email": "wrong@test.com", "password": "correct"})
+    client.post("/api/v1/auth/register", json={"name": "Wrong Pass", "email": "wrong@test.com", "accept_terms": True, "password": "correct"})
     response = client.post("/api/v1/auth/login", json={"email": "wrong@test.com", "password": "incorrect"})
     assert response.status_code == 401
     assert response.json()["success"] is False
@@ -170,7 +170,7 @@ def test_password_recovery_does_not_reveal_unknown_email(client, monkeypatch):
 
 def test_password_reset_flow_token_is_single_use(client, monkeypatch):
     sent = _recovery_token(monkeypatch, "x")
-    client.post("/api/v1/auth/register", json={"name": "Reset Flow", "email": "reset@test.com", "password": "senha1234"})
+    client.post("/api/v1/auth/register", json={"name": "Reset Flow", "email": "reset@test.com", "accept_terms": True, "password": "senha1234"})
     assert client.post("/api/v1/auth/password-recovery", json={"email": "reset@test.com"}).status_code == 200
     token = sent[0]["token"]
 
@@ -187,7 +187,7 @@ def test_password_reset_flow_token_is_single_use(client, monkeypatch):
 def test_password_reset_rejects_expired_token(client, monkeypatch):
     sent = _recovery_token(monkeypatch, "x")
     monkeypatch.setattr(settings, "password_reset_token_minutes", -1)
-    client.post("/api/v1/auth/register", json={"name": "Expired", "email": "expired@test.com", "password": "senha1234"})
+    client.post("/api/v1/auth/register", json={"name": "Expired", "email": "expired@test.com", "accept_terms": True, "password": "senha1234"})
     client.post("/api/v1/auth/password-recovery", json={"email": "expired@test.com"})
     response = client.post("/api/v1/auth/reset-password", json={"token": sent[0]["token"], "new_password": "novasenha99"})
     assert response.status_code == 400
@@ -197,6 +197,30 @@ def test_password_reset_rejects_expired_token(client, monkeypatch):
 def test_password_reset_rejects_garbage_token(client):
     response = client.post("/api/v1/auth/reset-password", json={"token": "x" * 40, "new_password": "novasenha99"})
     assert response.status_code == 400
+
+
+def test_register_requires_terms_acceptance(client):
+    response = client.post(
+        "/api/v1/auth/register", json={"name": "Sem Aceite", "email": "sem-aceite@test.com", "password": "senha1234"}
+    )
+    assert response.status_code == 400
+    assert response.json()["error"] == "terms_not_accepted"
+
+
+def test_register_records_terms_version(client):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import User
+
+    client.post(
+        "/api/v1/auth/register",
+        json={"name": "Com Aceite", "email": "com-aceite@test.com", "password": "senha1234", "accept_terms": True},
+    )
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == "com-aceite@test.com"))
+        assert user.terms_version == settings.legal_terms_version
+        assert user.terms_accepted_at is not None
 
 
 def test_password_recovery_and_reset_are_rate_limited(client, monkeypatch):
@@ -217,6 +241,6 @@ def test_register_sends_welcome_email(client, monkeypatch):
     monkeypatch.setattr("src.services.email_service.send_welcome", lambda **kw: sent.append(kw) or True)
     client.post(
         "/api/v1/auth/register",
-        json={"name": "Boas Vindas", "email": "welcome@test.com", "password": "senha1234"},
+        json={"name": "Boas Vindas", "email": "welcome@test.com", "password": "senha1234", "accept_terms": True},
     )
     assert sent and sent[0]["to"] == "welcome@test.com"

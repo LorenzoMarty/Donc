@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 
 import { BrandLink } from "@/components/shared/brand-mark";
 import { MotionShell } from "@/components/shared/motion-shell";
+import { TermsConsent } from "@/components/shared/terms-consent";
 import { useAuth } from "@/providers/app-providers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +54,7 @@ export default function RegisterPage() {
               minLength={8}
               required
             />
+            <TermsConsent checked={accepted} onChange={setAccepted} />
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
             <Button className="w-full" disabled={loading}>
               {loading ? "Criando..." : "Começar"}
