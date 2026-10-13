@@ -5,6 +5,7 @@ set -euo pipefail
 umask 077  # dump tem dados de alunos: so o dono le
 
 cd "$(dirname "$0")/.."
+# shellcheck source=/dev/null
 set -a; source .env.production; set +a
 
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/donc}"

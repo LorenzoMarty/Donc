@@ -6,6 +6,7 @@ set -euo pipefail
 
 FILE="${1:?informe o arquivo .sql.gz}"
 cd "$(dirname "$0")/.."
+# shellcheck source=/dev/null
 set -a; source .env.production; set +a
 TARGET="${2:-donc_restore_test}"
 
