@@ -1,0 +1,17 @@
+name: Deploy lint
+
+on:
+  pull_request:
+    paths: ["deploy/**", "docker-compose.prod.yml", ".env.production.example", ".github/workflows/deploy*.yml"]
+
+jobs:
+  deploy-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck -e SC1091 deploy/*.sh  # SC1091: .env.production so existe no VPS
+      - name: compose config (prod)
+        run: |
+          cp .env.production.example .env.production
+          docker compose --env-file .env.production -f docker-compose.prod.yml config -q

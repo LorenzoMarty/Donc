@@ -30,3 +30,6 @@ CLAUDE.md
 Apple-inspired writing interface/
 TELAS.md
 .superpowers/
+
+# Producao: segredos do VPS
+.env.production
