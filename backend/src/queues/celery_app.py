@@ -3,6 +3,9 @@
 import logging
 
 from src.config.settings import settings
+from src.telemetry.sentry import configure_sentry
+
+configure_sentry()
 
 try:
     from celery import Celery
