@@ -28,6 +28,13 @@ from src.utils.ai_idempotency import find_cached_generation
 MAX_THEME_GENERATION_ATTEMPTS = 3
 
 
+_PLACEHOLDER_VIDEO_ID = "dQw4w9WgXcQ"  # Rickroll do seed demo — nunca pode chegar ao aluno
+
+
+def _is_missing_video(video_url: str) -> bool:
+    return not video_url.strip() or _PLACEHOLDER_VIDEO_ID in video_url
+
+
 class AdminContentService:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -526,12 +533,13 @@ class AdminContentService:
             title=title.strip(),
             description=description.strip(),
             thumbnail_url=thumbnail_url.strip() or "/images/lessons/default.jpg",
-            video_url=video_url.strip() or "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            video_url=video_url.strip(),
             pdf_url=(pdf_url or "").strip() or None,
             summary=summary.strip(),
             duration_minutes=duration_minutes,
             order=lesson_order,
             targets=targets or [],
+            published=False,  # nasce rascunho; so aparece pro aluno apos publicar (valida video)
         )
         self.db.add(lesson)
         self.db.flush()
@@ -796,6 +804,8 @@ class AdminContentService:
         video_url: str | None,
         duration_minutes: int | None,
         targets: list[str] | None = None,
+        pdf_url: str | None = None,
+        published: bool | None = None,
     ) -> list[AdminModuleRead]:
         lesson = self.db.get(Lesson, lesson_id)
         if not lesson:
@@ -809,11 +819,21 @@ class AdminContentService:
         if thumbnail_url is not None:
             lesson.thumbnail_url = thumbnail_url.strip() or lesson.thumbnail_url
         if video_url is not None:
-            lesson.video_url = video_url.strip() or lesson.video_url
+            lesson.video_url = video_url.strip()
+        if pdf_url is not None:
+            lesson.pdf_url = pdf_url.strip() or None
         if duration_minutes is not None:
             lesson.duration_minutes = duration_minutes
         if targets is not None:
             lesson.targets = targets
+        if published is not None:
+            lesson.published = published
+        # Vale ao publicar e a edicao do video de aula ja publicada (nao trava editar so o titulo).
+        if lesson.published and (published or video_url is not None) and _is_missing_video(lesson.video_url):
+            self.db.rollback()
+            raise AppError(
+                "Informe a URL real do vídeo antes de publicar a aula.", status_code=400, code="lesson_video_required"
+            )
         self.db.commit()
         return self.content_tree()
 
@@ -1032,10 +1052,12 @@ class AdminContentService:
             description=lesson.description,
             thumbnail_url=lesson.thumbnail_url,
             video_url=lesson.video_url,
+            pdf_url=lesson.pdf_url,
             summary=lesson.summary,
             duration_minutes=lesson.duration_minutes,
             order=lesson.order,
             targets=lesson.targets or [],
+            published=lesson.published,
         )
 
     def _activity_to_admin_read(self, exercise: Exercise, order: int | None = None) -> AdminActivityRead:

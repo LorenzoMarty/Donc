@@ -58,7 +58,7 @@ export function LessonPlayer({ lesson, onComplete }: { lesson: Lesson; onComplet
   );
 }
 
-function extractYouTubeId(url: string): string | null {
+export function extractYouTubeId(url: string): string | null {
   try {
     const parsed = new URL(url);
     if (parsed.hostname.includes("youtu.be")) return parsed.pathname.slice(1) || null;

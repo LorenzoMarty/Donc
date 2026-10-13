@@ -217,7 +217,7 @@ class RecommendationEngine:
 
     def _find_lesson_for_issue(self, code: str, user_id: int | None):
         modules_by_id = {m.id: m for m in self.db.scalars(select(Module).order_by(Module.order))}
-        lessons = self.db.scalars(select(Lesson).order_by(Lesson.order)).all()
+        lessons = self.db.scalars(select(Lesson).where(Lesson.published.is_(True)).order_by(Lesson.order)).all()
         matches = []
         for lesson in lessons:
             module = modules_by_id.get(lesson.module_id)

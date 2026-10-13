@@ -390,6 +390,7 @@ export type AdminLesson = {
   duration_minutes: number;
   order: number;
   targets: string[];
+  published: boolean;
 };
 
 export type AdminActivity = {
