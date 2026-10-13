@@ -451,7 +451,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
           <Field label="Duração (min)">
             <Input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} />
           </Field>
-          <Field label="Vídeo URL">
+          <Field label="Vídeo URL" hint="YouTube não listado: Compartilhar → copiar link.">
             <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://..." />
           </Field>
         </div>
