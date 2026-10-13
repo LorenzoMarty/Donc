@@ -11,7 +11,10 @@ cd "$(dirname "$0")/.."
 REF="${1:-main}"
 git fetch --quiet --tags origin
 git checkout --quiet "$REF"
-git merge --quiet --ff-only "origin/$REF" 2>/dev/null || true
+# Branch: avanca para o remoto (ff-only; falha em vez de publicar codigo velho). Tag/sha: ja esta no ref.
+if git show-ref --verify --quiet "refs/remotes/origin/$REF"; then
+  git merge --quiet --ff-only "origin/$REF"
+fi
 
 COMPOSE="docker compose --env-file .env.production -f docker-compose.prod.yml"
 $COMPOSE up -d --build --remove-orphans

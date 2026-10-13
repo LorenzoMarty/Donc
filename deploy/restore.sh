@@ -8,6 +8,12 @@ FILE="${1:?informe o arquivo .sql.gz}"
 cd "$(dirname "$0")/.."
 set -a; source .env.production; set +a
 TARGET="${2:-donc_restore_test}"
+
+gzip -t "$FILE"  # arquivo corrompido/truncado: aborta antes de apagar qualquer banco
+if [ "$TARGET" != "donc_restore_test" ] && [ "${CONFIRM_RESTORE:-}" != "$TARGET" ]; then
+  echo "Isto APAGA o banco '$TARGET'. Repita com CONFIRM_RESTORE=$TARGET para confirmar." >&2
+  exit 1
+fi
 COMPOSE="docker compose --env-file .env.production -f docker-compose.prod.yml"
 
 $COMPOSE exec -T db psql -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$TARGET\""
