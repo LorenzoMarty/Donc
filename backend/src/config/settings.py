@@ -85,6 +85,7 @@ class Settings(BaseSettings):
     email_from: str = "Donc <nao-responda@donc.com.br>"
     password_reset_token_minutes: int = 60
     # Versão vigente dos Termos/Privacidade; gravada em User.terms_version no aceite. Subir ao revisar o texto.
+    sentry_dsn: str | None = None
     legal_terms_version: str = "2026-10-12"
 
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), env_file_encoding="utf-8", extra="ignore")
@@ -108,6 +109,7 @@ class Settings(BaseSettings):
         "mercadopago_access_token",
         "mercadopago_webhook_secret",
         "resend_api_key",
+        "sentry_dsn",
         mode="before",
     )
     @classmethod

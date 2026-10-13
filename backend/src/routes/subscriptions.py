@@ -72,7 +72,10 @@ async def webhook(request: Request, response: Response, db: Session = Depends(ge
 
     try:
         SubscriptionService(db).handle_webhook(payload, dict(request.headers))
-    except AppError:
+    except AppError as exc:
+        if exc.status_code >= 500:
+            # 5xx (ex.: Mercado Pago fora do ar) -> evento no Sentry; o MP reentrega, mas alguem precisa saber.
+            logger.error("Webhook do Mercado Pago falhou (%s): %s", exc.code, exc.message)
         raise
     except Exception:
         logger.exception("Falha ao processar webhook do Mercado Pago")

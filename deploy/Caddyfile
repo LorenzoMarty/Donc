@@ -1,5 +1,11 @@
-# HTTPS automatico (Let's Encrypt) para $DOMAIN; o DNS A/AAAA precisa apontar para o VPS.
+# HTTPS automatico (Lets Encrypt) para $DOMAIN; o DNS A/AAAA precisa apontar para o VPS.
 {$DOMAIN} {
 	encode zstd gzip
+
+	# Saude do backend (db + redis) para o uptime check; 503 quando uma dependencia cai.
+	handle /health {
+		reverse_proxy backend:8000
+	}
+
 	reverse_proxy frontend:3000
 }
