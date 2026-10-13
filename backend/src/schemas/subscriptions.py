@@ -10,6 +10,7 @@ StatusLiteral = Literal["pending", "active", "grace", "suspended", "canceled"]
 class CheckoutRequest(BaseModel):
     cycle: CycleLiteral
     coupon_code: str | None = Field(default=None, max_length=40)
+    accept_terms: bool = False
 
 
 class CheckoutResponse(BaseModel):

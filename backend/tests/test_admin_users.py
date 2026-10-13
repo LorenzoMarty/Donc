@@ -66,7 +66,7 @@ def test_admin_can_delete_student(client):
     try:
         create_response = client.post(
             "/api/v1/auth/register",
-            json={"name": "Aluno Delete", "email": "delete-admin@test.com", "password": "senha1234"},
+            json={"name": "Aluno Delete", "email": "delete-admin@test.com", "accept_terms": True, "password": "senha1234"},
         )
         assert create_response.status_code == 201
         user_id = api_data(create_response)["user"]["id"]

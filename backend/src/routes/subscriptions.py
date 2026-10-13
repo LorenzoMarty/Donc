@@ -9,6 +9,7 @@ from src.middlewares.errors import AppError
 from src.models import PlanCycle, User
 from src.schemas.common import ApiResponse, success_response
 from src.schemas.subscriptions import ChangePlanRequest, CheckoutRequest, CheckoutResponse, SubscriptionRead
+from src.services.auth_service import AuthService
 from src.services.subscription_service import SubscriptionService
 
 logger = logging.getLogger("src.routes.subscriptions")
@@ -22,6 +23,9 @@ def checkout(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[CheckoutResponse]:
+    auth = AuthService(db)
+    auth.require_terms(payload.accept_terms)
+    auth.record_terms_acceptance(current_user)
     service = SubscriptionService(db)
     subscription, checkout_url = service.start_checkout(
         current_user, cycle=PlanCycle(payload.cycle), coupon_code=payload.coupon_code

@@ -69,3 +69,9 @@ def test_admin_coupon_lifecycle_and_subscribers(client):
         assert {"items", "total", "mrr_cents"} <= set(subscribers.json()["data"])
     finally:
         app.dependency_overrides.pop(require_admin, None)
+
+
+def test_checkout_requires_terms_acceptance(client):
+    response = client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly"})
+    assert response.status_code == 400
+    assert response.json()["error"] == "terms_not_accepted"

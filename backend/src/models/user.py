@@ -33,6 +33,9 @@ class User(Base):
     # pedagógico (não é mais `db.delete()` + CASCADE) — linha continua existindo, só marcada.
     # `None` = conta ativa. Toda leitura de autenticação/listagem admin filtra por isso.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Aceite dos Termos de Uso/Privacidade (LGPD): quando e qual versão do texto. None = nunca aceitou.
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    terms_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")
