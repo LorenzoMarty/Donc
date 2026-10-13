@@ -142,8 +142,16 @@ class AuthService:
         user = self.db.get(User, row.user_id)
         if not user or user.deleted_at is not None:
             raise invalid
-        row.used_at = now
-        # Invalida os demais pedidos pendentes do usuário (só o último link vale).
+        # Consumo atomico: dois requests com o mesmo link disputam o UPDATE condicional e so um
+        # ganha (rowcount == 1). Invalida tambem os demais pedidos pendentes do usuario.
+        claimed = self.db.execute(
+            update(PasswordResetToken)
+            .where(PasswordResetToken.id == row.id, PasswordResetToken.used_at.is_(None))
+            .values(used_at=now)
+        ).rowcount
+        if claimed != 1:
+            self.db.rollback()
+            raise invalid
         self.db.execute(
             update(PasswordResetToken)
             .where(PasswordResetToken.user_id == user.id, PasswordResetToken.used_at.is_(None))

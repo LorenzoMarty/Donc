@@ -197,3 +197,26 @@ def test_password_reset_rejects_expired_token(client, monkeypatch):
 def test_password_reset_rejects_garbage_token(client):
     response = client.post("/api/v1/auth/reset-password", json={"token": "x" * 40, "new_password": "novasenha99"})
     assert response.status_code == 400
+
+
+def test_password_recovery_and_reset_are_rate_limited(client, monkeypatch):
+    monkeypatch.setattr(settings, "auth_rate_limit_per_minute", 2)
+    monkeypatch.setattr(auth_rate_limit, "_memory_counters", {})
+    monkeypatch.setattr(auth_rate_limit, "_increment_redis", lambda key: None)
+    codes = [client.post("/api/v1/auth/password-recovery", json={"email": "rl-recovery@test.com"}).status_code for _ in range(3)]
+    assert codes == [200, 200, 429]
+    codes = [
+        client.post("/api/v1/auth/reset-password", json={"token": "x" * 40, "new_password": "novasenha99"}).status_code
+        for _ in range(3)
+    ]
+    assert codes == [400, 400, 429]
+
+
+def test_register_sends_welcome_email(client, monkeypatch):
+    sent: list[dict] = []
+    monkeypatch.setattr("src.services.email_service.send_welcome", lambda **kw: sent.append(kw) or True)
+    client.post(
+        "/api/v1/auth/register",
+        json={"name": "Boas Vindas", "email": "welcome@test.com", "password": "senha1234"},
+    )
+    assert sent and sent[0]["to"] == "welcome@test.com"
