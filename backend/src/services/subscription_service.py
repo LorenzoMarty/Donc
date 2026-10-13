@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -81,6 +82,18 @@ class SubscriptionService:
             if not valid:
                 raise AppError("Assinatura de webhook inválida.", status_code=401, code="invalid_webhook_signature")
 
+        try:
+            self._process_notification(payload, data_id)
+        except IntegrityError:
+            # Entrega duplicada concorrente: a outra request ganhou o marcador unico — ja processado.
+            self.db.rollback()
+            logger.info("Webhook Mercado Pago duplicado (concorrente): %s", payload.get("id"))
+        except Exception:
+            # Qualquer falha descarta o marcador de notificacao: o retry do MP precisa reprocessar.
+            self.db.rollback()
+            raise
+
+    def _process_notification(self, payload: dict, data_id: str) -> None:
         notification_id = str(payload.get("id") or "")
         if notification_id:
             already_processed = self.db.scalar(
@@ -88,12 +101,15 @@ class SubscriptionService:
             )
             if already_processed:
                 return
+            # Sem commit aqui: o marcador so persiste junto com o resultado (save abaixo). Se a
+            # consulta ao MP falhar, a transacao nao e confirmada e o retry do MP reprocessa —
+            # antes o id era "queimado" antes do trabalho e a assinatura nunca ativava.
             self.db.add(ProcessedWebhookEvent(mp_notification_id=notification_id))
-            self.db.commit()
 
         subscription = self.repository.get_by_mp_preapproval_id(data_id)
         if not subscription:
             logger.info("Webhook Mercado Pago para preapproval desconhecida: %s", data_id)
+            self.db.commit()
             return
 
         remote = self.mp_client.get_preapproval(data_id)
