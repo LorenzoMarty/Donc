@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import html
 import logging
+import threading
+from collections.abc import Callable
 
 import httpx
 
@@ -50,8 +52,14 @@ def send_email(*, to: str, subject: str, html_body: str) -> bool:
         return False
 
 
+def fire_and_forget(send: Callable[..., bool], **kwargs) -> None:
+    """Envia em thread daemon: webhook/cancelamento nao podem esperar o Resend (o MP reenviaria o
+    evento se a resposta demorar). `send_email` ja engole qualquer erro."""
+    threading.Thread(target=send, kwargs=kwargs, daemon=True).start()
+
+
 def _app_url(path: str) -> str:
-    origin = settings.frontend_origin.split(",")[0].strip().rstrip("/")
+    origin = settings.frontend_origin.split(",", maxsplit=1)[0].strip().rstrip("/")
     return f"{origin}{path}"
 
 
