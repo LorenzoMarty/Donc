@@ -65,6 +65,15 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             <Link href="/dashboard" className="font-medium transition-colors hover:text-primary">
               Painel
             </Link>
+            <Link href="/termos" className="font-medium transition-colors hover:text-primary">
+              Termos de Uso
+            </Link>
+            <Link href="/privacidade" className="font-medium transition-colors hover:text-primary">
+              Privacidade
+            </Link>
+            <Link href="/cancelamento" className="font-medium transition-colors hover:text-primary">
+              Cancelamento e reembolso
+            </Link>
           </div>
         </div>
       </footer>

@@ -5,6 +5,7 @@ import { Check, Loader2 } from "lucide-react";
 
 import { BrandLink } from "@/components/shared/brand-mark";
 import { MotionShell } from "@/components/shared/motion-shell";
+import { TermsConsent } from "@/components/shared/terms-consent";
 import { useAuth } from "@/providers/app-providers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function AssinaturaPage() {
   const [loading, setLoading] = useState(true);
   const [cycle, setCycle] = useState<SubscriptionCycle>("monthly");
   const [couponCode, setCouponCode] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [sessionSyncFailed, setSessionSyncFailed] = useState(false);
@@ -135,9 +137,13 @@ export default function AssinaturaPage() {
             />
           </div>
 
+          <div className="mt-4">
+            <TermsConsent checked={accepted} onChange={setAccepted} />
+          </div>
+
           {error && <p className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
 
-          <Button className="mt-5 w-full" disabled={checkoutLoading} onClick={onCheckout}>
+          <Button className="mt-5 w-full" disabled={checkoutLoading || !accepted} onClick={onCheckout}>
             {checkoutLoading ? "Redirecionando..." : "Ir para pagamento"}
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">Pagamento processado pelo Mercado Pago.</p>
