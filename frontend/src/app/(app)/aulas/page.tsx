@@ -66,11 +66,11 @@ export default function LessonsPage() {
     );
   }
 
-  if (modules.length === 0) {
+  if (modules.every((mod) => !mod.lessons?.length)) {
     return (
       <MotionShell className="space-y-6">
         <PageHeader title="Aulas" description="Aprenda a estruturar a redação nota 1000" />
-        <EmptyState title="Nenhuma aula disponível ainda" description="Novas trilhas e aulas aparecem aqui assim que forem publicadas." />
+        <EmptyState title="Conteúdo chegando" description="As primeiras aulas estão sendo preparadas. Elas aparecem aqui assim que forem publicadas." />
       </MotionShell>
     );
   }

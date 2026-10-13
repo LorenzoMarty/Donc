@@ -14,7 +14,9 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { extractYouTubeId } from "@/components/shared/lesson-player";
 import { cn } from "@/utils";
 import { apiFetch } from "@/services/api";
 import type { AdminActivity, AdminLesson, AdminModule, AdminModuleItem } from "@/types/api";
@@ -248,6 +250,9 @@ function ModuleNode({
               <span className="min-w-0 flex-1 truncate text-xs">
                 {item.order}. {item.kind === "lesson" ? item.lesson?.title : item.activity?.statement}
               </span>
+              {item.kind === "lesson" && item.lesson && !item.lesson.published ? (
+                <Badge variant="outline" className="shrink-0 border-streak text-[0.65rem] text-streak">rascunho</Badge>
+              ) : null}
               <Badge variant="outline" className="shrink-0 text-[0.65rem]">{item.kind === "lesson" ? "aula" : "atividade"}</Badge>
               <MoveButtons isFirst={index === 0} isLast={index === items.length - 1} onMove={(direction) => onMoveItem(item, direction)} />
               {item.kind === "lesson" && item.lesson ? (
@@ -380,6 +385,16 @@ function ModuleModal({
   );
 }
 
+// Preview so em hosts de video conhecidos: evita embutir qualquer URL digitada num iframe do admin.
+function isKnownVideoHost(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" && ["player.vimeo.com", "iframe.mediadelivery.net"].includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
 function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<ModalState, { kind: "lesson" }>; onClose: () => void; onCreated: (moduleId: number, lesson: AdminLesson) => void; onUpdated: (modules: AdminModule[]) => void }) {
   const editing = state.mode === "edit" ? state.lesson : null;
   const [title, setTitle] = useState(editing?.title ?? "");
@@ -390,8 +405,11 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [thumbnailUrl, setThumbnailUrl] = useState(editing?.thumbnail_url ?? "");
   const [pdfUrl, setPdfUrl] = useState(editing?.pdf_url ?? "");
   const [targets, setTargets] = useState<string[]>(editing?.targets ?? []);
+  const [published, setPublished] = useState(editing?.published ?? false);
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const previewId = videoUrl ? extractYouTubeId(videoUrl) : null;
+  const previewSrc = previewId ? `https://www.youtube.com/embed/${previewId}` : isKnownVideoHost(videoUrl) ? videoUrl : null;
 
   const titleError = submitted && !title.trim() ? "Informe um título." : null;
   const descError = submitted && !description.trim() ? "Informe uma descrição." : null;
@@ -404,7 +422,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
     const body = { title, description, summary, duration_minutes: Number(durationMinutes), video_url: videoUrl, thumbnail_url: thumbnailUrl, pdf_url: pdfUrl.trim() || null, targets };
     try {
       if (editing) {
-        const modules = await apiFetch<AdminModule[]>(`/admin/lessons/${editing.id}`, { method: "PATCH", body: JSON.stringify(body) });
+        const modules = await apiFetch<AdminModule[]>(`/admin/lessons/${editing.id}`, { method: "PATCH", body: JSON.stringify({ ...body, published }) });
         onUpdated(modules);
         toast.success("Aula atualizada.");
       } else {
@@ -455,7 +473,23 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
             <Input value={pdfUrl} onChange={(e) => setPdfUrl(e.target.value)} placeholder="https://..." />
           </Field>
         </div>
+        {previewSrc ? (
+          <div className="aspect-video overflow-hidden rounded-card border border-border bg-foreground">
+            <iframe className="h-full w-full" src={previewSrc} title="Pré-visualização do vídeo" allowFullScreen />
+          </div>
+        ) : null}
         <TargetsField value={targets} onChange={setTargets} hint="Usado pelo motor de recomendação para indicar esta aula ao aluno certo." />
+        {editing ? (
+          <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3">
+            <span className="text-sm">
+              <span className="font-semibold">Publicada</span>
+              <span className="block text-xs text-muted-foreground">Rascunho não aparece para o aluno. Publicar exige a URL real do vídeo.</span>
+            </span>
+            <Switch checked={published} onCheckedChange={setPublished} aria-label="Aula publicada" />
+          </label>
+        ) : (
+          <p className="text-xs text-muted-foreground">A aula nasce como rascunho. Confira a pré-visualização e publique ao editar.</p>
+        )}
       </div>
     </Modal>
   );

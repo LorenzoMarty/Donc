@@ -200,6 +200,7 @@ class AdminLessonRead(BaseModel):
     duration_minutes: int
     order: int
     targets: list[str] = Field(default_factory=list)
+    published: bool = True
 
 
 class AdminActivityRead(BaseModel):
@@ -335,6 +336,7 @@ class AdminLessonUpdateRequest(BaseModel):
     summary: str | None = Field(default=None, min_length=10, max_length=5000)
     duration_minutes: int | None = Field(default=None, ge=1, le=600)
     targets: list[str] | None = None
+    published: bool | None = None
 
     _validate_targets = field_validator("targets")(_validate_targets)
 

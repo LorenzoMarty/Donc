@@ -1,7 +1,7 @@
 ﻿from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func, true
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,10 @@ class Module(Base):
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
     exercises = relationship("Exercise", back_populates="module", cascade="all, delete-orphan")
     items = relationship("ModuleItem", back_populates="module", cascade="all, delete-orphan")
+
+    @property
+    def published_lessons(self) -> list["Lesson"]:
+        return [lesson for lesson in self.lessons if lesson.published]
 
 
 class ModuleItem(Base):
@@ -62,6 +66,8 @@ class Lesson(Base):
     # Vazio = sem target explicito; RecommendationEngine cai no fallback via
     # Module.target_competencies (ver recommendation_service.py).
     targets: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
+    # Rascunho (False) nunca aparece pro aluno; so o admin ve e publica (fluxo de aulas de terceiros).
+    published: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False)
 
     module = relationship("Module", back_populates="lessons")
     exercises = relationship("Exercise", back_populates="lesson")
