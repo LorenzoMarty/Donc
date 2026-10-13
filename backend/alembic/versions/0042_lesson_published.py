@@ -1,6 +1,6 @@
 """Lessons get a published flag (draft/published) for third-party content.
 
-Existing lessons stay published so nothing disappears for current students.
+Existing lessons with a real video stay published; empty/placeholder-video ones become drafts.
 
 Revision ID: 0042_lesson_published
 Revises: 0041_user_terms_acceptance
@@ -21,6 +21,8 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.add_column("lessons", sa.Column("published", sa.Boolean(), nullable=False, server_default=sa.true()))
+    # Aula sem video real (vazio ou o Rickroll do seed) nao pode continuar visivel pro aluno.
+    op.execute("UPDATE lessons SET published = false WHERE video_url = '' OR video_url LIKE '%dQw4w9WgXcQ%'")
 
 
 def downgrade() -> None:

@@ -25,8 +25,7 @@ export default function PrivacyPage() {
       <section>
         <h2>3. Inteligência artificial e a OpenAI</h2>
         <p>
-          O texto das suas redações é enviado à OpenAI, nossa operadora de IA, apenas para gerar a correção. Não incluímos seu nome nem
-          seu e-mail nesse envio.
+          O texto das suas redações é enviado à OpenAI, nossa operadora de IA, apenas para gerar a correção.
         </p>
       </section>
       <section>
