@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck deploy/*.sh
+        run: shellcheck -e SC1091 deploy/*.sh  # SC1091: .env.production so existe no VPS
       - name: compose config (prod)
         run: |
           cp .env.production.example .env.production
