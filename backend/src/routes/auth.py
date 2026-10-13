@@ -1,6 +1,6 @@
 ﻿from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -18,11 +18,13 @@ from src.schemas.auth import (
     OnboardingUpdateRequest,
     PasswordRecoveryRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     AuthResponse,
     UpdateMeRequest,
     UserRead,
 )
 from src.schemas.common import ApiResponse, MessageResponse, success_response
+from src.services import email_service
 from src.services.auth_service import AuthService
 from src.utils.auth_rate_limit import check_auth_rate_limit
 from src.utils.csrf import require_csrf_for_cookie_session
@@ -86,7 +88,13 @@ def _subscription_active(db: Session, user: User) -> bool:
 
 
 @router.post("/register", response_model=ApiResponse[AuthResponse], status_code=201)
-def register(payload: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> ApiResponse[AuthResponse]:
+def register(
+    payload: RegisterRequest,
+    request: Request,
+    response: Response,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> ApiResponse[AuthResponse]:
     check_auth_rate_limit(request, bucket="register", identifier=str(payload.email))
     service = AuthService(db)
     user = service.register(name=payload.name, email=str(payload.email), password=payload.password)
@@ -94,6 +102,7 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
     refresh_token = service.issue_refresh_token(user)
     db.commit()
     _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
+    background.add_task(email_service.send_welcome, to=user.email, name=user.name)
     return success_response(AuthResponse(user=user), "Conta criada com sucesso.")
 
 
@@ -191,10 +200,27 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)) 
     return success_response(MessageResponse(message="Sessao encerrada."), "Sessao encerrada.")
 
 
+RECOVERY_MESSAGE = "Se existir uma conta com este e-mail, enviamos um link para redefinir a senha."
+
+
 @router.post("/password-recovery", response_model=ApiResponse[MessageResponse])
-def password_recovery(_: PasswordRecoveryRequest) -> ApiResponse[MessageResponse]:
-    raise AppError(
-        "Recuperação de senha por e-mail ainda não está configurada.",
-        status_code=501,
-        code="password_recovery_not_configured",
-    )
+def password_recovery(
+    payload: PasswordRecoveryRequest,
+    request: Request,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> ApiResponse[MessageResponse]:
+    check_auth_rate_limit(request, bucket="password-recovery", identifier=str(payload.email))
+    result = AuthService(db).request_password_reset(str(payload.email))
+    if result:
+        user, token = result
+        # Em background: o tempo de resposta não deve diferenciar e-mail existente de inexistente.
+        background.add_task(email_service.send_password_reset, to=user.email, name=user.name, token=token)
+    return success_response(MessageResponse(message=RECOVERY_MESSAGE), RECOVERY_MESSAGE)
+
+
+@router.post("/reset-password", response_model=ApiResponse[MessageResponse])
+def reset_password(payload: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)) -> ApiResponse[MessageResponse]:
+    check_auth_rate_limit(request, bucket="reset-password")
+    AuthService(db).reset_password(token=payload.token, new_password=payload.new_password)
+    return success_response(MessageResponse(message="Senha redefinida com sucesso."), "Senha redefinida com sucesso.")
