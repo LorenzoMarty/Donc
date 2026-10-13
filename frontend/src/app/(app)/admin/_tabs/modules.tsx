@@ -385,6 +385,16 @@ function ModuleModal({
   );
 }
 
+// Preview so em hosts de video conhecidos: evita embutir qualquer URL digitada num iframe do admin.
+function isKnownVideoHost(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" && ["player.vimeo.com", "iframe.mediadelivery.net"].includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
 function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<ModalState, { kind: "lesson" }>; onClose: () => void; onCreated: (moduleId: number, lesson: AdminLesson) => void; onUpdated: (modules: AdminModule[]) => void }) {
   const editing = state.mode === "edit" ? state.lesson : null;
   const [title, setTitle] = useState(editing?.title ?? "");
@@ -399,7 +409,7 @@ function LessonModal({ state, onClose, onCreated, onUpdated }: { state: Extract<
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const previewId = videoUrl ? extractYouTubeId(videoUrl) : null;
-  const previewSrc = previewId ? `https://www.youtube.com/embed/${previewId}` : videoUrl.startsWith("https://") ? videoUrl : null;
+  const previewSrc = previewId ? `https://www.youtube.com/embed/${previewId}` : isKnownVideoHost(videoUrl) ? videoUrl : null;
 
   const titleError = submitted && !title.trim() ? "Informe um título." : null;
   const descError = submitted && !description.trim() ? "Informe uma descrição." : null;

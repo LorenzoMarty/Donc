@@ -818,6 +818,7 @@ class AdminContentService:
             lesson.summary = summary.strip()
         if thumbnail_url is not None:
             lesson.thumbnail_url = thumbnail_url.strip() or lesson.thumbnail_url
+        video_changed = video_url is not None and video_url.strip() != lesson.video_url
         if video_url is not None:
             lesson.video_url = video_url.strip()
         if pdf_url is not None:
@@ -828,8 +829,9 @@ class AdminContentService:
             lesson.targets = targets
         if published is not None:
             lesson.published = published
-        # Vale ao publicar e a edicao do video de aula ja publicada (nao trava editar so o titulo).
-        if lesson.published and (published or video_url is not None) and _is_missing_video(lesson.video_url):
+        # Vale ao publicar e quando o video MUDA numa aula publicada. A UI reenvia o video_url a cada
+        # edicao; sem comparar com o valor atual, editar so o titulo travaria aulas legadas.
+        if lesson.published and (published or video_changed) and _is_missing_video(lesson.video_url):
             self.db.rollback()
             raise AppError(
                 "Informe a URL real do vídeo antes de publicar a aula.", status_code=400, code="lesson_video_required"

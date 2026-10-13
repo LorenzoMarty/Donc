@@ -91,3 +91,50 @@ def test_production_seed_does_not_create_demo_catalog(monkeypatch, tmp_path):
         seed_database(db, include_demo_data=False)
         assert db.scalar(select(func.count(Module.id))) == 0
     engine.dispose()
+
+
+def test_editing_title_of_published_lesson_with_legacy_video_is_allowed(client):
+    from src.database.session import SessionLocal
+    from src.models import Lesson
+
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        _, lesson = _create_draft(client, uuid4().hex[:8])
+        with SessionLocal() as db:  # aula legada: publicada com video placeholder
+            row = db.get(Lesson, lesson["id"])
+            row.published, row.video_url = True, "https://www.youtube.com/embed/dQw4w9WgXcQ"
+            db.commit()
+
+        # UI reenvia o video_url atual a cada edicao: nao pode travar editar so o titulo.
+        ok = client.patch(
+            f"/api/v1/admin/lessons/{lesson['id']}",
+            json={"title": "Novo titulo", "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ"},
+        )
+        assert ok.status_code == 200
+        # Trocar o video por vazio numa aula publicada continua bloqueado.
+        blocked = client.patch(f"/api/v1/admin/lessons/{lesson['id']}", json={"video_url": ""})
+        assert blocked.status_code == 400
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
+
+
+def test_unpublished_lessons_are_excluded_from_dashboard_and_module_progress(client):
+    from src.database.session import SessionLocal
+    from src.models import Lesson, Module
+    from src.services.lesson_service import LessonService
+    from src.services.dashboard_service import DashboardService
+
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        module, lesson = _create_draft(client, uuid4().hex[:8])
+        with SessionLocal() as db:
+            user = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+            total_before = DashboardService(db).db.scalar(select(func.count(Lesson.id)).where(Lesson.published.is_(True)))
+            assert db.get(Lesson, lesson["id"]).published is False
+            mod = db.get(Module, module["id"])
+            assert mod.published_lessons == []
+            assert LessonService(db)._module_progress(mod, user.id) == 0
+            assert DashboardService(db).get(user.id) is not None
+            assert total_before is not None
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
