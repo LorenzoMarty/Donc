@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 import src.models  # noqa: F401 - registra os modelos no Base.metadata
@@ -15,7 +15,7 @@ from src.config.security import get_password_hash
 from src.database.session import Base
 from src.middlewares.errors import AppError
 from src.models import PlanCycle, SubscriptionStatus, User, UserRole
-from src.models.subscription import DiscountType
+from src.models.subscription import DiscountType, ProcessedWebhookEvent
 from src.services.coupon_service import CouponService
 from src.services.subscription_service import SubscriptionService
 
@@ -154,6 +154,26 @@ def test_webhook_is_idempotent_for_repeated_notification_id():
     assert coupon.used_count == 1
 
 
+def test_webhook_failure_does_not_burn_notification_id():
+    """Se a consulta ao MP falha, o retry do MP (mesmo notification id) precisa reprocessar —
+    senao a assinatura nunca ativa."""
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+    event = {"id": "notif-retry", "type": "subscription_preapproval", "data": {"id": subscription.mp_preapproval_id}}
+
+    original = mp.get_preapproval
+    mp.get_preapproval = lambda _id: (_ for _ in ()).throw(AppError("MP fora do ar", status_code=502, code="mercadopago_unreachable"))
+    with pytest.raises(AppError):
+        service.handle_webhook(event, headers={})
+
+    mp.get_preapproval = original
+    service.handle_webhook(event, headers={})
+    assert service.repository.get_by_user_id(user.id).status == SubscriptionStatus.ACTIVE
+
+
 def test_webhook_paused_starts_grace_period():
     db = _session()
     user = _make_user(db)
@@ -254,3 +274,38 @@ def test_user_initiated_cancel_sends_one_email_even_if_webhook_follows(monkeypat
     service.handle_webhook({"id": "n2", "data": {"id": subscription.mp_preapproval_id}}, headers={})
 
     assert sent == ["send_subscription_canceled"]
+
+
+def test_webhook_for_unknown_preapproval_is_marked_processed():
+    db = _session()
+    service, _ = _service(db)
+    event = {"id": "notif-unknown", "data": {"id": "preapproval-inexistente"}}
+    service.handle_webhook(event, headers={})
+    assert db.scalar(select(ProcessedWebhookEvent).where(ProcessedWebhookEvent.mp_notification_id == "notif-unknown")) is not None
+
+
+def test_webhook_concurrent_duplicate_is_treated_as_already_processed():
+    """A outra entrega ja gravou o marcador entre o check e o commit: IntegrityError vira no-op."""
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+
+    real_scalar = db.scalar
+    calls = {"n": 0}
+
+    def racy_scalar(statement, *args, **kwargs):
+        # 1a chamada (check do marcador): nao ve nada. Mas outra sessao grava o marcador antes do commit.
+        result = real_scalar(statement, *args, **kwargs)
+        if calls["n"] == 0:
+            calls["n"] += 1
+            other = sessionmaker(bind=db.get_bind())()
+            other.add(ProcessedWebhookEvent(mp_notification_id="notif-race"))
+            other.commit()
+            other.close()
+        return result
+
+    db.scalar = racy_scalar
+    service.handle_webhook({"id": "notif-race", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    db.scalar = real_scalar
