@@ -75,7 +75,7 @@ const ERROR_CODE_MESSAGES: Record<string, string> = {
   module_item_not_found: "Item do módulo não encontrado.",
   ai_job_not_found: "Correção não encontrada.",
   rate_limit_exceeded: "Muitas requisições. Aguarde um momento.",
-  password_recovery_not_configured: "Recuperação por e-mail ainda não está configurada.",
+  invalid_reset_token: "Link inválido ou expirado. Peça uma nova recuperação.",
   subscription_required: "Sua assinatura não está ativa. Assine para continuar.",
   subscription_already_active: "Você já tem uma assinatura ativa.",
   subscription_not_found: "Você ainda não tem assinatura.",
