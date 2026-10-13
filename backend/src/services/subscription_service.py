@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -81,6 +82,18 @@ class SubscriptionService:
             if not valid:
                 raise AppError("Assinatura de webhook inválida.", status_code=401, code="invalid_webhook_signature")
 
+        try:
+            self._process_notification(payload, data_id)
+        except IntegrityError:
+            # Entrega duplicada concorrente: a outra request ganhou o marcador unico — ja processado.
+            self.db.rollback()
+            logger.info("Webhook Mercado Pago duplicado (concorrente): %s", payload.get("id"))
+        except Exception:
+            # Qualquer falha descarta o marcador de notificacao: o retry do MP precisa reprocessar.
+            self.db.rollback()
+            raise
+
+    def _process_notification(self, payload: dict, data_id: str) -> None:
         notification_id = str(payload.get("id") or "")
         if notification_id:
             already_processed = self.db.scalar(
@@ -99,11 +112,7 @@ class SubscriptionService:
             self.db.commit()
             return
 
-        try:
-            remote = self.mp_client.get_preapproval(data_id)
-        except Exception:
-            self.db.rollback()  # descarta o marcador de notificacao: o retry do MP precisa reprocessar
-            raise
+        remote = self.mp_client.get_preapproval(data_id)
         remote_status = remote.get("status")
         previous_status = subscription.status
         now = datetime.now(UTC)
