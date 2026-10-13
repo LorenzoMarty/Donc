@@ -478,6 +478,8 @@ def update_lesson(
             video_url=payload.video_url,
             duration_minutes=payload.duration_minutes,
             targets=payload.targets,
+            pdf_url=payload.pdf_url,
+            published=payload.published,
         ),
         "Aula atualizada.",
     )

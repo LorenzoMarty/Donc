@@ -19,7 +19,7 @@ class DashboardService:
 
     def get(self, user_id: int) -> DashboardResponse:
         user = self.db.get(User, user_id)
-        total_lessons = self.db.scalar(select(func.count(Lesson.id))) or 0
+        total_lessons = self.db.scalar(select(func.count(Lesson.id)).where(Lesson.published.is_(True))) or 0
         completed_lessons = self.db.scalar(
             select(func.count(LessonProgress.id)).where(
                 LessonProgress.user_id == user_id, LessonProgress.completed.is_(True)
@@ -276,6 +276,7 @@ class DashboardService:
             select(Lesson)
             .options(selectinload(Lesson.module))
             .join(Lesson.module)
+            .where(Lesson.published.is_(True))
             .order_by(Module.order, Lesson.order)
             .limit(3)
         )
