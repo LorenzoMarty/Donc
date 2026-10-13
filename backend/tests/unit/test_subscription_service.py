@@ -214,3 +214,43 @@ def test_change_plan_rejects_same_cycle():
     with pytest.raises(AppError) as exc_info:
         service.change_plan(user, new_cycle=PlanCycle.MONTHLY)
     assert exc_info.value.code == "subscription_same_cycle"
+
+
+def test_status_changes_fire_the_right_emails(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(
+        "src.services.email_service.fire_and_forget", lambda send, **kw: sent.append(send.__name__)
+    )
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    mp.set_remote_status(subscription.mp_preapproval_id, "paused")
+    service.handle_webhook({"id": "n2", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    mp.set_remote_status(subscription.mp_preapproval_id, "cancelled")
+    service.handle_webhook({"id": "n3", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+
+    assert sent == ["send_payment_approved", "send_payment_failed", "send_subscription_canceled"]
+
+
+def test_user_initiated_cancel_sends_one_email_even_if_webhook_follows(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(
+        "src.services.email_service.fire_and_forget", lambda send, **kw: sent.append(send.__name__)
+    )
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    sent.clear()
+
+    service.cancel(user)
+    mp.set_remote_status(subscription.mp_preapproval_id, "cancelled")
+    service.handle_webhook({"id": "n2", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+
+    assert sent == ["send_subscription_canceled"]

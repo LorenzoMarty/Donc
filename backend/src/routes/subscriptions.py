@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.orm import Session
 
+from src.config.settings import settings
 from src.database.session import get_db
 from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
@@ -25,11 +26,14 @@ def checkout(
 ) -> ApiResponse[CheckoutResponse]:
     auth = AuthService(db)
     auth.require_terms(payload.accept_terms)
-    auth.record_terms_acceptance(current_user)
     service = SubscriptionService(db)
     subscription, checkout_url = service.start_checkout(
         current_user, cycle=PlanCycle(payload.cycle), coupon_code=payload.coupon_code
     )
+    # So registra o aceite depois do checkout criado, e so quando a versao dos termos mudou
+    # (nao sobrescreve o timestamp do cadastro a cada tentativa).
+    if current_user.terms_version != settings.legal_terms_version:
+        auth.record_terms_acceptance(current_user)
     return success_response(
         CheckoutResponse(checkout_url=checkout_url, status=subscription.status.value),
         "Checkout criado.",
