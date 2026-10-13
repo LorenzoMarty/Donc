@@ -17,11 +17,14 @@ from src.routes import admin, admin_subscriptions, admin_support, ai, auth, dash
 from src.schemas.common import ApiResponse, HealthData, success_response
 from src.services.seed import seed_database
 from src.telemetry import configure_ai_telemetry, flush_ai_telemetry
+from src.telemetry.sentry import configure_sentry
 from src.vectorstore import seed_knowledge_base
 from src.utils.csrf import require_csrf_for_cookie_session
 
 
 logger = logging.getLogger("src.startup")
+
+configure_sentry()
 
 
 @asynccontextmanager

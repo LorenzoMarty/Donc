@@ -105,11 +105,13 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: /api/backend
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
       INTERNAL_API_URL: http://backend:8000/api/v1
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SENTRY_DSN: ${SENTRY_DSN:-}
     depends_on:
       backend:
         condition: service_healthy
