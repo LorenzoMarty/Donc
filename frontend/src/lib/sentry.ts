@@ -15,6 +15,9 @@ export function scrubEvent<T extends Event>(event: T): T {
       );
     }
   }
+  // Sem identidade nem trilha de cliques/console/fetch: a tela principal e o editor de redação.
+  delete event.user;
+  delete event.breadcrumbs;
   return event;
 }
 
@@ -25,5 +28,6 @@ export function sentryOptions(dsn: string | undefined) {
     sendDefaultPii: false,
     tracesSampleRate: 0,
     beforeSend: (event: ErrorEvent) => scrubEvent(event),
+    beforeBreadcrumb: () => null,
   };
 }

@@ -27,6 +27,9 @@ def scrub_event(event: dict[str, Any], hint: dict[str, Any] | None = None) -> di
         headers = request.get("headers")
         if isinstance(headers, dict):
             request["headers"] = {k: v for k, v in headers.items() if k.lower() not in _SENSITIVE_HEADERS}
+    # Identidade e trilha de acoes do usuario nao interessam (e breadcrumbs podem carregar texto).
+    event.pop("user", None)
+    event.pop("breadcrumbs", None)
     # Argumentos de task Celery (ids, nao texto, hoje — mas nunca arriscar texto de redacao).
     extra = event.get("extra")
     if isinstance(extra, dict):
@@ -51,6 +54,7 @@ def configure_sentry() -> bool:
             max_request_body_size="never",
             traces_sample_rate=0.0,
             before_send=scrub_event,
+            before_breadcrumb=lambda crumb, hint: None,  # noqa: ARG005 — sem breadcrumbs: podem conter texto de redacao
         )
         return True
     except Exception:  # noqa: BLE001 — monitoramento nunca derruba o app
