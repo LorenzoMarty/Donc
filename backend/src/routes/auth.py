@@ -97,7 +97,9 @@ def register(
 ) -> ApiResponse[AuthResponse]:
     check_auth_rate_limit(request, bucket="register", identifier=str(payload.email))
     service = AuthService(db)
-    user = service.register(name=payload.name, email=str(payload.email), password=payload.password)
+    user = service.register(
+        name=payload.name, email=str(payload.email), password=payload.password, accept_terms=payload.accept_terms
+    )
     token = service.token_for(user, subscription_active=_subscription_active(db, user))
     refresh_token = service.issue_refresh_token(user)
     db.commit()

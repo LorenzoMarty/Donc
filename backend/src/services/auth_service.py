@@ -16,11 +16,23 @@ class AuthService:
         self.db = db
         self.users = UserRepository(db)
 
-    def register(self, *, name: str, email: str, password: str) -> User:
+    def register(self, *, name: str, email: str, password: str, accept_terms: bool) -> User:
+        self.require_terms(accept_terms)
         if self.users.get_by_email(email):
             raise AppError("Já existe uma conta com este e-mail.", status_code=409, code="email_in_use")
         user = self.users.create(name=name, email=email, hashed_password=get_password_hash(password))
+        self.record_terms_acceptance(user)
         return touch_last_seen(self.db, user)
+
+    @staticmethod
+    def require_terms(accepted: bool) -> None:
+        if not accepted:
+            raise AppError("É preciso aceitar os Termos de Uso e a Política de Privacidade.", status_code=400, code="terms_not_accepted")
+
+    def record_terms_acceptance(self, user: User) -> None:
+        user.terms_accepted_at = datetime.now(UTC)
+        user.terms_version = settings.legal_terms_version
+        self.users.save(user)
 
     def authenticate(self, *, email: str, password: str) -> User:
         user = self.users.get_by_email(email)

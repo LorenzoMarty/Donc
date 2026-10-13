@@ -69,3 +69,43 @@ def test_admin_coupon_lifecycle_and_subscribers(client):
         assert {"items", "total", "mrr_cents"} <= set(subscribers.json()["data"])
     finally:
         app.dependency_overrides.pop(require_admin, None)
+
+
+def test_checkout_requires_terms_acceptance(client):
+    response = client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly"})
+    assert response.status_code == 400
+    assert response.json()["error"] == "terms_not_accepted"
+
+
+def test_checkout_records_terms_only_after_success_and_keeps_signup_timestamp(client, monkeypatch):
+    from types import SimpleNamespace
+
+    from src.config.settings import settings
+    from src.database.session import SessionLocal
+
+    def failing(self, user, **kwargs):
+        raise RuntimeError("mp fora do ar")
+
+    with SessionLocal() as db:
+        demo = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        demo.terms_version, demo.terms_accepted_at = None, None
+        db.commit()
+
+    monkeypatch.setattr(SubscriptionService, "start_checkout", failing)
+    try:
+        client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly", "accept_terms": True})
+    except RuntimeError:
+        pass
+    with SessionLocal() as db:
+        assert db.scalar(select(User).where(User.email == "aluno@demo.com")).terms_version is None
+
+    ok = lambda self, user, **kwargs: (SimpleNamespace(status=SimpleNamespace(value="pending")), "https://mp.example/x")  # noqa: E731
+    monkeypatch.setattr(SubscriptionService, "start_checkout", ok)
+    assert client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly", "accept_terms": True}).status_code == 201
+    with SessionLocal() as db:
+        demo = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        assert demo.terms_version == settings.legal_terms_version
+        first_ts = demo.terms_accepted_at
+    client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly", "accept_terms": True})
+    with SessionLocal() as db:
+        assert db.scalar(select(User).where(User.email == "aluno@demo.com")).terms_accepted_at == first_ts

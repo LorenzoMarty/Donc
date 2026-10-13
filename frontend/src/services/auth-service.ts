@@ -5,7 +5,8 @@ export const authApi = {
   login: (email: string, password: string) =>
     apiFetch<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   register: (name: string, email: string, password: string) =>
-    apiFetch<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ name, email, password }) }),
+    // O cadastro só envia depois do checkbox de aceite marcado (required na UI).
+    apiFetch<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ name, email, password, accept_terms: true }) }),
   me: () => apiFetch<User>("/auth/me"),
   // Reemite o access token (claim `sa` inclusa) — sem isso, virar assinante ativo enquanto o
   // token antigo (sa=false) ainda vale faria o proxy.ts empurrar de volta pro paywall mesmo

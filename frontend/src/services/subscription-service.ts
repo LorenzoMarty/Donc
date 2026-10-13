@@ -5,7 +5,7 @@ export const subscriptionApi = {
   checkout: (cycle: SubscriptionCycle, couponCode?: string) =>
     apiFetch<CheckoutResponse>("/subscriptions/checkout", {
       method: "POST",
-      body: JSON.stringify({ cycle, coupon_code: couponCode || undefined }),
+      body: JSON.stringify({ cycle, coupon_code: couponCode || undefined, accept_terms: true }),
     }),
   me: () => apiFetch<Subscription | null>("/subscriptions/me"),
   changePlan: (cycle: SubscriptionCycle) =>
