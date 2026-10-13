@@ -25,7 +25,7 @@ class LessonService:
 
     def get_lesson(self, lesson_id: int, user_id: int) -> LessonRead:
         lesson = self.repo.get_lesson(lesson_id)
-        if not lesson:
+        if not lesson or not lesson.published:
             raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         module = lesson.module
         unlock_map = self.progression.unlock_map(self.repo.list_modules(), user_id)
@@ -48,7 +48,7 @@ class LessonService:
         recommendation_log_id: int | None = None,
     ) -> LessonProgressRead:
         lesson = self.repo.get_lesson(lesson_id)
-        if not lesson:
+        if not lesson or not lesson.published:
             raise AppError("Aula não encontrada.", status_code=404, code="lesson_not_found")
         self._get_user(user_id)
         progress = self.repo.get_progress(user_id, lesson_id)
@@ -86,7 +86,7 @@ class LessonService:
             completed=self._module_completed(module.id, user_id),
             lessons=[
                 self._lesson_schema(lesson, user_id, locked=locked)
-                for lesson in sorted(module.lessons, key=lambda item: item.order)
+                for lesson in sorted(module.published_lessons, key=lambda item: item.order)
             ],
             items=self._module_items(module, user_id, locked=locked),
             locked=locked,
@@ -122,7 +122,7 @@ class LessonService:
         items = [
             item
             for item in getattr(module, "items", [])
-            if (item.kind == "lesson" and item.lesson) or (item.kind == "activity" and item.exercise)
+            if (item.kind == "lesson" and item.lesson and item.lesson.published) or (item.kind == "activity" and item.exercise)
         ]
         if not items:
             return [
@@ -132,7 +132,7 @@ class LessonService:
                     order=lesson.order,
                     lesson=self._lesson_schema(lesson, user_id, locked=locked),
                 )
-                for lesson in sorted(module.lessons, key=lambda item: (item.order, item.id))
+                for lesson in sorted(module.published_lessons, key=lambda item: (item.order, item.id))
             ]
         result: list[ModuleItemRead] = []
         for item in sorted(items, key=lambda entry: (entry.order, entry.id)):
@@ -170,7 +170,7 @@ class LessonService:
         return user
 
     def _module_progress(self, module, user_id: int) -> int:
-        lessons = list(module.lessons)
+        lessons = module.published_lessons
         if not lessons:
             return 0
         return round(sum(self._lesson_progress_percent(lesson, user_id) for lesson in lessons) / len(lessons))
@@ -180,7 +180,7 @@ class LessonService:
         return progress.progress_percent if progress else 0
 
     def _module_completed(self, module_id: int, user_id: int) -> bool:
-        lesson_ids = list(self.db.scalars(select(Lesson.id).where(Lesson.module_id == module_id)))
+        lesson_ids = list(self.db.scalars(select(Lesson.id).where(Lesson.module_id == module_id, Lesson.published.is_(True))))
         if not lesson_ids:
             return False
         completed_count = self.db.scalar(

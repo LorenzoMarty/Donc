@@ -77,7 +77,7 @@ class ProgressionService:
         return requirements
 
     def _lessons_done(self, module: Module, user_id: int) -> bool:
-        lessons = list(module.lessons)
+        lessons = module.published_lessons
         if not lessons:
             return True
         lesson_ids = {lesson.id for lesson in lessons}
