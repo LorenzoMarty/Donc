@@ -1,0 +1,5 @@
+# HTTPS automatico (Let's Encrypt) para $DOMAIN; o DNS A/AAAA precisa apontar para o VPS.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}

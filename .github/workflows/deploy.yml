@@ -1,0 +1,32 @@
+name: Deploy
+
+# Manual de proposito: deploy de producao so por decisao humana. Roda deploy/deploy.sh no VPS via SSH.
+# Secrets necessarios: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (chave privada), DEPLOY_PATH (ex. /opt/donc).
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag ou sha a publicar"
+        default: main
+        required: true
+
+concurrency: deploy-production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          REF: ${{ inputs.ref }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "cd '$DEPLOY_PATH' && ./deploy/deploy.sh '$REF'"
