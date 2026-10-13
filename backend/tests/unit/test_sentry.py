@@ -50,7 +50,29 @@ def test_forced_error_and_logged_error_reach_sentry_scrubbed():
         sentry_sdk.flush()
     finally:
         sentry_sdk.init()  # desliga
-    assert any("webhook" in str(e.get("logentry", e.get("message", ""))).lower() or e.get("exception") for e in transport.events)
+    assert transport.events, "o logger.exception deveria virar evento"
+    event = transport.events[0]
+    assert "webhook" in str(event.get("logentry") or event.get("message")).lower()
+    assert event["exception"]["values"][0]["value"] == "erro forcado"
+
+
+def test_scrub_removes_user_and_breadcrumbs():
+    event = sentry_module.scrub_event({"user": {"email": "a@b.com"}, "breadcrumbs": {"values": [{"message": "texto"}]}})
+    assert "user" not in event and "breadcrumbs" not in event
+
+
+def test_webhook_5xx_from_mercadopago_is_logged_as_error(client, monkeypatch, caplog):
+    from src.middlewares.errors import AppError
+    from src.services.subscription_service import SubscriptionService
+
+    def boom(self, payload, headers):
+        raise AppError("MP fora do ar", status_code=502, code="mercadopago_unreachable")
+
+    monkeypatch.setattr(SubscriptionService, "handle_webhook", boom)
+    with caplog.at_level(logging.ERROR, logger="src.routes.subscriptions"):
+        response = client.post("/api/v1/subscriptions/webhook", json={"id": "1", "data": {"id": "1"}})
+    assert response.status_code == 502
+    assert any("mercadopago_unreachable" in record.getMessage() for record in caplog.records)
 
 
 def test_configure_sentry_initializes_with_dsn(monkeypatch):

@@ -1,4 +1,4 @@
-# HTTPS automatico (Lets Encrypt) para $DOMAIN; o DNS A/AAAA precisa apontar para o VPS.
+# HTTPS automatico (Let's Encrypt) para $DOMAIN; o DNS A/AAAA precisa apontar para o VPS.
 {$DOMAIN} {
 	encode zstd gzip
 
