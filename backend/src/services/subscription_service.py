@@ -9,6 +9,7 @@ from src.middlewares.errors import AppError
 from src.models import PlanCycle, SubscriptionStatus, User
 from src.models.subscription import ProcessedWebhookEvent, Subscription
 from src.repositories.subscriptions import SubscriptionRepository
+from src.services import email_service
 from src.services.coupon_service import CouponService
 from src.services.mercadopago_client import MercadoPagoClient
 from src.services.subscription_status import effective_status
@@ -123,6 +124,23 @@ class SubscriptionService:
             subscription.coupon_applied = True
 
         self.repository.save(subscription)
+        self._notify_status_change(subscription, previous_status)
+
+    def _notify_status_change(self, subscription: Subscription, previous_status: SubscriptionStatus) -> None:
+        if subscription.status == previous_status:
+            return
+        user = self.db.get(User, subscription.user_id)
+        if not user:
+            return
+        if subscription.status == SubscriptionStatus.ACTIVE and previous_status == SubscriptionStatus.PENDING:
+            email_service.fire_and_forget(email_service.send_payment_approved, to=user.email, name=user.name)
+        elif subscription.status == SubscriptionStatus.GRACE:
+            email_service.fire_and_forget(
+                email_service.send_payment_failed, to=user.email, name=user.name, grace_days=settings.subscription_grace_period_days
+            )
+        elif subscription.status == SubscriptionStatus.CANCELED and subscription.canceled_at is None:
+            # canceled_at preenchido = cancelamento iniciado pelo aluno (cancel() ja avisou).
+            email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
 
     def cancel(self, user: User) -> Subscription:
         subscription = self.repository.get_by_user_id(user.id)
@@ -145,7 +163,9 @@ class SubscriptionService:
         else:
             # Acesso continua ate current_period_end (REQ-5) — effective_status() decide isso.
             subscription.canceled_at = now
-        return self.repository.save(subscription)
+        saved = self.repository.save(subscription)
+        email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
+        return saved
 
     def change_plan(self, user: User, *, new_cycle: PlanCycle) -> Subscription:
         subscription = self.repository.get_by_user_id(user.id)

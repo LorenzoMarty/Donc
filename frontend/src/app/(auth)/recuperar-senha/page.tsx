@@ -33,14 +33,14 @@ export default function RecoverPage() {
             </div>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">Recuperar senha</h1>
-              <p className="text-sm text-muted-foreground">Verifique a disponibilidade da recuperação por e-mail.</p>
+              <p className="text-sm text-muted-foreground">Enviaremos um link para redefinir sua senha.</p>
             </div>
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
             <Input type="email" placeholder="seu@email.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
             {message && <p className="rounded-md bg-accent/10 px-3 py-2 text-sm text-accent">{message}</p>}
             <Button className="w-full" disabled={loading}>
-              {loading ? "Verificando..." : "Verificar recuperação"}
+              {loading ? "Enviando..." : "Enviar link"}
             </Button>
           </form>
           <Link href="/login" className="mt-5 block text-center text-sm font-medium text-primary">
