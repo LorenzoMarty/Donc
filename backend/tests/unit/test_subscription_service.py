@@ -154,6 +154,26 @@ def test_webhook_is_idempotent_for_repeated_notification_id():
     assert coupon.used_count == 1
 
 
+def test_webhook_failure_does_not_burn_notification_id():
+    """Se a consulta ao MP falha, o retry do MP (mesmo notification id) precisa reprocessar —
+    senao a assinatura nunca ativa."""
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+    event = {"id": "notif-retry", "type": "subscription_preapproval", "data": {"id": subscription.mp_preapproval_id}}
+
+    original = mp.get_preapproval
+    mp.get_preapproval = lambda _id: (_ for _ in ()).throw(AppError("MP fora do ar", status_code=502, code="mercadopago_unreachable"))
+    with pytest.raises(AppError):
+        service.handle_webhook(event, headers={})
+
+    mp.get_preapproval = original
+    service.handle_webhook(event, headers={})
+    assert service.repository.get_by_user_id(user.id).status == SubscriptionStatus.ACTIVE
+
+
 def test_webhook_paused_starts_grace_period():
     db = _session()
     user = _make_user(db)

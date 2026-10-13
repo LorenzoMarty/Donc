@@ -88,15 +88,22 @@ class SubscriptionService:
             )
             if already_processed:
                 return
+            # Sem commit aqui: o marcador so persiste junto com o resultado (save abaixo). Se a
+            # consulta ao MP falhar, a transacao nao e confirmada e o retry do MP reprocessa —
+            # antes o id era "queimado" antes do trabalho e a assinatura nunca ativava.
             self.db.add(ProcessedWebhookEvent(mp_notification_id=notification_id))
-            self.db.commit()
 
         subscription = self.repository.get_by_mp_preapproval_id(data_id)
         if not subscription:
             logger.info("Webhook Mercado Pago para preapproval desconhecida: %s", data_id)
+            self.db.commit()
             return
 
-        remote = self.mp_client.get_preapproval(data_id)
+        try:
+            remote = self.mp_client.get_preapproval(data_id)
+        except Exception:
+            self.db.rollback()  # descarta o marcador de notificacao: o retry do MP precisa reprocessar
+            raise
         remote_status = remote.get("status")
         previous_status = subscription.status
         now = datetime.now(UTC)
