@@ -1,7 +1,8 @@
 name: Deploy
 
 # Manual de proposito: deploy de producao so por decisao humana. Roda deploy/deploy.sh no VPS via SSH.
-# Secrets necessarios: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (chave privada), DEPLOY_PATH (ex. /opt/donc).
+# Secrets necessarios: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (chave privada), DEPLOY_PATH (ex. /opt/donc),
+# DEPLOY_KNOWN_HOSTS (saida de `ssh-keyscan -H <host>` coletada uma vez, de um lugar confiavel).
 on:
   workflow_dispatch:
     inputs:
@@ -23,10 +24,14 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           REF: ${{ inputs.ref }}
         run: |
+          # ref vai para um comando remoto: so caracteres de nome de branch/tag/sha (sem aspas, espaco, ;, $).
+          [[ "$REF" =~ ^[A-Za-z0-9._/-]+$ ]] || { echo "ref invalido" >&2; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "cd '$DEPLOY_PATH' && ./deploy/deploy.sh '$REF'"
+          printf '%s
+' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" "cd '$DEPLOY_PATH' && ./deploy/deploy.sh '$REF'"

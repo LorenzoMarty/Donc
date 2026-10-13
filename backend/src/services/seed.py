@@ -718,6 +718,7 @@ def ensure_module_catalog(db: Session) -> tuple[list[Module], list[Lesson]]:
         lesson.description = description
         lesson.thumbnail_url = f"https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80&ixid=lesson-{index}"
         lesson.video_url = "https://www.youtube.com/embed/dQw4w9WgXcQ"
+        lesson.published = True  # catalogo demo (dev/testes): visivel; em producao este seed nao roda
         lesson.summary = summary
         lesson.duration_minutes = 14 + index * 3
         lesson.order = order

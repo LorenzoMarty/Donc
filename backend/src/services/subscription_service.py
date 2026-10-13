@@ -140,12 +140,14 @@ class SubscriptionService:
         if not user:
             return
         if subscription.status == SubscriptionStatus.ACTIVE and previous_status == SubscriptionStatus.PENDING:
-            email_service.send_payment_approved(to=user.email, name=user.name)
+            email_service.fire_and_forget(email_service.send_payment_approved, to=user.email, name=user.name)
         elif subscription.status == SubscriptionStatus.GRACE:
-            email_service.send_payment_failed(to=user.email, name=user.name, grace_days=settings.subscription_grace_period_days)
+            email_service.fire_and_forget(
+                email_service.send_payment_failed, to=user.email, name=user.name, grace_days=settings.subscription_grace_period_days
+            )
         elif subscription.status == SubscriptionStatus.CANCELED and subscription.canceled_at is None:
             # canceled_at preenchido = cancelamento iniciado pelo aluno (cancel() ja avisou).
-            email_service.send_subscription_canceled(to=user.email, name=user.name)
+            email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
 
     def cancel(self, user: User) -> Subscription:
         subscription = self.repository.get_by_user_id(user.id)
@@ -169,7 +171,7 @@ class SubscriptionService:
             # Acesso continua ate current_period_end (REQ-5) — effective_status() decide isso.
             subscription.canceled_at = now
         saved = self.repository.save(subscription)
-        email_service.send_subscription_canceled(to=user.email, name=user.name)
+        email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
         return saved
 
     def change_plan(self, user: User, *, new_cycle: PlanCycle) -> Subscription:
