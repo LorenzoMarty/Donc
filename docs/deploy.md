@@ -17,7 +17,7 @@ Tudo em `docker-compose.prod.yml`; só o Caddy publica portas (80/443).
 ## Deploys seguintes
 
 - No VPS: `./deploy/deploy.sh [branch|tag|sha]` (padrão `main`).
-- Pelo GitHub: Actions → **Deploy** → *Run workflow* (secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_PATH`).
+- Pelo GitHub: Actions → **Deploy** → *Run workflow* (secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_PATH`, `DEPLOY_KNOWN_HOSTS` = saída de `ssh-keyscan -H <host>`).
 - Rollback: `./deploy/deploy.sh <sha anterior>`. Migrations só andam para frente: se a release ruim trouxe migration, restaure o backup antes.
 
 ## Primeiro admin
@@ -35,7 +35,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml exec db \
   Guarda 14 dias em `/var/backups/donc`. Para cópia off-site, instale `rclone`, configure um remote e preencha `BACKUP_RCLONE_REMOTE`.
 - Testar um backup (restaura num banco descartável, não toca a produção):
   `./deploy/restore.sh /var/backups/donc/donc-<data>.sql.gz` — deve imprimir o número de usuários.
-- Restaurar de verdade: `./deploy/restore.sh <arquivo> <nome_do_banco_real>` (pare backend/worker antes).
+- Restaurar de verdade: `CONFIRM_RESTORE=<banco> ./deploy/restore.sh <arquivo> <banco>` (pare backend/worker antes). O off-site deve ser criptografado (ex. `rclone crypt`): o dump tem dados de alunos.
 
 ## Limites do VPS
 

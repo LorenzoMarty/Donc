@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 import src.models  # noqa: F401 - registra os modelos no Base.metadata
@@ -15,7 +15,7 @@ from src.config.security import get_password_hash
 from src.database.session import Base
 from src.middlewares.errors import AppError
 from src.models import PlanCycle, SubscriptionStatus, User, UserRole
-from src.models.subscription import DiscountType
+from src.models.subscription import DiscountType, ProcessedWebhookEvent
 from src.services.coupon_service import CouponService
 from src.services.subscription_service import SubscriptionService
 
@@ -234,3 +234,78 @@ def test_change_plan_rejects_same_cycle():
     with pytest.raises(AppError) as exc_info:
         service.change_plan(user, new_cycle=PlanCycle.MONTHLY)
     assert exc_info.value.code == "subscription_same_cycle"
+
+
+def test_status_changes_fire_the_right_emails(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(
+        "src.services.email_service.fire_and_forget", lambda send, **kw: sent.append(send.__name__)
+    )
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    mp.set_remote_status(subscription.mp_preapproval_id, "paused")
+    service.handle_webhook({"id": "n2", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    mp.set_remote_status(subscription.mp_preapproval_id, "cancelled")
+    service.handle_webhook({"id": "n3", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+
+    assert sent == ["send_payment_approved", "send_payment_failed", "send_subscription_canceled"]
+
+
+def test_user_initiated_cancel_sends_one_email_even_if_webhook_follows(monkeypatch):
+    sent: list[str] = []
+    monkeypatch.setattr(
+        "src.services.email_service.fire_and_forget", lambda send, **kw: sent.append(send.__name__)
+    )
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    sent.clear()
+
+    service.cancel(user)
+    mp.set_remote_status(subscription.mp_preapproval_id, "cancelled")
+    service.handle_webhook({"id": "n2", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+
+    assert sent == ["send_subscription_canceled"]
+
+
+def test_webhook_for_unknown_preapproval_is_marked_processed():
+    db = _session()
+    service, _ = _service(db)
+    event = {"id": "notif-unknown", "data": {"id": "preapproval-inexistente"}}
+    service.handle_webhook(event, headers={})
+    assert db.scalar(select(ProcessedWebhookEvent).where(ProcessedWebhookEvent.mp_notification_id == "notif-unknown")) is not None
+
+
+def test_webhook_concurrent_duplicate_is_treated_as_already_processed():
+    """A outra entrega ja gravou o marcador entre o check e o commit: IntegrityError vira no-op."""
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.set_remote_status(subscription.mp_preapproval_id, "authorized", next_payment_date="2026-10-04T12:00:00.000-03:00")
+
+    real_scalar = db.scalar
+    calls = {"n": 0}
+
+    def racy_scalar(statement, *args, **kwargs):
+        # 1a chamada (check do marcador): nao ve nada. Mas outra sessao grava o marcador antes do commit.
+        result = real_scalar(statement, *args, **kwargs)
+        if calls["n"] == 0:
+            calls["n"] += 1
+            other = sessionmaker(bind=db.get_bind())()
+            other.add(ProcessedWebhookEvent(mp_notification_id="notif-race"))
+            other.commit()
+            other.close()
+        return result
+
+    db.scalar = racy_scalar
+    service.handle_webhook({"id": "notif-race", "data": {"id": subscription.mp_preapproval_id}}, headers={})
+    db.scalar = real_scalar

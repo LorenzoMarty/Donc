@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -81,6 +82,18 @@ class SubscriptionService:
             if not valid:
                 raise AppError("Assinatura de webhook inválida.", status_code=401, code="invalid_webhook_signature")
 
+        try:
+            self._process_notification(payload, data_id)
+        except IntegrityError:
+            # Entrega duplicada concorrente: a outra request ganhou o marcador unico — ja processado.
+            self.db.rollback()
+            logger.info("Webhook Mercado Pago duplicado (concorrente): %s", payload.get("id"))
+        except Exception:
+            # Qualquer falha descarta o marcador de notificacao: o retry do MP precisa reprocessar.
+            self.db.rollback()
+            raise
+
+    def _process_notification(self, payload: dict, data_id: str) -> None:
         notification_id = str(payload.get("id") or "")
         if notification_id:
             already_processed = self.db.scalar(
@@ -99,11 +112,7 @@ class SubscriptionService:
             self.db.commit()
             return
 
-        try:
-            remote = self.mp_client.get_preapproval(data_id)
-        except Exception:
-            self.db.rollback()  # descarta o marcador de notificacao: o retry do MP precisa reprocessar
-            raise
+        remote = self.mp_client.get_preapproval(data_id)
         remote_status = remote.get("status")
         previous_status = subscription.status
         now = datetime.now(UTC)
@@ -140,12 +149,14 @@ class SubscriptionService:
         if not user:
             return
         if subscription.status == SubscriptionStatus.ACTIVE and previous_status == SubscriptionStatus.PENDING:
-            email_service.send_payment_approved(to=user.email, name=user.name)
+            email_service.fire_and_forget(email_service.send_payment_approved, to=user.email, name=user.name)
         elif subscription.status == SubscriptionStatus.GRACE:
-            email_service.send_payment_failed(to=user.email, name=user.name, grace_days=settings.subscription_grace_period_days)
+            email_service.fire_and_forget(
+                email_service.send_payment_failed, to=user.email, name=user.name, grace_days=settings.subscription_grace_period_days
+            )
         elif subscription.status == SubscriptionStatus.CANCELED and subscription.canceled_at is None:
             # canceled_at preenchido = cancelamento iniciado pelo aluno (cancel() ja avisou).
-            email_service.send_subscription_canceled(to=user.email, name=user.name)
+            email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
 
     def cancel(self, user: User) -> Subscription:
         subscription = self.repository.get_by_user_id(user.id)
@@ -169,7 +180,7 @@ class SubscriptionService:
             # Acesso continua ate current_period_end (REQ-5) — effective_status() decide isso.
             subscription.canceled_at = now
         saved = self.repository.save(subscription)
-        email_service.send_subscription_canceled(to=user.email, name=user.name)
+        email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
         return saved
 
     def change_plan(self, user: User, *, new_cycle: PlanCycle) -> Subscription:
