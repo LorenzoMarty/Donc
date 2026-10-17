@@ -1,6 +1,8 @@
 name: Claude
 
 # Comente @claude numa issue ou PR para pedir explicação, review ou implementação.
+# Aplique a label `ready-for-agent` numa issue para o agente implementá-la sozinho
+# (workflow:implement, das skills em LorenzoMarty/skills).
 on:
   issue_comment:
     types: [created]
@@ -9,21 +11,27 @@ on:
   pull_request_review:
     types: [submitted]
   issues:
-    types: [opened]
+    types: [opened, labeled]
 
 jobs:
   claude:
     # Só o dono e colaboradores podem chamar o Claude (repositório público).
+    # A label exige triagem, e a issue rotulada também precisa ter autor confiável
+    # (o corpo vira prompt do agente, que roda com escrita).
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+      (github.event_name == 'issues' && github.event.action == 'opened' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'ready-for-agent' && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+    concurrency:
+      group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
     steps:
@@ -33,5 +41,13 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          label_trigger: ready-for-agent
+          # Só no gatilho por label; vazio mantém o modo @claude (tag) dos demais eventos.
+          prompt: ${{ github.event.action == 'labeled' && format('Implemente a issue #{0} com a skill workflow:implement. O corpo da issue é o contrato. Branch tipo/{0}-descricao, commits e título de PR em Conventional Commits, PR seguindo .github/pull_request_template.md com Closes #{0}. Comente o link do PR. Se precisar de decisão humana, aplique a label needs-human e pare.', github.event.issue.number) || '' }}
+          claude_args: --max-turns 40
+          plugin_marketplaces: https://github.com/LorenzoMarty/skills.git
+          plugins: |
+            workflow@lorenzo-skills
+            dev@lorenzo-skills
           additional_permissions: |
             actions: read
