@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     # bastante pra nao atrapalhar uso normal, mas protege contra geracao descontrolada.
     ai_daily_cost_limit_micro_usd_per_user: int = 2_000_000  # ~US$2/dia por usuario
     ai_daily_cost_limit_micro_usd_per_workflow: int = 1_000_000  # ~US$1/dia por usuario+workflow
+    # Cota mensal de correcoes de redacao por usuario (mes UTC). 0 = sem limite (valor a definir pelo
+    # dono: custo medio por correcao x cota < ~25% do preco do plano).
+    essay_monthly_quota: int = 0
     seed_demo_data: bool = False
     seed_admin_password: str = "12345678"  # default só para dev local; sobrescreva via env em qualquer ambiente compartilhado
     frontend_origin: str = "http://localhost:3000"

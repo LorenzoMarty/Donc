@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertCircle, Brain, ChevronRight, Cpu, Leaf, Sparkles, Users, type LucideIcon } from "lucide-react";
 
@@ -15,8 +16,48 @@ import { Progress } from "@/components/ui/progress";
 import { useCorrectionStatus } from "@/hooks/useCorrectionStatus";
 import { useEssayDraft, replaceEssayUrl } from "@/hooks/useEssayDraft";
 import { useEssaySubmission } from "@/hooks/useEssaySubmission";
-import { type Essay, type EssayTheme } from "@/services/api";
+import { apiFetch, type Essay, type EssayQuota, type EssayTheme } from "@/services/api";
 import { cn } from "@/utils";
+
+function EssayQuotaBanner({ refreshKey }: { refreshKey: unknown }) {
+  const [quota, setQuota] = useState<EssayQuota | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    apiFetch<EssayQuota>("/essays/quota")
+      .then((data) => active && setQuota(data))
+      .catch(() => active && setQuota(null));
+    return () => {
+      active = false;
+    };
+  }, [refreshKey]);
+
+  if (!quota || quota.limit === null) return null;
+  const exhausted = quota.used >= quota.limit;
+  const resets = new Date(quota.resets_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+
+  return (
+    <p
+      className={cn(
+        "game-tile flex flex-wrap items-center gap-x-3 gap-y-1 p-3 text-sm font-semibold",
+        exhausted ? "bg-destructive/10 text-destructive" : "bg-muted/60 text-muted-foreground",
+      )}
+      data-testid="essay-quota"
+    >
+      <span>
+        {Math.min(quota.used, quota.limit)} de {quota.limit} correções neste mês
+      </span>
+      {exhausted ? (
+        <>
+          <span>Cota renova em {resets}.</span>
+          <Link href="/perfil" className="underline underline-offset-2">
+            Ver meu plano
+          </Link>
+        </>
+      ) : null}
+    </p>
+  );
+}
 
 export default function EssayPage() {
   const draft = useEssayDraft();
@@ -134,6 +175,7 @@ export default function EssayPage() {
       </div>
 
       <div className="grid gap-3 pt-3">
+        <EssayQuotaBanner refreshKey={essay?.id ?? "none"} />
         {!essay ? <ThemePicker themes={themes} onPick={(theme) => createDraft(theme)} /> : null}
 
         {error ? (

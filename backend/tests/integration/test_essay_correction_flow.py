@@ -182,3 +182,29 @@ def test_reprocess_blocked_when_content_matches_any_past_corrected_version(
     assert blocked_res.status_code == 422
     assert blocked_res.json()["error"] == "edit_required"
     assert _count_jobs() == jobs_before  # 422 sincrono: nenhum AIJob novo
+
+
+def test_monthly_quota_blocks_submit_and_reports_counter(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.config.settings import settings
+
+    _, essay_id = _create_theme_and_essay()
+    monkeypatch.setattr(settings, "essay_monthly_quota", 1)
+
+    before = client.get("/api/v1/essays/quota").json()["data"]
+    assert before["limit"] == 1
+
+    # Preenche a cota do mes corrente com um job de correcao ja criado.
+    db = SessionLocal()
+    try:
+        user = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        db.add(AIJob(id="quota-job", user_id=user.id, kind="essay_correction", status="completed"))
+        db.commit()
+    finally:
+        db.close()
+
+    quota = client.get("/api/v1/essays/quota").json()["data"]
+    assert quota["used"] >= 1 and quota["limit"] == 1
+
+    response = client.post(f"/api/v1/essays/{essay_id}/submit")
+    assert response.status_code == 429
+    assert response.json()["error"] == "quota_exceeded"
