@@ -43,7 +43,8 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           label_trigger: ready-for-agent
           # Só no gatilho por label; vazio mantém o modo @claude (tag) dos demais eventos.
-          prompt: ${{ github.event.action == 'labeled' && format('Implemente a issue #{0} com a skill workflow:implement. O corpo da issue é o contrato. Suba a branch, abra o PR (Closes #{0}) e comente o link. Se precisar de decisão humana, aplique a label needs-human e pare.', github.event.issue.number) || '' }}
+          prompt: ${{ github.event.action == 'labeled' && format('Implemente a issue #{0} com a skill workflow:implement. O corpo da issue é o contrato. Branch tipo/{0}-descricao, commits e título de PR em Conventional Commits, PR seguindo .github/pull_request_template.md com Closes #{0}. Comente o link do PR. Se precisar de decisão humana, aplique a label needs-human e pare.', github.event.issue.number) || '' }}
+          claude_args: --max-turns 40
           plugin_marketplaces: https://github.com/LorenzoMarty/skills.git
           plugins: |
             workflow@lorenzo-skills
