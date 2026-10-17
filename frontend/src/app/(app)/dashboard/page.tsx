@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Check, FileText, Flame, Gamepad2, PenLine, Sparkles, Target, User, Video } from "lucide-react";
 
+import { DailyMissionCard } from "@/components/shared/daily-mission-card";
 import { ErrorState } from "@/components/shared/error-state";
 import { FolhinhaMascot } from "@/components/shared/folhinha-mascot";
 import { LoadingCard } from "@/components/shared/loading-card";
@@ -105,6 +106,8 @@ export default function DashboardPage() {
           <h1 className="page-title font-display mt-0.5 font-medium">Olá, {studentName}</h1>
         </div>
       </section>
+
+      <DailyMissionCard dashboard={data} />
 
       <section className="mt-4 flex flex-wrap gap-4">
         {draftEssay ? (
