@@ -15,6 +15,14 @@ export type Subscription = {
   current_period_end: string | null;
   grace_until: string | null;
   canceled_at: string | null;
+  coupon_code: string | null;
+};
+
+export type SubscriptionPayment = {
+  id: string;
+  status: "paid" | "failed" | "pending";
+  amount_cents: number;
+  date: string | null;
 };
 
 export type CheckoutResponse = {

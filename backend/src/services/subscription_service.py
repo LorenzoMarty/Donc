@@ -158,6 +158,31 @@ class SubscriptionService:
             # canceled_at preenchido = cancelamento iniciado pelo aluno (cancel() ja avisou).
             email_service.fire_and_forget(email_service.send_subscription_canceled, to=user.email, name=user.name)
 
+    def payment_history(self, user: User) -> list[dict]:
+        """Cobrancas reais da assinatura, direto do Mercado Pago (mais recentes primeiro)."""
+        subscription = self.repository.get_by_user_id(user.id)
+        if not subscription or not subscription.mp_preapproval_id:
+            return []
+        items = []
+        for raw in self.mp_client.list_authorized_payments(subscription.mp_preapproval_id):
+            payment_status = (raw.get("payment") or {}).get("status")
+            if payment_status == "approved":
+                status = "paid"
+            elif payment_status == "rejected" or raw.get("status") == "cancelled":
+                status = "failed"
+            else:
+                status = "pending"
+            raw_date = raw.get("debit_date") or raw.get("date_created")
+            items.append(
+                {
+                    "id": str(raw.get("id")),
+                    "status": status,
+                    "amount_cents": round(float(raw.get("transaction_amount") or 0) * 100),
+                    "date": datetime.fromisoformat(raw_date.replace("Z", "+00:00")) if raw_date else None,
+                }
+            )
+        return sorted(items, key=lambda item: item["date"] or datetime.min.replace(tzinfo=UTC), reverse=True)
+
     def cancel(self, user: User) -> Subscription:
         subscription = self.repository.get_by_user_id(user.id)
         if not subscription:

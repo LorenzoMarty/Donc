@@ -9,7 +9,7 @@ from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
 from src.models import PlanCycle, User
 from src.schemas.common import ApiResponse, success_response
-from src.schemas.subscriptions import ChangePlanRequest, CheckoutRequest, CheckoutResponse, SubscriptionRead
+from src.schemas.subscriptions import ChangePlanRequest, CheckoutRequest, CheckoutResponse, PaymentRead, SubscriptionRead
 from src.services.auth_service import AuthService
 from src.services.subscription_service import SubscriptionService
 
@@ -46,6 +46,11 @@ def me(current_user: User = Depends(get_current_user), db: Session = Depends(get
     if not subscription:
         return success_response(None)
     return success_response(SubscriptionRead.model_validate(subscription))
+
+
+@router.get("/payments", response_model=ApiResponse[list[PaymentRead]])
+def payments(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[list[PaymentRead]]:
+    return success_response([PaymentRead(**item) for item in SubscriptionService(db).payment_history(current_user)])
 
 
 @router.post("/change-plan", response_model=ApiResponse[SubscriptionRead])

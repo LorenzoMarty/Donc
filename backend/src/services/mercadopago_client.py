@@ -60,6 +60,11 @@ class MercadoPagoClient:
     def get_preapproval(self, preapproval_id: str) -> dict:
         return self._request("GET", f"/preapproval/{preapproval_id}")
 
+    def list_authorized_payments(self, preapproval_id: str) -> list[dict]:
+        """Cobrancas (recorrentes) de uma assinatura: GET /authorized_payments/search."""
+        data = self._request("GET", f"/authorized_payments/search?preapproval_id={preapproval_id}")
+        return data.get("results") or []
+
     def update_preapproval(self, preapproval_id: str, **fields) -> dict:
         return self._request("PUT", f"/preapproval/{preapproval_id}", json_body=fields)
 

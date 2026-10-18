@@ -27,6 +27,7 @@ export type {
   NextRecommendedAction,
   AuthResponse,
   Subscription,
+  SubscriptionPayment,
   SubscriptionCycle,
   SubscriptionStatus,
   SupportTicketCategory,

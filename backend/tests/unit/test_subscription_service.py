@@ -47,6 +47,9 @@ class FakeMercadoPagoClient:
     def verify_webhook_signature(self, **kwargs) -> bool:
         return True
 
+    def list_authorized_payments(self, preapproval_id: str) -> list[dict]:
+        return getattr(self, "authorized_payments", [])
+
     def set_remote_status(self, preapproval_id: str, status: str, next_payment_date: str | None = None) -> None:
         self.preapprovals[preapproval_id]["status"] = status
         if next_payment_date:
@@ -309,3 +312,22 @@ def test_webhook_concurrent_duplicate_is_treated_as_already_processed():
     db.scalar = racy_scalar
     service.handle_webhook({"id": "notif-race", "data": {"id": subscription.mp_preapproval_id}}, headers={})
     db.scalar = real_scalar
+
+
+def test_payment_history_maps_mp_charges_newest_first():
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    assert service.payment_history(user) == []  # sem assinatura
+
+    service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.authorized_payments = [
+        {"id": 1, "transaction_amount": 59.0, "debit_date": "2026-09-01T10:00:00.000-03:00", "payment": {"status": "approved"}},
+        {"id": 2, "transaction_amount": 59.0, "debit_date": "2026-10-01T10:00:00.000-03:00", "payment": {"status": "rejected"}},
+        {"id": 3, "transaction_amount": 59.0, "debit_date": "2026-11-01T10:00:00.000-03:00", "status": "scheduled"},
+    ]
+
+    history = service.payment_history(user)
+
+    assert [(item["id"], item["status"]) for item in history] == [("3", "pending"), ("2", "failed"), ("1", "paid")]
+    assert history[0]["amount_cents"] == 5_900
