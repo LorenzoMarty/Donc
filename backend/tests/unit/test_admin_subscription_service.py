@@ -88,3 +88,33 @@ def test_list_subscribers_includes_user_name_and_email():
     row = result.items[0]
     assert row.email == "aluno@teste.com"
     assert row.status == SubscriptionStatus.ACTIVE
+
+
+def test_active_count_and_churn_over_last_30_days():
+    db = _session()
+    paying = [_make_user(db, email=f"paga{i}@teste.com") for i in range(3)]
+    for user in paying:
+        _make_subscription(db, user=user, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.ACTIVE, price_cents=5_900, current_period_end=NOW + timedelta(days=10))
+    # pediu cancelamento ha 5 dias (ainda com acesso ate o fim do periodo): conta como churn, nao como ativo pagante
+    recent = _make_user(db, email="recente@teste.com")
+    _make_subscription(
+        db, user=recent, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.ACTIVE, price_cents=5_900,
+        current_period_end=NOW + timedelta(days=5), canceled_at=NOW - timedelta(days=5),
+    )
+    # cancelou ha 60 dias: fora da janela
+    old = _make_user(db, email="antigo@teste.com")
+    _make_subscription(
+        db, user=old, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.CANCELED, price_cents=5_900,
+        current_period_end=NOW - timedelta(days=30), canceled_at=NOW - timedelta(days=60),
+    )
+
+    result = AdminSubscriptionService(db).list_subscribers(limit=50, offset=0, now=NOW)
+
+    assert result.active_count == 4  # 3 pagantes + 1 com cancelamento agendado e acesso ate o fim do periodo
+    assert result.canceled_30d == 1
+    assert result.churn_rate_30d == 25.0  # 1 / (3 + 1)
+
+
+def test_churn_is_zero_without_subscribers():
+    result = AdminSubscriptionService(_session()).list_subscribers(limit=50, offset=0, now=NOW)
+    assert (result.active_count, result.canceled_30d, result.churn_rate_30d) == (0, 0, 0.0)
