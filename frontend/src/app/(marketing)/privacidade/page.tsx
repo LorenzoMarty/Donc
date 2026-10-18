@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
+import { marketingMetadata } from "@/lib/site";
 import { LegalPage } from "@/components/sections/legal-page";
 
-export const metadata: Metadata = { title: "Política de Privacidade — Donc" };
+export const metadata: Metadata = marketingMetadata("/privacidade");
 
 export default function PrivacyPage() {
   return (
