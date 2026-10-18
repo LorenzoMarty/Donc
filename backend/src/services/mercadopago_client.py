@@ -65,6 +65,14 @@ class MercadoPagoClient:
         data = self._request("GET", f"/authorized_payments/search?preapproval_id={preapproval_id}")
         return data.get("results") or []
 
+    def search_preapprovals(self, *, status: str, limit: int = 100, offset: int = 0) -> list[dict]:
+        data = self._request("GET", f"/preapproval/search?status={status}&limit={limit}&offset={offset}")
+        return data.get("results") or []
+
+    def refund_payment(self, payment_id: str) -> dict:
+        """Reembolso total (corpo vazio) do pagamento: POST /v1/payments/{id}/refunds."""
+        return self._request("POST", f"/v1/payments/{payment_id}/refunds", json_body={})
+
     def update_preapproval(self, preapproval_id: str, **fields) -> dict:
         return self._request("PUT", f"/preapproval/{preapproval_id}", json_body=fields)
 

@@ -1,5 +1,15 @@
 import { apiFetch } from "@/lib/http-client";
-import type { AdminFunnel, AdminSubscribersResponse, CheckoutResponse, Coupon, Subscription, SubscriptionCycle, SubscriptionPayment } from "@/types/api";
+import type {
+  AdminFunnel,
+  AdminSubscribersResponse,
+  CheckoutResponse,
+  Coupon,
+  ReconciliationIssue,
+  Subscription,
+  SubscriptionCycle,
+  SubscriptionPayment,
+  SubscriptionRefund,
+} from "@/types/api";
 
 export const subscriptionApi = {
   checkout: (cycle: SubscriptionCycle, couponCode?: string) =>
@@ -16,6 +26,8 @@ export const subscriptionApi = {
 
 export const adminSubscriptionApi = {
   funnel: (days = 30) => apiFetch<AdminFunnel>(`/admin/funnel?days=${days}`),
+  refund: (userId: number) => apiFetch<SubscriptionRefund>(`/admin/subscribers/${userId}/refund`, { method: "POST" }),
+  reconciliation: () => apiFetch<ReconciliationIssue[]>("/admin/reconciliation"),
   subscribers: (limit = 50, offset = 0) =>
     apiFetch<AdminSubscribersResponse>(`/admin/subscribers?limit=${limit}&offset=${offset}`),
   coupons: (limit = 50, offset = 0) =>

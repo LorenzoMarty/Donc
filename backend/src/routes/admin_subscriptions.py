@@ -12,11 +12,14 @@ from src.schemas.admin_subscriptions import (
     CouponRead,
     CouponUpdateRequest,
     FunnelResponse,
+    ReconciliationIssueRead,
+    RefundRead,
 )
 from src.schemas.common import ApiResponse, success_response
 from src.services.admin_subscription_service import AdminSubscriptionService
 from src.services.coupon_service import CouponService
 from src.services.funnel_service import FunnelService
+from src.services.refund_service import RefundService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -62,6 +65,22 @@ def funnel(
 ) -> ApiResponse[FunnelResponse]:
     result = FunnelService(db).metrics(days=days)
     return success_response(FunnelResponse.model_validate(result, from_attributes=True))
+
+
+@router.post("/subscribers/{user_id}/refund", response_model=ApiResponse[RefundRead])
+def refund_subscriber(
+    user_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[RefundRead]:
+    refund = RefundService(db).refund_latest_charge(user_id=user_id, admin_user_id=admin.id)
+    return success_response(RefundRead.model_validate(refund), "Reembolso realizado e acesso revogado.")
+
+
+@router.get("/reconciliation", response_model=ApiResponse[list[ReconciliationIssueRead]])
+def reconciliation(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[list[ReconciliationIssueRead]]:
+    issues = RefundService(db).reconcile()
+    return success_response([ReconciliationIssueRead(**issue.__dict__) for issue in issues])
 
 
 @router.get("/coupons", response_model=ApiResponse[CouponListResponse])

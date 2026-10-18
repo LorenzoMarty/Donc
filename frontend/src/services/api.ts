@@ -26,6 +26,7 @@ export type {
   Module,
   NextRecommendedAction,
   AuthResponse,
+  ReconciliationIssue,
   Subscription,
   SubscriptionPayment,
   SubscriptionCycle,

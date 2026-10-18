@@ -135,5 +135,32 @@ def test_admin_funnel_requires_admin_and_validates_days(client):
     try:
         assert client.get("/api/v1/admin/funnel?days=0").status_code == 422
         assert client.get("/api/v1/admin/funnel?days=181").status_code == 422
+
+
+def test_admin_refund_and_reconciliation_routes(client, monkeypatch):
+    from datetime import UTC, datetime
+    from types import SimpleNamespace
+
+    from src.services.refund_service import ReconciliationIssue
+
+    class StubRefundService:
+        def __init__(self, db):
+            pass
+
+        def refund_latest_charge(self, *, user_id, admin_user_id):
+            return SimpleNamespace(mp_payment_id="pay-1", amount_cents=5900, refunded_at=datetime.now(UTC), admin_user_id=admin_user_id)
+
+        def reconcile(self):
+            return [ReconciliationIssue(kind="remote_without_local", detail="x", mp_preapproval_id="pre-9")]
+
+    monkeypatch.setattr("src.routes.admin_subscriptions.RefundService", StubRefundService)
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        refund = client.post("/api/v1/admin/subscribers/1/refund")
+        assert refund.status_code == 200
+        assert refund.json()["data"]["mp_payment_id"] == "pay-1"
+
+        report = client.get("/api/v1/admin/reconciliation")
+        assert report.json()["data"][0]["kind"] == "remote_without_local"
     finally:
         app.dependency_overrides.pop(require_admin, None)
