@@ -17,6 +17,7 @@ import {
   PanelLeftOpen,
   Plus,
   ShieldCheck,
+  Sparkles,
   User,
   X,
   type LucideIcon,
@@ -26,6 +27,7 @@ import { BrandLink } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/providers/app-providers";
+import { useWhatsNewUnread } from "@/features/whats-new/use-whats-new-unread";
 import { useGameStore } from "@/stores/game-store";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { cn, initials } from "@/utils";
@@ -43,6 +45,7 @@ const workspaceNav: WorkspaceNavItem[] = [
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/games", label: "Atividades", icon: Gamepad2 },
   { href: "/perfil", label: "Perfil", icon: User },
+  { href: "/novidades", label: "Novidades", icon: Sparkles },
   { href: "/suporte", label: "Suporte", icon: LifeBuoy },
 ];
 
@@ -332,6 +335,8 @@ function ShellNavLink({
 }) {
   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
   const Icon = item.icon;
+  const whatsNewUnread = useWhatsNewUnread();
+  const showDot = item.href === "/novidades" && whatsNewUnread && !active;
 
   return (
     <Link
@@ -353,10 +358,19 @@ function ShellNavLink({
         />
       ) : null}
       <Icon className="relative z-10 h-5 w-5 shrink-0 transition-transform duration-150 group-hover/nav:scale-110" aria-hidden="true" />
+      {showDot ? (
+        <span
+          data-testid="whats-new-dot"
+          className={cn("absolute z-10 h-2 w-2 rounded-full bg-primary", collapsed ? "right-3 top-2.5" : "left-[2.1rem] top-2.5")}
+        />
+      ) : null}
       {collapsed ? (
         <span className="sr-only">{item.label}</span>
       ) : (
-        <span className="text-safe relative z-10 min-w-0 overflow-hidden whitespace-nowrap">{item.label}</span>
+        <span className="text-safe relative z-10 min-w-0 overflow-hidden whitespace-nowrap">
+          {item.label}
+          {showDot ? <span className="sr-only"> (novidade não lida)</span> : null}
+        </span>
       )}
     </Link>
   );
