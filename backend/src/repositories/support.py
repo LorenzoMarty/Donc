@@ -1,5 +1,5 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from src.models import SupportTicket
 
@@ -14,13 +14,22 @@ class SupportTicketRepository:
         self.db.flush()
         return ticket
 
+    def list_for_user(self, user_id: int) -> list[SupportTicket]:
+        stmt = (
+            select(SupportTicket)
+            .options(selectinload(SupportTicket.messages))
+            .where(SupportTicket.user_id == user_id)
+            .order_by(SupportTicket.created_at.desc())
+        )
+        return list(self.db.scalars(stmt))
+
     def get(self, ticket_id: int) -> SupportTicket | None:
         return self.db.get(SupportTicket, ticket_id)
 
     def list_for_admin(
         self, *, limit: int, offset: int, status: str | None = None, category: str | None = None
     ) -> tuple[list[SupportTicket], int]:
-        stmt = select(SupportTicket).options(joinedload(SupportTicket.user))
+        stmt = select(SupportTicket).options(joinedload(SupportTicket.user), selectinload(SupportTicket.messages))
         count_stmt = select(func.count()).select_from(SupportTicket)
         if status:
             stmt = stmt.where(SupportTicket.status == status)

@@ -3,9 +3,10 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from src.middlewares.errors import AppError
-from src.models import SupportTicket
+from src.models import SupportTicket, SupportTicketMessage
+from src.services import email_service
 from src.repositories.support import SupportTicketRepository
-from src.schemas.support import AdminSupportTicketListResponse, AdminSupportTicketRead
+from src.schemas.support import AdminSupportTicketListResponse, AdminSupportTicketRead, SupportMessageRead
 
 
 class AdminSupportTicketService:
@@ -26,6 +27,18 @@ class AdminSupportTicketService:
         self.db.refresh(ticket)
         return self._to_read(ticket)
 
+    def reply(self, *, ticket_id: int, body: str) -> AdminSupportTicketRead:
+        ticket = self.repository.get(ticket_id)
+        if not ticket:
+            raise AppError("Chamado não encontrado.", status_code=404, code="support_ticket_not_found")
+        ticket.messages.append(SupportTicketMessage(author_role="admin", body=body.strip()))
+        self.db.commit()
+        self.db.refresh(ticket)
+        email_service.fire_and_forget(
+            email_service.send_support_reply, to=ticket.user.email, name=ticket.user.name, subject=ticket.subject
+        )
+        return self._to_read(ticket)
+
     def _to_read(self, ticket: SupportTicket) -> AdminSupportTicketRead:
         return AdminSupportTicketRead(
             id=ticket.id,
@@ -35,6 +48,7 @@ class AdminSupportTicketService:
             status=ticket.status,
             created_at=ticket.created_at,
             updated_at=ticket.updated_at,
+            messages=[SupportMessageRead.model_validate(m) for m in ticket.messages],
             user_id=ticket.user_id,
             user_name=ticket.user.name,
             user_email=ticket.user.email,

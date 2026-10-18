@@ -30,6 +30,7 @@ function makeTicket(overrides: Partial<AdminSupportTicket> = {}): AdminSupportTi
     status: "open",
     created_at: "2026-09-01T10:00:00Z",
     updated_at: "2026-09-01T10:00:00Z",
+    messages: [],
     user_id: 7,
     user_name: "Aluno Demo",
     user_email: "aluno@demo.com",

@@ -51,8 +51,32 @@ export type AdminSubscribersResponse = {
   mrr_cents: number;
 };
 
-export type SupportTicketCategory = "billing" | "technical_bug" | "correction_question" | "account_access" | "other";
+export type SupportTicketCategory =
+  | "billing"
+  | "technical_bug"
+  | "correction_question"
+  | "account_access"
+  | "suggestion"
+  | "other";
 export type SupportTicketStatus = "open" | "resolved";
+
+export type SupportMessage = {
+  id: number;
+  author_role: "student" | "admin";
+  body: string;
+  created_at: string;
+};
+
+export type SupportTicket = {
+  id: number;
+  category: SupportTicketCategory;
+  subject: string;
+  message: string;
+  status: SupportTicketStatus;
+  created_at: string;
+  updated_at: string;
+  messages: SupportMessage[];
+};
 
 export type AdminSupportTicket = {
   id: number;
@@ -62,6 +86,7 @@ export type AdminSupportTicket = {
   status: SupportTicketStatus;
   created_at: string;
   updated_at: string;
+  messages: SupportMessage[];
   user_id: number;
   user_name: string;
   user_email: string;

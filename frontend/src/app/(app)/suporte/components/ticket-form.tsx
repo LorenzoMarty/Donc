@@ -17,10 +17,18 @@ const MESSAGE_MAX = 4000;
 const SUBJECT_MIN = 4;
 const MESSAGE_MIN = 10;
 
-export function TicketForm() {
-  const [category, setCategory] = useState<SupportTicketCategory>(SUPPORT_TICKET_CATEGORIES[0].value);
+export function TicketForm({
+  initialCategory,
+  initialMessage = "",
+  onSent,
+}: {
+  initialCategory?: SupportTicketCategory;
+  initialMessage?: string;
+  onSent?: () => void;
+} = {}) {
+  const [category, setCategory] = useState<SupportTicketCategory>(initialCategory ?? SUPPORT_TICKET_CATEGORIES[0].value);
   const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -50,6 +58,7 @@ export function TicketForm() {
       setSent(true);
       setSubject("");
       setMessage("");
+      onSent?.();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : "Não foi possível enviar o chamado.");
     } finally {
