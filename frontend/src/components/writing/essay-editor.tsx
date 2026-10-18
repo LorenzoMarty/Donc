@@ -226,7 +226,7 @@ export function EssayEditor({
               type="button"
               onClick={onBack}
               aria-label="Voltar"
-              className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-control border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
+              className="mt-0.5 grid h-[44px] w-[44px] shrink-0 place-items-center rounded-control border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </button>
