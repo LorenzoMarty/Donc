@@ -29,6 +29,8 @@ export type {
   Subscription,
   SubscriptionCycle,
   SubscriptionStatus,
+  SupportMessage,
+  SupportTicket,
   SupportTicketCategory,
   SupportTicketStatus,
   User,

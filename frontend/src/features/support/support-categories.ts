@@ -5,6 +5,7 @@ export const SUPPORT_TICKET_CATEGORIES: { value: SupportTicketCategory; label: s
   { value: "technical_bug", label: "Bug técnico" },
   { value: "correction_question", label: "Dúvida sobre correção" },
   { value: "account_access", label: "Conta e acesso" },
+  { value: "suggestion", label: "Sugestão" },
   { value: "other", label: "Outro" },
 ];
 

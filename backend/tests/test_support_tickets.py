@@ -124,3 +124,38 @@ def test_admin_can_filter_support_tickets_by_status(client, as_admin):
     assert listing.status_code == 200
     data = api_data(listing)
     assert all(item["status"] == "resolved" for item in data["items"])
+
+
+def test_suggestion_ticket_admin_reply_student_sees_and_follows_up(client, as_admin, monkeypatch):
+    sent: list[dict] = []
+    monkeypatch.setattr("src.services.email_service.send_support_reply", lambda **kw: sent.append(kw) or True)
+    # fire_and_forget roda em thread; executa na hora para o teste ser deterministico.
+    monkeypatch.setattr("src.services.email_service.fire_and_forget", lambda send, **kw: send(**kw))
+
+    created = client.post(
+        "/api/v1/support/tickets",
+        json={"category": "suggestion", "subject": "Modo escuro nas aulas", "message": "Seria bom ter modo escuro no player."},
+    )
+    assert created.status_code == 201
+
+    ticket = next(t for t in api_data(client.get("/api/v1/admin/support-tickets"))["items"] if t["subject"] == "Modo escuro nas aulas")
+    assert ticket["category"] == "suggestion"
+
+    reply = client.post(f"/api/v1/admin/support-tickets/{ticket['id']}/reply", json={"message": "Boa ideia, vamos avaliar!"})
+    assert reply.status_code == 201
+    assert sent and sent[0]["subject"] == "Modo escuro nas aulas"
+
+    mine = next(t for t in api_data(client.get("/api/v1/support/tickets")) if t["id"] == ticket["id"])
+    assert [(m["author_role"], m["body"]) for m in mine["messages"]] == [("admin", "Boa ideia, vamos avaliar!")]
+
+    client.patch(f"/api/v1/admin/support-tickets/{ticket['id']}", json={"status": "resolved"})
+    follow = client.post(f"/api/v1/support/tickets/{ticket['id']}/messages", json={"message": "Obrigado, fico no aguardo."})
+    assert follow.status_code == 201
+    data = api_data(follow)
+    assert data["status"] == "open"  # réplica reabre
+    assert [m["author_role"] for m in data["messages"]] == ["admin", "student"]
+
+
+def test_student_cannot_reply_to_someone_elses_ticket(client):
+    response = client.post("/api/v1/support/tickets/999999/messages", json={"message": "Olá, isso não é meu."})
+    assert response.status_code == 404

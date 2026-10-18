@@ -21,8 +21,10 @@ def _reject_dangerous_html(value: str) -> str:
     return value
 
 
-SUPPORT_TICKET_CATEGORIES = ("billing", "technical_bug", "correction_question", "account_access", "other")
-SupportTicketCategoryLiteral = Literal["billing", "technical_bug", "correction_question", "account_access", "other"]
+SUPPORT_TICKET_CATEGORIES = ("billing", "technical_bug", "correction_question", "account_access", "suggestion", "other")
+SupportTicketCategoryLiteral = Literal[
+    "billing", "technical_bug", "correction_question", "account_access", "suggestion", "other"
+]
 SupportTicketStatusLiteral = Literal["open", "resolved"]
 
 
@@ -34,6 +36,21 @@ class SupportTicketCreateRequest(BaseModel):
     _validate_no_dangerous_html = field_validator("subject", "message")(_reject_dangerous_html)
 
 
+class SupportMessageRead(BaseModel):
+    id: int
+    author_role: Literal["student", "admin"]
+    body: str
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SupportReplyRequest(BaseModel):
+    message: str = Field(min_length=2, max_length=4000)
+
+    _validate_no_dangerous_html = field_validator("message")(_reject_dangerous_html)
+
+
 class SupportTicketRead(BaseModel):
     id: int
     category: str
@@ -42,6 +59,7 @@ class SupportTicketRead(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    messages: list[SupportMessageRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 
