@@ -26,5 +26,8 @@ export const authApi = {
   verifyEmail: (token: string) =>
     apiFetch<{ message: string }>("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) }),
   resendVerification: () => apiFetch<{ message: string }>("/auth/resend-verification", { method: "POST" }),
+  exportData: () => apiFetch<Record<string, unknown>>("/auth/me/export"),
+  deleteAccount: (password: string) =>
+    apiFetch<{ message: string }>("/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
   logout: () => apiFetch<{ message: string }>("/auth/logout", { method: "POST" }),
 };

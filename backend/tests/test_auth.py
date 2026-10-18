@@ -356,3 +356,35 @@ def test_admin_is_not_blocked_by_email_verification(client):
     finally:
         db.close()
     assert raised
+
+
+def test_export_my_data_downloads_json(client):
+    response = client.get("/api/v1/auth/me/export")
+    assert response.status_code == 200
+    assert "attachment" in response.headers["content-disposition"]
+    body = response.json()
+    assert body["account"]["email"] == "aluno@demo.com"
+    assert "hashed_password" not in body["account"]
+    assert {"essays", "goals", "game_attempts", "subscription"} <= set(body)
+
+
+def test_delete_account_requires_password_then_blocks_login(client, monkeypatch):
+    from src.dependencies import get_current_user
+    from src.main import app
+
+    monkeypatch.delitem(app.dependency_overrides, get_current_user)
+    register = client.post(
+        "/api/v1/auth/register",
+        json={"name": "Vai Embora", "email": "bye@test.com", "password": "senha1234", "accept_terms": True},
+    )
+    csrf = {"X-CSRF-Token": register.cookies.get("csrf_token")}
+
+    wrong = client.post("/api/v1/auth/delete-account", json={"password": "errada"}, headers=csrf)
+    assert wrong.status_code == 400
+
+    ok = client.post("/api/v1/auth/delete-account", json={"password": "senha1234"}, headers=csrf)
+    assert ok.status_code == 200
+
+    client.cookies.clear()
+    login = client.post("/api/v1/auth/login", json={"email": "bye@test.com", "password": "senha1234"})
+    assert login.status_code == 401
