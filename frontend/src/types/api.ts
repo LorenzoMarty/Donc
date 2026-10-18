@@ -140,6 +140,7 @@ export type User = {
   streak_days: number;
   daily_goal_minutes: number;
   created_at: string;
+  email_verified: boolean;
 };
 
 export type CognitiveIssueState = "DETECTED" | "TRAINING" | "IMPROVING" | "MASTERED";

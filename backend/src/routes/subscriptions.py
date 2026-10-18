@@ -26,6 +26,7 @@ def checkout(
 ) -> ApiResponse[CheckoutResponse]:
     auth = AuthService(db)
     auth.require_terms(payload.accept_terms)
+    auth.require_email_verified(current_user)
     service = SubscriptionService(db)
     subscription, checkout_url = service.start_checkout(
         current_user, cycle=PlanCycle(payload.cycle), coupon_code=payload.coupon_code

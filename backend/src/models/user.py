@@ -36,6 +36,13 @@ class User(Base):
     # Aceite dos Termos de Uso/Privacidade (LGPD): quando e qual versão do texto. None = nunca aceitou.
     terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     terms_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Confirmação de e-mail (link de uso único enviado no cadastro). None = ainda não verificado;
+    # só assina depois de verificar. Usuários anteriores à feature foram migrados como verificados.
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
 
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")
