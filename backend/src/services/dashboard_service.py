@@ -152,6 +152,7 @@ class DashboardService:
             essay_average=essay_average,
             best_essay_score=best_essay_score,
             streak_days=streak,
+            streak_freeze_available=user.streak_freeze_available if user else True,
             completed_lessons=completed_lessons,
             correct_exercises_rate=correct_rate,
             essays_written=len(essays),
