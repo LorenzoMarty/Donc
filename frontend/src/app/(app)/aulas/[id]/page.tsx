@@ -122,7 +122,19 @@ export default function LessonPage() {
                 <Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Concluída</p>
               </div>
-              <p className="text-sm leading-6 text-muted-foreground">Aula marcada como concluída. Siga para a próxima aula.</p>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {nextLesson ? "Aula marcada como concluída. Siga para a próxima aula." : "Aula marcada como concluída. Você chegou ao fim da trilha disponível."}
+              </p>
+              {nextLesson ? (
+                <Link
+                  href={`/aulas/${nextLesson.id}`}
+                  data-testid="next-lesson-cta"
+                  className="mt-3.5 flex min-h-11 w-full items-center justify-center gap-2 rounded-control bg-primary px-3 py-2.5 text-[14px] font-bold text-primary-foreground"
+                >
+                  <Play className="h-[15px] w-[15px] fill-current" aria-hidden="true" />
+                  Próxima aula: {nextLesson.title}
+                </Link>
+              ) : null}
             </Surface>
           ) : null}
         </aside>
