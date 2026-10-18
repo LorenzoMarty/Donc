@@ -104,7 +104,7 @@
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: var(--green-500);
+  --primary: var(--accent-600); /* 500 dá 3,5:1 com branco; 600 passa de 4,5:1 (WCAG AA) */
   --primary-foreground: 0 0% 100%;
 
   /* ---- Accent ativo: sempre aponta pra escala da cor escolhida em /perfil (src/lib/accent.ts) ---- */
@@ -252,7 +252,7 @@ html:not(.dark) .game-shell-panel {
   --foreground: var(--neutral-800);
   --muted: 220 44% 97%;
   --muted-foreground: var(--neutral-500);
-  --primary: var(--accent-500);
+  --primary: var(--accent-600);
   --primary-foreground: 0 0% 100%;
   --secondary: var(--neutral-50);
   --secondary-foreground: var(--neutral-800);
@@ -289,7 +289,7 @@ html:not(.dark) .dark .force-light {
   --card-foreground: 0 0% 20%;
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 20%;
-  --primary: var(--accent-500);
+  --primary: var(--accent-600);
   --primary-foreground: 0 0% 100%;
 
   --secondary: var(--neutral-50);
@@ -329,7 +329,7 @@ html:not(.dark) .dark .force-light {
 /* ---- Marketing (landing/sobre/pricing/plataforma/trilhas): cor fixa verde da marca, independente
    de tema claro/escuro e da accent color escolhida em /perfil (que só vale pra área logada). */
 .force-brand-green {
-  --primary: var(--green-500);
+  --primary: var(--green-600);
   --primary-foreground: 0 0% 100%;
   --accent-50: var(--green-50);
   --accent-100: var(--green-100);
@@ -570,7 +570,7 @@ li {
     --foreground: var(--neutral-800);
     --card: 0 0% 100%;
     --card-foreground: 0 0% 20%;
-    --primary: var(--accent-500);
+    --primary: var(--accent-600);
     --primary-foreground: 0 0% 100%;
     --secondary: 131 44% 91%;
     --secondary-foreground: var(--accent-700);
@@ -661,7 +661,7 @@ li {
     --foreground: var(--neutral-800);
     --card: 0 0% 100%;
     --card-foreground: 0 0% 20%;
-    --primary: var(--accent-500);
+    --primary: var(--accent-600);
     --primary-foreground: 0 0% 100%;
     --secondary: 131 44% 91%;
     --secondary-foreground: var(--accent-700);

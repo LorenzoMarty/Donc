@@ -148,6 +148,7 @@ function ContinueBanner({ lesson, module }: { lesson: Lesson; module: Module }) 
       </div>
       <Link
         href={`/aulas/${lesson.id}`}
+        aria-label={`Assistir: ${lesson.title}`}
         className="hidden h-[132px] w-[220px] shrink-0 place-items-center rounded-control bg-primary shadow-elevated lg:grid"
       >
         <span className="grid h-[52px] w-[52px] place-items-center rounded-full bg-white/90">

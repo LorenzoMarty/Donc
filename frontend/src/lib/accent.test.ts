@@ -36,11 +36,11 @@ describe("accent (cor de destaque)", () => {
     expect(localStorage.getItem(ACCENT_KEY)).toBe(purple.hex);
   });
 
-  it("applyAccent seta --primary/--ring/--accent apontando pra escala 500 da key certa", () => {
+  it("applyAccent seta --ring/--accent na escala 500 da key certa e deixa --primary para o CSS", () => {
     const teal = ACCENT_OPTIONS.find((o) => o.key === "teal")!;
     applyAccent(teal.hex);
     const root = document.documentElement.style;
-    expect(root.getPropertyValue("--primary")).toBe("var(--teal-500)");
+    expect(root.getPropertyValue("--primary")).toBe("");
     expect(root.getPropertyValue("--ring")).toBe("var(--teal-500)");
     expect(root.getPropertyValue("--accent")).toBe("var(--teal-500)");
   });
@@ -57,7 +57,7 @@ describe("accent (cor de destaque)", () => {
   it("applyAccent com hex desconhecido cai pro verde (default)", () => {
     applyAccent("#000000");
     const root = document.documentElement.style;
-    expect(root.getPropertyValue("--primary")).toBe("var(--green-500)");
+    expect(root.getPropertyValue("--accent-600")).toBe("var(--green-600)");
     expect(root.getPropertyValue("--accent-900")).toBe("var(--green-900)");
   });
 

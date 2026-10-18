@@ -58,12 +58,15 @@ export function writeAccent(hex: string): void {
   }
 }
 
-/** Aplica a preferência às variáveis CSS no <html> (efeito imediato: --primary/--ring/--accent-*). */
+/**
+ * Aplica a preferência às variáveis CSS no <html> (efeito imediato: --ring/--accent/--accent-*).
+ * `--primary` não é setado aqui: o CSS o deriva da escala por tema (600 no claro, para dar 4,5:1 com
+ * texto branco; 400 no escuro), então trocar a accent continua refletindo nele.
+ */
 export function applyAccent(hex: string): void {
   if (typeof document === "undefined") return;
   const { key } = optionForHex(normalizeAccent(hex));
   const root = document.documentElement;
-  root.style.setProperty("--primary", `var(--${key}-500)`);
   root.style.setProperty("--ring", `var(--${key}-500)`);
   root.style.setProperty("--accent", `var(--${key}-500)`);
   for (const step of ACCENT_STEPS) {
@@ -83,7 +86,6 @@ var hex=(raw&&map[String(raw).toLowerCase()])?raw:d;
 var key=map[hex.toLowerCase()]||'green';
 var steps=[50,100,200,300,400,500,600,700,800,900];
 var e=document.documentElement;
-e.style.setProperty('--primary','var(--'+key+'-500)');
 e.style.setProperty('--ring','var(--'+key+'-500)');
 e.style.setProperty('--accent','var(--'+key+'-500)');
 for(var i=0;i<steps.length;i++){e.style.setProperty('--accent-'+steps[i],'var(--'+key+'-'+steps[i]+')');}
