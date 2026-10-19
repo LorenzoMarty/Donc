@@ -78,6 +78,8 @@ async def csrf_cookie_session_middleware(request, call_next):
         f"{settings.api_v1_prefix}/auth/register",
         f"{settings.api_v1_prefix}/auth/password-recovery",
         f"{settings.api_v1_prefix}/auth/reset-password",
+        # o proprio token do link e a credencial; clicar pode acontecer com sessao ja aberta
+        f"{settings.api_v1_prefix}/auth/verify-email",
     }
     if unsafe_method and request.url.path.startswith(settings.api_v1_prefix) and request.url.path not in public_auth_paths:
         try:

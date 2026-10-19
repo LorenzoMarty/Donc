@@ -21,7 +21,7 @@ const PLANS: { cycle: SubscriptionCycle; label: string; price: string; note: str
 ];
 
 export default function AssinaturaPage() {
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading, logout, refresh } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [cycle, setCycle] = useState<SubscriptionCycle>("monthly");
@@ -30,6 +30,8 @@ export default function AssinaturaPage() {
   const [error, setError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [sessionSyncFailed, setSessionSyncFailed] = useState(false);
+  const [notice, setNotice] = useState("");
+  const unverified = user?.role !== "admin" && user?.email_verified === false;
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +65,17 @@ export default function AssinaturaPage() {
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : "Falha ao iniciar o checkout.");
       setCheckoutLoading(false);
+    }
+  }
+
+  async function onResend() {
+    setError("");
+    setNotice("");
+    try {
+      await authApi.resendVerification();
+      setNotice("Enviamos um novo e-mail de confirmação. Confira também o spam.");
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : "Não foi possível reenviar o e-mail.");
     }
   }
 
@@ -108,6 +121,23 @@ export default function AssinaturaPage() {
         </div>
 
         <Card className="p-4 xs:p-6">
+          {unverified ? (
+            <div className="mb-5 rounded-md bg-muted px-3 py-3 text-sm" role="status" data-testid="verify-email-notice">
+              <p className="font-medium">Confirme seu e-mail para assinar</p>
+              <p className="mt-1 text-muted-foreground">
+                Enviamos um link para <strong>{user?.email}</strong>. Depois de clicar nele, volte aqui.
+              </p>
+              {notice ? <p className="mt-2 text-primary">{notice}</p> : null}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button type="button" variant="secondary" className="min-h-11" onClick={onResend}>
+                  Reenviar e-mail
+                </Button>
+                <Button type="button" variant="ghost" className="min-h-11" onClick={() => void refresh()}>
+                  Já confirmei
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <div className="grid gap-3 xs:grid-cols-2">
             {PLANS.map((plan) => (
               <button
@@ -143,7 +173,7 @@ export default function AssinaturaPage() {
 
           {error && <p className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
 
-          <Button className="mt-5 w-full" disabled={checkoutLoading || !accepted} onClick={onCheckout}>
+          <Button className="mt-5 w-full" disabled={checkoutLoading || !accepted || unverified} onClick={onCheckout}>
             {checkoutLoading ? "Redirecionando..." : "Ir para pagamento"}
           </Button>
           <p className="mt-3 text-center text-xs text-muted-foreground">Pagamento processado pelo Mercado Pago.</p>

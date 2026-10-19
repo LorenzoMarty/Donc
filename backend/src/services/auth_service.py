@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.config.settings import settings
 from src.config.security import create_access_token, generate_refresh_token, get_password_hash, hash_refresh_token, verify_password
 from src.middlewares.errors import AppError
-from src.models import PasswordResetToken, RefreshToken, StudentProfile, User
+from src.models import EmailVerificationToken, PasswordResetToken, RefreshToken, StudentProfile, User
 from src.repositories.users import UserRepository
 from src.services.streak_service import touch_last_seen
 
@@ -127,6 +127,67 @@ class AuthService:
             .values(revoked_at=datetime.now(UTC))
         )
         self.db.commit()
+
+    def issue_email_verification(self, user: User) -> str:
+        """Gera token de verificação (uso único, guardado como hash) e invalida os pendentes."""
+        now = datetime.now(UTC)
+        self.db.execute(
+            update(EmailVerificationToken)
+            .where(EmailVerificationToken.user_id == user.id, EmailVerificationToken.used_at.is_(None))
+            .values(used_at=now)
+        )
+        raw = generate_refresh_token()
+        self.db.add(
+            EmailVerificationToken(
+                user_id=user.id,
+                token_hash=hash_refresh_token(raw),
+                expires_at=now + timedelta(hours=settings.email_verification_token_hours),
+            )
+        )
+        self.db.commit()
+        return raw
+
+    def resend_email_verification(self, user: User) -> str:
+        if user.email_verified:
+            raise AppError("Seu e-mail já está verificado.", status_code=409, code="email_already_verified")
+        last = self.db.scalar(
+            select(EmailVerificationToken.created_at)
+            .where(EmailVerificationToken.user_id == user.id)
+            .order_by(EmailVerificationToken.id.desc())
+            .limit(1)
+        )
+        cooldown = timedelta(seconds=settings.email_verification_resend_cooldown_seconds)
+        if last is not None and datetime.now(UTC) - _aware(last) < cooldown:
+            raise AppError("Aguarde um instante antes de pedir outro e-mail.", status_code=429, code="verification_resend_cooldown")
+        return self.issue_email_verification(user)
+
+    def verify_email(self, token: str) -> tuple[User, bool]:
+        """Consome o token. Devolve (usuário, True se esta chamada foi a que verificou o e-mail)."""
+        row = self.db.scalar(select(EmailVerificationToken).where(EmailVerificationToken.token_hash == hash_refresh_token(token)))
+        now = datetime.now(UTC)
+        invalid = AppError("Link inválido ou expirado. Peça um novo e-mail de confirmação.", status_code=400, code="invalid_verification_token")
+        if not row or row.used_at is not None or _aware(row.expires_at) < now:
+            raise invalid
+        user = self.db.get(User, row.user_id)
+        if not user or user.deleted_at is not None:
+            raise invalid
+        # Consumo atômico (mesmo padrão do reset de senha): só um request ganha o UPDATE condicional.
+        claimed = self.db.execute(
+            update(EmailVerificationToken).where(EmailVerificationToken.id == row.id, EmailVerificationToken.used_at.is_(None)).values(used_at=now)
+        ).rowcount
+        if claimed != 1:
+            self.db.rollback()
+            raise invalid
+        newly_verified = user.email_verified_at is None
+        if newly_verified:
+            user.email_verified_at = now
+        return self.users.save(user), newly_verified
+
+    def require_email_verified(self, user: User) -> None:
+        # Admin nunca paga nem passa por cadastro público.
+        if user.role.value == "admin" or user.email_verified:
+            return
+        raise AppError("Confirme seu e-mail antes de assinar.", status_code=403, code="email_not_verified")
 
     def request_password_reset(self, email: str) -> tuple[User, str] | None:
         """Gera token de reset (uso único, guardado como hash). Retorna None se não houver conta —

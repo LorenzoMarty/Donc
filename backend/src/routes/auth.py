@@ -19,6 +19,7 @@ from src.schemas.auth import (
     PasswordRecoveryRequest,
     RegisterRequest,
     ResetPasswordRequest,
+    VerifyEmailRequest,
     AuthResponse,
     UpdateMeRequest,
     UserRead,
@@ -102,9 +103,10 @@ def register(
     )
     token = service.token_for(user, subscription_active=_subscription_active(db, user))
     refresh_token = service.issue_refresh_token(user)
+    verification_token = service.issue_email_verification(user)
     db.commit()
     _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
-    background.add_task(email_service.send_welcome, to=user.email, name=user.name)
+    background.add_task(email_service.send_email_verification, to=user.email, name=user.name, token=verification_token)
     return success_response(AuthResponse(user=user), "Conta criada com sucesso.")
 
 
@@ -219,6 +221,30 @@ def password_recovery(
         # Em background: o tempo de resposta não deve diferenciar e-mail existente de inexistente.
         background.add_task(email_service.send_password_reset, to=user.email, name=user.name, token=token)
     return success_response(MessageResponse(message=RECOVERY_MESSAGE), RECOVERY_MESSAGE)
+
+
+@router.post("/verify-email", response_model=ApiResponse[MessageResponse])
+def verify_email(
+    payload: VerifyEmailRequest, request: Request, background: BackgroundTasks, db: Session = Depends(get_db)
+) -> ApiResponse[MessageResponse]:
+    check_auth_rate_limit(request, bucket="verify-email")
+    user, newly_verified = AuthService(db).verify_email(payload.token)
+    if newly_verified:  # token antigo de quem já estava verificado não reenvia as boas-vindas
+        background.add_task(email_service.send_welcome, to=user.email, name=user.name)
+    return success_response(MessageResponse(message="E-mail confirmado."), "E-mail confirmado.")
+
+
+@router.post("/resend-verification", response_model=ApiResponse[MessageResponse])
+def resend_verification(
+    request: Request,
+    background: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[MessageResponse]:
+    check_auth_rate_limit(request, bucket="resend-verification", identifier=str(current_user.id))
+    token = AuthService(db).resend_email_verification(current_user)
+    background.add_task(email_service.send_email_verification, to=current_user.email, name=current_user.name, token=token)
+    return success_response(MessageResponse(message="E-mail de confirmação reenviado."), "E-mail de confirmação reenviado.")
 
 
 @router.post("/reset-password", response_model=ApiResponse[MessageResponse])

@@ -23,5 +23,8 @@ export const authApi = {
     apiFetch<{ message: string }>("/auth/password-recovery", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (token: string, new_password: string) =>
     apiFetch<{ message: string }>("/auth/reset-password", { method: "POST", body: JSON.stringify({ token, new_password }) }),
+  verifyEmail: (token: string) =>
+    apiFetch<{ message: string }>("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) }),
+  resendVerification: () => apiFetch<{ message: string }>("/auth/resend-verification", { method: "POST" }),
   logout: () => apiFetch<{ message: string }>("/auth/logout", { method: "POST" }),
 };

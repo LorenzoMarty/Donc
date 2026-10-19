@@ -534,6 +534,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         role=UserRole.STUDENT,
         streak_days=9,
         daily_goal_minutes=45,
+        email_verified_at=datetime.now(UTC),
     )
     admin = User(
         name="Admin Donc",
@@ -542,6 +543,7 @@ def seed_database(db: Session, *, include_demo_data: bool = True) -> None:
         role=UserRole.ADMIN,
         streak_days=18,
         daily_goal_minutes=60,
+        email_verified_at=datetime.now(UTC),
     )
     db.add_all([student, admin])
     db.flush()
