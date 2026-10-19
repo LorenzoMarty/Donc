@@ -43,6 +43,9 @@ def essay_corrections_this_month(db: Session, user_id: int, now: datetime | None
 
 
 def check_essay_monthly_quota(db: Session, user: User, now: datetime | None = None) -> None:
+    # Limite brando por desenho: a contagem acontece aqui e o AIJob so e criado depois, no handler, entao dois
+    # envios exatamente simultaneos com `used = limite - 1` passam os dois (estouro marginal de 1 correcao).
+    # Aceito: o rate limit por minuto ja limita a rajada e travar por usuario exigiria lock no banco.
     limit = settings.essay_monthly_quota
     if limit <= 0 or user.role == UserRole.ADMIN:
         return

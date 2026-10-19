@@ -175,7 +175,7 @@ export default function EssayPage() {
       </div>
 
       <div className="grid gap-3 pt-3">
-        <EssayQuotaBanner refreshKey={essay?.id ?? "none"} />
+        <EssayQuotaBanner refreshKey={`${essay?.id ?? "none"}:${mode}:${submitting}`} />
         {!essay ? <ThemePicker themes={themes} onPick={(theme) => createDraft(theme)} /> : null}
 
         {error ? (

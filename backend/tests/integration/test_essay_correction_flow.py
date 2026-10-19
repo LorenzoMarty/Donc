@@ -203,8 +203,16 @@ def test_monthly_quota_blocks_submit_and_reports_counter(client: TestClient, mon
         db.close()
 
     quota = client.get("/api/v1/essays/quota").json()["data"]
-    assert quota["used"] >= 1 and quota["limit"] == 1
+    assert quota["used"] >= 1 and quota["limit"] == 1  # o banco da suite é compartilhado: outros testes também criam jobs
 
     response = client.post(f"/api/v1/essays/{essay_id}/submit")
     assert response.status_code == 429
     assert response.json()["error"] == "quota_exceeded"
+
+
+def test_quota_endpoint_reports_unlimited_when_not_configured(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.config.settings import settings
+
+    monkeypatch.setattr(settings, "essay_monthly_quota", 0)
+    data = client.get("/api/v1/essays/quota").json()["data"]
+    assert data["limit"] is None
