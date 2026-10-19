@@ -80,6 +80,8 @@ class Settings(BaseSettings):
     subscription_price_monthly_cents: int = 5_900
     subscription_price_annual_cents: int = 58_800
     subscription_grace_period_days: int = 3
+    # Prazo de arrependimento (CDC art. 49): reembolso total pelo admin so dentro desta janela.
+    refund_window_days: int = 7
     # E-mail transacional (Resend via HTTP). Sem RESEND_API_KEY o envio vira log-only (dev/testes).
     resend_api_key: str | None = None
     email_from: str = "Donc <nao-responda@donc.com.br>"

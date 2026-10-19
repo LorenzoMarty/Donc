@@ -63,6 +63,21 @@ export type AdminFunnel = {
   retention_d7: { eligible: number; retained: number; rate: number };
 };
 
+export type ReconciliationIssue = {
+  kind: "active_without_payment" | "remote_without_local" | "status_mismatch" | "lookup_failed";
+  detail: string;
+  user_id: number | null;
+  email: string | null;
+  mp_preapproval_id: string | null;
+};
+
+export type SubscriptionRefund = {
+  mp_payment_id: string;
+  amount_cents: number;
+  refunded_at: string;
+  admin_user_id: number | null;
+};
+
 export type AdminSubscribersResponse = {
   items: AdminSubscriber[];
   total: number;

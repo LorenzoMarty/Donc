@@ -11,7 +11,7 @@ from src.models.password_reset_token import PasswordResetToken
 from src.models.recommendation_log import RecommendationLog
 from src.models.refresh_token import RefreshToken
 from src.models.static_game import StaticGame
-from src.models.subscription import Coupon, DiscountType, PlanCycle, ProcessedWebhookEvent, Subscription, SubscriptionStatus
+from src.models.subscription import Coupon, DiscountType, PlanCycle, ProcessedWebhookEvent, Subscription, SubscriptionRefund, SubscriptionStatus
 from src.models.support import SupportTicket, SupportTicketCategory, SupportTicketStatus
 from src.models.user import StudentProfile, User, UserRole
 
@@ -53,6 +53,7 @@ __all__ = [
     "StaticGame",
     "StudentProfile",
     "Subscription",
+    "SubscriptionRefund",
     "SubscriptionStatus",
     "SupportTicket",
     "SupportTicketCategory",

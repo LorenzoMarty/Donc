@@ -84,3 +84,20 @@ class FunnelResponse(BaseModel):
     first_action_within_target_pct: float
     retention_d1: RetentionRead
     retention_d7: RetentionRead
+
+
+class RefundRead(BaseModel):
+    mp_payment_id: str
+    amount_cents: int
+    refunded_at: datetime
+    admin_user_id: int | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReconciliationIssueRead(BaseModel):
+    kind: Literal["active_without_payment", "remote_without_local", "status_mismatch", "lookup_failed"]
+    detail: str
+    user_id: int | None = None
+    email: str | None = None
+    mp_preapproval_id: str | None = None
