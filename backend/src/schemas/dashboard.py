@@ -73,6 +73,7 @@ class DashboardResponse(BaseModel):
     essay_average: int
     best_essay_score: int
     streak_days: int
+    streak_freeze_available: bool = True
     completed_lessons: int
     correct_exercises_rate: int
     essays_written: int

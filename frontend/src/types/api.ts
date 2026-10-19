@@ -223,6 +223,7 @@ export type Dashboard = {
   essay_average: number;
   best_essay_score: number;
   streak_days: number;
+  streak_freeze_available?: boolean;
   completed_lessons: number;
   correct_exercises_rate: number;
   essays_written: number;

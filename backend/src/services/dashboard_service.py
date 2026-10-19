@@ -11,6 +11,7 @@ from src.middlewares.errors import AppError
 from src.schemas.dashboard import DashboardResponse, GoalRead, MasteryPoint, NextActionRead, PendingExercise, RecentEssay, RecentLesson, TrendPoint
 from src.services.competency_stats import mean_competency
 from src.services.recommendation_service import RecommendationEngine
+from src.services.streak_service import effective_streak, freeze_available
 
 
 class DashboardService:
@@ -128,7 +129,7 @@ class DashboardService:
             for essay in corrected[-6:]
         ]
 
-        streak = user.streak_days if user else 0
+        streak = effective_streak(user) if user else 0
 
         profile = get_or_create_learning_profile(self.db, user_id)
         next_action = RecommendationEngine(self.db).recommend(profile, user_id=user_id)[0]
@@ -152,6 +153,7 @@ class DashboardService:
             essay_average=essay_average,
             best_essay_score=best_essay_score,
             streak_days=streak,
+            streak_freeze_available=freeze_available(user) if user else True,
             completed_lessons=completed_lessons,
             correct_exercises_rate=correct_rate,
             essays_written=len(essays),
