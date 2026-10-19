@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from src.config.settings import settings
 from src.utils import auth_rate_limit
 
@@ -187,8 +189,8 @@ def test_password_reset_flow_token_is_single_use(client, monkeypatch):
 def test_password_reset_rejects_expired_token(client, monkeypatch):
     sent = _recovery_token(monkeypatch, "x")
     monkeypatch.setattr(settings, "password_reset_token_minutes", -1)
-    client.post("/api/v1/auth/register", json={"name": "Expired", "email": "expired@test.com", "accept_terms": True, "password": "senha1234"})
-    client.post("/api/v1/auth/password-recovery", json={"email": "expired@test.com"})
+    client.post("/api/v1/auth/register", json={"name": "Expired", "email": "verify-expired@test.com", "accept_terms": True, "password": "senha1234"})
+    client.post("/api/v1/auth/password-recovery", json={"email": "verify-expired@test.com"})
     response = client.post("/api/v1/auth/reset-password", json={"token": sent[0]["token"], "new_password": "novasenha99"})
     assert response.status_code == 400
     assert response.json()["error"] == "invalid_reset_token"
@@ -236,11 +238,121 @@ def test_password_recovery_and_reset_are_rate_limited(client, monkeypatch):
     assert codes == [400, 400, 429]
 
 
-def test_register_sends_welcome_email(client, monkeypatch):
+@pytest.fixture()
+def real_auth(monkeypatch):
+    """A suite sobrescreve `get_current_user` com o aluno demo; aqui o usuario vem do cookie de verdade."""
+    from src.dependencies import get_current_user
+    from src.main import app
+
+    monkeypatch.delitem(app.dependency_overrides, get_current_user)
+
+
+def _register_capturing_token(client, monkeypatch, email):
     sent: list[dict] = []
-    monkeypatch.setattr("src.services.email_service.send_welcome", lambda **kw: sent.append(kw) or True)
-    client.post(
+    monkeypatch.setattr("src.services.email_service.send_email_verification", lambda **kw: sent.append(kw) or True)
+    response = client.post(
         "/api/v1/auth/register",
-        json={"name": "Boas Vindas", "email": "welcome@test.com", "password": "senha1234", "accept_terms": True},
+        json={"name": "Verifica", "email": email, "password": "senha1234", "accept_terms": True},
     )
-    assert sent and sent[0]["to"] == "welcome@test.com"
+    assert response.status_code == 201
+    assert response.json()["data"]["user"]["email_verified"] is False
+    assert sent and sent[0]["to"] == email
+    return sent[0]["token"], {"X-CSRF-Token": response.cookies.get("csrf_token")}
+
+
+def test_register_sends_verification_then_welcome_after_confirming(client, monkeypatch, real_auth):
+    token, _ = _register_capturing_token(client, monkeypatch, "verify@test.com")
+    welcomed: list[dict] = []
+    monkeypatch.setattr("src.services.email_service.send_welcome", lambda **kw: welcomed.append(kw) or True)
+
+    ok = client.post("/api/v1/auth/verify-email", json={"token": token})
+    assert ok.status_code == 200
+    assert welcomed and welcomed[0]["to"] == "verify@test.com"
+    assert client.get("/api/v1/auth/me").json()["data"]["email_verified"] is True
+
+    # uso único
+    again = client.post("/api/v1/auth/verify-email", json={"token": token})
+    assert again.status_code == 400
+    assert again.json()["error"] == "invalid_verification_token"
+
+
+def test_verify_email_rejects_expired_token(client, monkeypatch, real_auth):
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import update
+
+    from src.database.session import SessionLocal
+    from src.models import EmailVerificationToken
+
+    token, _ = _register_capturing_token(client, monkeypatch, "emailverify-expired@test.com")
+    db = SessionLocal()
+    try:
+        db.execute(update(EmailVerificationToken).values(expires_at=datetime.now(UTC) - timedelta(hours=1)))
+        db.commit()
+    finally:
+        db.close()
+    response = client.post("/api/v1/auth/verify-email", json={"token": token})
+    assert response.status_code == 400
+    assert response.json()["error"] == "invalid_verification_token"
+
+
+def test_unverified_user_cannot_checkout_and_resend_has_cooldown(client, monkeypatch, real_auth):
+    _, csrf = _register_capturing_token(client, monkeypatch, "gate@test.com")
+
+    checkout = client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly", "accept_terms": True}, headers=csrf)
+    assert checkout.status_code == 403
+    assert checkout.json()["error"] == "email_not_verified"
+
+    # o cadastro acabou de emitir um token: reenvio imediato cai no cooldown
+    assert client.post("/api/v1/auth/resend-verification", headers=csrf).status_code == 429
+    monkeypatch.setattr(settings, "email_verification_resend_cooldown_seconds", 0)
+    assert client.post("/api/v1/auth/resend-verification", headers=csrf).status_code == 200
+
+
+def test_welcome_email_only_on_first_verification(client, monkeypatch, real_auth):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import EmailVerificationToken, User
+    from src.services.auth_service import AuthService
+
+    token, _ = _register_capturing_token(client, monkeypatch, "twice@test.com")
+    welcomed: list[dict] = []
+    monkeypatch.setattr("src.services.email_service.send_welcome", lambda **kw: welcomed.append(kw) or True)
+    assert client.post("/api/v1/auth/verify-email", json={"token": token}).status_code == 200
+    assert len(welcomed) == 1
+
+    # token antigo de quem já está verificado: o link funciona, mas não reenvia as boas-vindas
+    db = SessionLocal()
+    try:
+        user = db.scalar(select(User).where(User.email == "twice@test.com"))
+        old_token = AuthService(db).issue_email_verification(user)
+    finally:
+        db.close()
+    assert client.post("/api/v1/auth/verify-email", json={"token": old_token}).status_code == 200
+    assert len(welcomed) == 1
+
+
+def test_admin_is_not_blocked_by_email_verification(client):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import User
+    from src.services.auth_service import AuthService
+
+    db = SessionLocal()
+    try:
+        admin = db.scalar(select(User).where(User.email == "admin@demo.com"))
+        admin.email_verified_at = None
+        AuthService(db).require_email_verified(admin)  # não levanta
+        student = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        student.email_verified_at = None
+        try:
+            AuthService(db).require_email_verified(student)
+            raised = False
+        except Exception as exc:  # noqa: BLE001
+            raised = getattr(exc, "code", "") == "email_not_verified"
+        db.rollback()
+    finally:
+        db.close()
+    assert raised

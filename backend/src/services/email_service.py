@@ -68,6 +68,16 @@ def send_welcome(*, to: str, name: str) -> bool:
     return send_email(to=to, subject="Bem-vindo ao Donc", html_body=_layout("Bem-vindo ao Donc", body, ("Começar", _app_url("/dashboard"))))
 
 
+def send_email_verification(*, to: str, name: str, token: str) -> bool:
+    link = _app_url(f"/verificar-email?token={token}")
+    body = (
+        f"<p>Oi, {html.escape(name)}! Confirme seu e-mail para ativar sua conta e poder assinar. "
+        f"O link vale por {settings.email_verification_token_hours} horas e só pode ser usado uma vez.</p>"
+        "<p>Se não foi você, ignore este e-mail.</p>"
+    )
+    return send_email(to=to, subject="Confirme seu e-mail", html_body=_layout("Confirme seu e-mail", body, ("Confirmar e-mail", link)))
+
+
 def send_password_reset(*, to: str, name: str, token: str) -> bool:
     link = _app_url(f"/redefinir-senha?token={token}")
     body = (

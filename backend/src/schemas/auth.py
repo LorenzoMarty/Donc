@@ -30,6 +30,10 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=200)
+
+
 class UpdateMeRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
 
@@ -47,6 +51,7 @@ class UserRead(BaseModel):
     streak_days: int
     daily_goal_minutes: int
     created_at: datetime
+    email_verified: bool = True
 
     model_config = ConfigDict(from_attributes=True)
 
