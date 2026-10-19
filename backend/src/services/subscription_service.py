@@ -9,7 +9,7 @@ from src.config.settings import settings
 from src.middlewares.errors import AppError
 from src.models import PlanCycle, SubscriptionStatus, User
 from src.utils.email_normalize import normalize_email
-from src.models.subscription import ProcessedWebhookEvent, Subscription
+from src.models.subscription import CouponRedemption, ProcessedWebhookEvent, Subscription
 from src.repositories.subscriptions import SubscriptionRepository
 from src.services import email_service
 from src.services.coupon_service import CouponService
@@ -72,19 +72,30 @@ class SubscriptionService:
         """Um cupom por conta e, nos de uso limitado, um por pessoa: aliases do mesmo e-mail
         (`nome+x@`, pontos no Gmail) contam como a mesma conta descartavel."""
         reused = AppError("Você já usou este cupom.", status_code=400, code="coupon_already_used")
-        if existing and existing.coupon_applied and existing.coupon_code == coupon.code:
+        already = self.db.scalar(
+            select(CouponRedemption.id).where(CouponRedemption.coupon_code == coupon.code, CouponRedemption.user_id == user.id)
+        )
+        if already or (existing and existing.coupon_applied and existing.coupon_code == coupon.code):
             raise reused
         if coupon.max_uses is None:
             return
         wanted = normalize_email(user.email)
-        holders = self.db.execute(
-            select(User.email, Subscription.coupon_applied, Subscription.status)
+        redeemed = self.db.execute(
+            select(User.email)
+            .join(CouponRedemption, CouponRedemption.user_id == User.id)
+            .where(CouponRedemption.coupon_code == coupon.code, CouponRedemption.user_id != user.id)
+        ).scalars()
+        in_progress = self.db.execute(
+            select(User.email)
             .join(Subscription, Subscription.user_id == User.id)
-            .where(Subscription.coupon_code == coupon.code, Subscription.user_id != user.id)
-        )
-        for email, applied, status in holders:
-            if (applied or status in (SubscriptionStatus.PENDING, SubscriptionStatus.ACTIVE, SubscriptionStatus.GRACE)) and normalize_email(email) == wanted:
-                raise reused
+            .where(
+                Subscription.coupon_code == coupon.code,
+                Subscription.user_id != user.id,
+                Subscription.status.in_((SubscriptionStatus.PENDING, SubscriptionStatus.ACTIVE, SubscriptionStatus.GRACE)),
+            )
+        ).scalars()
+        if any(normalize_email(email) == wanted for email in (*redeemed, *in_progress)):
+            raise reused
 
     def handle_webhook(self, payload: dict, headers: dict) -> None:
         data_id = str((payload.get("data") or {}).get("id") or "")
@@ -158,6 +169,7 @@ class SubscriptionService:
         ):
             self.coupons.record_redemption(subscription.coupon_code)
             subscription.coupon_applied = True
+            self.db.add(CouponRedemption(coupon_code=subscription.coupon_code, user_id=subscription.user_id))
 
         self.repository.save(subscription)
         self._notify_status_change(subscription, previous_status)

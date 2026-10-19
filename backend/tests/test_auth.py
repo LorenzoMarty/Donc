@@ -399,6 +399,7 @@ def test_delete_account_requires_csrf_header_for_cookie_sessions(client):
 def test_register_is_limited_per_ip_per_day(client, monkeypatch):
     monkeypatch.setattr(settings, "register_per_ip_per_day", 2)
     monkeypatch.setattr(auth_rate_limit, "_increment_redis", lambda key, ttl=70: None)
+    monkeypatch.setattr(auth_rate_limit, "_peek_redis", lambda key: None)
     auth_rate_limit._daily_counters.clear()
 
     def register(n):
@@ -421,3 +422,18 @@ def test_register_and_recovery_require_captcha_when_configured(client, monkeypat
 
     monkeypatch.setattr("src.routes.auth.verify_turnstile", lambda token, remote_ip=None: None)
     assert client.post("/api/v1/auth/register", json={**body, "turnstile_token": "ok"}).status_code == 201
+
+
+def test_failed_registrations_do_not_consume_the_daily_ip_quota(client, monkeypatch):
+    monkeypatch.setattr(settings, "register_per_ip_per_day", 2)
+    monkeypatch.setattr(auth_rate_limit, "_increment_redis", lambda key, ttl=70: None)
+    monkeypatch.setattr(auth_rate_limit, "_peek_redis", lambda key: None)
+    auth_rate_limit._daily_counters.clear()
+    body = {"name": "Repetido", "email": "repetido-ip@test.com", "password": "senha1234", "accept_terms": True}
+
+    assert client.post("/api/v1/auth/register", json=body).status_code == 201
+    for _ in range(3):  # e-mail repetido: 409, não conta
+        assert client.post("/api/v1/auth/register", json=body).status_code == 409
+    other = {**body, "email": "segunda-conta-ip@test.com"}
+    assert client.post("/api/v1/auth/register", json=other).status_code == 201
+    auth_rate_limit._daily_counters.clear()
