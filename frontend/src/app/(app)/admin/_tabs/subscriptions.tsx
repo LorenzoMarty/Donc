@@ -36,6 +36,9 @@ export function SubscriptionsTab() {
   const [subscribers, setSubscribers] = useState<AdminSubscriber[] | null>(null);
   const [mrrCents, setMrrCents] = useState(0);
   const [total, setTotal] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [canceled30d, setCanceled30d] = useState(0);
+  const [churnRate, setChurnRate] = useState(0);
   const [coupons, setCoupons] = useState<Coupon[] | null>(null);
   const [creatingCoupon, setCreatingCoupon] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
@@ -47,6 +50,9 @@ export function SubscriptionsTab() {
         setSubscribers(data.items);
         setMrrCents(data.mrr_cents);
         setTotal(data.total);
+        setActiveCount(data.active_count ?? 0);
+        setCanceled30d(data.canceled_30d ?? 0);
+        setChurnRate(data.churn_rate_30d ?? 0);
       })
       .catch((err) => toast.error(err instanceof Error ? err.message : "Não foi possível carregar os assinantes."));
   }
@@ -79,14 +85,27 @@ export function SubscriptionsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-testid="subscription-metrics">
         <div className="rounded-card border border-border bg-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Receita recorrente (MRR)</p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{formatBRLCents(mrrCents)}</p>
         </div>
         <div className="rounded-card border border-border bg-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assinantes</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{total}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assinantes ativos</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{activeCount}</p>
+          <p className="text-xs text-muted-foreground">{total} no total</p>
+        </div>
+        <div className="rounded-card border border-border bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Churn (30 dias)</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{churnRate.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%</p>
+          <p className="text-xs text-muted-foreground">
+            {canceled30d} cancelamento{canceled30d === 1 ? "" : "s"} no período
+          </p>
+        </div>
+        <div className="rounded-card border border-border bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ticket médio</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{formatBRLCents(activeCount ? Math.round(mrrCents / activeCount) : 0)}</p>
+          <p className="text-xs text-muted-foreground">Média mensal por assinante ativo</p>
         </div>
       </div>
 

@@ -58,3 +58,6 @@ class AdminSubscribersResponse(BaseModel):
     items: list[AdminSubscriberRead]
     total: int
     mrr_cents: int
+    active_count: int = 0
+    canceled_30d: int = 0
+    churn_rate_30d: float = 0.0

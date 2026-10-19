@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Clock, FileText, Sparkles, Users } from "lucide-react";
 
 import { contentQualityTotal, countPublished, countRecentlyCreated } from "@/app/(app)/admin/_tabs/overview-metrics";
+import { LaunchChecklist } from "@/app/(app)/admin/_tabs/launch-checklist";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AdminContentQuality, AIGeneratedGame, EssayTheme, UserActivity } from "@/types/api";
@@ -48,6 +49,7 @@ export function AdminOverviewTab({
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <section className="space-y-4">
+        <LaunchChecklist />
         <div className="grid gap-3 md:grid-cols-3">
           <PriorityCard
             title="Revisar agora"
