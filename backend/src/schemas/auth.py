@@ -34,6 +34,10 @@ class VerifyEmailRequest(BaseModel):
     token: str = Field(min_length=10, max_length=200)
 
 
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+
+
 class UpdateMeRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
 
