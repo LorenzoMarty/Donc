@@ -75,15 +75,20 @@ class ReminderService:
         sent = 0
         for user in self.due_users(now):
             try:
-                email_service.send_streak_reminder(
+                delivered = email_service.send_streak_reminder(
                     to=user.email, name=user.name, streak_days=user.streak_days, unsubscribe_token=unsubscribe_token(user.id)
                 )
             except Exception:  # um e-mail com problema não pode travar a fila dos demais
                 logger.exception("Falha ao enviar lembrete para o usuário %s", user.id)
                 continue
+            if not delivered:
+                # `send_email` não levanta: devolve False (Resend fora, sem chave). Não marca como lembrado,
+                # para a próxima execução do dia tentar de novo.
+                logger.warning("Lembrete não entregue ao usuário %s", user.id)
+                continue
             user.last_reminder_at = now
             sent += 1
-        self.db.commit()
+            self.db.commit()  # por usuário: se o worker morrer no meio, quem já recebeu não recebe de novo
         return sent
 
     def opt_out(self, user_id: int) -> bool:

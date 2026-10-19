@@ -106,3 +106,16 @@ def test_unsubscribe_token_is_signed_and_opt_out_sticks():
     assert ReminderService(db).opt_out(user.id) is True
     assert ReminderService(db).due_users(NOW) == []
     assert ReminderService(db).opt_out(999) is False
+
+
+def test_undelivered_email_is_not_marked_as_reminded(monkeypatch):
+    db = _db()
+    user = _student(db, "risco@t.com")
+    monkeypatch.setattr("src.services.email_service.send_streak_reminder", lambda **kw: False)
+
+    assert ReminderService(db).send_due(NOW) == 0
+    db.refresh(user)
+    assert user.last_reminder_at is None  # a próxima execução do dia tenta de novo
+
+    monkeypatch.setattr("src.services.email_service.send_streak_reminder", lambda **kw: True)
+    assert ReminderService(db).send_due(NOW) == 1
