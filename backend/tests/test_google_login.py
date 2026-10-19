@@ -44,7 +44,7 @@ def _token(*, sub="g-123", email="google.user@example.com", email_verified=True,
 @pytest.fixture()
 def google(monkeypatch):
     monkeypatch.setattr(settings, "google_client_id", CLIENT_ID)
-    monkeypatch.setattr(google_identity, "_fetch_jwks", lambda: JWKS)
+    monkeypatch.setattr(google_identity, "_fetch_jwks", lambda **kw: JWKS)
     from src.dependencies import get_current_user
     from src.main import app
 
@@ -140,3 +140,18 @@ def test_google_only_account_cannot_password_login_and_change_password_explains(
     client.cookies.clear()
     login = client.post("/api/v1/auth/login", json={"email": "somente.google@example.com", "password": "qualquer1"})
     assert login.status_code == 401 and login.json()["error"] == "invalid_credentials"
+
+
+def test_unknown_kid_triggers_one_key_refresh_then_succeeds(monkeypatch):
+    """Rotação de chaves: o cache tem só a chave antiga; a releitura traz a nova e o token vale."""
+    monkeypatch.setattr(settings, "google_client_id", CLIENT_ID)
+    calls: list[bool] = []
+
+    def loader(*, force: bool = False):
+        calls.append(force)
+        return JWKS if force else {"keys": []}
+
+    identity = google_identity.verify_google_id_token(_token(), jwks_loader=loader)
+
+    assert identity.email == "google.user@example.com"
+    assert calls == [False, True]

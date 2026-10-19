@@ -22,6 +22,7 @@ logger = logging.getLogger("src.services.google_identity")
 
 _ISSUERS = {"https://accounts.google.com", "accounts.google.com"}
 _JWKS_TTL_SECONDS = 3600
+_JWKS_MIN_REFRESH_SECONDS = 60
 _jwks_cache: tuple[float, dict] | None = None
 
 
@@ -32,10 +33,13 @@ class GoogleIdentity:
     name: str
 
 
-def _fetch_jwks() -> dict:
+def _fetch_jwks(*, force: bool = False) -> dict:
     global _jwks_cache
     now = time.monotonic()
-    if _jwks_cache and now - _jwks_cache[0] < _JWKS_TTL_SECONDS:
+    # `force` (kid desconhecido = rotação de chaves) respeita um intervalo mínimo para um token
+    # forjado não virar uma chamada ao Google por requisição.
+    min_age = _JWKS_MIN_REFRESH_SECONDS if force else _JWKS_TTL_SECONDS
+    if _jwks_cache and now - _jwks_cache[0] < min_age:
         return _jwks_cache[1]
     response = httpx.get(settings.google_jwks_url, timeout=5.0)
     response.raise_for_status()
@@ -48,23 +52,25 @@ def _invalid() -> AppError:
     return AppError("Não foi possível entrar com o Google. Tente novamente.", status_code=401, code="invalid_google_token")
 
 
-def verify_google_id_token(id_token: str, *, jwks_loader: Callable[[], dict] | None = None) -> GoogleIdentity:
+def _decode(id_token: str, jwks: dict, client_id: str) -> dict:
+    return jwt.decode(id_token, jwks, algorithms=["RS256"], audience=client_id, options={"verify_at_hash": False})
+
+
+def verify_google_id_token(id_token: str, *, jwks_loader: Callable[..., dict] | None = None) -> GoogleIdentity:
     client_id = settings.google_client_id
     if not client_id:
         raise AppError("Login com Google não está configurado.", status_code=503, code="google_login_disabled")
+    loader = jwks_loader or _fetch_jwks
     try:
-        jwks = (jwks_loader or _fetch_jwks)()
+        try:
+            claims = _decode(id_token, loader(), client_id)
+        except JWTError:
+            # Rotação de chaves do Google: um kid novo só aparece depois do cache de 1h. Uma releitura
+            # (limitada a 1x por minuto) resolve; se continuar inválido, o token é recusado.
+            claims = _decode(id_token, loader(force=True), client_id)
     except (httpx.HTTPError, ValueError):
         logger.exception("Falha ao buscar as chaves do Google")
         raise AppError("Não foi possível validar o login com o Google agora.", status_code=502, code="google_unreachable") from None
-    try:
-        claims = jwt.decode(
-            id_token,
-            jwks,
-            algorithms=["RS256"],
-            audience=client_id,
-            options={"verify_at_hash": False},
-        )
     except JWTError:
         raise _invalid() from None
     if claims.get("iss") not in _ISSUERS:

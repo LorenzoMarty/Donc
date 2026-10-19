@@ -1,6 +1,7 @@
 ﻿from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -31,13 +32,25 @@ class AuthService:
             user = self.users.get_by_email(identity.email)
             if user is not None:
                 # E-mail ja existe: vincula (o e-mail veio verificado pelo Google; ver google_identity.py).
+                # Encerra as sessoes que ja existiam: se alguem cadastrou este e-mail antes do dono, o acesso
+                # dele (sessoes abertas) nao sobrevive a vinculacao.
                 user.google_sub = identity.sub
-                user = self.users.save(user)
+                user.session_version += 1
+                self.users.save(user)
+                self.revoke_all_refresh_tokens(user.id)
             else:
                 self.require_terms(accept_terms)
                 user = User(name=identity.name, email=identity.email, hashed_password=None, google_sub=identity.sub)
                 self.db.add(user)
-                self.db.commit()
+                try:
+                    self.db.commit()
+                except IntegrityError:
+                    # Dois primeiros logins simultaneos (duas abas): o outro ganhou, entra na conta que ele criou.
+                    self.db.rollback()
+                    existing = self.db.scalar(select(User).where(User.google_sub == identity.sub))
+                    if existing is None:
+                        raise
+                    return touch_last_seen(self.db, existing)
                 self.db.refresh(user)
                 self.record_terms_acceptance(user)
         return touch_last_seen(self.db, user)
