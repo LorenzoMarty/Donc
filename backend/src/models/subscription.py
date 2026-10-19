@@ -70,6 +70,19 @@ class Coupon(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class SubscriptionRefund(Base):
+    """Auditoria de reembolsos feitos pelo admin: quem, quando, qual pagamento e quanto."""
+
+    __tablename__ = "subscription_refunds"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscription_id: Mapped[int] = mapped_column(ForeignKey("subscriptions.id", ondelete="CASCADE"), nullable=False, index=True)
+    admin_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    mp_payment_id: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    amount_cents: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    refunded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ProcessedWebhookEvent(Base):
     """Deduplicacao de notificacoes do Mercado Pago — o mesmo evento pode ser reentregue
     (retry do provedor); sem isso um webhook duplicado reprocessaria a mudanca de status

@@ -14,6 +14,7 @@ import { LoadingCard } from "@/components/shared/loading-card";
 import { formatBRLCents } from "@/lib/format";
 import { FunnelSection } from "@/app/(app)/admin/_tabs/funnel-section";
 import { adminSubscriptionApi } from "@/services/api";
+import { ReconciliationSection, RefundButton } from "@/app/(app)/admin/_tabs/refund-reconciliation";
 import type { AdminSubscriber, Coupon } from "@/types/api";
 
 const STATUS_LABEL: Record<AdminSubscriber["status"], { label: string; variant: "default" | "outline" | "destructive" | "success" }> = {
@@ -123,6 +124,7 @@ export function SubscriptionsTab() {
                 <th className="pb-2">Status</th>
                 <th className="pb-2">Valor</th>
                 <th className="pb-2">Próximo período / cancelamento</th>
+                <th className="pb-2" />
               </tr>
             </thead>
             <tbody>
@@ -142,12 +144,15 @@ export function SubscriptionsTab() {
                     <td className="py-2 text-muted-foreground">
                       {row.canceled_at ? `Cancela em ${formatDate(row.current_period_end)}` : formatDate(row.current_period_end)}
                     </td>
+                    <td className="py-2 text-right">
+                      {row.status === "active" || row.status === "grace" ? <RefundButton subscriber={row} onRefunded={loadSubscribers} /> : null}
+                    </td>
                   </tr>
                 );
               })}
               {subscribers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-4 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-4 text-center text-muted-foreground">
                     Nenhum assinante ainda.
                   </td>
                 </tr>
@@ -156,6 +161,8 @@ export function SubscriptionsTab() {
           </table>
         </div>
       </section>
+
+      <ReconciliationSection />
 
       <section className="rounded-card border border-border bg-card p-4">
         <div className="flex items-center justify-between">
