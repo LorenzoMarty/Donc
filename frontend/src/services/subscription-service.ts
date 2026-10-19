@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/http-client";
-import type { AdminSubscribersResponse, CheckoutResponse, Coupon, Subscription, SubscriptionCycle } from "@/types/api";
+import type { AdminSubscribersResponse, CheckoutResponse, Coupon, Subscription, SubscriptionCycle, SubscriptionPayment } from "@/types/api";
 
 export const subscriptionApi = {
   checkout: (cycle: SubscriptionCycle, couponCode?: string) =>
@@ -10,6 +10,7 @@ export const subscriptionApi = {
   me: () => apiFetch<Subscription | null>("/subscriptions/me"),
   changePlan: (cycle: SubscriptionCycle) =>
     apiFetch<Subscription>("/subscriptions/change-plan", { method: "POST", body: JSON.stringify({ cycle }) }),
+  payments: () => apiFetch<SubscriptionPayment[]>("/subscriptions/payments"),
   cancel: () => apiFetch<Subscription>("/subscriptions/cancel", { method: "POST" }),
 };
 

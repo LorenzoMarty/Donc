@@ -97,3 +97,16 @@ def test_verify_webhook_signature_rejects_malformed_header():
     assert client.verify_webhook_signature(
         x_signature="garbage", x_request_id="req-abc", data_id="123456", secret="webhook-secret"
     ) is False
+
+
+def test_list_authorized_payments_queries_by_preapproval_and_returns_results():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        return httpx.Response(200, json={"results": [{"id": 9, "status": "processed"}]})
+
+    client = MercadoPagoClient(access_token="TEST-token", transport=httpx.MockTransport(handler))
+
+    assert client.list_authorized_payments("pre-1") == [{"id": 9, "status": "processed"}]
+    assert captured["url"].endswith("/authorized_payments/search?preapproval_id=pre-1")

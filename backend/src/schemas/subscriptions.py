@@ -25,8 +25,16 @@ class SubscriptionRead(BaseModel):
     current_period_end: datetime | None
     grace_until: datetime | None
     canceled_at: datetime | None
+    coupon_code: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PaymentRead(BaseModel):
+    id: str
+    status: Literal["paid", "failed", "retrying", "pending"]
+    amount_cents: int
+    date: datetime | None
 
 
 class ChangePlanRequest(BaseModel):
