@@ -1,7 +1,7 @@
 """Weekly streak freeze: users.streak_freeze_week.
 
-Revision ID: 0043_streak_freeze
-Revises: 0042_lesson_published
+Revision ID: 0045_streak_freeze
+Revises: 0044_subscription_refunds
 Create Date: 2026-10-17
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0043_streak_freeze"
-down_revision: str | None = "0042_lesson_published"
+revision: str = "0045_streak_freeze"
+down_revision: str | None = "0044_subscription_refunds"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
