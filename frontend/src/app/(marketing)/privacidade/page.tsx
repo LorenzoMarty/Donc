@@ -51,7 +51,16 @@ export default function PrivacyPage() {
         <h2>7. Seus direitos</h2>
         <p>
           Você pode pedir acesso, correção, exportação e exclusão dos seus dados, e revogar consentimentos, pelo canal de suporte da
-          plataforma.
+          plataforma. Em Perfil, a opção &quot;Baixar meus dados&quot; gera uma cópia em JSON e &quot;Excluir minha conta&quot; faz a exclusão
+          por conta própria.
+        </p>
+      </section>
+      <section>
+        <h2>8. Retenção</h2>
+        <p>
+          Ao excluir a conta, apagamos na hora suas redações, progresso, chamados e dados de correção, cancelamos a assinatura e encerramos
+          as sessões. Mantemos apenas os registros de pagamento pelo prazo fiscal de 5 anos, sem seus dados pessoais, e métricas de custo de
+          IA sem vínculo com você.
         </p>
       </section>
     </LegalPage>

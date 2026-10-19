@@ -1,6 +1,8 @@
 ﻿from datetime import UTC, datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -18,6 +20,7 @@ from src.schemas.auth import (
     OnboardingUpdateRequest,
     PasswordRecoveryRequest,
     RegisterRequest,
+    DeleteAccountRequest,
     ResetPasswordRequest,
     VerifyEmailRequest,
     AuthResponse,
@@ -26,6 +29,7 @@ from src.schemas.auth import (
 )
 from src.schemas.common import ApiResponse, MessageResponse, success_response
 from src.services import email_service
+from src.services.account_data_service import AccountDataService
 from src.services.auth_service import AuthService
 from src.utils.auth_rate_limit import check_auth_rate_limit
 from src.utils.csrf import require_csrf_for_cookie_session
@@ -171,6 +175,30 @@ def change_password(
         new_password=payload.new_password,
     )
     return success_response(MessageResponse(message="Senha alterada com sucesso."), "Senha alterada com sucesso.")
+
+
+@router.get("/me/export")
+def export_my_data(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> JSONResponse:
+    """LGPD: baixa todos os dados do titular em JSON."""
+    return JSONResponse(
+        content=jsonable_encoder(AccountDataService(db).export(current_user)),
+        headers={"Content-Disposition": 'attachment; filename="meus-dados-donc.json"'},
+    )
+
+
+@router.post("/delete-account", response_model=ApiResponse[MessageResponse])
+def delete_account(
+    payload: DeleteAccountRequest,
+    request: Request,
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[MessageResponse]:
+    require_csrf_for_cookie_session(request)
+    check_auth_rate_limit(request, bucket="delete-account", identifier=current_user.email)
+    AccountDataService(db).delete_account(current_user, password=payload.password)
+    _delete_session_cookies(response)
+    return success_response(MessageResponse(message="Conta excluída."), "Conta excluída.")
 
 
 @router.get("/onboarding", response_model=ApiResponse[OnboardingRead])
