@@ -1,15 +1,25 @@
 import { ImageResponse } from "next/og";
 
-const ALLOWED_SIZES = new Set([192, 512]);
+// Ícones PNG do PWA (o manifest exige 192 e 512), gerados uma vez no build — nada roda por requisição.
+// `maskable-512` deixa a margem de segurança que o Android usa para recortar o ícone.
+const ICONS: Record<string, { size: number; maskable: boolean }> = {
+  "192": { size: 192, maskable: false },
+  "512": { size: 512, maskable: false },
+  "maskable-512": { size: 512, maskable: true },
+};
 
-/** Ícones PNG do PWA gerados em tempo de requisição (o manifest exige PNG 192 e 512). `?maskable=1`
- * deixa a margem de segurança que o Android usa para recortar o ícone. */
-export async function GET(request: Request, { params }: { params: Promise<{ size: string }> }) {
-  const { size: rawSize } = await params;
-  const size = Number(rawSize);
-  if (!ALLOWED_SIZES.has(size)) return new Response("Tamanho não suportado", { status: 404 });
-  const maskable = new URL(request.url).searchParams.get("maskable") === "1";
-  const fontSize = Math.round(size * (maskable ? 0.4 : 0.55));
+export const dynamic = "force-static";
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return Object.keys(ICONS).map((size) => ({ size }));
+}
+
+export async function GET(_request: Request, { params }: { params: Promise<{ size: string }> }) {
+  const { size: key } = await params;
+  const icon = ICONS[key];
+  if (!icon) return new Response("Tamanho não suportado", { status: 404 });
+  const { size, maskable } = icon;
 
   return new ImageResponse(
     (
@@ -22,7 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ size
           justifyContent: "center",
           background: "#2b823b",
           color: "#ffffff",
-          fontSize,
+          fontSize: Math.round(size * (maskable ? 0.4 : 0.55)),
           fontWeight: 700,
           borderRadius: maskable ? 0 : Math.round(size * 0.2),
         }}
