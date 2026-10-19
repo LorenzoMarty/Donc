@@ -118,3 +118,35 @@ def test_active_count_and_churn_over_last_30_days():
 def test_churn_is_zero_without_subscribers():
     result = AdminSubscriptionService(_session()).list_subscribers(limit=50, offset=0, now=NOW)
     assert (result.active_count, result.canceled_30d, result.churn_rate_30d) == (0, 0, 0.0)
+
+
+def test_churn_counts_canceled_in_window_even_when_access_already_ended():
+    db = _db_for_churn()
+    user = _make_user(db, email="cancelou@teste.com")
+    _make_subscription(
+        db, user=user, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.CANCELED, price_cents=5_900,
+        current_period_end=NOW - timedelta(days=2), canceled_at=NOW - timedelta(days=10),
+    )
+    payer = _make_user(db, email="paga@teste.com")
+    _make_subscription(db, user=payer, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.ACTIVE, price_cents=5_900, current_period_end=NOW + timedelta(days=10))
+
+    result = AdminSubscriptionService(db).list_subscribers(limit=50, offset=0, now=NOW)
+
+    assert (result.active_count, result.canceled_30d, result.churn_rate_30d) == (1, 1, 50.0)
+
+
+def test_grace_counts_as_active_and_suspended_does_not():
+    db = _db_for_churn()
+    grace = _make_user(db, email="carencia@teste.com")
+    suspended = _make_user(db, email="suspensa@teste.com")
+    _make_subscription(db, user=grace, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.GRACE, price_cents=5_900, grace_until=NOW + timedelta(days=2))
+    _make_subscription(db, user=suspended, cycle=PlanCycle.MONTHLY, status=SubscriptionStatus.SUSPENDED, price_cents=5_900)
+
+    result = AdminSubscriptionService(db).list_subscribers(limit=50, offset=0, now=NOW)
+
+    assert result.active_count == 1
+    assert result.mrr_cents == 5_900
+
+
+def _db_for_churn():
+    return _session()
