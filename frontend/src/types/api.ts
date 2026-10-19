@@ -20,7 +20,7 @@ export type Subscription = {
 
 export type SubscriptionPayment = {
   id: string;
-  status: "paid" | "failed" | "pending";
+  status: "paid" | "failed" | "retrying" | "pending";
   amount_cents: number;
   date: string | null;
 };

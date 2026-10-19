@@ -170,15 +170,23 @@ class SubscriptionService:
                 status = "paid"
             elif payment_status == "rejected" or raw.get("status") == "cancelled":
                 status = "failed"
+            elif raw.get("status") == "recycling":
+                status = "retrying"  # recusada, com nova tentativa agendada: não pode parecer cobrança futura normal
             else:
                 status = "pending"
             raw_date = raw.get("debit_date") or raw.get("date_created")
+            try:
+                date = datetime.fromisoformat(raw_date.replace("Z", "+00:00")) if raw_date else None
+                if date is not None and date.tzinfo is None:
+                    date = date.replace(tzinfo=UTC)  # sem offset = UTC, nunca naive (a ordenação compara com aware)
+            except (ValueError, AttributeError):
+                date = None  # um item malformado não derruba o histórico inteiro
             items.append(
                 {
                     "id": str(raw.get("id")),
                     "status": status,
                     "amount_cents": round(float(raw.get("transaction_amount") or 0) * 100),
-                    "date": datetime.fromisoformat(raw_date.replace("Z", "+00:00")) if raw_date else None,
+                    "date": date,
                 }
             )
         return sorted(items, key=lambda item: item["date"] or datetime.min.replace(tzinfo=UTC), reverse=True)

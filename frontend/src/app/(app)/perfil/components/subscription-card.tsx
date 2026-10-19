@@ -25,6 +25,7 @@ const MP_MANAGE_URL = "https://www.mercadopago.com.br/subscriptions";
 const PAYMENT_LABEL: Record<SubscriptionPayment["status"], { label: string; tone: string }> = {
   paid: { label: "Pago", tone: "bg-primary/12 text-primary" },
   failed: { label: "Recusado", tone: "bg-destructive/10 text-destructive" },
+  retrying: { label: "Nova tentativa", tone: "bg-streak-tint text-streak" },
   pending: { label: "Agendado", tone: "bg-muted text-muted-foreground" },
 };
 

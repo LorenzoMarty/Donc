@@ -331,3 +331,24 @@ def test_payment_history_maps_mp_charges_newest_first():
 
     assert [(item["id"], item["status"]) for item in history] == [("3", "pending"), ("2", "failed"), ("1", "paid")]
     assert history[0]["amount_cents"] == 5_900
+
+
+def test_payment_history_handles_recycling_naive_dates_and_malformed_items():
+    db = _session()
+    user = _make_user(db)
+    service, mp = _service(db)
+    service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    mp.authorized_payments = [
+        {"id": 1, "transaction_amount": 59.0, "debit_date": "2026-09-01T10:00:00", "payment": {"status": "approved"}},  # sem offset
+        {"id": 2, "transaction_amount": 59.0, "debit_date": "lixo", "status": "recycling"},  # data inválida, em retentativa
+        {"id": 3, "transaction_amount": 59.0, "debit_date": "2026-10-01T10:00:00.000-03:00", "status": "processed", "payment": {"status": "approved"}},
+        {"id": 4, "transaction_amount": 59.0, "debit_date": "2026-11-01T10:00:00Z", "status": "cancelled"},
+    ]
+
+    history = service.payment_history(user)  # não pode levantar TypeError nem ValueError
+
+    by_id = {item["id"]: item for item in history}
+    assert by_id["2"]["status"] == "retrying" and by_id["2"]["date"] is None
+    assert by_id["1"]["status"] == "paid" and by_id["1"]["date"].tzinfo is not None
+    assert by_id["4"]["status"] == "failed"
+    assert [item["id"] for item in history][:3] == ["4", "3", "1"]  # mais recentes primeiro; sem data vai para o fim

@@ -32,7 +32,7 @@ class SubscriptionRead(BaseModel):
 
 class PaymentRead(BaseModel):
     id: str
-    status: Literal["paid", "failed", "pending"]
+    status: Literal["paid", "failed", "retrying", "pending"]
     amount_cents: int
     date: datetime | None
 
