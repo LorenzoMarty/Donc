@@ -11,6 +11,7 @@ import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-set
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
 import { CognitiveIssuesSection } from "@/app/(app)/perfil/components/cognitive-issues-section";
 import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
+import { ReferralCard } from "@/app/(app)/perfil/components/referral-card";
 import { SubscriptionCard } from "@/app/(app)/perfil/components/subscription-card";
 import { WriterXraySection } from "@/app/(app)/perfil/components/writer-xray";
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
@@ -84,6 +85,8 @@ export default function ProfilePage() {
       </section>
 
       <SubscriptionCard />
+
+      <ReferralCard />
 
       <CognitiveIssuesSection issues={learningProfile?.cognitive_issues} />
 

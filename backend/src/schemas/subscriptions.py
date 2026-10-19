@@ -31,3 +31,11 @@ class SubscriptionRead(BaseModel):
 
 class ChangePlanRequest(BaseModel):
     cycle: CycleLiteral
+
+
+class ReferralSummaryRead(BaseModel):
+    code: str
+    discount_percent: int
+    pending_count: int
+    rewarded_count: int
+    credits_available: int

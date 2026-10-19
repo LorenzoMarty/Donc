@@ -26,6 +26,7 @@ export type {
   Module,
   NextRecommendedAction,
   AuthResponse,
+  ReferralSummary,
   Subscription,
   SubscriptionCycle,
   SubscriptionStatus,

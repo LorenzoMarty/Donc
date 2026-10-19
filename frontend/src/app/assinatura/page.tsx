@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ApiClientError, authApi, subscriptionApi, type Subscription, type SubscriptionCycle } from "@/services/api";
+import { readStoredReferral } from "@/lib/referral";
 import { cn } from "@/utils";
 
 // Precos de referencia — espelham subscription_price_monthly_cents/subscription_price_annual_cents
@@ -25,7 +26,7 @@ export default function AssinaturaPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [cycle, setCycle] = useState<SubscriptionCycle>("monthly");
-  const [couponCode, setCouponCode] = useState("");
+  const [couponCode, setCouponCode] = useState(() => readStoredReferral() ?? "");
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);

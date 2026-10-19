@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
 import { BrandLink } from "@/components/shared/brand-mark";
@@ -11,6 +11,7 @@ import { useAuth } from "@/providers/app-providers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { captureReferralFromUrl } from "@/lib/referral";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -20,6 +21,10 @@ export default function RegisterPage() {
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    captureReferralFromUrl();
+  }, []);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

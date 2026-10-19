@@ -36,6 +36,8 @@ class User(Base):
     # Aceite dos Termos de Uso/Privacidade (LGPD): quando e qual versão do texto. None = nunca aceitou.
     terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     terms_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Codigo de indicacao (AMIGO-XXXXXX), gerado sob demanda; ver services/referral_service.py.
+    referral_code: Mapped[str | None] = mapped_column(String(40), unique=True, index=True, nullable=True)
 
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")

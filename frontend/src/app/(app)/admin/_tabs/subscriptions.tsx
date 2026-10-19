@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { formatBRLCents } from "@/lib/format";
+import { ReferralsSection } from "@/app/(app)/admin/_tabs/referrals-section";
 import { adminSubscriptionApi } from "@/services/api";
 import type { AdminSubscriber, Coupon } from "@/types/api";
 
@@ -89,6 +90,8 @@ export function SubscriptionsTab() {
           <p className="mt-1 text-2xl font-semibold tabular-nums">{total}</p>
         </div>
       </div>
+
+      <ReferralsSection />
 
       <section className="rounded-card border border-border bg-card p-4">
         <h3 className="font-semibold">Assinantes</h3>
