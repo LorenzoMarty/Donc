@@ -96,7 +96,7 @@ class RefundRead(BaseModel):
 
 
 class ReconciliationIssueRead(BaseModel):
-    kind: Literal["active_without_payment", "remote_without_local", "status_mismatch"]
+    kind: Literal["active_without_payment", "remote_without_local", "status_mismatch", "lookup_failed"]
     detail: str
     user_id: int | None = None
     email: str | None = None

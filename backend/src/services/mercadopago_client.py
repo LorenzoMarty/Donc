@@ -21,9 +21,9 @@ class MercadoPagoClient:
             timeout=15.0,
         )
 
-    def _request(self, method: str, path: str, *, json_body: dict | None = None) -> dict:
+    def _request(self, method: str, path: str, *, json_body: dict | None = None, headers: dict[str, str] | None = None) -> dict:
         try:
-            response = self._client.request(method, path, json=json_body)
+            response = self._client.request(method, path, json=json_body, headers=headers)
         except httpx.HTTPError as exc:
             logger.exception("Falha de rede ao chamar Mercado Pago (%s %s)", method, path)
             raise AppError("Falha ao comunicar com o Mercado Pago.", status_code=502, code="mercadopago_unreachable") from exc
@@ -71,7 +71,8 @@ class MercadoPagoClient:
 
     def refund_payment(self, payment_id: str) -> dict:
         """Reembolso total (corpo vazio) do pagamento: POST /v1/payments/{id}/refunds."""
-        return self._request("POST", f"/v1/payments/{payment_id}/refunds", json_body={})
+        # A mesma chave em retentativas faz o Mercado Pago devolver o mesmo reembolso em vez de criar outro.
+        return self._request("POST", f"/v1/payments/{payment_id}/refunds", json_body={}, headers={"X-Idempotency-Key": f"refund-{payment_id}"})
 
     def update_preapproval(self, preapproval_id: str, **fields) -> dict:
         return self._request("PUT", f"/preapproval/{preapproval_id}", json_body=fields)

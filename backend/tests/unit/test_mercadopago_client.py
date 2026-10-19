@@ -110,3 +110,20 @@ def test_list_authorized_payments_queries_by_preapproval_and_returns_results():
 
     assert client.list_authorized_payments("pre-1") == [{"id": 9, "status": "processed"}]
     assert captured["url"].endswith("/authorized_payments/search?preapproval_id=pre-1")
+
+
+def test_refund_payment_posts_with_idempotency_key_and_lists_authorized_payments():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured[request.url.path] = (request.method, request.headers.get("x-idempotency-key"), str(request.url))
+        return httpx.Response(200, json={"results": [{"id": 1}], "id": 99})
+
+    client = MercadoPagoClient(access_token="TEST-token", transport=httpx.MockTransport(handler))
+
+    assert client.list_authorized_payments("pre-7") == [{"id": 1}]
+    client.refund_payment("pay-55")
+
+    assert captured["/authorized_payments/search"][0] == "GET"
+    assert captured["/authorized_payments/search"][2].endswith("preapproval_id=pre-7")
+    assert captured["/v1/payments/pay-55/refunds"][:2] == ("POST", "refund-pay-55")

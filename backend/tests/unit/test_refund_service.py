@@ -32,6 +32,8 @@ class FakeMP:
         return self.charges.get(preapproval_id, [])
 
     def refund_payment(self, payment_id):
+        if getattr(self, "fail_refund", False):
+            raise AppError("MP fora do ar", status_code=502, code="mercadopago_unreachable")
         self.refunded.append(payment_id)
         return {}
 
@@ -134,3 +136,51 @@ def test_reconcile_flags_all_three_divergences():
         ("remote_without_local", "pre-orphan"),
         ("status_mismatch", "pre-2"),
     ]
+
+
+def test_failed_mp_refund_leaves_no_audit_row_and_keeps_access():
+    db, admin, [(user, sub)] = _setup()
+    mp = FakeMP()
+    mp.fail_refund = True
+    mp.charges["pre-0"] = [_charge("pay-1", 1)]
+
+    with pytest.raises(AppError):
+        RefundService(db, mp).refund_latest_charge(user_id=user.id, admin_user_id=admin.id, now=NOW)
+
+    assert db.scalars(select(SubscriptionRefund)).all() == []
+    db.refresh(sub)
+    assert sub.status == SubscriptionStatus.ACTIVE
+    # com o MP de volta, a mesma cobrança pode ser reembolsada normalmente
+    mp.fail_refund = False
+    RefundService(db, mp).refund_latest_charge(user_id=user.id, admin_user_id=admin.id, now=NOW)
+    assert mp.refunded == ["pay-1"]
+
+
+def test_naive_mp_dates_are_treated_as_utc():
+    db, admin, [(user, _)] = _setup()
+    mp = FakeMP()
+    naive = (NOW - timedelta(days=1)).replace(tzinfo=None).isoformat()
+    mp.charges["pre-0"] = [{"id": 1, "transaction_amount": 59.0, "debit_date": naive, "payment": {"id": "pay-naive", "status": "approved"}}]
+
+    RefundService(db, mp).refund_latest_charge(user_id=user.id, admin_user_id=admin.id, now=NOW)
+
+    assert mp.refunded == ["pay-naive"]
+
+
+def test_reconcile_survives_a_failing_lookup_and_reports_it():
+    db, _, subs = _setup(n_users=2)
+    mp = FakeMP()
+    original = mp.list_authorized_payments
+
+    def flaky(preapproval_id):
+        if preapproval_id == "pre-0":
+            raise AppError("MP fora do ar", status_code=502, code="mercadopago_unreachable")
+        return original(preapproval_id)
+
+    mp.list_authorized_payments = flaky
+    mp.charges["pre-1"] = [_charge("p1", 3)]
+    mp.remote = [{"id": "pre-0"}, {"id": "pre-1"}]
+
+    issues = RefundService(db, mp).reconcile(now=NOW)
+
+    assert [(i.kind, i.mp_preapproval_id) for i in issues] == [("lookup_failed", "pre-0")]

@@ -15,6 +15,7 @@ const ISSUE_LABEL: Record<ReconciliationIssue["kind"], string> = {
   active_without_payment: "Ativa sem pagamento",
   remote_without_local: "No Mercado Pago, sem registro",
   status_mismatch: "Status divergente",
+  lookup_failed: "Não foi possível conferir",
 };
 
 export function RefundButton({ subscriber, onRefunded }: { subscriber: AdminSubscriber; onRefunded: () => void }) {

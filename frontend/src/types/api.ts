@@ -64,7 +64,7 @@ export type AdminFunnel = {
 };
 
 export type ReconciliationIssue = {
-  kind: "active_without_payment" | "remote_without_local" | "status_mismatch";
+  kind: "active_without_payment" | "remote_without_local" | "status_mismatch" | "lookup_failed";
   detail: string;
   user_id: number | null;
   email: string | null;

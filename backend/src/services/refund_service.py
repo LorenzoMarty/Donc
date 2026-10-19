@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -24,7 +25,7 @@ _ACCESS_STATUSES = (SubscriptionStatus.ACTIVE, SubscriptionStatus.GRACE)
 
 @dataclass
 class ReconciliationIssue:
-    kind: str  # active_without_payment | remote_without_local | status_mismatch
+    kind: str  # active_without_payment | remote_without_local | status_mismatch | lookup_failed
     detail: str
     user_id: int | None = None
     email: str | None = None
@@ -37,7 +38,13 @@ def _approved_payments(charges: list[dict]) -> list[dict]:
 
 def _charge_date(item: dict) -> datetime | None:
     raw = item.get("debit_date") or item.get("date_created")
-    return datetime.fromisoformat(raw.replace("Z", "+00:00")) if raw else None
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)  # sem offset = UTC, nunca naive
 
 
 class RefundService:
@@ -68,10 +75,30 @@ class RefundService:
                 status_code=409,
                 code="refund_window_expired",
             )
+        already = AppError("Essa cobrança já foi reembolsada.", status_code=409, code="already_refunded")
         if self.db.scalar(select(SubscriptionRefund).where(SubscriptionRefund.mp_payment_id == payment_id)):
-            raise AppError("Essa cobrança já foi reembolsada.", status_code=409, code="already_refunded")
+            raise already
 
-        self.mp_client.refund_payment(payment_id)
+        # Registra a auditoria ANTES de chamar o Mercado Pago: a chave única em `mp_payment_id` faz de dois
+        # cliques simultâneos (ou duas abas) um só reembolso, e uma falha do MP desfaz o registro.
+        refund = SubscriptionRefund(
+            subscription_id=subscription.id,
+            admin_user_id=admin_user_id,
+            mp_payment_id=payment_id,
+            amount_cents=round(float(charge.get("transaction_amount") or 0) * 100),
+            refunded_at=now,
+        )
+        self.db.add(refund)
+        try:
+            self.db.flush()
+        except IntegrityError:
+            self.db.rollback()
+            raise already from None
+        try:
+            self.mp_client.refund_payment(payment_id)
+        except AppError:
+            self.db.rollback()
+            raise
         try:
             self.mp_client.update_preapproval(subscription.mp_preapproval_id, status="cancelled")
         except AppError:
@@ -82,14 +109,6 @@ class RefundService:
         subscription.grace_until = None
         subscription.current_period_end = now
         subscription.canceled_at = subscription.canceled_at or now
-        refund = SubscriptionRefund(
-            subscription_id=subscription.id,
-            admin_user_id=admin_user_id,
-            mp_payment_id=payment_id,
-            amount_cents=round(float(charge.get("transaction_amount") or 0) * 100),
-            refunded_at=now,
-        )
-        self.db.add(refund)
         self.repository.save(subscription)
         self.db.refresh(refund)
         return refund
@@ -105,9 +124,22 @@ class RefundService:
             local_by_preapproval[subscription.mp_preapproval_id] = subscription
             if effective_status(subscription, now=now) not in _ACCESS_STATUSES:
                 continue
-            charges = self.mp_client.list_authorized_payments(subscription.mp_preapproval_id)
+            user = self.db.get(User, subscription.user_id)
+            try:
+                charges = self.mp_client.list_authorized_payments(subscription.mp_preapproval_id)
+            except AppError:
+                # Um erro isolado do Mercado Pago não derruba o relatório: vira um item "não foi possível conferir".
+                issues.append(
+                    ReconciliationIssue(
+                        kind="lookup_failed",
+                        detail="Não foi possível consultar as cobranças desta assinatura no Mercado Pago agora.",
+                        user_id=subscription.user_id,
+                        email=user.email if user else None,
+                        mp_preapproval_id=subscription.mp_preapproval_id,
+                    )
+                )
+                continue
             if not _approved_payments(charges):
-                user = self.db.get(User, subscription.user_id)
                 issues.append(
                     ReconciliationIssue(
                         kind="active_without_payment",
