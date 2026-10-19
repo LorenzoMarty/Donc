@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
+import { marketingMetadata } from "@/lib/site";
 
 import { HoverGlowCard, Reveal } from "@/components/sections/aceternity-primitives";
+import { JsonLd } from "@/components/sections/json-ld";
 import { MarketingShell } from "@/components/sections/marketing-shell";
 import { Button } from "@/components/ui/button";
 import { PRICING_PLANS } from "@/features/marketing/pricing-plans";
@@ -33,9 +35,38 @@ const faq = [
   },
 ];
 
+export const metadata = marketingMetadata("/pricing");
+
 export default function PricingPage() {
   return (
     <MarketingShell>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Product",
+              name: "Donc — Português e Redação ENEM",
+              description: "Plataforma de estudo com correção de redação por IA, trilhas de Português e treinos gamificados.",
+              offers: plans.map((plan) => ({
+                "@type": "Offer",
+                name: plan.name,
+                price: String(plan.amount),
+                priceCurrency: "BRL",
+                availability: "https://schema.org/InStock",
+              })),
+            },
+            {
+              "@type": "FAQPage",
+              mainEntity: faq.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: { "@type": "Answer", text: item.answer },
+              })),
+            },
+          ],
+        }}
+      />
       <main className="marketing-container py-10">
         <Reveal className="mx-auto max-w-3xl text-center">
           <p className="marketing-kicker">Planos</p>

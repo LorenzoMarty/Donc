@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Brain, FilePenLine, GraduationCap, LineChart, Medal, PlayCircle } from "lucide-react";
+import { marketingMetadata } from "@/lib/site";
 
 import { AceternityGrid, HoverGlowCard, Reveal } from "@/components/sections/aceternity-primitives";
 import { MarketingShell } from "@/components/sections/marketing-shell";
@@ -26,6 +27,8 @@ const showcase = [
     text: "Editor de redação com correção por IA, banco de repertório e histórico de nota por competência ao longo do tempo.",
   },
 ];
+
+export const metadata = marketingMetadata("/plataforma");
 
 export default function PlatformPage() {
   return (

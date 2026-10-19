@@ -9,6 +9,7 @@ export const PRICING_PLANS = [
   {
     name: "Mensal",
     price: "R$ 59",
+    amount: 59,
     description: "Acesso completo à plataforma, cobrado todo mês.",
     features: ["Correção de redação por IA", "Trilhas de Português completas", "Treino gamificado nos 7 hubs", "Raio-X do escritor"],
     featured: false,
@@ -16,6 +17,7 @@ export const PRICING_PLANS = [
   {
     name: "Anual",
     price: "R$ 588",
+    amount: 588,
     description: "O mesmo acesso completo, equivalente a R$ 49/mês.",
     features: ["Tudo do plano Mensal", "~17% mais barato no total do ano"],
     featured: true,
