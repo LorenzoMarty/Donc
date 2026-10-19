@@ -1,7 +1,7 @@
 """Coupon redemption history (one coupon per account even if the subscription is redone).
 
-Revision ID: 0043_coupon_redemptions
-Revises: 0042_lesson_published
+Revision ID: 0046_coupon_redemptions
+Revises: 0045_streak_freeze
 Create Date: 2026-10-19
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0043_coupon_redemptions"
-down_revision: str | None = "0042_lesson_published"
+revision: str = "0046_coupon_redemptions"
+down_revision: str | None = "0045_streak_freeze"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
