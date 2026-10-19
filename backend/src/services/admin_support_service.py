@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.middlewares.errors import AppError
 from src.models import SupportTicket, SupportTicketMessage
-from src.services import email_service
 from src.repositories.support import SupportTicketRepository
 from src.schemas.support import AdminSupportTicketListResponse, AdminSupportTicketRead, SupportMessageRead
+from src.services import email_service
 
 
 class AdminSupportTicketService:
@@ -32,6 +33,7 @@ class AdminSupportTicketService:
         if not ticket:
             raise AppError("Chamado não encontrado.", status_code=404, code="support_ticket_not_found")
         ticket.messages.append(SupportTicketMessage(author_role="admin", body=body.strip()))
+        ticket.updated_at = func.now()
         self.db.commit()
         self.db.refresh(ticket)
         email_service.fire_and_forget(

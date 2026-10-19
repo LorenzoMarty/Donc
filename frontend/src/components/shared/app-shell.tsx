@@ -151,7 +151,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           href={`/suporte?origem=${encodeURIComponent(pathname)}`}
           aria-label="Dúvida ou sugestão"
           data-testid="help-shortcut"
-          className="fixed bottom-4 right-4 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-soft transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pb-[env(safe-area-inset-bottom)]"
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-soft transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <HelpCircle className="h-5 w-5" aria-hidden="true" />
           <span className="hidden sm:inline">Dúvida ou sugestão</span>
