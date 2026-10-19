@@ -19,7 +19,7 @@ export function AccountCard() {
   const [changingPassword, setChangingPassword] = useState(false);
 
   return (
-    <Surface className="bg-[hsl(var(--accent-600))] text-primary-foreground">
+    <Surface className="bg-[hsl(var(--accent-700))] text-primary-foreground">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
         <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-white/25 bg-[hsl(var(--accent-700))] text-2xl font-semibold text-primary-foreground">
           {initials(user?.name ?? "Aluno")}

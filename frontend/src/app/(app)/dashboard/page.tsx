@@ -112,9 +112,9 @@ export default function DashboardPage() {
         ) : (
           <div className="comfortable-card flex min-w-0 flex-1 basis-[340px] flex-col justify-between gap-4 rounded-card bg-primary text-primary-foreground shadow-accent sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1 basis-[220px]">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground/85">{heroCopy.eyebrow}</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground">{heroCopy.eyebrow}</p>
               <p className="font-display mt-2 text-[22px] font-medium leading-tight">{heroCopy.title}</p>
-              <p className="mt-1 text-[13px] text-primary-foreground/85">{heroCopy.description}</p>
+              <p className="mt-1 text-[13px] text-primary-foreground">{heroCopy.description}</p>
             </div>
             <Link
               href="/redacao"
@@ -520,12 +520,12 @@ function ContinueWritingCard({ essay }: { essay: NonNullable<Dashboard["recent_e
   return (
     <div className="comfortable-card flex min-w-0 flex-1 basis-[340px] flex-col justify-between gap-4 rounded-card bg-primary text-primary-foreground shadow-accent sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1 basis-[220px]">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground/85">Continue de onde parou</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-primary-foreground">Continue de onde parou</p>
         <p className="font-display mt-2 text-[22px] font-medium leading-tight">{essay.title || essay.theme_title}</p>
         <div className="mt-2.5 h-1.5 max-w-[240px] overflow-hidden rounded-full bg-white/28">
           <div className="h-full rounded-full bg-white" style={{ width: `${progressPercent}%` }} />
         </div>
-        <p className="mt-1.5 text-[12px] text-primary-foreground/85">Rascunho · {essay.word_count} palavras escritas</p>
+        <p className="mt-1.5 text-[12px] text-primary-foreground">Rascunho · {essay.word_count} palavras escritas</p>
       </div>
       <Link
         href={`/redacao?essay=${essay.id}`}
