@@ -1,7 +1,7 @@
 ﻿from datetime import date, datetime
 from enum import Enum
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, false, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,6 +46,14 @@ class User(Base):
     @property
     def email_verified(self) -> bool:
         return self.email_verified_at is not None
+
+    # Lembrete de streak em risco por e-mail: o aluno pode sair (link no e-mail ou preferencia no perfil).
+    reminders_opt_out: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false(), nullable=False)
+    last_reminder_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    @property
+    def reminders_enabled(self) -> bool:
+        return not self.reminders_opt_out
 
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")

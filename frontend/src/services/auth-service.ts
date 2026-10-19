@@ -35,5 +35,9 @@ export const authApi = {
   exportData: () => apiFetch<Record<string, unknown>>("/auth/me/export"),
   deleteAccount: (password: string) =>
     apiFetch<{ message: string }>("/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
+  updatePreferences: (preferences: { reminders_enabled: boolean }) =>
+    apiFetch<User>("/auth/me/preferences", { method: "PATCH", body: JSON.stringify(preferences) }),
+  unsubscribeReminders: (token: string) =>
+    apiFetch<{ message: string }>("/auth/reminders/unsubscribe", { method: "POST", body: JSON.stringify({ token }) }),
   logout: () => apiFetch<{ message: string }>("/auth/logout", { method: "POST" }),
 };

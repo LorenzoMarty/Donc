@@ -11,6 +11,7 @@ import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-set
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
 import { AchievementsCard } from "@/app/(app)/perfil/components/achievements-card";
 import { PrivacyCard } from "@/app/(app)/perfil/components/privacy-card";
+import { RemindersCard } from "@/app/(app)/perfil/components/reminders-card";
 import { CognitiveIssuesSection } from "@/app/(app)/perfil/components/cognitive-issues-section";
 import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
 import { SubscriptionCard } from "@/app/(app)/perfil/components/subscription-card";
@@ -88,6 +89,7 @@ export default function ProfilePage() {
       <SubscriptionCard />
 
       <AchievementsCard dashboard={dashboard} />
+      <RemindersCard />
 
       <CognitiveIssuesSection issues={learningProfile?.cognitive_issues} />
 
