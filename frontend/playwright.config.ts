@@ -36,6 +36,8 @@ export default defineConfig({
         SEED_DEMO_DATA: "true",
         JWT_SECRET_KEY: "e2e-secret",
         FRONTEND_ORIGIN: "http://localhost:3100",
+        // Os specs logam o mesmo aluno demo dezenas de vezes por minuto: o limite padrao (10/min) daria 429.
+        AUTH_RATE_LIMIT_PER_MINUTE: "1000",
       },
     },
     {
