@@ -21,6 +21,7 @@ from src.schemas.auth import (
     PasswordRecoveryRequest,
     RegisterRequest,
     DeleteAccountRequest,
+    GoogleLoginRequest,
     ResetPasswordRequest,
     VerifyEmailRequest,
     UnsubscribeRemindersRequest,
@@ -37,6 +38,7 @@ from src.services.turnstile import verify_turnstile
 from src.services.reminder_service import ReminderService, user_id_from_unsubscribe_token
 from src.utils.auth_rate_limit import check_auth_rate_limit, check_daily_ip_limit, count_daily_ip_event
 from src.utils.client_ip import client_ip
+from src.services.google_identity import verify_google_id_token
 from src.utils.csrf import require_csrf_for_cookie_session
 
 
@@ -127,6 +129,22 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
     check_auth_rate_limit(request, bucket="login", identifier=str(payload.email))
     service = AuthService(db)
     user = service.authenticate(email=str(payload.email), password=payload.password)
+    token = service.token_for(user, subscription_active=_subscription_active(db, user))
+    refresh_token = service.issue_refresh_token(user)
+    db.commit()
+    _set_session_cookies(response, access_token=token, refresh_token=refresh_token)
+    return success_response(AuthResponse(user=user), "Login realizado com sucesso.")
+
+
+@router.post("/google", response_model=ApiResponse[AuthResponse])
+def login_with_google(
+    payload: GoogleLoginRequest, request: Request, response: Response, db: Session = Depends(get_db)
+) -> ApiResponse[AuthResponse]:
+    """Login/cadastro com o ID token do Google Identity Services."""
+    check_auth_rate_limit(request, bucket="google")
+    identity = verify_google_id_token(payload.credential)
+    service = AuthService(db)
+    user = service.login_with_google(identity, accept_terms=payload.accept_terms)
     token = service.token_for(user, subscription_active=_subscription_active(db, user))
     refresh_token = service.issue_refresh_token(user)
     db.commit()

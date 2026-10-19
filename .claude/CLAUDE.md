@@ -208,6 +208,7 @@ Detalhe completo (engines, payloads, contrato de missão, como criar missão nov
 | `AI_COST_CENTS_PER_1K_TOKENS` | Legado: fallback de custo pra linhas antigas sem `cost_micro_usd` (padrão `0.5`) |
 | `AI_RATE_LIMIT_PER_MINUTE` | Limite de chamadas de IA por usuário por minuto (padrão `20`) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Validade do JWT de acesso (padrão 7 dias) |
+| `GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Login com Google (ID token): backend valida `aud`; o do frontend entra no build. Vazio = desligado |
 | `RESEND_API_KEY` / `EMAIL_FROM` | E-mail transacional via Resend (boas-vindas, reset de senha, pagamento); sem a chave vira log-only |
 | `SEED_ADMIN_PASSWORD` | Senha do admin de demonstração no seed (padrão só para dev local — sempre sobrescreva fora de dev) |
 

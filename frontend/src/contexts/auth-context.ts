@@ -7,6 +7,7 @@ export type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, turnstileToken?: string | null) => Promise<void>;
+  loginWithGoogle: (credential: string, acceptTerms: boolean) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 };

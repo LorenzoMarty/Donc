@@ -19,7 +19,9 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Nulo para quem entrou so com o Google (sem senha); `change-password` trata esse caso.
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    google_sub: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), default=UserRole.STUDENT, nullable=False)
     streak_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)

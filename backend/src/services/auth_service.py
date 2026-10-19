@@ -24,6 +24,24 @@ class AuthService:
         self.record_terms_acceptance(user)
         return touch_last_seen(self.db, user)
 
+    def login_with_google(self, identity, *, accept_terms: bool) -> User:
+        """Entra (ou cria/vincula) a conta a partir de uma identidade Google ja validada."""
+        user = self.db.scalar(select(User).where(User.google_sub == identity.sub, User.deleted_at.is_(None)))
+        if user is None:
+            user = self.users.get_by_email(identity.email)
+            if user is not None:
+                # E-mail ja existe: vincula (o e-mail veio verificado pelo Google; ver google_identity.py).
+                user.google_sub = identity.sub
+                user = self.users.save(user)
+            else:
+                self.require_terms(accept_terms)
+                user = User(name=identity.name, email=identity.email, hashed_password=None, google_sub=identity.sub)
+                self.db.add(user)
+                self.db.commit()
+                self.db.refresh(user)
+                self.record_terms_acceptance(user)
+        return touch_last_seen(self.db, user)
+
     @staticmethod
     def require_terms(accepted: bool) -> None:
         if not accepted:
@@ -36,7 +54,7 @@ class AuthService:
 
     def authenticate(self, *, email: str, password: str) -> User:
         user = self.users.get_by_email(email)
-        if not user or not verify_password(password, user.hashed_password):
+        if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
             raise AppError("E-mail ou senha inválidos.", status_code=401, code="invalid_credentials")
         return touch_last_seen(self.db, user)
 
@@ -45,6 +63,12 @@ class AuthService:
         return self.users.save(user)
 
     def change_password(self, user: User, *, current_password: str, new_password: str) -> None:
+        if not user.hashed_password:
+            raise AppError(
+                "Sua conta entra com o Google e não tem senha. Para criar uma, use \"Esqueci minha senha\" na tela de login.",
+                status_code=400,
+                code="no_password_set",
+            )
         if not verify_password(current_password, user.hashed_password):
             raise AppError("Senha atual incorreta.", status_code=400, code="invalid_current_password")
         if verify_password(new_password, user.hashed_password):
