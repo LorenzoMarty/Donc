@@ -135,6 +135,8 @@ def test_admin_funnel_requires_admin_and_validates_days(client):
     try:
         assert client.get("/api/v1/admin/funnel?days=0").status_code == 422
         assert client.get("/api/v1/admin/funnel?days=181").status_code == 422
+    finally:
+        app.dependency_overrides.pop(require_admin, None)
 
 
 def test_admin_refund_and_reconciliation_routes(client, monkeypatch):
