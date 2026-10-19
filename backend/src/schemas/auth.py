@@ -40,6 +40,14 @@ class DeleteAccountRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class UpdatePreferencesRequest(BaseModel):
+    reminders_enabled: bool
+
+
+class UnsubscribeRemindersRequest(BaseModel):
+    token: str = Field(min_length=3, max_length=120)
+
+
 class UpdateMeRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
 
@@ -58,6 +66,7 @@ class UserRead(BaseModel):
     daily_goal_minutes: int
     created_at: datetime
     email_verified: bool = True
+    reminders_enabled: bool = True
 
     model_config = ConfigDict(from_attributes=True)
 

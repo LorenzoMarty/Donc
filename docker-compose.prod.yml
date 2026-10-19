@@ -102,6 +102,20 @@ services:
         condition: service_healthy
     mem_limit: 768m
 
+  # Agendador: dispara o lembrete diario de streak em risco (19h de Sao Paulo). Uma unica instancia.
+  beat:
+    build:
+      context: ./backend
+    <<: *backend-env
+    command: celery -A src.queues.celery_app:celery_app beat --loglevel=INFO -s /tmp/celerybeat-schedule
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    mem_limit: 256m
+
   frontend:
     build:
       context: ./frontend

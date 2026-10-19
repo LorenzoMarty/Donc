@@ -437,3 +437,28 @@ def test_failed_registrations_do_not_consume_the_daily_ip_quota(client, monkeypa
     other = {**body, "email": "segunda-conta-ip@test.com"}
     assert client.post("/api/v1/auth/register", json=other).status_code == 201
     auth_rate_limit._daily_counters.clear()
+
+
+def test_reminder_preference_and_signed_unsubscribe(client):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import User
+    from src.services.auth_service import AuthService
+
+    db = SessionLocal()
+    try:
+        admin = db.scalar(select(User).where(User.email == "admin@demo.com"))
+        admin.email_verified_at = None
+        AuthService(db).require_email_verified(admin)  # não levanta
+        student = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        student.email_verified_at = None
+        try:
+            AuthService(db).require_email_verified(student)
+            raised = False
+        except Exception as exc:  # noqa: BLE001
+            raised = getattr(exc, "code", "") == "email_not_verified"
+        db.rollback()
+    finally:
+        db.close()
+    assert raised

@@ -78,6 +78,21 @@ def send_email_verification(*, to: str, name: str, token: str) -> bool:
     return send_email(to=to, subject="Confirme seu e-mail", html_body=_layout("Confirme seu e-mail", body, ("Confirmar e-mail", link)))
 
 
+def send_streak_reminder(*, to: str, name: str, streak_days: int, unsubscribe_token: str) -> bool:
+    optout = _app_url(f"/lembretes/cancelar?token={unsubscribe_token}")
+    body = (
+        f"<p>Oi, {html.escape(name)}! Você está há <strong>{streak_days} dias</strong> estudando em sequência. "
+        "Falta só uma atividade hoje para não perder a sequência. Leva uns minutos.</p>"
+        f'<p style="font-size:12px;color:#6b7280">Não quer mais receber estes lembretes? '
+        f'<a href="{html.escape(optout)}">Parar de receber</a>.</p>'
+    )
+    return send_email(
+        to=to,
+        subject=f"Sua sequência de {streak_days} dias está em risco",
+        html_body=_layout("Sua sequência está em risco", body, ("Estudar agora", _app_url("/dashboard"))),
+    )
+
+
 def send_password_reset(*, to: str, name: str, token: str) -> bool:
     link = _app_url(f"/redefinir-senha?token={token}")
     body = (
