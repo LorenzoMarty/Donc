@@ -58,7 +58,7 @@ test("aulas em 390px: lista e aula sem scroll horizontal e com alvos de 44px", a
   const lesson = (modules.data as { items?: Item[] }[])
     .flatMap((module) => module.items ?? [])
     .find((item) => item.kind === "lesson" && item.lesson && !item.lesson.locked)?.lesson;
-  test.skip(!lesson, "seed sem aula liberada");
+  expect(lesson, "o seed precisa ter ao menos uma aula liberada para o aluno demo").toBeTruthy();
 
   await page.goto(`/aulas/${lesson!.id}`);
   await page.waitForLoadState("networkidle");
