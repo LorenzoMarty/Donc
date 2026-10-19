@@ -56,7 +56,7 @@ export function FunnelSection() {
               <dd className="mt-0.5 font-semibold tabular-nums">
                 {funnel.first_action_median_minutes === null ? "—" : `${funnel.first_action_median_minutes.toLocaleString("pt-BR")} min (mediana)`}
               </dd>
-              <dd className="text-xs text-muted-foreground">{formatPct(funnel.first_action_within_target_pct)} em até 3 min</dd>
+              <dd className="text-xs text-muted-foreground">{formatPct(funnel.first_action_within_target_pct)} dos cadastros em até 3 min</dd>
             </div>
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Retorno em D1</dt>

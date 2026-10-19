@@ -51,7 +51,7 @@ class FunnelResult:
     signups: int
     steps: list[FunnelStep]
     first_action_median_minutes: float | None
-    first_action_within_target_pct: float
+    first_action_within_target_pct: float  # % dos cadastros da coorte que agiu em até 3 min
     retention_d1: Retention
     retention_d7: Retention
 
@@ -122,7 +122,8 @@ class FunnelService:
             signups=signups,
             steps=steps,
             first_action_median_minutes=round(median(minutes), 1) if minutes else None,
-            first_action_within_target_pct=_pct(within, len(minutes)),
+            # sobre TODOS os cadastros da coorte: quem nunca agiu conta como "não agiu em 3 min"
+            first_action_within_target_pct=_pct(within, signups),
             retention_d1=self._retention(users, activity, offset_days=1, now=now),
             retention_d7=self._retention(users, activity, offset_days=7, now=now),
         )

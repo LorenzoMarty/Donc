@@ -88,6 +88,7 @@ def test_funnel_steps_time_to_first_action_and_retention():
     assert result.signups == 3
     assert counts == {"signup": 3, "onboarding": 1, "checkout_start": 1, "paid": 1, "first_action": 2, "first_lesson": 1, "first_essay": 1}
     assert result.first_action_median_minutes == 16.0  # mediana de 2 e 30 minutos
-    assert result.first_action_within_target_pct == 50.0
+    # A agiu em 2 min; B em 30; C nunca agiu: 1 de 3 cadastros dentro da meta (e não 1 de 2 que agiram)
+    assert result.first_action_within_target_pct == 33.3
     assert (result.retention_d1.eligible, result.retention_d1.retained) == (3, 1)
     assert (result.retention_d7.eligible, result.retention_d7.retained) == (2, 1)  # C ainda nao completou 7 dias
