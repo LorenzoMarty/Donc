@@ -40,7 +40,16 @@ def list_subscribers(
         )
         for row in result.items
     ]
-    return success_response(AdminSubscribersResponse(items=items, total=result.total, mrr_cents=result.mrr_cents))
+    return success_response(
+        AdminSubscribersResponse(
+            items=items,
+            total=result.total,
+            mrr_cents=result.mrr_cents,
+            active_count=result.active_count,
+            canceled_30d=result.canceled_30d,
+            churn_rate_30d=result.churn_rate_30d,
+        )
+    )
 
 
 @router.get("/coupons", response_model=ApiResponse[CouponListResponse])

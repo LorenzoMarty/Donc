@@ -57,6 +57,9 @@ export type AdminSubscribersResponse = {
   items: AdminSubscriber[];
   total: number;
   mrr_cents: number;
+  active_count?: number;
+  canceled_30d?: number;
+  churn_rate_30d?: number;
 };
 
 export type SupportTicketCategory = "billing" | "technical_bug" | "correction_question" | "account_access" | "other";

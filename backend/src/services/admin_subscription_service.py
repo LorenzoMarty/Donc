@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
 from src.models import PlanCycle, SubscriptionStatus, User
 from src.models.subscription import Subscription
 from src.repositories.subscriptions import SubscriptionRepository
-from src.services.subscription_status import effective_status
+from src.services.subscription_status import _as_aware, effective_status
 
 _MONTHLY_EQUIVALENT_DIVISOR = {PlanCycle.MONTHLY: 1, PlanCycle.ANNUAL: 12}
 
@@ -28,6 +28,9 @@ class AdminSubscribersResult:
     items: list[AdminSubscriberRow]
     total: int
     mrr_cents: int
+    active_count: int
+    canceled_30d: int
+    churn_rate_30d: float
 
 
 class AdminSubscriptionService:
@@ -56,14 +59,31 @@ class AdminSubscriptionService:
                 )
             )
 
-        mrr_cents = self._compute_mrr(now)
-        return AdminSubscribersResult(items=items, total=total, mrr_cents=mrr_cents)
+        mrr_cents, active_count, canceled_30d, churn_rate_30d = self._compute_metrics(now)
+        return AdminSubscribersResult(
+            items=items,
+            total=total,
+            mrr_cents=mrr_cents,
+            active_count=active_count,
+            canceled_30d=canceled_30d,
+            churn_rate_30d=churn_rate_30d,
+        )
 
-    def _compute_mrr(self, now: datetime) -> int:
-        total = 0
+    def _compute_metrics(self, now: datetime) -> tuple[int, int, int, float]:
+        """MRR, assinantes com acesso hoje (ativa/carencia) e churn dos ultimos 30 dias em uma unica
+        passada: cancelamentos pedidos na janela / (ativos que nao cancelaram + cancelados na janela)."""
+        window_start = now - timedelta(days=30)
+        mrr = active_count = paying = canceled_in_window = 0
         for subscription in self.repository.list_all_for_metrics():
-            if effective_status(subscription, now=now) not in (SubscriptionStatus.ACTIVE, SubscriptionStatus.GRACE):
-                continue
-            divisor = _MONTHLY_EQUIVALENT_DIVISOR[subscription.cycle]
-            total += round(subscription.price_charged_cents / divisor)
-        return total
+            has_access = effective_status(subscription, now=now) in (SubscriptionStatus.ACTIVE, SubscriptionStatus.GRACE)
+            if has_access:
+                active_count += 1
+                mrr += round(subscription.price_charged_cents / _MONTHLY_EQUIVALENT_DIVISOR[subscription.cycle])
+            canceled_at = _as_aware(subscription.canceled_at)
+            if canceled_at is not None and canceled_at >= window_start:
+                canceled_in_window += 1
+            elif has_access:
+                paying += 1
+        base = paying + canceled_in_window
+        churn = round(canceled_in_window / base * 100, 1) if base else 0.0
+        return mrr, active_count, canceled_in_window, churn
