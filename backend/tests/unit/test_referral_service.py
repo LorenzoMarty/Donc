@@ -143,3 +143,21 @@ def test_admin_overview_and_apply_reward():
     referrals.mark_reward_applied(overview["items"][0]["id"])
     assert referrals.admin_overview()["credits_open"] == 0
     assert referrals.summary(referrer).credits_available == 0
+
+
+def test_webhook_redelivery_and_reactivation_do_not_double_credit():
+    db, (referrer, friend) = _setup("indicador@t.com", "amigo@t.com")
+    mp = FakeMP()
+    service = SubscriptionService(db, mp_client=mp)
+    subscription, _ = service.start_checkout(friend, cycle=PlanCycle.MONTHLY, coupon_code=ReferralService(db).code_for(referrer))
+    mp.remote_status[subscription.mp_preapproval_id] = "authorized"
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, {})
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, {})  # reentrega do mesmo evento
+
+    # cancela e assina de novo (nova transicao PENDING -> ACTIVE com a mesma indicação já recompensada)
+    subscription.status = SubscriptionStatus.PENDING
+    service.repository.save(subscription)
+    service.handle_webhook({"id": "n2", "data": {"id": subscription.mp_preapproval_id}}, {})
+
+    assert ReferralService(db).summary(referrer).rewarded_count == 1
+    assert ReferralService(db).summary(referrer).credits_available == 1

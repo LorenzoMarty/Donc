@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -44,14 +45,20 @@ class ReferralService:
         """Código único do aluno, gerado na primeira vez que ele pede."""
         if user.referral_code:
             return user.referral_code
-        while True:
+        for _ in range(5):
             candidate = "AMIGO-" + "".join(secrets.choice(_ALPHABET) for _ in range(6))
-            if not self.db.scalar(select(User.id).where(User.referral_code == candidate)):
-                break
-        user.referral_code = candidate
-        self.db.add(user)
-        self.db.commit()
-        return candidate
+            user.referral_code = candidate
+            self.db.add(user)
+            try:
+                self.db.commit()
+                return candidate
+            except IntegrityError:
+                # Código repetido ou outra aba gerou o do mesmo aluno agora: relê e tenta de novo.
+                self.db.rollback()
+                self.db.refresh(user)
+                if user.referral_code:
+                    return user.referral_code
+        raise AppError("Não foi possível gerar o seu código agora. Tente novamente.", status_code=503, code="referral_code_unavailable")
 
     def summary(self, user: User) -> ReferralSummary:
         rows = list(self.db.scalars(select(Referral).where(Referral.referrer_id == user.id)))
@@ -105,37 +112,42 @@ class ReferralService:
     # --- admin ---
 
     def admin_overview(self) -> dict:
-        rows = list(self.db.scalars(select(Referral).order_by(Referral.created_at.desc())))
-        users = {
-            user.id: user
-            for user in self.db.scalars(select(User).where(User.id.in_({r.referrer_id for r in rows} | {r.referred_id for r in rows})))
-        } if rows else {}
-        by_referrer = (
-            self.db.execute(
-                select(Referral.referrer_id, func.count(Referral.id)).where(Referral.status == "rewarded").group_by(Referral.referrer_id).order_by(func.count(Referral.id).desc()).limit(5)
-            ).all()
-            if rows
-            else []
-        )
+        counts = dict(self.db.execute(select(Referral.status, func.count(Referral.id)).group_by(Referral.status)).all())
+        credits_open = self.db.scalar(
+            select(func.count(Referral.id)).where(Referral.status == "rewarded", Referral.reward_applied_at.is_(None))
+        ) or 0
+        recent = list(self.db.scalars(select(Referral).order_by(Referral.created_at.desc()).limit(50)))
+        top = self.db.execute(
+            select(Referral.referrer_id, func.count(Referral.id))
+            .where(Referral.status == "rewarded")
+            .group_by(Referral.referrer_id)
+            .order_by(func.count(Referral.id).desc())
+            .limit(5)
+        ).all()
+        ids = {r.referrer_id for r in recent} | {r.referred_id for r in recent} | {uid for uid, _ in top}
+        users = {user.id: user for user in self.db.scalars(select(User).where(User.id.in_(ids)))} if ids else {}
+
+        def email(uid: int) -> str:
+            return users[uid].email if uid in users else ""
+
         return {
-            "total": len(rows),
-            "pending": sum(1 for r in rows if r.status == "pending"),
-            "rewarded": sum(1 for r in rows if r.status == "rewarded"),
-            "credits_open": sum(1 for r in rows if r.status == "rewarded" and r.reward_applied_at is None),
+            "total": sum(counts.values()),
+            "pending": counts.get("pending", 0),
+            "rewarded": counts.get("rewarded", 0),
+            "credits_open": credits_open,
             "top_referrers": [
-                {"user_id": uid, "name": users[uid].name if uid in users else "", "email": users[uid].email if uid in users else "", "rewarded": count}
-                for uid, count in by_referrer
+                {"user_id": uid, "name": users[uid].name if uid in users else "", "email": email(uid), "rewarded": count} for uid, count in top
             ],
             "items": [
                 {
                     "id": r.id,
-                    "referrer_email": users[r.referrer_id].email if r.referrer_id in users else "",
-                    "referred_email": users[r.referred_id].email if r.referred_id in users else "",
+                    "referrer_email": email(r.referrer_id),
+                    "referred_email": email(r.referred_id),
                     "status": r.status,
                     "created_at": r.created_at,
                     "reward_applied": r.reward_applied_at is not None,
                 }
-                for r in rows[:50]
+                for r in recent
             ],
         }
 
