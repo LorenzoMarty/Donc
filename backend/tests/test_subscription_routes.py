@@ -109,3 +109,9 @@ def test_checkout_records_terms_only_after_success_and_keeps_signup_timestamp(cl
     client.post("/api/v1/subscriptions/checkout", json={"cycle": "monthly", "accept_terms": True})
     with SessionLocal() as db:
         assert db.scalar(select(User).where(User.email == "aluno@demo.com")).terms_accepted_at == first_ts
+
+
+def test_payments_route_returns_list(client):
+    response = client.get("/api/v1/subscriptions/payments")
+    assert response.status_code == 200
+    assert isinstance(response.json()["data"], list)

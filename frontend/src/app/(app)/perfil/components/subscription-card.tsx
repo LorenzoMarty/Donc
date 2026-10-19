@@ -8,7 +8,7 @@ import { Surface } from "@/components/shared/premium-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { ApiClientError, subscriptionApi, type Subscription, type SubscriptionCycle } from "@/services/api";
+import { ApiClientError, subscriptionApi, type Subscription, type SubscriptionCycle, type SubscriptionPayment } from "@/services/api";
 import { cn } from "@/utils";
 
 const STATUS_LABEL: Record<Subscription["status"], { label: string; tone: string }> = {
@@ -17,6 +17,16 @@ const STATUS_LABEL: Record<Subscription["status"], { label: string; tone: string
   grace: { label: "Pagamento pendente", tone: "bg-streak-tint text-streak" },
   suspended: { label: "Suspensa", tone: "bg-destructive/10 text-destructive" },
   canceled: { label: "Cancelada", tone: "bg-destructive/10 text-destructive" },
+};
+
+// Gestão de cartão/assinatura na conta do Mercado Pago do próprio aluno.
+const MP_MANAGE_URL = "https://www.mercadopago.com.br/subscriptions";
+
+const PAYMENT_LABEL: Record<SubscriptionPayment["status"], { label: string; tone: string }> = {
+  paid: { label: "Pago", tone: "bg-primary/12 text-primary" },
+  failed: { label: "Recusado", tone: "bg-destructive/10 text-destructive" },
+  retrying: { label: "Nova tentativa", tone: "bg-streak-tint text-streak" },
+  pending: { label: "Agendado", tone: "bg-muted text-muted-foreground" },
 };
 
 const CYCLE_LABEL: Record<SubscriptionCycle, string> = { monthly: "Mensal", annual: "Anual" };
@@ -78,8 +88,26 @@ export function SubscriptionCard() {
         </p>
       ) : subscription.status === "grace" ? (
         <p className="mt-3 text-sm text-muted-foreground">
-          O último pagamento falhou. Regularize com o Mercado Pago antes do fim do período de carência para não perder o acesso.
+          O último pagamento falhou. Atualize a forma de pagamento até {formatDate(subscription.grace_until)} para não perder o acesso.
         </p>
+      ) : subscription.status === "suspended" ? (
+        <p className="mt-3 text-sm text-muted-foreground">Sem pagamento confirmado, o acesso está suspenso. Regularize ou assine de novo.</p>
+      ) : subscription.status === "active" ? (
+        <p className="mt-3 text-sm text-muted-foreground" data-testid="next-charge">
+          Próxima cobrança em {formatDate(subscription.current_period_end)} · {priceLabel}
+          {subscription.coupon_code ? ` · cupom ${subscription.coupon_code}` : ""}
+        </p>
+      ) : null}
+
+      {subscription.status === "grace" || subscription.status === "suspended" ? (
+        <div className="mt-3">
+          <Button asChild size="sm" className="min-h-11">
+            <a href={MP_MANAGE_URL} target="_blank" rel="noopener noreferrer">
+              <CreditCard className="h-4 w-4" aria-hidden="true" />
+              Atualizar forma de pagamento
+            </a>
+          </Button>
+        </div>
       ) : null}
 
       {subscription.status === "active" && !subscription.canceled_at ? (
@@ -95,6 +123,8 @@ export function SubscriptionCard() {
         </div>
       ) : null}
 
+      {subscription.status !== "pending" ? <PaymentHistory /> : null}
+
       <ChangePlanModal
         open={changingPlan}
         targetCycle={otherCycle}
@@ -106,6 +136,45 @@ export function SubscriptionCard() {
       />
       <CancelModal open={canceling} onClose={() => setCanceling(false)} onCanceled={() => { setCanceling(false); load(); }} />
     </Surface>
+  );
+}
+
+function PaymentHistory() {
+  const [payments, setPayments] = useState<SubscriptionPayment[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    subscriptionApi
+      .payments()
+      .then((items) => active && setPayments(items))
+      .catch(() => active && setFailed(true));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="mt-4 border-t border-border/60 pt-3" data-testid="payment-history">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Histórico de cobranças</p>
+      {failed ? (
+        <p className="mt-2 text-sm text-muted-foreground">Não foi possível carregar o histórico agora. Tente de novo mais tarde.</p>
+      ) : payments === null ? (
+        <p className="mt-2 text-sm text-muted-foreground">Carregando...</p>
+      ) : payments.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">Nenhuma cobrança registrada ainda.</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-border/60">
+          {payments.map((payment) => (
+            <li key={payment.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <span>{formatDate(payment.date)}</span>
+              <span className="tabular-nums">{(payment.amount_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+              <Badge className={cn("shrink-0", PAYMENT_LABEL[payment.status].tone)}>{PAYMENT_LABEL[payment.status].label}</Badge>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
