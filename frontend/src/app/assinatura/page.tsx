@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ApiClientError, authApi, subscriptionApi, type Subscription, type SubscriptionCycle } from "@/services/api";
+import { PRICING_PLANS } from "@/features/marketing/pricing-plans";
 import { cn } from "@/utils";
 
 // Precos de referencia — espelham subscription_price_monthly_cents/subscription_price_annual_cents
@@ -119,6 +120,15 @@ export default function AssinaturaPage() {
                 : "A plataforma é 100% assinatura — escolha o ciclo e conclua o pagamento pra liberar sua conta."}
           </p>
         </div>
+
+        <ul className="mb-4 grid gap-1.5 text-sm" data-testid="value-proposition">
+          {PRICING_PLANS[0].features.map((feature) => (
+            <li key={feature} className="flex items-center gap-2">
+              <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              {feature}
+            </li>
+          ))}
+        </ul>
 
         <Card className="p-4 xs:p-6">
           {unverified ? (
