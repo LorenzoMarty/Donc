@@ -27,7 +27,8 @@ def reply_to_ticket(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[SupportTicketRead]:
-    check_auth_rate_limit(request, bucket="support-ticket", identifier=current_user.email)
+    # Bucket próprio: uma conversa longa não consome a cota de abrir chamados novos.
+    check_auth_rate_limit(request, bucket="support-reply", identifier=current_user.email)
     ticket = SupportService(db).add_student_message(user_id=current_user.id, ticket_id=ticket_id, body=payload.message)
     return success_response(SupportTicketRead.model_validate(ticket), "Mensagem enviada.")
 

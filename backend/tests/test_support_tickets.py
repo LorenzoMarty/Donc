@@ -159,3 +159,39 @@ def test_suggestion_ticket_admin_reply_student_sees_and_follows_up(client, as_ad
 def test_student_cannot_reply_to_someone_elses_ticket(client):
     response = client.post("/api/v1/support/tickets/999999/messages", json={"message": "Olá, isso não é meu."})
     assert response.status_code == 404
+
+
+def test_student_cannot_reply_to_a_ticket_that_belongs_to_someone_else(client):
+    from src.models import SupportTicket
+
+    db = SessionLocal()
+    try:
+        admin = db.scalar(select(User).where(User.email == "admin@demo.com"))
+        ticket = SupportTicket(user_id=admin.id, category="other", subject="Chamado do admin", message="Mensagem do outro usuário.")
+        db.add(ticket)
+        db.commit()
+        ticket_id = ticket.id
+    finally:
+        db.close()
+
+    # o aluno demo (usuário autenticado nos testes) tenta responder um chamado que existe, mas é de outro usuário
+    response = client.post(f"/api/v1/support/tickets/{ticket_id}/messages", json={"message": "Tentando entrar no chamado alheio."})
+
+    assert response.status_code == 404
+    db = SessionLocal()
+    try:
+        assert db.get(SupportTicket, ticket_id).messages == []
+    finally:
+        db.close()
+
+
+def test_reply_moves_the_ticket_up_by_updating_updated_at(client, as_admin, monkeypatch):
+    monkeypatch.setattr("src.services.email_service.fire_and_forget", lambda send, **kw: None)
+    client.post("/api/v1/support/tickets", json={"category": "other", "subject": "Ordenação por atualização", "message": "Mensagem inicial do chamado."})
+    ticket = next(t for t in api_data(client.get("/api/v1/admin/support-tickets"))["items"] if t["subject"] == "Ordenação por atualização")
+
+    client.post(f"/api/v1/admin/support-tickets/{ticket['id']}/reply", json={"message": "Resposta que deve atualizar o chamado."})
+
+    after = next(t for t in api_data(client.get("/api/v1/admin/support-tickets"))["items"] if t["id"] == ticket["id"])
+    assert after["updated_at"] >= ticket["updated_at"]
+    assert len(after["messages"]) == 1

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import { PageHeader, Surface } from "@/components/shared/premium-ui";
 import { SUPPORT_FAQ_ITEMS } from "@/features/support/faq-data";
+import { safeOrigin } from "@/features/support/origin";
 import { SUPPORT_TICKET_CATEGORIES } from "@/features/support/support-categories";
 import type { SupportTicketCategory } from "@/types/api";
 
@@ -19,8 +20,8 @@ function SupportContent() {
   const origin = params?.get("origem");
   const initialCategory = SUPPORT_TICKET_CATEGORIES.some((option) => option.value === category) ? (category ?? undefined) : undefined;
   // Só caminhos internos entram no texto (evita injetar conteúdo arbitrário vindo da URL).
-  const safeOrigin = origin && /^\/[a-z0-9/_-]*$/i.test(origin) ? origin : null;
-  const initialMessage = safeOrigin ? `Estava na página ${safeOrigin}.\n\n` : "";
+  const safePath = safeOrigin(origin);
+  const initialMessage = safePath ? `Estava na página ${safePath}.\n\n` : "";
 
   return (
     <div className="space-y-5 md:space-y-6">

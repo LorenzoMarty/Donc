@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.middlewares.errors import AppError
@@ -24,6 +25,7 @@ class SupportService:
             raise AppError("Chamado não encontrado.", status_code=404, code="support_ticket_not_found")
         ticket.messages.append(SupportTicketMessage(author_role="student", body=body.strip()))
         ticket.status = "open"  # réplica do aluno reabre o chamado
+        ticket.updated_at = func.now()  # adicionar mensagem não faz UPDATE na linha: sobe o chamado na ordenação
         self.db.commit()
         self.db.refresh(ticket)
         return ticket
