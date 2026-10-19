@@ -45,6 +45,23 @@ export type AdminSubscriber = {
   canceled_at: string | null;
 };
 
+export type ReferralSummary = {
+  code: string;
+  discount_percent: number;
+  pending_count: number;
+  rewarded_count: number;
+  credits_available: number;
+};
+
+export type AdminReferrals = {
+  total: number;
+  pending: number;
+  rewarded: number;
+  credits_open: number;
+  top_referrers: { user_id: number; name: string; email: string; rewarded: number }[];
+  items: { id: number; referrer_email: string; referred_email: string; status: "pending" | "rewarded"; created_at: string; reward_applied: boolean }[];
+};
+
 export type AdminSubscribersResponse = {
   items: AdminSubscriber[];
   total: number;

@@ -6,6 +6,7 @@ from src.dependencies import require_admin
 from src.models import DiscountType, User
 from src.schemas.admin_subscriptions import (
     AdminSubscriberRead,
+    AdminReferralsResponse,
     AdminSubscribersResponse,
     CouponCreateRequest,
     CouponListResponse,
@@ -15,6 +16,7 @@ from src.schemas.admin_subscriptions import (
 from src.schemas.common import ApiResponse, success_response
 from src.services.admin_subscription_service import AdminSubscriptionService
 from src.services.coupon_service import CouponService
+from src.services.referral_service import ReferralService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -41,6 +43,17 @@ def list_subscribers(
         for row in result.items
     ]
     return success_response(AdminSubscribersResponse(items=items, total=result.total, mrr_cents=result.mrr_cents))
+
+
+@router.get("/referrals", response_model=ApiResponse[AdminReferralsResponse])
+def referrals_overview(_: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[AdminReferralsResponse]:
+    return success_response(AdminReferralsResponse(**ReferralService(db).admin_overview()))
+
+
+@router.post("/referrals/{referral_id}/apply-reward", response_model=ApiResponse[None])
+def apply_referral_reward(referral_id: int, _: User = Depends(require_admin), db: Session = Depends(get_db)) -> ApiResponse[None]:
+    ReferralService(db).mark_reward_applied(referral_id)
+    return success_response(None, "Crédito marcado como aplicado.")
 
 
 @router.get("/coupons", response_model=ApiResponse[CouponListResponse])

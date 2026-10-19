@@ -68,6 +68,14 @@ def send_welcome(*, to: str, name: str) -> bool:
     return send_email(to=to, subject="Bem-vindo ao Donc", html_body=_layout("Bem-vindo ao Donc", body, ("Começar", _app_url("/dashboard"))))
 
 
+def send_referral_reward(*, to: str, name: str) -> bool:
+    body = (
+        f"<p>{html.escape(name)}, uma pessoa que você indicou acabou de assinar o Donc! "
+        "Você ganhou 1 mês grátis, que aplicamos na sua próxima cobrança.</p>"
+    )
+    return send_email(to=to, subject="Sua indicação virou assinatura", html_body=_layout("Indicação confirmada", body, ("Ver meu perfil", _app_url("/perfil"))))
+
+
 def send_password_reset(*, to: str, name: str, token: str) -> bool:
     link = _app_url(f"/redefinir-senha?token={token}")
     body = (
