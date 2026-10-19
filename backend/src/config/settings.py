@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
     auth_rate_limit_per_minute: int = 10
+    # Contas novas por IP em 24h (0 desliga). Cadastro em massa e cupom em conta descartavel.
+    register_per_ip_per_day: int = 5
+    # Confia no X-Forwarded-For (so ligar atras do Caddy; ver utils/client_ip.py).
+    trust_forwarded_for: bool = False
+    # Cloudflare Turnstile no cadastro e na recuperacao de senha; sem a chave, a checagem e pulada.
+    turnstile_secret_key: str | None = None
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     openai_fallback_model: str = "gpt-4o-mini"

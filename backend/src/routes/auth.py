@@ -31,7 +31,9 @@ from src.schemas.common import ApiResponse, MessageResponse, success_response
 from src.services import email_service
 from src.services.account_data_service import AccountDataService
 from src.services.auth_service import AuthService
-from src.utils.auth_rate_limit import check_auth_rate_limit
+from src.services.turnstile import verify_turnstile
+from src.utils.auth_rate_limit import check_auth_rate_limit, check_daily_ip_limit
+from src.utils.client_ip import client_ip
 from src.utils.csrf import require_csrf_for_cookie_session
 
 
@@ -101,6 +103,8 @@ def register(
     db: Session = Depends(get_db),
 ) -> ApiResponse[AuthResponse]:
     check_auth_rate_limit(request, bucket="register", identifier=str(payload.email))
+    verify_turnstile(payload.turnstile_token, remote_ip=client_ip(request))
+    check_daily_ip_limit(request, bucket="register", limit=settings.register_per_ip_per_day)
     service = AuthService(db)
     user = service.register(
         name=payload.name, email=str(payload.email), password=payload.password, accept_terms=payload.accept_terms
@@ -243,6 +247,7 @@ def password_recovery(
     db: Session = Depends(get_db),
 ) -> ApiResponse[MessageResponse]:
     check_auth_rate_limit(request, bucket="password-recovery", identifier=str(payload.email))
+    verify_turnstile(payload.turnstile_token, remote_ip=client_ip(request))
     result = AuthService(db).request_password_reset(str(payload.email))
     if result:
         user, token = result

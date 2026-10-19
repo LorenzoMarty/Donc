@@ -20,6 +20,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB}"
 os.environ["OPENAI_API_KEY"] = ""
 os.environ["AI_RATE_LIMIT_PER_MINUTE"] = "1000"
 os.environ["AUTH_RATE_LIMIT_PER_MINUTE"] = "1000"
+os.environ["REGISTER_PER_IP_PER_DAY"] = "0"
 os.environ["SEED_DEMO_DATA"] = "true"
 
 from src.database.session import engine, get_db  # noqa: E402
