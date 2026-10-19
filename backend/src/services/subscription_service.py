@@ -12,6 +12,7 @@ from src.models.subscription import ProcessedWebhookEvent, Subscription
 from src.repositories.subscriptions import SubscriptionRepository
 from src.services import email_service
 from src.services.coupon_service import CouponService
+from src.services.referral_service import ReferralService
 from src.services.mercadopago_client import MercadoPagoClient
 from src.services.subscription_status import effective_status
 
@@ -26,6 +27,7 @@ class SubscriptionService:
         self.db = db
         self.repository = SubscriptionRepository(db)
         self.coupons = CouponService(db)
+        self.referrals = ReferralService(db)
         self.mp_client = mp_client or MercadoPagoClient(
             access_token=settings.mercadopago_access_token or "", base_url=settings.mercadopago_base_url
         )
@@ -41,9 +43,19 @@ class SubscriptionService:
 
         base_amount = self._price_for(cycle)
         coupon = None
+        referral_code = None
         final_amount = base_amount
         if coupon_code:
-            final_amount, coupon = self.coupons.validate_and_apply(coupon_code, base_amount_cents=base_amount, now=now)
+            referrer = self.referrals.find_referrer(coupon_code)
+            if referrer is not None:
+                self.referrals.attach(referrer=referrer, referred=user, existing_subscription=existing, code=coupon_code)
+                referral_code = coupon_code.strip().upper()
+                final_amount = max(0, base_amount - round(base_amount * settings.referral_discount_percent / 100))
+            else:
+                final_amount, coupon = self.coupons.validate_and_apply(coupon_code, base_amount_cents=base_amount, now=now)
+
+        if referral_code is None:
+            self.referrals.discard_pending(user.id)
 
         mp_result = self.mp_client.create_preapproval(
             payer_email=user.email,
@@ -59,7 +71,7 @@ class SubscriptionService:
         subscription.status = SubscriptionStatus.PENDING
         subscription.mp_preapproval_id = mp_result["id"]
         subscription.price_charged_cents = final_amount
-        subscription.coupon_code = coupon.code if coupon else None
+        subscription.coupon_code = coupon.code if coupon else referral_code
         subscription.coupon_applied = False
         subscription.canceled_at = None
         subscription.grace_until = None
@@ -130,14 +142,11 @@ class SubscriptionService:
             subscription.status = SubscriptionStatus.CANCELED
             subscription.grace_until = None
 
-        if (
-            previous_status == SubscriptionStatus.PENDING
-            and subscription.status == SubscriptionStatus.ACTIVE
-            and subscription.coupon_code
-            and not subscription.coupon_applied
-        ):
-            self.coupons.record_redemption(subscription.coupon_code)
-            subscription.coupon_applied = True
+        if previous_status == SubscriptionStatus.PENDING and subscription.status == SubscriptionStatus.ACTIVE:
+            self.referrals.reward_on_first_payment(subscription.user_id)
+            if subscription.coupon_code and not subscription.coupon_applied:
+                self.coupons.record_redemption(subscription.coupon_code)
+                subscription.coupon_applied = True
 
         self.repository.save(subscription)
         self._notify_status_change(subscription, previous_status)

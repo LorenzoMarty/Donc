@@ -58,3 +58,28 @@ class AdminSubscribersResponse(BaseModel):
     items: list[AdminSubscriberRead]
     total: int
     mrr_cents: int
+
+
+class ReferralTopRead(BaseModel):
+    user_id: int
+    name: str
+    email: str
+    rewarded: int
+
+
+class ReferralItemRead(BaseModel):
+    id: int
+    referrer_email: str
+    referred_email: str
+    status: Literal["pending", "rewarded"]
+    created_at: datetime
+    reward_applied: bool
+
+
+class AdminReferralsResponse(BaseModel):
+    total: int
+    pending: int
+    rewarded: int
+    credits_open: int
+    top_referrers: list[ReferralTopRead]
+    items: list[ReferralItemRead]

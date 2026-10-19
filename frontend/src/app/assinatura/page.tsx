@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ApiClientError, authApi, subscriptionApi, type Subscription, type SubscriptionCycle } from "@/services/api";
+import { clearStoredReferral, readStoredReferral } from "@/lib/referral";
 import { cn } from "@/utils";
 
 // Precos de referencia — espelham subscription_price_monthly_cents/subscription_price_annual_cents
@@ -25,7 +26,7 @@ export default function AssinaturaPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [cycle, setCycle] = useState<SubscriptionCycle>("monthly");
-  const [couponCode, setCouponCode] = useState("");
+  const [couponCode, setCouponCode] = useState(() => readStoredReferral() ?? "");
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -59,8 +60,14 @@ export default function AssinaturaPage() {
     setError("");
     try {
       const result = await subscriptionApi.checkout(cycle, couponCode.trim() || undefined);
+      clearStoredReferral(); // usado: não reaparece em um próximo checkout
       window.location.href = result.checkout_url;
     } catch (err) {
+      // Código que não serve para esta conta (próprio link, quem já assinou, já indicado): descarta e limpa o campo.
+      if (err instanceof ApiClientError && err.code.startsWith("referral_")) {
+        clearStoredReferral();
+        setCouponCode("");
+      }
       setError(err instanceof ApiClientError ? err.message : "Falha ao iniciar o checkout.");
       setCheckoutLoading(false);
     }

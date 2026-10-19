@@ -9,8 +9,9 @@ from src.dependencies import get_current_user
 from src.middlewares.errors import AppError
 from src.models import PlanCycle, User
 from src.schemas.common import ApiResponse, success_response
-from src.schemas.subscriptions import ChangePlanRequest, CheckoutRequest, CheckoutResponse, SubscriptionRead
+from src.schemas.subscriptions import ChangePlanRequest, CheckoutRequest, CheckoutResponse, ReferralSummaryRead, SubscriptionRead
 from src.services.auth_service import AuthService
+from src.services.referral_service import ReferralService
 from src.services.subscription_service import SubscriptionService
 
 logger = logging.getLogger("src.routes.subscriptions")
@@ -46,6 +47,12 @@ def me(current_user: User = Depends(get_current_user), db: Session = Depends(get
     if not subscription:
         return success_response(None)
     return success_response(SubscriptionRead.model_validate(subscription))
+
+
+@router.get("/referral", response_model=ApiResponse[ReferralSummaryRead])
+def my_referral(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[ReferralSummaryRead]:
+    summary = ReferralService(db).summary(current_user)
+    return success_response(ReferralSummaryRead(**summary.__dict__))
 
 
 @router.post("/change-plan", response_model=ApiResponse[SubscriptionRead])

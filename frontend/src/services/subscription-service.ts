@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/http-client";
-import type { AdminSubscribersResponse, CheckoutResponse, Coupon, Subscription, SubscriptionCycle } from "@/types/api";
+import type { AdminReferrals, AdminSubscribersResponse, CheckoutResponse, Coupon, ReferralSummary, Subscription, SubscriptionCycle } from "@/types/api";
 
 export const subscriptionApi = {
   checkout: (cycle: SubscriptionCycle, couponCode?: string) =>
@@ -8,12 +8,15 @@ export const subscriptionApi = {
       body: JSON.stringify({ cycle, coupon_code: couponCode || undefined, accept_terms: true }),
     }),
   me: () => apiFetch<Subscription | null>("/subscriptions/me"),
+  referral: () => apiFetch<ReferralSummary>("/subscriptions/referral"),
   changePlan: (cycle: SubscriptionCycle) =>
     apiFetch<Subscription>("/subscriptions/change-plan", { method: "POST", body: JSON.stringify({ cycle }) }),
   cancel: () => apiFetch<Subscription>("/subscriptions/cancel", { method: "POST" }),
 };
 
 export const adminSubscriptionApi = {
+  referrals: () => apiFetch<AdminReferrals>("/admin/referrals"),
+  applyReferralReward: (id: number) => apiFetch<null>(`/admin/referrals/${id}/apply-reward`, { method: "POST" }),
   subscribers: (limit = 50, offset = 0) =>
     apiFetch<AdminSubscribersResponse>(`/admin/subscribers?limit=${limit}&offset=${offset}`),
   coupons: (limit = 50, offset = 0) =>
