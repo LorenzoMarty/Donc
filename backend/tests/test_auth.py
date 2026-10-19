@@ -388,3 +388,9 @@ def test_delete_account_requires_password_then_blocks_login(client, monkeypatch)
     client.cookies.clear()
     login = client.post("/api/v1/auth/login", json={"email": "bye@test.com", "password": "senha1234"})
     assert login.status_code == 401
+
+
+def test_delete_account_requires_csrf_header_for_cookie_sessions(client):
+    client.post("/api/v1/auth/login", json={"email": "aluno@demo.com", "password": "12345678"})
+    response = client.post("/api/v1/auth/delete-account", json={"password": "12345678"})
+    assert response.status_code == 403 and response.json()["error"] == "csrf_invalid"

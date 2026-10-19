@@ -19,6 +19,7 @@ from sqlalchemy import delete, inspect, select, update
 from sqlalchemy.orm import Session
 
 from src.config.security import get_password_hash, verify_password
+from src.config.settings import settings
 from src.middlewares.errors import AppError
 from src.models import (
     AIInteractionLog,
@@ -44,7 +45,7 @@ from src.models import (
     UserEvent,
     UserGameProgress,
 )
-from src.services.subscription_service import SubscriptionService
+from src.services.mercadopago_client import MercadoPagoClient
 
 logger = logging.getLogger("src.services.account_data_service")
 
@@ -87,8 +88,11 @@ def _row(obj: Any) -> dict[str, Any]:
 
 
 class AccountDataService:
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, mp_client: MercadoPagoClient | None = None) -> None:
         self.db = db
+        self.mp_client = mp_client or MercadoPagoClient(
+            access_token=settings.mercadopago_access_token or "", base_url=settings.mercadopago_base_url
+        )
 
     def export(self, user: User) -> dict[str, Any]:
         def rows(model: type) -> list[dict[str, Any]]:
@@ -126,6 +130,8 @@ class AccountDataService:
             "game_progress": rows(UserGameProgress),
             "learning_profile": rows(StudentLearningProfile),
             "learning_outcomes": rows(LearningOutcome),
+            "recommendations": rows(RecommendationLog),
+            "events": rows(UserEvent),
             "support_tickets": rows(SupportTicket),
             "subscription": rows(Subscription),
         }
@@ -155,12 +161,19 @@ class AccountDataService:
         subscription = self.db.scalar(select(Subscription).where(Subscription.user_id == user.id))
         if not subscription or subscription.status in (SubscriptionStatus.CANCELED, SubscriptionStatus.SUSPENDED):
             return
-        try:
-            SubscriptionService(self.db).cancel(user)
-        except AppError:
-            logger.warning("Cancelamento no Mercado Pago falhou na exclusão da conta %s", user.id)
+        if subscription.mp_preapproval_id:
+            try:
+                self.mp_client.update_preapproval(subscription.mp_preapproval_id, status="cancelled")
+            except AppError:
+                # Sem isso a cobrança recorrente seguiria ativa numa conta já anonimizada, sem como cancelar depois.
+                # Nada foi apagado ainda: o aluno pode tentar de novo ou falar com o suporte.
+                raise AppError(
+                    "Não conseguimos cancelar a sua assinatura no Mercado Pago agora, então a conta não foi excluída. "
+                    "Tente de novo em alguns minutos ou fale com o suporte.",
+                    status_code=502,
+                    code="subscription_cancel_failed",
+                ) from None
         # Conta excluída não mantém acesso até o fim do período: encerra agora.
-        subscription = self.db.scalar(select(Subscription).where(Subscription.user_id == user.id))
-        if subscription:
-            subscription.status = SubscriptionStatus.CANCELED
-            subscription.canceled_at = subscription.canceled_at or datetime.now(UTC)
+        subscription.status = SubscriptionStatus.CANCELED
+        subscription.grace_until = None
+        subscription.canceled_at = subscription.canceled_at or datetime.now(UTC)

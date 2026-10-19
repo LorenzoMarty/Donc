@@ -78,12 +78,25 @@ def test_delete_requires_correct_password():
     assert user.deleted_at is None
 
 
-def test_delete_anonymizes_user_removes_content_and_cancels_subscription(monkeypatch):
+class FakeMP:
+    def __init__(self, fail=False):
+        self.fail = fail
+        self.cancelled: list[str] = []
+
+    def update_preapproval(self, preapproval_id, **fields):
+        if self.fail:
+            raise AppError("MP fora do ar", status_code=502, code="mercadopago_unreachable")
+        self.cancelled.append(preapproval_id)
+        return {}
+
+
+def test_delete_anonymizes_user_removes_content_and_cancels_subscription():
     db, user, other = _setup()
-    monkeypatch.setattr("src.services.subscription_service.SubscriptionService.cancel", lambda self, u: None)
+    mp = FakeMP()
     version_before = user.session_version
 
-    AccountDataService(db).delete_account(user, password="senha1234")
+    AccountDataService(db, mp_client=mp).delete_account(user, password="senha1234")
+    assert mp.cancelled == ["mp-123"]
 
     db.refresh(user)
     assert user.deleted_at is not None
@@ -104,3 +117,17 @@ def test_delete_anonymizes_user_removes_content_and_cancels_subscription(monkeyp
     assert subscription.status == SubscriptionStatus.CANCELED
     # dados de outro aluno intactos
     assert len(db.scalars(select(Essay).where(Essay.user_id == other.id)).all()) == 1
+
+
+def test_delete_is_aborted_and_nothing_is_erased_when_mercado_pago_cancel_fails():
+    db, user, _ = _setup()
+
+    with pytest.raises(AppError) as exc:
+        AccountDataService(db, mp_client=FakeMP(fail=True)).delete_account(user, password="senha1234")
+
+    assert exc.value.code == "subscription_cancel_failed"
+    db.refresh(user)
+    assert user.deleted_at is None and user.email == "maria@test.com"
+    assert len(db.scalars(select(Essay).where(Essay.user_id == user.id)).all()) == 1  # conteúdo intacto
+    subscription = db.scalar(select(Subscription).where(Subscription.user_id == user.id))
+    assert subscription.status == SubscriptionStatus.ACTIVE  # e a assinatura segue como estava
