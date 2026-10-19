@@ -1,7 +1,7 @@
 """Streak reminder emails: users.reminders_opt_out + users.last_reminder_at.
 
-Revision ID: 0043_reminders
-Revises: 0042_lesson_published
+Revision ID: 0047_reminders
+Revises: 0046_coupon_redemptions
 Create Date: 2026-10-18
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0043_reminders"
-down_revision: str | None = "0042_lesson_published"
+revision: str = "0047_reminders"
+down_revision: str | None = "0046_coupon_redemptions"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
