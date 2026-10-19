@@ -29,6 +29,22 @@ def freeze_available(user: User, *, now: datetime | None = None) -> bool:
     return user.streak_freeze_week != _week_start(today)
 
 
+def effective_streak(user: User, *, now: datetime | None = None) -> int:
+    """Sequência que o aluno deve VER hoje (só leitura; não grava nada).
+
+    `streak_days` só é recalculado quando há atividade, então um aluno que parou de estudar continuaria vendo
+    o número antigo. Aqui: até ontem vale o salvo; com 1 dia perdido e o congelamento da semana livre ainda dá
+    para salvar hoje; passou disso, a sequência já quebrou (0).
+    """
+    if user.streak_days <= 0 or user.last_activity_at is None:
+        return 0
+    now_utc = _as_aware_utc(now or datetime.now(UTC))
+    elapsed = (_streak_date(now_utc) - _streak_date(user.last_activity_at)).days
+    if elapsed <= 1 or (elapsed == 2 and freeze_available(user, now=now_utc)):
+        return user.streak_days
+    return 0
+
+
 def apply_daily_streak(user: User, *, now: datetime | None = None) -> None:
     """Avanca `streak_days` com base em `last_activity_at` — NUNCA chamar em request de leitura
     ou login; so em atividade pedagogica real (ver `touch_daily_streak`)."""

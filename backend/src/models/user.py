@@ -47,12 +47,6 @@ class User(Base):
     def email_verified(self) -> bool:
         return self.email_verified_at is not None
 
-    @property
-    def streak_freeze_available(self) -> bool:
-        from src.services.streak_service import freeze_available
-
-        return freeze_available(self)
-
     lesson_progress = relationship("LessonProgress", back_populates="user", cascade="all, delete-orphan")
     exercise_answers = relationship("ExerciseAnswer", back_populates="user", cascade="all, delete-orphan")
     essays = relationship("Essay", back_populates="user", cascade="all, delete-orphan")
