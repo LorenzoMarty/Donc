@@ -51,7 +51,7 @@ export default function PricingPage() {
               offers: plans.map((plan) => ({
                 "@type": "Offer",
                 name: plan.name,
-                price: plan.price.replace(/[^0-9]/g, ""),
+                price: String(plan.amount),
                 priceCurrency: "BRL",
                 availability: "https://schema.org/InStock",
               })),

@@ -44,3 +44,10 @@ test("pricing publica JSON-LD de produto e FAQ", async ({ page }) => {
   const offers = (data["@graph"][0] as { offers: { price: string }[] }).offers;
   expect(offers.map((offer) => offer.price)).toEqual(["59", "588"]);
 });
+
+test("home publica JSON-LD de organização e site", async ({ page }) => {
+  await page.goto("/");
+  const raw = await page.locator('script[type="application/ld+json"]').first().textContent();
+  const types = (JSON.parse(raw!)["@graph"] as { "@type": string }[]).map((node) => node["@type"]);
+  expect(types).toEqual(["Organization", "WebSite"]);
+});

@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 
+import { PRICING_PLANS } from "@/features/marketing/pricing-plans";
+
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+// NEXT_PUBLIC_* é embutido no build: se faltar, sitemap, canonical e og:url saem apontando para localhost.
+if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_SITE_URL && process.env.CI !== "true") {
+  console.warn("[seo] NEXT_PUBLIC_SITE_URL não definido no build: sitemap, canonical e og:url usarão http://localhost:3000.");
+}
 
 export type MarketingPage = { path: string; title: string; description: string; priority: number };
 
@@ -15,7 +22,7 @@ export const MARKETING_PAGES: MarketingPage[] = [
   {
     path: "/pricing",
     title: "Planos e preços",
-    description: "Plano mensal de R$ 59 ou anual de R$ 588. Acesso completo à plataforma, com correção de redação por IA e trilhas de Português.",
+    description: `Plano ${PRICING_PLANS[0].name.toLowerCase()} de ${PRICING_PLANS[0].price} ou ${PRICING_PLANS[1].name.toLowerCase()} de ${PRICING_PLANS[1].price}. Acesso completo à plataforma, com correção de redação por IA e trilhas de Português.`,
     priority: 0.9,
   },
   {
