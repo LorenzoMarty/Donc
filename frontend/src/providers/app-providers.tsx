@@ -59,8 +59,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         ensureFreePostItsStoreOwner(payload.user.id);
         setUser(payload.user);
       },
-      register: async (name: string, email: string, password: string) => {
-        const payload = await authApi.register(name, email, password);
+      register: async (name: string, email: string, password: string, turnstileToken?: string | null) => {
+        const payload = await authApi.register(name, email, password, turnstileToken);
         ensureGameStoreOwner(payload.user.id);
         ensureHighlightsStoreOwner(payload.user.id);
         ensureFreePostItsStoreOwner(payload.user.id);

@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { MailCheck } from "lucide-react";
 
 import { MotionShell } from "@/components/shared/motion-shell";
+import { TurnstileWidget, turnstileEnabled } from "@/components/shared/turnstile-widget";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,12 +15,15 @@ export default function RecoverPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
-    const response = await authApi.recover(email).catch((error) => ({ message: error.message }));
+    const response = await authApi.recover(email, captchaToken).catch((error) => ({ message: error.message }));
     setMessage(response.message);
+    setCaptchaReset((value) => value + 1); // o token do captcha vale uma única verificação
     setLoading(false);
   }
 
@@ -38,8 +42,9 @@ export default function RecoverPage() {
           </div>
           <form onSubmit={onSubmit} className="space-y-4">
             <Input type="email" placeholder="seu@email.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaReset} />
             {message && <p className="rounded-md bg-accent/10 px-3 py-2 text-sm text-accent">{message}</p>}
-            <Button className="w-full" disabled={loading}>
+            <Button className="w-full" disabled={loading || (turnstileEnabled && !captchaToken)}>
               {loading ? "Enviando..." : "Enviar link"}
             </Button>
           </form>
