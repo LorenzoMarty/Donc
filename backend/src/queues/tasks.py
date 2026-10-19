@@ -46,3 +46,17 @@ if celery_app is not None:
     correct_essay_task = celery_app.task(name="src.queues.tasks.correct_essay")(run_correct_essay_job)
 else:
     correct_essay_task = None
+
+
+def send_streak_reminders() -> int:
+    from src.services.reminder_service import ReminderService
+
+    db = SessionLocal()
+    try:
+        return ReminderService(db).send_due()
+    finally:
+        db.close()
+
+
+if celery_app is not None:
+    send_streak_reminders_task = celery_app.task(name="src.queues.tasks.send_streak_reminders")(send_streak_reminders)

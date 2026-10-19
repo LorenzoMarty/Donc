@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Merriweather, Newsreader } from "next/font/google";
 
 import { Providers } from "@/providers/app-providers";
@@ -35,11 +35,17 @@ export const metadata: Metadata = {
     template: "%s | Donc",
   },
   description: "Plataforma para estudar Portugues e Redacao ENEM com IA, praticas curtas, rotina e progresso real.",
+  applicationName: "Donc",
+  appleWebApp: { capable: true, title: "Donc", statusBarStyle: "default" },
   openGraph: {
     title: "Donc",
     description: "Estudo de Portugues e Redacao ENEM com IA, rotina e progresso mensuravel.",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2b823b",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -23,6 +23,8 @@ from src.schemas.auth import (
     DeleteAccountRequest,
     ResetPasswordRequest,
     VerifyEmailRequest,
+    UnsubscribeRemindersRequest,
+    UpdatePreferencesRequest,
     AuthResponse,
     UpdateMeRequest,
     UserRead,
@@ -32,6 +34,7 @@ from src.services import email_service
 from src.services.account_data_service import AccountDataService
 from src.services.auth_service import AuthService
 from src.services.turnstile import verify_turnstile
+from src.services.reminder_service import ReminderService, user_id_from_unsubscribe_token
 from src.utils.auth_rate_limit import check_auth_rate_limit, check_daily_ip_limit, count_daily_ip_event
 from src.utils.client_ip import client_ip
 from src.utils.csrf import require_csrf_for_cookie_session
@@ -279,6 +282,29 @@ def resend_verification(
     token = AuthService(db).resend_email_verification(current_user)
     background.add_task(email_service.send_email_verification, to=current_user.email, name=current_user.name, token=token)
     return success_response(MessageResponse(message="E-mail de confirmação reenviado."), "E-mail de confirmação reenviado.")
+
+
+@router.patch("/me/preferences", response_model=ApiResponse[UserRead])
+def update_preferences(
+    payload: UpdatePreferencesRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[UserRead]:
+    current_user.reminders_opt_out = not payload.reminders_enabled
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return success_response(UserRead.model_validate(current_user), "Preferências atualizadas.")
+
+
+@router.post("/reminders/unsubscribe", response_model=ApiResponse[MessageResponse])
+def unsubscribe_reminders(payload: UnsubscribeRemindersRequest, request: Request, db: Session = Depends(get_db)) -> ApiResponse[MessageResponse]:
+    """Link de opt-out do e-mail: público, autenticado pelo token assinado."""
+    check_auth_rate_limit(request, bucket="reminders-unsubscribe")
+    user_id = user_id_from_unsubscribe_token(payload.token)
+    if user_id is None or not ReminderService(db).opt_out(user_id):
+        raise AppError("Link inválido.", status_code=400, code="invalid_unsubscribe_token")
+    return success_response(MessageResponse(message="Lembretes desativados."), "Lembretes desativados.")
 
 
 @router.post("/reset-password", response_model=ApiResponse[MessageResponse])

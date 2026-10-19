@@ -9,6 +9,7 @@ configure_sentry()
 
 try:
     from celery import Celery
+    from celery.schedules import crontab
 
     celery_app = Celery(
         "donc_ai",
@@ -32,6 +33,11 @@ try:
     # comum.
     celery_app.conf.task_time_limit = 420
     celery_app.conf.task_soft_time_limit = 400
+    # Agendador (`celery beat`): lembrete de streak em risco todo dia as 19h de Sao Paulo.
+    celery_app.conf.timezone = "America/Sao_Paulo"
+    celery_app.conf.beat_schedule = {
+        "streak-reminders": {"task": "src.queues.tasks.send_streak_reminders", "schedule": crontab(hour=19, minute=0)},
+    }
 except Exception:
     logging.getLogger("src.queues.celery_app").warning("Celery indisponivel — correcoes rodam pelo fallback sincrono.", exc_info=True)
     celery_app = None

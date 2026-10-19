@@ -177,6 +177,7 @@ export type User = {
   daily_goal_minutes: number;
   created_at: string;
   email_verified: boolean;
+  reminders_enabled?: boolean;
 };
 
 export type CognitiveIssueState = "DETECTED" | "TRAINING" | "IMPROVING" | "MASTERED";
