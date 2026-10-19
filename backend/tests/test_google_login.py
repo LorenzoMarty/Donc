@@ -71,6 +71,7 @@ def test_new_google_user_is_created_without_password_and_gets_a_session(client, 
     assert response.cookies.get("access_token") and response.cookies.get("refresh_token")
     user = _user_by_email("novo.google@example.com")
     assert user.hashed_password is None and user.google_sub == "new-sub" and user.terms_accepted_at is not None
+    assert user.email_verified_at is not None  # pode assinar sem o passo de verificação por e-mail
     assert client.get("/api/v1/auth/me").json()["data"]["email"] == "novo.google@example.com"
 
 
@@ -84,21 +85,44 @@ def test_new_account_requires_terms_but_existing_one_does_not(client, google):
     assert _post(client, _token(sub="s-terms", email="semtermos@example.com"), accept_terms=False).status_code == 200
 
 
-def test_existing_email_is_linked_not_duplicated(client, google):
+def _users(email):
+    db = SessionLocal()
+    try:
+        return db.scalars(select(User).where(User.email == email)).all()
+    finally:
+        db.close()
+
+
+def test_verified_account_is_linked_not_duplicated_and_keeps_its_password(client, google):
     client.post("/api/v1/auth/register", json={"name": "Com Senha", "email": "vincular@example.com", "password": "senha1234", "accept_terms": True})
+    db = SessionLocal()
+    try:
+        user = db.scalar(select(User).where(User.email == "vincular@example.com"))
+        user.email_verified_at = user.created_at  # dono já confirmou o e-mail
+        db.commit()
+    finally:
+        db.close()
     client.cookies.clear()
 
     response = _post(client, _token(sub="link-sub", email="vincular@example.com"), accept_terms=False)
 
     assert response.status_code == 200
-    db = SessionLocal()
-    try:
-        users = db.scalars(select(User).where(User.email == "vincular@example.com")).all()
-    finally:
-        db.close()
+    users = _users("vincular@example.com")
     assert len(users) == 1 and users[0].google_sub == "link-sub" and users[0].hashed_password
-    # a senha antiga continua funcionando
     assert client.post("/api/v1/auth/login", json={"email": "vincular@example.com", "password": "senha1234"}).status_code == 200
+
+
+def test_linking_an_unverified_pre_registered_account_drops_the_squatter_password(client, google):
+    """Atacante cadastra o e-mail da vítima antes dela; quando a vítima entra com o Google, a senha dele morre."""
+    client.post("/api/v1/auth/register", json={"name": "Invasor", "email": "vitima@example.com", "password": "senha-do-invasor", "accept_terms": True})
+    client.cookies.clear()
+
+    assert _post(client, _token(sub="vitima-sub", email="vitima@example.com")).status_code == 200
+
+    user = _users("vitima@example.com")[0]
+    assert user.hashed_password is None and user.email_verified_at is not None
+    client.cookies.clear()
+    assert client.post("/api/v1/auth/login", json={"email": "vitima@example.com", "password": "senha-do-invasor"}).status_code == 401
 
 
 @pytest.mark.parametrize(

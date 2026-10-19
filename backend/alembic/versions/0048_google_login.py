@@ -1,7 +1,7 @@
 """Google login: users.hashed_password nullable + users.google_sub (unique).
 
-Revision ID: 0043_google_login
-Revises: 0042_lesson_published
+Revision ID: 0048_google_login
+Revises: 0047_reminders
 Create Date: 2026-10-18
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 
-revision: str = "0043_google_login"
-down_revision: str | None = "0042_lesson_published"
+revision: str = "0048_google_login"
+down_revision: str | None = "0047_reminders"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

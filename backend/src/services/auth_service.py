@@ -35,12 +35,24 @@ class AuthService:
                 # Encerra as sessoes que ja existiam: se alguem cadastrou este e-mail antes do dono, o acesso
                 # dele (sessoes abertas) nao sobrevive a vinculacao.
                 user.google_sub = identity.sub
+                if user.email_verified_at is None:
+                    # Conta pre-cadastrada por senha sem confirmar o e-mail: quem prova ser dono do e-mail agora e o
+                    # Google. A senha de quem cadastrou antes (possivel invasor) deixa de valer; o dono volta por
+                    # "Esqueci minha senha" se quiser uma.
+                    user.hashed_password = None
+                    user.email_verified_at = datetime.now(UTC)
                 user.session_version += 1
                 self.users.save(user)
                 self.revoke_all_refresh_tokens(user.id)
             else:
                 self.require_terms(accept_terms)
-                user = User(name=identity.name, email=identity.email, hashed_password=None, google_sub=identity.sub)
+                user = User(
+                    name=identity.name,
+                    email=identity.email,
+                    hashed_password=None,
+                    google_sub=identity.sub,
+                    email_verified_at=datetime.now(UTC),  # o Google ja verificou o e-mail
+                )
                 self.db.add(user)
                 try:
                     self.db.commit()
