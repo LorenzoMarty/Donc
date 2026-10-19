@@ -137,7 +137,7 @@ export default function DashboardPage() {
           items={[
             { icon: Sparkles, tone: "g", label: "Nota média", value: average ? String(average) : "--", unit: "/1000", delta: bestScore ? `melhor nota ${bestScore}` : "envie uma redação", up: average > 0 },
             { icon: FileText, tone: "b", label: "Redações", value: String(essaysWritten), unit: "enviadas", delta: `${essaysWritten} no total`, up: null },
-            { icon: Flame, tone: "a", label: "Sequência", value: String(streak), unit: "dias", delta: streak > 0 ? "sequência ativa" : "comece hoje", up: streak > 0 },
+            { icon: Flame, tone: "a", label: "Sequência", value: String(streak), unit: "dias", delta: streak > 0 ? (data.streak_freeze_available !== false ? "congelamento da semana disponível" : "congelamento da semana usado") : "comece hoje", up: streak > 0 },
             { icon: Video, tone: "v", label: "Aulas", value: String(completedLessons), unit: "assistidas", delta: `${data.progress_general ?? 0}% do percurso`, up: completedLessons > 0 },
           ]}
         />

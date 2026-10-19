@@ -1,7 +1,7 @@
-﻿from datetime import datetime
+﻿from datetime import date, datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,6 +23,9 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole), default=UserRole.STUDENT, nullable=False)
     streak_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     daily_goal_minutes: Mapped[int] = mapped_column(Integer, default=45, nullable=False)
+    # Segunda-feira da semana (America/Sao_Paulo) em que o congelamento semanal foi usado. Um dia
+    # perdido por semana nao quebra o streak; ver `streak_service.apply_daily_streak`.
+    streak_freeze_week: Mapped[date | None] = mapped_column(Date, nullable=True)
     session_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Separado de `last_seen_at` (presenca, tocado em toda request autenticada) — so avanca em

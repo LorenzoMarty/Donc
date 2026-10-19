@@ -68,11 +68,14 @@ def test_daily_streak_increments_on_consecutive_day():
     assert user.streak_days == 5
 
 
-def test_daily_streak_restarts_after_missed_day():
+def test_daily_streak_restarts_after_missed_day_when_weekly_freeze_already_used():
+    from datetime import date
+
     user = make_user(
         streak_days=4,
         last_activity_at=datetime(2026, 5, 31, 12, 0, tzinfo=UTC),
     )
+    user.streak_freeze_week = date(2026, 6, 1)  # segunda da semana de 2026-06-02: congelamento ja gasto
 
     apply_daily_streak(user, now=datetime(2026, 6, 2, 12, 0, tzinfo=UTC))
 
@@ -121,3 +124,58 @@ def test_last_seen_updates_do_not_affect_streak_day_math():
     touch_daily_streak(db, user, now=day2)
 
     assert user.streak_days == 2
+
+
+def test_weekly_freeze_saves_one_missed_day_then_resets_on_second_miss_same_week():
+    # 2026-06-01 e segunda-feira. Atividade na segunda, perde a terca, volta na quarta.
+    user = make_user(streak_days=5, last_activity_at=datetime(2026, 6, 1, 15, 0, tzinfo=UTC))
+
+    apply_daily_streak(user, now=datetime(2026, 6, 3, 15, 0, tzinfo=UTC))
+
+    assert user.streak_days == 6
+    assert user.streak_freeze_week is not None
+
+    # Perde a quinta e volta na sexta: congelamento da semana ja foi usado, streak recomeca.
+    apply_daily_streak(user, now=datetime(2026, 6, 5, 15, 0, tzinfo=UTC))
+
+    assert user.streak_days == 1
+
+
+def test_freeze_renews_next_week_and_two_missed_days_always_break():
+    from src.services.streak_service import freeze_available
+
+    user = make_user(streak_days=5, last_activity_at=datetime(2026, 6, 1, 15, 0, tzinfo=UTC))
+    apply_daily_streak(user, now=datetime(2026, 6, 3, 15, 0, tzinfo=UTC))
+    assert freeze_available(user, now=datetime(2026, 6, 4, 15, 0, tzinfo=UTC)) is False
+    assert freeze_available(user, now=datetime(2026, 6, 8, 15, 0, tzinfo=UTC)) is True  # segunda seguinte
+
+    # Dois dias perdidos nunca sao salvos, mesmo com o congelamento livre.
+    other = make_user(streak_days=5, last_activity_at=datetime(2026, 6, 8, 15, 0, tzinfo=UTC))
+    apply_daily_streak(other, now=datetime(2026, 6, 11, 15, 0, tzinfo=UTC))
+    assert other.streak_days == 1
+
+
+def test_effective_streak_shows_what_the_student_can_still_keep():
+    from src.services.streak_service import effective_streak
+
+    last = datetime(2026, 6, 1, 15, 0, tzinfo=UTC)  # segunda
+    user = make_user(streak_days=6, last_activity_at=last)
+
+    assert effective_streak(user, now=datetime(2026, 6, 1, 20, 0, tzinfo=UTC)) == 6  # mesmo dia
+    assert effective_streak(user, now=datetime(2026, 6, 2, 20, 0, tzinfo=UTC)) == 6  # ontem: ainda dá para manter
+    assert effective_streak(user, now=datetime(2026, 6, 3, 20, 0, tzinfo=UTC)) == 6  # 1 dia perdido + congelamento livre
+    user.streak_freeze_week = datetime(2026, 6, 1).date()  # congelamento da semana já usado
+    assert effective_streak(user, now=datetime(2026, 6, 3, 20, 0, tzinfo=UTC)) == 0
+    assert effective_streak(make_user(streak_days=6, last_activity_at=last), now=datetime(2026, 6, 4, 20, 0, tzinfo=UTC)) == 0  # 2 dias
+    assert effective_streak(make_user(streak_days=0, last_activity_at=last), now=last) == 0
+    assert effective_streak(make_user(streak_days=3, last_activity_at=None)) == 0
+
+
+def test_freeze_week_boundary_sunday_to_monday_and_sao_paulo_midnight():
+    from src.services.streak_service import freeze_available
+
+    user = make_user(streak_days=4, last_activity_at=datetime(2026, 6, 5, 15, 0, tzinfo=UTC))
+    user.streak_freeze_week = datetime(2026, 6, 1).date()  # usado na semana de 1 a 7 de junho
+    # domingo 7 (SP) ainda é a mesma semana; 03h UTC de segunda 8 = 00h em SP já é a semana nova
+    assert freeze_available(user, now=datetime(2026, 6, 8, 2, 59, tzinfo=UTC)) is False
+    assert freeze_available(user, now=datetime(2026, 6, 8, 3, 0, tzinfo=UTC)) is True
