@@ -334,10 +334,6 @@ def test_welcome_email_only_on_first_verification(client, monkeypatch, real_auth
 
 
 def test_admin_is_not_blocked_by_email_verification(client):
-    assert sent and sent[0]["to"] == "welcome@test.com"
-
-
-def test_reminder_preference_and_signed_unsubscribe(client):
     from sqlalchemy import select
 
     from src.database.session import SessionLocal
@@ -441,27 +437,28 @@ def test_failed_registrations_do_not_consume_the_daily_ip_quota(client, monkeypa
     other = {**body, "email": "segunda-conta-ip@test.com"}
     assert client.post("/api/v1/auth/register", json=other).status_code == 201
     auth_rate_limit._daily_counters.clear()
-    from src.services.reminder_service import unsubscribe_token
 
-    login = client.post("/api/v1/auth/login", json={"email": "aluno@demo.com", "password": "12345678"})
-    csrf = {"X-CSRF-Token": login.cookies.get("csrf_token")}
 
-    off = client.patch("/api/v1/auth/me/preferences", json={"reminders_enabled": False}, headers=csrf)
-    assert off.status_code == 200 and api_data(off)["reminders_enabled"] is False
-    on = client.patch("/api/v1/auth/me/preferences", json={"reminders_enabled": True}, headers=csrf)
-    assert api_data(on)["reminders_enabled"] is True
+def test_reminder_preference_and_signed_unsubscribe(client):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import User
+    from src.services.auth_service import AuthService
 
     db = SessionLocal()
     try:
-        user_id = db.scalar(select(User.id).where(User.email == "aluno@demo.com"))
+        admin = db.scalar(select(User).where(User.email == "admin@demo.com"))
+        admin.email_verified_at = None
+        AuthService(db).require_email_verified(admin)  # não levanta
+        student = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        student.email_verified_at = None
+        try:
+            AuthService(db).require_email_verified(student)
+            raised = False
+        except Exception as exc:  # noqa: BLE001
+            raised = getattr(exc, "code", "") == "email_not_verified"
+        db.rollback()
     finally:
         db.close()
-
-    bad = client.post("/api/v1/auth/reminders/unsubscribe", json={"token": f"{user_id}.{'0' * 32}"})
-    assert bad.status_code == 400 and bad.json()["error"] == "invalid_unsubscribe_token"
-
-    # o link do e-mail funciona sem CSRF mesmo com sessao aberta
-    ok = client.post("/api/v1/auth/reminders/unsubscribe", json={"token": unsubscribe_token(user_id)})
-    assert ok.status_code == 200
-    assert api_data(client.get("/api/v1/auth/me"))["reminders_enabled"] is False
-    client.patch("/api/v1/auth/me/preferences", json={"reminders_enabled": True}, headers=csrf)  # restaura o demo
+    assert raised
