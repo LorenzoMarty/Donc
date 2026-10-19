@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { BrandLink } from "@/components/shared/brand-mark";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { TermsConsent } from "@/components/shared/terms-consent";
+import { TurnstileWidget, turnstileEnabled } from "@/components/shared/turnstile-widget";
 import { useAuth } from "@/providers/app-providers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,16 +21,19 @@ export default function RegisterPage() {
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError("");
     try {
-      await register(name, email, password);
+      await register(name, email, password, captchaToken);
       window.location.replace("/assinatura");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao cadastrar.");
+      setCaptchaReset((value) => value + 1); // o token do captcha vale uma única verificação
     } finally {
       setLoading(false);
     }
@@ -55,8 +59,9 @@ export default function RegisterPage() {
               required
             />
             <TermsConsent checked={accepted} onChange={setAccepted} />
+            <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaReset} />
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-            <Button className="w-full" disabled={loading}>
+            <Button className="w-full" disabled={loading || (turnstileEnabled && !captchaToken)}>
               {loading ? "Criando..." : "Começar"}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>
