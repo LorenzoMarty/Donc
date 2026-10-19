@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Lock, Play, Trophy } from "lucide-react";
+import { marketingMetadata } from "@/lib/site";
 
 import { HoverGlowCard, Reveal } from "@/components/sections/aceternity-primitives";
 import { MarketingShell } from "@/components/sections/marketing-shell";
@@ -11,6 +12,8 @@ const tracks = [
   { title: "Redação ENEM", text: "Tese, desenvolvimento e proposta de intervenção com prática guiada." },
   { title: "Figuras de Linguagem", text: "Reconhecimento rápido, o suficiente pra não travar na hora da prova." },
 ];
+
+export const metadata = marketingMetadata("/trilhas");
 
 export default function TracksPage() {
   return (

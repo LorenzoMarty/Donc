@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
+import { marketingMetadata } from "@/lib/site";
 import { LegalPage } from "@/components/sections/legal-page";
 
-export const metadata: Metadata = { title: "Cancelamento e Reembolso — Donc" };
+export const metadata: Metadata = marketingMetadata("/cancelamento");
 
 export default function CancellationPage() {
   return (

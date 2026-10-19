@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Brain, GraduationCap, Sparkles } from "lucide-react";
+import { marketingMetadata } from "@/lib/site";
 
 import { AceternityGrid, HoverGlowCard, Reveal } from "@/components/sections/aceternity-primitives";
 import { MarketingShell } from "@/components/sections/marketing-shell";
 import { Button } from "@/components/ui/button";
+
+export const metadata = marketingMetadata("/sobre");
 
 export default function AboutPage() {
   return (
