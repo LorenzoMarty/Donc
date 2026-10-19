@@ -104,7 +104,7 @@ export default function LessonPage() {
           {trail && trail.lessons.length > 1 ? (
             <Surface>
               <TrailCard trail={trail} currentLessonId={lesson.id} />
-              {nextLesson ? (
+              {nextLesson && !completion?.completed ? (
                 <Link
                   href={`/aulas/${nextLesson.id}`}
                   className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-control bg-primary px-3 py-2.5 text-[14px] font-bold text-primary-foreground"

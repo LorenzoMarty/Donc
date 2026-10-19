@@ -5,7 +5,8 @@ export type Achievement = { id: string; title: string; description: string; earn
 type Input = Pick<Dashboard, "streak_days" | "essays_written" | "best_essay_score" | "completed_lessons" | "trend">;
 
 const STREAK_MILESTONES = [3, 7, 30] as const;
-/** Ganho mínimo (em pontos) entre a primeira e a última redação corrigida para contar como evolução. */
+/** Ganho mínimo (em pontos) entre a mais antiga e a mais recente das últimas redações corrigidas (a janela do
+ * dashboard, `trend`, tem as 6 últimas) para contar como evolução. */
 const SCORE_GAIN = 50;
 
 /** Conquistas simples derivadas do dashboard (sem XP de conta nem estado novo no servidor). */
@@ -23,6 +24,6 @@ export function computeAchievements(data: Input): Achievement[] {
     { id: "first-essay", title: "Primeira redação", description: "Enviou sua primeira redação.", earned: data.essays_written >= 1 },
     { id: "first-lesson", title: "Primeira aula", description: "Concluiu sua primeira aula.", earned: data.completed_lessons >= 1 },
     { id: "score-700", title: "Nota 700+", description: "Passou dos 700 pontos em uma redação.", earned: data.best_essay_score >= 700 },
-    { id: "score-evolution", title: "Evolução de nota", description: `Subiu ${SCORE_GAIN} pontos ou mais entre as redações.`, earned: evolved },
+    { id: "score-evolution", title: "Evolução de nota", description: `Subiu ${SCORE_GAIN} pontos ou mais nas suas últimas redações.`, earned: evolved },
   ];
 }
