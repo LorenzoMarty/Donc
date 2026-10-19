@@ -1,6 +1,7 @@
 ﻿from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
@@ -24,6 +25,48 @@ class AuthService:
         self.record_terms_acceptance(user)
         return touch_last_seen(self.db, user)
 
+    def login_with_google(self, identity, *, accept_terms: bool) -> User:
+        """Entra (ou cria/vincula) a conta a partir de uma identidade Google ja validada."""
+        user = self.db.scalar(select(User).where(User.google_sub == identity.sub, User.deleted_at.is_(None)))
+        if user is None:
+            user = self.users.get_by_email(identity.email)
+            if user is not None:
+                # E-mail ja existe: vincula (o e-mail veio verificado pelo Google; ver google_identity.py).
+                # Encerra as sessoes que ja existiam: se alguem cadastrou este e-mail antes do dono, o acesso
+                # dele (sessoes abertas) nao sobrevive a vinculacao.
+                user.google_sub = identity.sub
+                if user.email_verified_at is None:
+                    # Conta pre-cadastrada por senha sem confirmar o e-mail: quem prova ser dono do e-mail agora e o
+                    # Google. A senha de quem cadastrou antes (possivel invasor) deixa de valer; o dono volta por
+                    # "Esqueci minha senha" se quiser uma.
+                    user.hashed_password = None
+                    user.email_verified_at = datetime.now(UTC)
+                user.session_version += 1
+                self.users.save(user)
+                self.revoke_all_refresh_tokens(user.id)
+            else:
+                self.require_terms(accept_terms)
+                user = User(
+                    name=identity.name,
+                    email=identity.email,
+                    hashed_password=None,
+                    google_sub=identity.sub,
+                    email_verified_at=datetime.now(UTC),  # o Google ja verificou o e-mail
+                )
+                self.db.add(user)
+                try:
+                    self.db.commit()
+                except IntegrityError:
+                    # Dois primeiros logins simultaneos (duas abas): o outro ganhou, entra na conta que ele criou.
+                    self.db.rollback()
+                    existing = self.db.scalar(select(User).where(User.google_sub == identity.sub))
+                    if existing is None:
+                        raise
+                    return touch_last_seen(self.db, existing)
+                self.db.refresh(user)
+                self.record_terms_acceptance(user)
+        return touch_last_seen(self.db, user)
+
     @staticmethod
     def require_terms(accepted: bool) -> None:
         if not accepted:
@@ -36,7 +79,7 @@ class AuthService:
 
     def authenticate(self, *, email: str, password: str) -> User:
         user = self.users.get_by_email(email)
-        if not user or not verify_password(password, user.hashed_password):
+        if not user or not user.hashed_password or not verify_password(password, user.hashed_password):
             raise AppError("E-mail ou senha inválidos.", status_code=401, code="invalid_credentials")
         return touch_last_seen(self.db, user)
 
@@ -45,6 +88,12 @@ class AuthService:
         return self.users.save(user)
 
     def change_password(self, user: User, *, current_password: str, new_password: str) -> None:
+        if not user.hashed_password:
+            raise AppError(
+                "Sua conta entra com o Google e não tem senha. Para criar uma, use \"Esqueci minha senha\" na tela de login.",
+                status_code=400,
+                code="no_password_set",
+            )
         if not verify_password(current_password, user.hashed_password):
             raise AppError("Senha atual incorreta.", status_code=400, code="invalid_current_password")
         if verify_password(new_password, user.hashed_password):

@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     trust_forwarded_for: bool = False
     # Cloudflare Turnstile no cadastro e na recuperacao de senha; sem a chave, a checagem e pulada.
     turnstile_secret_key: str | None = None
+    # Login com Google (Google Identity Services). Sem GOOGLE_CLIENT_ID a rota responde 503.
+    google_client_id: str | None = None
+    google_jwks_url: str = "https://www.googleapis.com/oauth2/v3/certs"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     openai_fallback_model: str = "gpt-4o-mini"
