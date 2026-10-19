@@ -11,10 +11,12 @@ from src.schemas.admin_subscriptions import (
     CouponListResponse,
     CouponRead,
     CouponUpdateRequest,
+    FunnelResponse,
 )
 from src.schemas.common import ApiResponse, success_response
 from src.services.admin_subscription_service import AdminSubscriptionService
 from src.services.coupon_service import CouponService
+from src.services.funnel_service import FunnelService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -50,6 +52,16 @@ def list_subscribers(
             churn_rate_30d=result.churn_rate_30d,
         )
     )
+
+
+@router.get("/funnel", response_model=ApiResponse[FunnelResponse])
+def funnel(
+    days: int = Query(default=30, ge=1, le=180),
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[FunnelResponse]:
+    result = FunnelService(db).metrics(days=days)
+    return success_response(FunnelResponse.model_validate(result, from_attributes=True))
 
 
 @router.get("/coupons", response_model=ApiResponse[CouponListResponse])

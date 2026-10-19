@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { LoadingCard } from "@/components/shared/loading-card";
 import { formatBRLCents } from "@/lib/format";
+import { FunnelSection } from "@/app/(app)/admin/_tabs/funnel-section";
 import { adminSubscriptionApi } from "@/services/api";
 import type { AdminSubscriber, Coupon } from "@/types/api";
 
@@ -108,6 +109,8 @@ export function SubscriptionsTab() {
           <p className="text-xs text-muted-foreground">Média mensal por assinante ativo</p>
         </div>
       </div>
+
+      <FunnelSection />
 
       <section className="rounded-card border border-border bg-card p-4">
         <h3 className="font-semibold">Assinantes</h3>

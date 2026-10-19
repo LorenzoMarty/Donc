@@ -53,6 +53,16 @@ export type AdminSubscriber = {
   canceled_at: string | null;
 };
 
+export type AdminFunnel = {
+  days: number;
+  signups: number;
+  steps: { key: string; label: string; count: number; pct: number }[];
+  first_action_median_minutes: number | null;
+  first_action_within_target_pct: number;
+  retention_d1: { eligible: number; retained: number; rate: number };
+  retention_d7: { eligible: number; retained: number; rate: number };
+};
+
 export type AdminSubscribersResponse = {
   items: AdminSubscriber[];
   total: number;
