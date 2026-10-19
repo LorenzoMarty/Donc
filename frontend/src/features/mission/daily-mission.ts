@@ -21,6 +21,25 @@ export type DailyMission = {
 
 export const emptyMissionLog: MissionLog = { baseline: null, doneDays: [] };
 
+/** Lê o log salvo no navegador. Qualquer coisa fora do formato (JSON quebrado, tipos errados, edição manual)
+ * volta ao log vazio em vez de derrubar o dashboard. */
+export function parseMissionLog(raw: string | null): MissionLog {
+  if (!raw) return emptyMissionLog;
+  try {
+    const data = JSON.parse(raw) as { baseline?: unknown; doneDays?: unknown };
+    const baseline = data.baseline as { day?: unknown; completedLessons?: unknown } | null | undefined;
+    return {
+      baseline:
+        baseline && typeof baseline.day === "string" && typeof baseline.completedLessons === "number"
+          ? { day: baseline.day, completedLessons: baseline.completedLessons }
+          : null,
+      doneDays: Array.isArray(data.doneDays) ? data.doneDays.filter((day): day is string => typeof day === "string") : [],
+    };
+  } catch {
+    return emptyMissionLog;
+  }
+}
+
 /** Dia local (não UTC): a missão vira à meia-noite do aluno, não às 21h no Brasil. */
 export function localDayKey(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");

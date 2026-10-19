@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { emptyAdaptiveProfile } from "@/features/gamification/adaptive";
 import type { GameAttempt, GameDefinition } from "@/features/gamification/types";
-import { buildMission, emptyMissionLog, localDayKey, syncMissionLog } from "@/features/mission/daily-mission";
+import { buildMission, emptyMissionLog, localDayKey, parseMissionLog, syncMissionLog } from "@/features/mission/daily-mission";
 
 const NOW = new Date(2026, 9, 17, 15, 0);
 const TODAY = localDayKey(NOW);
@@ -75,5 +75,20 @@ describe("syncMissionLog", () => {
     expect(next.baseline).toEqual({ day: TODAY, completedLessons: 3 });
     expect(next.doneDays).toEqual(["2026-10-16", TODAY]);
     expect(syncMissionLog(next, mission, 3)).toBe(next);
+  });
+});
+
+
+describe("parseMissionLog", () => {
+  it("round-trips a valid log", () => {
+    const log = { baseline: { day: "2026-10-17", completedLessons: 4 }, doneDays: ["2026-10-16"] };
+    expect(parseMissionLog(JSON.stringify(log))).toEqual(log);
+  });
+
+  it("falls back to an empty log for missing, broken or wrongly typed data", () => {
+    expect(parseMissionLog(null)).toEqual(emptyMissionLog);
+    expect(parseMissionLog("{nao e json")).toEqual(emptyMissionLog);
+    expect(parseMissionLog(JSON.stringify({ baseline: "x", doneDays: "nope" }))).toEqual(emptyMissionLog);
+    expect(parseMissionLog(JSON.stringify({ doneDays: ["2026-10-16", 7, null] })).doneDays).toEqual(["2026-10-16"]);
   });
 });

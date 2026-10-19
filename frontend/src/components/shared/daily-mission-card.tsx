@@ -6,14 +6,13 @@ import { Check, Circle, Target } from "lucide-react";
 
 import { useAuth } from "@/providers/app-providers";
 import { useGameStore } from "@/stores/game-store";
-import { buildMission, emptyMissionLog, syncMissionLog, type MissionLog, type MissionStep } from "@/features/mission/daily-mission";
+import { buildMission, emptyMissionLog, parseMissionLog, syncMissionLog, type MissionLog, type MissionStep } from "@/features/mission/daily-mission";
 import type { Dashboard } from "@/types/api";
 import { cn } from "@/utils";
 
 function readLog(key: string): MissionLog {
   try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? { ...emptyMissionLog, ...(JSON.parse(raw) as MissionLog) } : emptyMissionLog;
+    return parseMissionLog(window.localStorage.getItem(key));
   } catch {
     return emptyMissionLog;
   }
@@ -27,14 +26,20 @@ function writeLog(key: string, log: MissionLog) {
   }
 }
 
-/** Missão de hoje: 1 atividade adaptativa + continuar a aula. Estado 100% client-side, como XP/streak. */
+/** Missão de hoje: 1 atividade adaptativa + continuar a aula. Estado 100% client-side, como XP/streak.
+ * Só monta com o usuário carregado e remonta ao trocar de conta (`key`): o log é lido uma vez, da chave certa. */
 export function DailyMissionCard({ dashboard }: { dashboard: Dashboard }) {
   const { user } = useAuth();
+  if (!user) return null;
+  return <MissionCard key={user.id} userId={user.id} dashboard={dashboard} />;
+}
+
+function MissionCard({ userId, dashboard }: { userId: number; dashboard: Dashboard }) {
   const adaptive = useGameStore((state) => state.adaptive);
   const attempts = useGameStore((state) => state.attempts);
   const games = useGameStore((state) => state.remoteGames);
   const hydrateRemoteGames = useGameStore((state) => state.hydrateRemoteGames);
-  const storageKey = `donc.mission.v1.${user?.id ?? "anon"}`;
+  const storageKey = `donc.mission.v1.${userId}`;
   // O card só monta depois do dashboard carregar no cliente, então ler o storage no init é seguro.
   const [stored] = useState(() => readLog(storageKey));
 
