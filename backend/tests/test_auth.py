@@ -394,3 +394,30 @@ def test_delete_account_requires_csrf_header_for_cookie_sessions(client):
     client.post("/api/v1/auth/login", json={"email": "aluno@demo.com", "password": "12345678"})
     response = client.post("/api/v1/auth/delete-account", json={"password": "12345678"})
     assert response.status_code == 403 and response.json()["error"] == "csrf_invalid"
+
+
+def test_register_is_limited_per_ip_per_day(client, monkeypatch):
+    monkeypatch.setattr(settings, "register_per_ip_per_day", 2)
+    monkeypatch.setattr(auth_rate_limit, "_increment_redis", lambda key, ttl=70: None)
+    auth_rate_limit._daily_counters.clear()
+
+    def register(n):
+        return client.post(
+            "/api/v1/auth/register",
+            json={"name": "Em Massa", "email": f"massa{n}@test.com", "password": "senha1234", "accept_terms": True},
+        ).status_code
+
+    assert [register(n) for n in range(3)] == [201, 201, 429]
+    auth_rate_limit._daily_counters.clear()
+
+
+def test_register_and_recovery_require_captcha_when_configured(client, monkeypatch):
+    monkeypatch.setattr(settings, "turnstile_secret_key", "secret")
+    body = {"name": "Sem Captcha", "email": "nocaptcha@test.com", "password": "senha1234", "accept_terms": True}
+    blocked = client.post("/api/v1/auth/register", json=body)
+    assert blocked.status_code == 400
+    assert blocked.json()["error"] == "captcha_failed"
+    assert client.post("/api/v1/auth/password-recovery", json={"email": "nocaptcha@test.com"}).status_code == 400
+
+    monkeypatch.setattr("src.routes.auth.verify_turnstile", lambda token, remote_ip=None: None)
+    assert client.post("/api/v1/auth/register", json={**body, "turnstile_token": "ok"}).status_code == 201

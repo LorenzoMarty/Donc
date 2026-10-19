@@ -10,6 +10,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # DSN publico do Sentry (navegador), inlined em build time; vazio = Sentry desligado.
 ARG NEXT_PUBLIC_SENTRY_DSN=
 ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

@@ -33,6 +33,10 @@ async function forward(request: NextRequest, context: RouteContext) {
   // header de CSRF nesse hop e volta 403 do backend mesmo com cookie/token válidos — o cliente
   // (http-client.ts) já manda esse header em toda chamada não-GET, o proxy só precisa repassar.
   if (csrfToken) headers.set("x-csrf-token", csrfToken);
+  // IP real do cliente (gravado pelo Caddy): o backend usa para o limite de contas por IP quando
+  // TRUST_FORWARDED_FOR=true. Sem repassar, todo cadastro pareceria vir do container do frontend.
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
 
   const response = await fetch(targetUrl, {
     method: request.method,
