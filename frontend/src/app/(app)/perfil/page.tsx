@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { AccentSettings } from "@/app/(app)/perfil/components/accent-settings";
 import { AppearanceSettings } from "@/app/(app)/perfil/components/appearance-settings";
 import { AccountCard } from "@/app/(app)/perfil/components/account-card";
+import { AchievementsCard } from "@/app/(app)/perfil/components/achievements-card";
 import { CognitiveIssuesSection } from "@/app/(app)/perfil/components/cognitive-issues-section";
 import { PhaseMapCard } from "@/app/(app)/perfil/components/phase-map";
 import { SubscriptionCard } from "@/app/(app)/perfil/components/subscription-card";
@@ -84,6 +85,8 @@ export default function ProfilePage() {
       </section>
 
       <SubscriptionCard />
+
+      <AchievementsCard dashboard={dashboard} />
 
       <CognitiveIssuesSection issues={learningProfile?.cognitive_issues} />
 
