@@ -115,3 +115,14 @@ def test_payments_route_returns_list(client):
     response = client.get("/api/v1/subscriptions/payments")
     assert response.status_code == 200
     assert isinstance(response.json()["data"], list)
+
+
+def test_admin_funnel_route_shape(client):
+    app.dependency_overrides[require_admin] = override_admin
+    try:
+        response = client.get("/api/v1/admin/funnel?days=30")
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert {"days", "signups", "steps", "first_action_median_minutes", "retention_d1", "retention_d7"} <= set(data)
+    finally:
+        app.dependency_overrides.pop(require_admin, None)

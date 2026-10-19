@@ -61,3 +61,26 @@ class AdminSubscribersResponse(BaseModel):
     active_count: int = 0
     canceled_30d: int = 0
     churn_rate_30d: float = 0.0
+
+
+class FunnelStepRead(BaseModel):
+    key: str
+    label: str
+    count: int
+    pct: float
+
+
+class RetentionRead(BaseModel):
+    eligible: int
+    retained: int
+    rate: float
+
+
+class FunnelResponse(BaseModel):
+    days: int
+    signups: int
+    steps: list[FunnelStepRead]
+    first_action_median_minutes: float | None
+    first_action_within_target_pct: float
+    retention_d1: RetentionRead
+    retention_d7: RetentionRead

@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/http-client";
-import type { AdminSubscribersResponse, CheckoutResponse, Coupon, Subscription, SubscriptionCycle, SubscriptionPayment } from "@/types/api";
+import type { AdminFunnel, AdminSubscribersResponse, CheckoutResponse, Coupon, Subscription, SubscriptionCycle, SubscriptionPayment } from "@/types/api";
 
 export const subscriptionApi = {
   checkout: (cycle: SubscriptionCycle, couponCode?: string) =>
@@ -15,6 +15,7 @@ export const subscriptionApi = {
 };
 
 export const adminSubscriptionApi = {
+  funnel: (days = 30) => apiFetch<AdminFunnel>(`/admin/funnel?days=${days}`),
   subscribers: (limit = 50, offset = 0) =>
     apiFetch<AdminSubscribersResponse>(`/admin/subscribers?limit=${limit}&offset=${offset}`),
   coupons: (limit = 50, offset = 0) =>
