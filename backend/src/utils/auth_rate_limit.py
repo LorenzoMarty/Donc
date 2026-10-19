@@ -29,19 +29,45 @@ def check_auth_rate_limit(request: Request, *, bucket: str, identifier: str = ""
         raise AppError("Muitas tentativas. Aguarde um momento e tente novamente.", status_code=429, code="rate_limit_exceeded")
 
 
+def _daily_key(request: Request, bucket: str) -> tuple[str, int]:
+    day = int(time.time() // 86400)
+    return f"auth-daily:{bucket}:{client_ip(request)}:{day}", day
+
+
+def count_daily_ip_event(request: Request, *, bucket: str) -> None:
+    """Conta uma acao concluida (ex.: conta criada) no teto diario por IP."""
+    key, day = _daily_key(request, bucket)
+    if _increment_redis(key, ttl=90000) is None:
+        _increment_daily_memory(key, day)
+
+
 def check_daily_ip_limit(request: Request, *, bucket: str, limit: int) -> None:
-    """Teto de acoes por IP em 24h (ex.: contas novas). `limit <= 0` desliga."""
+    """Recusa quando o IP ja chegou ao teto de acoes **concluidas** em 24h (`limit <= 0` desliga).
+    Tentativas que falham (e-mail repetido, validacao) nao entram na conta: so `count_daily_ip_event`."""
     if limit <= 0:
         return
-    day = int(time.time() // 86400)
-    key = f"auth-daily:{bucket}:{client_ip(request)}:{day}"
-    count = _increment_redis(key, ttl=90000) or _increment_daily_memory(key, day)
-    if count > limit:
+    key, day = _daily_key(request, bucket)
+    count = _peek_redis(key)
+    if count is None:
+        count = _daily_counters.get(key, (0, day))[0]
+    if count >= limit:
         raise AppError(
             "Muitas contas criadas a partir desta rede hoje. Tente novamente amanhã ou fale com o suporte.",
             status_code=429,
             code="signup_limit_exceeded",
         )
+
+
+def _peek_redis(key: str) -> int | None:
+    try:
+        import redis
+
+        client = redis.from_url(settings.redis_url, socket_connect_timeout=0.2, socket_timeout=0.2)
+        value = client.get(key)
+        return int(value) if value is not None else 0
+    except Exception as exc:
+        logger.warning("Falha ao ler contador diario no Redis (key=%s): %s: %s", key, type(exc).__name__, exc)
+        return None
 
 
 def _increment_redis(key: str, ttl: int = 70) -> int | None:

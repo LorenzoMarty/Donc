@@ -85,8 +85,19 @@ def test_turnstile_fails_closed_when_cloudflare_is_unreachable(monkeypatch):
 
 
 class FakeMP:
+    def __init__(self):
+        self.status: dict[str, str] = {}
+
     def create_preapproval(self, **kwargs):
-        return {"id": f"pre-{kwargs['external_reference']}", "init_point": "https://mp.example/x"}
+        pid = f"pre-{kwargs['external_reference']}"
+        self.status[pid] = "pending"
+        return {"id": pid, "init_point": "https://mp.example/x"}
+
+    def get_preapproval(self, preapproval_id):
+        return {"id": preapproval_id, "status": self.status[preapproval_id], "next_payment_date": "2026-11-20T10:00:00+00:00"}
+
+    def verify_webhook_signature(self, **kwargs):
+        return True
 
 
 def _db_with_users(*emails):
@@ -129,4 +140,25 @@ def test_unlimited_coupon_allows_aliases_but_not_the_same_account_twice():
     service.repository.save(subscription)
     with pytest.raises(AppError) as exc:
         service.start_checkout(first, cycle=PlanCycle.ANNUAL, coupon_code="LIVRE")
+    assert exc.value.code == "coupon_already_used"
+
+
+def test_redeemed_coupon_cannot_be_reused_after_redoing_the_subscription():
+    """Antes: o checkout seguinte zerava `coupon_applied` e o cupom podia ser reaproveitado."""
+    db, (user,) = _db_with_users("ana@escola.com")
+    CouponService(db).create(code="UMAVEZ", discount_type=DiscountType.PERCENT, discount_value=30)
+    mp = FakeMP()
+    service = SubscriptionService(db, mp_client=mp)
+
+    subscription, _ = service.start_checkout(user, cycle=PlanCycle.MONTHLY, coupon_code="UMAVEZ")
+    mp.status[subscription.mp_preapproval_id] = "authorized"
+    service.handle_webhook({"id": "n1", "data": {"id": subscription.mp_preapproval_id}}, {})
+
+    # cancela, refaz o checkout sem cupom e tenta usar o mesmo cupom de novo
+    subscription = service.repository.get_by_user_id(user.id)
+    subscription.status = "canceled"
+    service.repository.save(subscription)
+    service.start_checkout(user, cycle=PlanCycle.MONTHLY)
+    with pytest.raises(AppError) as exc:
+        service.start_checkout(user, cycle=PlanCycle.MONTHLY, coupon_code="UMAVEZ")
     assert exc.value.code == "coupon_already_used"

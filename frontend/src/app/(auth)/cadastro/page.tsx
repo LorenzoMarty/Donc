@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { BrandLink } from "@/components/shared/brand-mark";
 import { MotionShell } from "@/components/shared/motion-shell";
 import { TermsConsent } from "@/components/shared/terms-consent";
-import { TurnstileWidget } from "@/components/shared/turnstile-widget";
+import { TurnstileWidget, turnstileEnabled } from "@/components/shared/turnstile-widget";
 import { useAuth } from "@/providers/app-providers";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -61,7 +61,7 @@ export default function RegisterPage() {
             <TermsConsent checked={accepted} onChange={setAccepted} />
             <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaReset} />
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-            <Button className="w-full" disabled={loading}>
+            <Button className="w-full" disabled={loading || (turnstileEnabled && !captchaToken)}>
               {loading ? "Criando..." : "Começar"}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>

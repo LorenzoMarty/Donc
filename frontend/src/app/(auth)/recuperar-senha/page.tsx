@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import { MailCheck } from "lucide-react";
 
 import { MotionShell } from "@/components/shared/motion-shell";
-import { TurnstileWidget } from "@/components/shared/turnstile-widget";
+import { TurnstileWidget, turnstileEnabled } from "@/components/shared/turnstile-widget";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ export default function RecoverPage() {
             <Input type="email" placeholder="seu@email.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
             <TurnstileWidget onToken={setCaptchaToken} resetKey={captchaReset} />
             {message && <p className="rounded-md bg-accent/10 px-3 py-2 text-sm text-accent">{message}</p>}
-            <Button className="w-full" disabled={loading}>
+            <Button className="w-full" disabled={loading || (turnstileEnabled && !captchaToken)}>
               {loading ? "Enviando..." : "Enviar link"}
             </Button>
           </form>

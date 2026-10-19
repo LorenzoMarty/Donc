@@ -32,7 +32,7 @@ from src.services import email_service
 from src.services.account_data_service import AccountDataService
 from src.services.auth_service import AuthService
 from src.services.turnstile import verify_turnstile
-from src.utils.auth_rate_limit import check_auth_rate_limit, check_daily_ip_limit
+from src.utils.auth_rate_limit import check_auth_rate_limit, check_daily_ip_limit, count_daily_ip_event
 from src.utils.client_ip import client_ip
 from src.utils.csrf import require_csrf_for_cookie_session
 
@@ -109,6 +109,7 @@ def register(
     user = service.register(
         name=payload.name, email=str(payload.email), password=payload.password, accept_terms=payload.accept_terms
     )
+    count_daily_ip_event(request, bucket="register")
     token = service.token_for(user, subscription_active=_subscription_active(db, user))
     refresh_token = service.issue_refresh_token(user)
     verification_token = service.issue_email_verification(user)

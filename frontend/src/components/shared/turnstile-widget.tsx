@@ -17,6 +17,8 @@ declare global {
   }
 }
 
+export const turnstileEnabled = Boolean(SITE_KEY);
+
 let scriptPromise: Promise<void> | null = null;
 
 function loadScript(): Promise<void> {
