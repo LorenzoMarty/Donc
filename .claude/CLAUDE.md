@@ -124,7 +124,9 @@ os problemas mapeados na auditoria de UX multi-input (2026-08-16):
   `touch-action: none` (`touch-none`) nele, e só spread os listeners quando o item não estiver
   `disabled`. Trade-off aceito: em listas verticais isso conflita com rolar a página no touch/tablet
   (`activationConstraint.distance` do sensor reduz mas não elimina o atrito).
-- **Alvo de toque mínimo 44×44** (`h-11 w-11` no Tailwind) em qualquer controle voltado ao aluno.
+- **Alvo de toque mínimo 44×44** em qualquer controle voltado ao aluno. Use `min-h-[44px] min-w-[44px]`
+  (ou `h-[44px] w-[44px]`), **não** `h-11 w-11`: neste projeto a fonte-raiz é menor que 16px e `h-11` mede ~41px.
+  O smoke `e2e/mobile-390.spec.ts` reprova controles abaixo de 44px nas telas de aulas, redação e checkout.
 - **Affordance nunca só em `:hover`** — todo indicador funcional relevante precisa de estado
   sempre-visível (ou opacidade base) + `group-focus-visible`, hover só intensifica.
 - **`useCoarsePointer()`/`useHoverCapable()`** (`hooks/useMediaQuery.ts`) — única fonte de verdade pra

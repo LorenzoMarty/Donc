@@ -204,7 +204,7 @@ function ThemePicker({
               type="button"
               onClick={() => setFilter(option.value)}
               className={cn(
-                "whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                "min-h-[44px] whitespace-nowrap rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors",
                 filter === option.value ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
               )}
             >

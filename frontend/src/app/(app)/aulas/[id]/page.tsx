@@ -91,7 +91,7 @@ export default function LessonPage() {
   return (
     <MotionShell className="space-y-5">
       {trail ? (
-        <Link href="/aulas" className="inline-flex items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground">
+        <Link href="/aulas" className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Trilha {trail.moduleTitle}
         </Link>
@@ -107,7 +107,7 @@ export default function LessonPage() {
               {nextLesson ? (
                 <Link
                   href={`/aulas/${nextLesson.id}`}
-                  className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-control bg-primary px-3 py-2.5 text-[14px] font-bold text-primary-foreground"
+                  className="mt-3.5 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-control bg-primary px-3 py-2.5 text-[14px] font-bold text-primary-foreground"
                 >
                   <Play className="h-[15px] w-[15px] fill-current" aria-hidden="true" />
                   Próxima aula
@@ -159,7 +159,7 @@ function TrailCard({ trail, currentLessonId }: { trail: { moduleTitle: string; l
               href={isLocked ? "#" : `/aulas/${item.id}`}
               aria-disabled={isLocked}
               className={cn(
-                "flex items-center gap-2.5 rounded-[9px] px-2.5 py-2",
+                "flex min-h-[44px] items-center gap-2.5 rounded-[9px] px-2.5 py-2",
                 isCurrent && "bg-primary/10",
                 isLocked && "pointer-events-none",
               )}

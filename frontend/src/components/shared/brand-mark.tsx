@@ -62,7 +62,7 @@ export function BrandLink({
   const showText = !compact && !collapsed;
 
   return (
-    <Link href={href} className={cn("flex min-w-0 items-center", className)}>
+    <Link href={href} className={cn("flex min-h-[44px] min-w-0 items-center", className)}>
       <DoncLogoMark
         size={compact ? "sm" : "md"}
         compressed={collapsed}
