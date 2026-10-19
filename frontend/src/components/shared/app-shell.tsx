@@ -9,6 +9,7 @@ import {
   FilePenLine,
   Gamepad2,
   History,
+  HelpCircle,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
@@ -144,6 +145,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           </AnimatePresence>
         </main>
       </div>
+
+      {pathname.startsWith("/suporte") ? null : (
+        <Link
+          href={`/suporte?origem=${encodeURIComponent(pathname)}`}
+          aria-label="Dúvida ou sugestão"
+          data-testid="help-shortcut"
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-soft transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <HelpCircle className="h-5 w-5" aria-hidden="true" />
+          <span className="hidden sm:inline">Dúvida ou sugestão</span>
+        </Link>
+      )}
     </div>
   );
 }

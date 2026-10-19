@@ -68,6 +68,14 @@ def send_welcome(*, to: str, name: str) -> bool:
     return send_email(to=to, subject="Bem-vindo ao Donc", html_body=_layout("Bem-vindo ao Donc", body, ("Começar", _app_url("/dashboard"))))
 
 
+def send_support_reply(*, to: str, name: str, subject: str) -> bool:
+    body = (
+        f"<p>Oi, {html.escape(name)}. Respondemos o seu chamado &quot;{html.escape(subject)}&quot;. "
+        "Abra o Suporte no Donc para ler a resposta e continuar a conversa.</p>"
+    )
+    return send_email(to=to, subject="Respondemos o seu chamado", html_body=_layout("Resposta do suporte", body, ("Ver resposta", _app_url("/suporte"))))
+
+
 def send_password_reset(*, to: str, name: str, token: str) -> bool:
     link = _app_url(f"/redefinir-senha?token={token}")
     body = (

@@ -9,6 +9,7 @@ from src.schemas.support import (
     AdminSupportTicketListResponse,
     AdminSupportTicketRead,
     AdminSupportTicketStatusUpdateRequest,
+    SupportReplyRequest,
 )
 from src.services.admin_support_service import AdminSupportTicketService
 
@@ -39,3 +40,14 @@ def update_support_ticket_status(
 ) -> ApiResponse[AdminSupportTicketRead]:
     ticket = AdminSupportTicketService(db).update_status(ticket_id=ticket_id, status=payload.status)
     return success_response(ticket, "Status atualizado.")
+
+
+@router.post("/support-tickets/{ticket_id}/reply", response_model=ApiResponse[AdminSupportTicketRead], status_code=201)
+def reply_support_ticket(
+    ticket_id: int,
+    payload: SupportReplyRequest,
+    _: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> ApiResponse[AdminSupportTicketRead]:
+    ticket = AdminSupportTicketService(db).reply(ticket_id=ticket_id, body=payload.message)
+    return success_response(ticket, "Resposta enviada.")

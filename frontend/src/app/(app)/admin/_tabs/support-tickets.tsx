@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { TicketReplyButton } from "@/app/(app)/admin/_tabs/ticket-reply-modal";
 import { supportCategoryLabel } from "@/features/support/support-categories";
 import { adminSupportApi } from "@/services/api";
 import type { AdminSupportTicket, AdminSupportTicketListResponse } from "@/types/api";
@@ -114,7 +115,11 @@ export function SupportTicketsTab() {
                       {ticket.status === "resolved" ? "Resolvido" : "Aberto"}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="flex justify-end gap-2 px-4 py-3 text-right">
+                    <TicketReplyButton
+                      ticket={ticket}
+                      onReplied={(updated) => setItems((prev) => prev?.map((item) => (item.id === updated.id ? updated : item)) ?? prev)}
+                    />
                     <Button
                       type="button"
                       size="sm"

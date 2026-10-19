@@ -1,5 +1,11 @@
 import { apiFetch } from "@/lib/http-client";
-import type { AdminSupportTicket, AdminSupportTicketListResponse, SupportTicketCategory, SupportTicketStatus } from "@/types/api";
+import type {
+  AdminSupportTicket,
+  AdminSupportTicketListResponse,
+  SupportTicket,
+  SupportTicketCategory,
+  SupportTicketStatus,
+} from "@/types/api";
 
 export const supportApi = {
   createTicket: (category: SupportTicketCategory, subject: string, message: string) =>
@@ -7,6 +13,9 @@ export const supportApi = {
       method: "POST",
       body: JSON.stringify({ category, subject, message }),
     }),
+  myTickets: () => apiFetch<SupportTicket[]>("/support/tickets"),
+  reply: (ticketId: number, message: string) =>
+    apiFetch<SupportTicket>(`/support/tickets/${ticketId}/messages`, { method: "POST", body: JSON.stringify({ message }) }),
 };
 
 export const adminSupportApi = {
@@ -21,4 +30,6 @@ export const adminSupportApi = {
   },
   updateStatus: (id: number, status: SupportTicketStatus) =>
     apiFetch<AdminSupportTicket>(`/admin/support-tickets/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  reply: (id: number, message: string) =>
+    apiFetch<AdminSupportTicket>(`/admin/support-tickets/${id}/reply`, { method: "POST", body: JSON.stringify({ message }) }),
 };
