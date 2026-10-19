@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -81,6 +81,19 @@ class SubscriptionRefund(Base):
     mp_payment_id: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     amount_cents: Mapped[int] = mapped_column(BigInteger, nullable=False)
     refunded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CouponRedemption(Base):
+    """Historico de resgates: um cupom por conta mesmo que a assinatura seja refeita (a linha de
+    `subscriptions` e uma por usuario e e sobrescrita a cada checkout)."""
+
+    __tablename__ = "coupon_redemptions"
+    __table_args__ = (UniqueConstraint("coupon_code", "user_id", name="uq_coupon_redemption_user"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    coupon_code: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ProcessedWebhookEvent(Base):

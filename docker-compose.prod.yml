@@ -10,6 +10,8 @@ x-backend-env: &backend-env
     DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     REDIS_URL: redis://redis:6379/0
     SEED_DEMO_DATA: "false"
+    # Atras do Caddy: o IP real do cliente vem no X-Forwarded-For (limite de contas por IP).
+    TRUST_FORWARDED_FOR: "true"
 
 services:
   caddy:
@@ -106,6 +108,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: /api/backend
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
