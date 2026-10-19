@@ -228,8 +228,9 @@ def verify_email(
     payload: VerifyEmailRequest, request: Request, background: BackgroundTasks, db: Session = Depends(get_db)
 ) -> ApiResponse[MessageResponse]:
     check_auth_rate_limit(request, bucket="verify-email")
-    user = AuthService(db).verify_email(payload.token)
-    background.add_task(email_service.send_welcome, to=user.email, name=user.name)
+    user, newly_verified = AuthService(db).verify_email(payload.token)
+    if newly_verified:  # token antigo de quem já estava verificado não reenvia as boas-vindas
+        background.add_task(email_service.send_welcome, to=user.email, name=user.name)
     return success_response(MessageResponse(message="E-mail confirmado."), "E-mail confirmado.")
 
 

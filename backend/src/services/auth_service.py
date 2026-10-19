@@ -161,7 +161,8 @@ class AuthService:
             raise AppError("Aguarde um instante antes de pedir outro e-mail.", status_code=429, code="verification_resend_cooldown")
         return self.issue_email_verification(user)
 
-    def verify_email(self, token: str) -> User:
+    def verify_email(self, token: str) -> tuple[User, bool]:
+        """Consome o token. Devolve (usuário, True se esta chamada foi a que verificou o e-mail)."""
         row = self.db.scalar(select(EmailVerificationToken).where(EmailVerificationToken.token_hash == hash_refresh_token(token)))
         now = datetime.now(UTC)
         invalid = AppError("Link inválido ou expirado. Peça um novo e-mail de confirmação.", status_code=400, code="invalid_verification_token")
@@ -177,9 +178,10 @@ class AuthService:
         if claimed != 1:
             self.db.rollback()
             raise invalid
-        if user.email_verified_at is None:
+        newly_verified = user.email_verified_at is None
+        if newly_verified:
             user.email_verified_at = now
-        return self.users.save(user)
+        return self.users.save(user), newly_verified
 
     def require_email_verified(self, user: User) -> None:
         # Admin nunca paga nem passa por cadastro público.

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { MailCheck } from "lucide-react";
 
 import { MotionShell } from "@/components/shared/motion-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/providers/app-providers";
 import { authApi } from "@/services/api";
 
 type Status = "loading" | "done" | "error" | "missing";
@@ -16,22 +17,25 @@ function VerifyEmail() {
   const token = useSearchParams().get("token") ?? "";
   const [status, setStatus] = useState<Status>(token ? "loading" : "missing");
   const [message, setMessage] = useState("");
+  const { refresh } = useAuth();
+  // O token é de uso único: o StrictMode (dev) monta o efeito duas vezes e o segundo consumo daria erro
+  // mesmo com o e-mail já confirmado. Um ref por token garante uma única chamada.
+  const consumedToken = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
-    let active = true;
+    if (!token || consumedToken.current === token) return;
+    consumedToken.current = token;
     authApi
       .verifyEmail(token)
-      .then(() => active && setStatus("done"))
+      .then(async () => {
+        await refresh(); // com a sessão aberta, /assinatura precisa enxergar `email_verified` já atualizado
+        setStatus("done");
+      })
       .catch((err) => {
-        if (!active) return;
         setMessage(err instanceof Error ? err.message : "Não foi possível confirmar o e-mail.");
         setStatus("error");
       });
-    return () => {
-      active = false;
-    };
-  }, [token]);
+  }, [token, refresh]);
 
   if (status === "loading") return <p className="text-sm text-muted-foreground">Confirmando seu e-mail...</p>;
 

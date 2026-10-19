@@ -307,3 +307,52 @@ def test_unverified_user_cannot_checkout_and_resend_has_cooldown(client, monkeyp
     assert client.post("/api/v1/auth/resend-verification", headers=csrf).status_code == 429
     monkeypatch.setattr(settings, "email_verification_resend_cooldown_seconds", 0)
     assert client.post("/api/v1/auth/resend-verification", headers=csrf).status_code == 200
+
+
+def test_welcome_email_only_on_first_verification(client, monkeypatch, real_auth):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import EmailVerificationToken, User
+    from src.services.auth_service import AuthService
+
+    token, _ = _register_capturing_token(client, monkeypatch, "twice@test.com")
+    welcomed: list[dict] = []
+    monkeypatch.setattr("src.services.email_service.send_welcome", lambda **kw: welcomed.append(kw) or True)
+    assert client.post("/api/v1/auth/verify-email", json={"token": token}).status_code == 200
+    assert len(welcomed) == 1
+
+    # token antigo de quem já está verificado: o link funciona, mas não reenvia as boas-vindas
+    db = SessionLocal()
+    try:
+        user = db.scalar(select(User).where(User.email == "twice@test.com"))
+        old_token = AuthService(db).issue_email_verification(user)
+    finally:
+        db.close()
+    assert client.post("/api/v1/auth/verify-email", json={"token": old_token}).status_code == 200
+    assert len(welcomed) == 1
+
+
+def test_admin_is_not_blocked_by_email_verification(client):
+    from sqlalchemy import select
+
+    from src.database.session import SessionLocal
+    from src.models import User
+    from src.services.auth_service import AuthService
+
+    db = SessionLocal()
+    try:
+        admin = db.scalar(select(User).where(User.email == "admin@demo.com"))
+        admin.email_verified_at = None
+        AuthService(db).require_email_verified(admin)  # não levanta
+        student = db.scalar(select(User).where(User.email == "aluno@demo.com"))
+        student.email_verified_at = None
+        try:
+            AuthService(db).require_email_verified(student)
+            raised = False
+        except Exception as exc:  # noqa: BLE001
+            raised = getattr(exc, "code", "") == "email_not_verified"
+        db.rollback()
+    finally:
+        db.close()
+    assert raised
