@@ -1,9 +1,10 @@
 ﻿from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from src.config.settings import settings
 from src.database.session import SessionLocal, get_db
 from src.dependencies import get_current_user
-from src.models import AIJob, User
+from src.models import AIJob, User, UserRole
 from src.queues.jobs import AIJobService, acquire_sync_fallback_slot, enqueue_correct_essay, expire_stale_job, release_sync_fallback_slot
 from src.queues.tasks import run_correct_essay_job
 from src.schemas.common import ApiResponse, MessageResponse, success_response
@@ -11,6 +12,7 @@ from src.schemas.essays import (
     EssayAutosaveRequest,
     EssayCreateRequest,
     EssayHistoryResponse,
+    EssayQuotaRead,
     EssayRead,
     EssaySubmitResponse,
     EssayThemeGenerateRequest,
@@ -20,6 +22,7 @@ from src.schemas.essays import (
 from src.services.essay_service import EssayService
 from src.services.streak_service import touch_daily_streak
 from src.utils.ai_quota import require_ai_daily_quota
+from src.utils.essay_quota import essay_corrections_this_month, month_bounds_utc, require_essay_monthly_quota
 from src.utils.rate_limit import require_ai_rate_limit
 
 
@@ -68,6 +71,19 @@ def draw_random_themes(
     return success_response(EssayService(db).list_random_themes(limit=4), "4 temas sorteados do banco.")
 
 
+@router.get("/quota", response_model=ApiResponse[EssayQuotaRead])
+def quota(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssayQuotaRead]:
+    limit = settings.essay_monthly_quota
+    unlimited = limit <= 0 or current_user.role == UserRole.ADMIN
+    return success_response(
+        EssayQuotaRead(
+            used=essay_corrections_this_month(db, current_user.id),
+            limit=None if unlimited else limit,
+            resets_at=month_bounds_utc()[1],
+        )
+    )
+
+
 @router.get("/history", response_model=ApiResponse[EssayHistoryResponse])
 def history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> ApiResponse[EssayHistoryResponse]:
     return success_response(EssayService(db).history(current_user.id))
@@ -102,7 +118,7 @@ def autosave(
 @router.post(
     "/{essay_id}/submit",
     response_model=ApiResponse[EssaySubmitResponse],
-    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("essay_correction"))],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_essay_monthly_quota), Depends(require_ai_daily_quota("essay_correction"))],
 )
 def submit_essay(
     essay_id: int,
@@ -166,7 +182,7 @@ def rewrite_from_version(essay_id: int, version_id: int, current_user: User = De
 @router.post(
     "/{essay_id}/reprocess",
     response_model=ApiResponse[EssaySubmitResponse],
-    dependencies=[Depends(require_ai_rate_limit), Depends(require_ai_daily_quota("essay_correction"))],
+    dependencies=[Depends(require_ai_rate_limit), Depends(require_essay_monthly_quota), Depends(require_ai_daily_quota("essay_correction"))],
 )
 def reprocess_essay(
     essay_id: int,

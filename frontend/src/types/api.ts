@@ -378,6 +378,12 @@ export type EssaySubmitResponse = {
   essay_id: number;
 };
 
+export type EssayQuota = {
+  used: number;
+  limit: number | null;
+  resets_at: string;
+};
+
 export type JobStatus = {
   job_id: string;
   status: "queued" | "running" | "completed" | "failed";
