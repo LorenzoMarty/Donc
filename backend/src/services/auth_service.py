@@ -8,6 +8,7 @@ from src.config.security import create_access_token, generate_refresh_token, get
 from src.middlewares.errors import AppError
 from src.models import EmailVerificationToken, PasswordResetToken, RefreshToken, StudentProfile, User
 from src.repositories.users import UserRepository
+from src.services import analytics
 from src.services.streak_service import touch_last_seen
 
 
@@ -22,6 +23,7 @@ class AuthService:
             raise AppError("Já existe uma conta com este e-mail.", status_code=409, code="email_in_use")
         user = self.users.create(name=name, email=email, hashed_password=get_password_hash(password))
         self.record_terms_acceptance(user)
+        analytics.capture("signup", user.id)
         return touch_last_seen(self.db, user)
 
     @staticmethod
