@@ -11,7 +11,7 @@ from src.models import PlanCycle, SubscriptionStatus, User
 from src.utils.email_normalize import normalize_email
 from src.models.subscription import CouponRedemption, ProcessedWebhookEvent, Subscription
 from src.repositories.subscriptions import SubscriptionRepository
-from src.services import email_service
+from src.services import analytics, email_service
 from src.services.coupon_service import CouponService
 from src.services.mercadopago_client import MercadoPagoClient
 from src.services.subscription_status import effective_status
@@ -181,6 +181,7 @@ class SubscriptionService:
         if not user:
             return
         if subscription.status == SubscriptionStatus.ACTIVE and previous_status == SubscriptionStatus.PENDING:
+            analytics.capture("subscription_activated", user.id, cycle=str(getattr(subscription.cycle, "value", subscription.cycle)))
             email_service.fire_and_forget(email_service.send_payment_approved, to=user.email, name=user.name)
         elif subscription.status == SubscriptionStatus.GRACE:
             email_service.fire_and_forget(

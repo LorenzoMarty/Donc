@@ -95,6 +95,9 @@ class Settings(BaseSettings):
     email_verification_token_hours: int = 24
     email_verification_resend_cooldown_seconds: int = 60
     sentry_dsn: str | None = None
+    # Analytics de produto (PostHog cloud EU, free). Sem a chave vira no-op. Ver docs/analytics.md.
+    posthog_api_key: str | None = None
+    posthog_host: str = "https://eu.i.posthog.com"
     # Versão vigente dos Termos/Privacidade; gravada em User.terms_version no aceite. Subir ao revisar o texto.
     legal_terms_version: str = "2026-10-12"
 
@@ -120,6 +123,7 @@ class Settings(BaseSettings):
         "mercadopago_webhook_secret",
         "resend_api_key",
         "sentry_dsn",
+        "posthog_api_key",
         mode="before",
     )
     @classmethod
