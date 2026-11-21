@@ -41,3 +41,16 @@ docker compose --env-file .env.production -f docker-compose.prod.yml exec db \
 
 Cada serviço tem `mem_limit` (somam ~3,4 GB) e o swap de 2 GB absorve picos. Se o worker for morto por falta de memória
 (`docker compose ... ps`), reduza `--concurrency` ou suba o plano do VPS.
+
+## Arquivos fora do banco (inventário)
+
+O app **não grava arquivos em disco**: não há upload (nenhum `UploadFile`/escrita de arquivo no backend).
+
+| O quê | Onde vive | Backup |
+|---|---|---|
+| PDFs das aulas (`lessons.pdf_url`) | link externo, só a URL fica no Postgres | coberto por `backup.sh` (URL); o arquivo em si fica no serviço de origem (Drive/YouTube etc.): manter cópia lá |
+| Miniaturas (`thumbnail_url`) | link externo ou asset versionado em `frontend/public/images` (padrão `/images/lessons/default.jpg`) | git |
+| Certificados HTTPS (volume `caddy-data`) | VPS | dispensável: o Caddy reemite sozinho |
+| Dados (`postgres-data`) | VPS | `backup.sh` + off-site (acima) |
+
+Se um dia houver upload, mover para object storage (R2/B2) e incluir no backup antes de liberar. Restauração completa em máquina limpa = `setup-vps.sh` + clone + `.env.production` + `restore.sh` (seção acima); não há outro estado a recuperar.
