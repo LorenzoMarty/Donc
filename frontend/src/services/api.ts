@@ -16,6 +16,7 @@ export type {
   Essay,
   EssayCorrection,
   EssayHistory,
+  EssayQuota,
   EssaySubmitResponse,
   EssayTheme,
   EssayVersion,

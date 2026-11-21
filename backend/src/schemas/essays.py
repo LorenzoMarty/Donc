@@ -219,6 +219,12 @@ class EssaySubmitResponse(BaseModel):
     essay_id: int
 
 
+class EssayQuotaRead(BaseModel):
+    used: int
+    limit: int | None  # None = sem limite
+    resets_at: datetime
+
+
 class JobStatusRead(BaseModel):
     job_id: str
     status: str
