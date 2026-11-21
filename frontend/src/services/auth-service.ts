@@ -10,6 +10,8 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ name, email, password, accept_terms: true, turnstile_token: turnstileToken ?? undefined }),
     }),
+  google: (credential: string, acceptTerms: boolean) =>
+    apiFetch<AuthResponse>("/auth/google", { method: "POST", body: JSON.stringify({ credential, accept_terms: acceptTerms }) }),
   me: () => apiFetch<User>("/auth/me"),
   // Reemite o access token (claim `sa` inclusa) — sem isso, virar assinante ativo enquanto o
   // token antigo (sa=false) ainda vale faria o proxy.ts empurrar de volta pro paywall mesmo

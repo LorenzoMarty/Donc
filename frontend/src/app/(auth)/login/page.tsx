@@ -10,14 +10,36 @@ import { MotionShell } from "@/components/shared/motion-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { GoogleSignInButton } from "@/components/shared/google-signin-button";
+import { TermsConsent } from "@/components/shared/terms-consent";
 import { useAuth } from "@/providers/app-providers";
+import { ApiClientError } from "@/services/api";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // Conta nova via Google exige aceite dos termos: guarda o token e pede o aceite antes de repetir.
+  const [pendingCredential, setPendingCredential] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  async function onGoogle(credential: string, accept = false) {
+    setError("");
+    try {
+      await loginWithGoogle(credential, accept);
+      window.location.replace("/dashboard");
+    } catch (err) {
+      if (err instanceof ApiClientError && err.code === "terms_not_accepted") {
+        setPendingCredential(credential);
+        setError("Para criar a sua conta, aceite os termos abaixo e continue.");
+        return;
+      }
+      setPendingCredential(null);
+      setError(err instanceof Error ? err.message : "Falha ao entrar com o Google.");
+    }
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -62,6 +84,17 @@ export default function LoginPage() {
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </form>
+            <div className="mt-5 space-y-3">
+              <GoogleSignInButton onCredential={(credential) => void onGoogle(credential)} />
+              {pendingCredential ? (
+                <div className="space-y-3" data-testid="google-terms">
+                  <TermsConsent checked={acceptedTerms} onChange={setAcceptedTerms} id="google-accept-terms" />
+                  <Button type="button" className="w-full" disabled={!acceptedTerms} onClick={() => void onGoogle(pendingCredential, true)}>
+                    Criar conta com Google
+                  </Button>
+                </div>
+              ) : null}
+            </div>
             <div className="mt-5 flex flex-col gap-3 text-sm xs:flex-row xs:items-center xs:justify-between">
               <Link href="/recuperar-senha" className="font-medium text-primary">
                 Recuperar senha

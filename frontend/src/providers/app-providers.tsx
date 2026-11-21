@@ -66,6 +66,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         ensureFreePostItsStoreOwner(payload.user.id);
         setUser(payload.user);
       },
+      loginWithGoogle: async (credential: string, acceptTerms: boolean) => {
+        const payload = await authApi.google(credential, acceptTerms);
+        ensureGameStoreOwner(payload.user.id);
+        ensureHighlightsStoreOwner(payload.user.id);
+        ensureFreePostItsStoreOwner(payload.user.id);
+        setUser(payload.user);
+      },
       logout: () => {
         setUser(null);
         authApi.logout().catch(() => undefined).finally(() => {

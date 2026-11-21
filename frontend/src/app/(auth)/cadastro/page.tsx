@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 
 import { BrandLink } from "@/components/shared/brand-mark";
 import { MotionShell } from "@/components/shared/motion-shell";
+import { GoogleSignInButton } from "@/components/shared/google-signin-button";
 import { TermsConsent } from "@/components/shared/terms-consent";
 import { TurnstileWidget, turnstileEnabled } from "@/components/shared/turnstile-widget";
 import { useAuth } from "@/providers/app-providers";
@@ -14,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,6 +24,20 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
+
+  async function onGoogle(credential: string) {
+    if (!accepted) {
+      setError("Aceite os Termos de Uso e a Política de Privacidade para continuar com o Google.");
+      return;
+    }
+    setError("");
+    try {
+      await loginWithGoogle(credential, true);
+      window.location.replace("/assinatura");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao entrar com o Google.");
+    }
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -66,6 +81,9 @@ export default function RegisterPage() {
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </form>
+          <div className="mt-4">
+            <GoogleSignInButton text="signup_with" onCredential={(credential) => void onGoogle(credential)} />
+          </div>
           <p className="mt-5 text-center text-sm text-muted-foreground">
             Já tem conta?{" "}
             <Link href="/login" className="font-medium text-primary">

@@ -82,6 +82,7 @@ async def csrf_cookie_session_middleware(request, call_next):
         f"{settings.api_v1_prefix}/auth/verify-email",
         # o token assinado do link do e-mail e a credencial (clicar com sessao aberta nao deve dar CSRF)
         f"{settings.api_v1_prefix}/auth/reminders/unsubscribe",
+        f"{settings.api_v1_prefix}/auth/google",
     }
     if unsafe_method and request.url.path.startswith(settings.api_v1_prefix) and request.url.path not in public_auth_paths:
         try:
