@@ -23,6 +23,7 @@ from src.schemas.admin import (
     WorkflowStats,
 )
 from src.services.admin_cost_helpers import log_cost_micros, micros_to_brl_cents, micros_to_usd_cents
+from src.services import analytics
 from src.services.fx_rate import get_usd_brl
 
 
@@ -294,3 +295,4 @@ class AdminTelemetryService:
             )
         )
         self.db.commit()
+        analytics.capture(event_type, user_id, entity_type=entity_type, duration_ms=duration_ms)

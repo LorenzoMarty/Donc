@@ -10,6 +10,7 @@ from src.middlewares.errors import AppError
 from src.models import Essay, EssayCorrection, EssayStatus, EssayTheme, EssayVersion, EssayVersionCorrection, User
 from src.repositories.essays import EssayRepository
 from src.schemas.essays import EssayEvolutionPoint, EssayHistoryResponse
+from src.services import analytics
 from src.services.ai_telemetry import record_ai_interaction
 from src.services.competency_stats import mean_competencies
 from src.services.ai_service import EssayAIService
@@ -126,6 +127,7 @@ class EssayService:
         essay = self.repo.lock_essay_for_correction(essay_id, user.id) or essay
         self.require_edit_before_new_correction(essay)
 
+        analytics.capture("essay_submitted", user.id)
         return self._apply_correction(essay=essay, user=user, job_id=job_id)
 
     def duplicate(self, *, essay_id: int, user_id: int) -> Essay:
