@@ -23,8 +23,13 @@ por projeto, não registro de decisões/arquitetura).
 - Não rodar a skill `analyze-system` (gera `SYSTEM_ANALYSIS.md` na raiz) para tarefas pequenas ou
   localizadas — só quando a tarefa exigir entender o sistema inteiro.
 - Gate de verificação antes de declarar concluído: frontend → `npm run quality` (lint + typecheck
-  + test, rodar de dentro de `frontend/` com caminho absoluto, o cwd não persiste entre comandos);
-  backend → `.\quality.ps1`. Não rodar tsc/lint/vitest avulsos em série — o gate já cobre tudo.
+  + test + `check:grammar`, rodar de dentro de `frontend/` com caminho absoluto, o cwd não persiste
+  entre comandos); backend → `.\quality.ps1` no Windows ou o equivalente Linux abaixo. Não rodar
+  tsc/lint/vitest avulsos em série — o gate já cobre tudo.
+- O `check:grammar` (e o `quality.ps1`) precisa do LanguageTool respondendo em `LANGUAGETOOL_URL`
+  (padrão `http://localhost:8010/v2/check`): suba com `docker compose up -d languagetool`. Sem
+  Docker (ex.: sessão na nuvem), rode lint, typecheck e test separados e **diga que o
+  `check:grammar` não foi executado**; o CI roda o gate completo (`quality.yml`).
 - Mudança com superfície de runtime (tela, rota, pipeline): verificar no browser/chamada real
   antes de encerrar, não apenas por leitura de código.
 
@@ -58,7 +63,7 @@ Plugins do marketplace [`lorenzo-skills`](https://github.com/LorenzoMarty/skills
 
 O contexto que cresce (registros de tarefa, arquitetura, decisões) vive no vault **E_Mind**, em
 `02 - Projetos/Donc/` (hub `Donc.md` + `Arquitetura.md` + `Decisões.md` + `Registros/`).
-Gravado/atualizado pela skill `knowledge-manager` (regra 3). Para dúvidas sobre o sistema, leia este
+Gravado/atualizado pela skill `claude-obsidian` (regra 3). Para dúvidas sobre o sistema, leia este
 arquivo e o contexto lá antes de explorar código (regra 2). **Não** recriar `claude/docs/` no repo.
 
 ---
@@ -71,7 +76,7 @@ npm run dev          # dev server :3000
 npm run build / lint / typecheck / format
 npm run test         # Vitest (unit + stores); test:coverage p/ cobertura
 npm run test:e2e     # Playwright smoke (antes: test:e2e:install uma vez)
-npm run quality      # lint + typecheck + test (gate local)
+npm run quality      # lint + typecheck + test + check:grammar (gate local; exige LanguageTool em :8010)
 ```
 
 ### Backend (`backend/`)
@@ -81,9 +86,14 @@ uvicorn src.main:app --reload   # dev server :8000
 celery -A src.queues.celery_app:celery_app worker --loglevel=INFO
 alembic upgrade head            # migrações
 pytest / pytest --cov           # testes
-.\quality.ps1                   # prospector + pytest --cov (gate local)
+.\quality.ps1                   # prospector + pytest --cov + check-grammar (gate local, Windows)
 ```
-> Deps de qualidade/teste: `python -m pip install -r requirements-dev.txt`. Guia: `docs/testing.md`.
+Equivalente em Linux/macOS e na nuvem (o `quality.ps1` usa `.venv\Scripts\python.exe`, só Windows), a partir de `backend/`:
+```bash
+python -m prospector && python -m pytest --cov     # análise estática + testes com cobertura
+node ../scripts/check-grammar.mjs                  # só com o LanguageTool no ar (docker compose up -d languagetool)
+```
+> Deps de qualidade/teste: `python -m pip install -r requirements-dev.txt`.
 > Testes em `tests/` (`unit/`, `integration/`, `fixtures/`). Config: `pyproject.toml`, `.prospector.yaml`.
 
 ### Stack completa via Docker
